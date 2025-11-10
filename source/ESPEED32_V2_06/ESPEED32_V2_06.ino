@@ -1,62 +1,52 @@
 /*********************************************************************************************************************/
-/*------------------------------------------------------Includes-----------------------------------------------------*/
+/*                                                   Includes                                                        */
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
 
 /*********************************************************************************************************************/
-/*-------------------------------------------------------Macros------------------------------------------------------*/
+/*                                                   Version Control                                                 */
 /*********************************************************************************************************************/
-#define BOOTLOADER_BUILD 1
-//#define LOG_LOCAL_LEVEL ESP_LOG_NONE
-#define CONFIG_BOOTLOADER_LOG_LEVEL ESP_LOG_NONE
-
 #define SW_MAJOR_VERSION 2
-#define SW_MINOR_VERSION 06
-#define STORED_VAR_VERSION 4 /* tells which version of stored variable is used for thisproject in case the stored var */
-                             /* changes from previous SW release, please increase the STORED_VAR_VERSION by 1         */
+#define SW_MINOR_VERSION 6
+#define STORED_VAR_VERSION 4  /* Stored variable version - increment when stored structure changes */
 
 /* Last modified: 17/10/2024 */
 /*********************************************************************************************************************/
-/*-------------------------------------------------Global variables--------------------------------------------------*/
+/*                                                   Global Variables                                                */
 /*********************************************************************************************************************/
 
-//CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON=y not existing
-//CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
-
-
+/* FreeRTOS Task Handles */
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
+/* State Machine */
 static StateMachine_enum g_currState = INIT;
-uint16_t debug;
 
-/* Display Backbuffer */
+/* Display Components */
 #ifdef USE_BACKBUFFER
 static uint8_t ucBackBuffer[1024];
 #else
 static uint8_t *ucBackBuffer = NULL;
 #endif
 
-OBDISP g_obd;       /* Display global instance */
+OBDISP g_obd;         /* OLED display instance */
+char msgStr[50];      /* Display message buffer */
 
-char msgStr[50];    /* Display string global instance */
+/* Car Selection */
+uint16_t g_carSel;    /* Currently selected car model index */
 
-
-uint16_t g_carSel;  /* global variable telling whch car model has been selected */
-
-/* Rotary Encoder global instance */
+/* Rotary Encoder */
 AiEsp32RotaryEncoder g_rotaryEncoder = AiEsp32RotaryEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_BUTTON_PIN, ENCODER_VCC_PIN, ENCODER_STEPS);
 
-static uint8_t g_encoderMainSelector = 1;           /* Value of main menu selector (indicates selected item) */
-static uint8_t g_encoderSecondarySelector = 0;      /* Value of secondarty selector (indicates selected item's value) */
-static uint16_t *g_encoderSelectedValuePtr = NULL;  /* Global instance of pointer to the value selected by the encoder */
+static uint8_t g_encoderMainSelector = 1;             /* Main menu item selector */
+static uint8_t g_encoderSecondarySelector = 0;        /* Secondary value selector */
+static uint16_t *g_encoderSelectedValuePtr = NULL;    /* Pointer to currently selected value */
 
-
-/* EEPROM stored values (mainly calibration) global instance */
+/* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
 
-/* ESC internal variables gloabl instance */
-ESC_type g_escVar{
+/* ESC Runtime Variables */
+ESC_type g_escVar {
   .outputSpeed_pct = 0,
   .trigger_raw = 0,
   .trigger_norm = 0,
@@ -65,86 +55,86 @@ ESC_type g_escVar{
   .dualCurve = false
 };
 
-/* Main menu global instances */
-Menu_type g_mainMenu{
+/* Menu Structures */
+Menu_type g_mainMenu {
   .lines = 3
 };
 
-/* Car menu global instances */
-Menu_type g_carMenu{
+Menu_type g_carMenu {
   .lines = 3
 };
 
-/* Preferences global instance (for storing NVM data, replace EEPROM library) */
+/* Preferences (NVM storage) */
 Preferences g_pref;
 
-static uint32_t g_lastEncoderInteraction = 0;  /* tell how much time has passed since last time encoder whas rotated/pressed
-                                                  so we can avoid keep printing the display menu and save CPU cycles */
+/* UI Timing */
+static uint32_t g_lastEncoderInteraction = 0;  /* Timestamp of last encoder interaction for display power saving */
 
 /*********************************************************************************************************************/
-/*--------------------------------------------- Function Declaration----------------------------------------*/
+/*                                                Function Prototypes                                                */
 /*********************************************************************************************************************/
 void IRAM_ATTR readEncoderISR();
 
-
 /*********************************************************************************************************************/
-/*---------------------------------------------Setup Function Implementations----------------------------------------*/
+/*                                                Setup Function                                                     */
 /*********************************************************************************************************************/
 
-/* Setup */
-void setup()
-{
-
-  /***** Pin and Serial Setup *****/
+/**
+ * @brief Main setup function - initializes hardware and creates FreeRTOS tasks
+ */
+void setup() {
+  /* Pin and Serial Setup */
   HAL_PinSetup();
 
-  /***** HalfBridge & HW Setup *****/
-  HalfBridge_SetupFabio();
+  /* HalfBridge & Hardware Setup */
+  HalfBridge_Setup();
 
-  /***** create a task that will be executed in the Task1code() and Task2code() funcitons, executed on core 0 and 1 *****/
-  /* TASK1: slotESC state machine, managex OLED display and Encoder, low priority task */
+  /* Create FreeRTOS Tasks */
+  /* Task 1: UI and state machine (low priority, core 0) */
   xTaskCreatePinnedToCore(
-    Task1code, /* Task function. */
-    "Task1",   /* name of task. */
-    10000,     /* Stack size of task */
-    NULL,      /* parameter of the task */
-    1,         /* priority of the task */
-    &Task1,    /* Task handle to keep track of created task */
-    0);        /* pin task to core 0 */
-  /* TASK2: perform trigger reading, trigger conditioning, PWM output */
+    Task1code,   /* Task function */
+    "Task1",     /* Task name */
+    10000,       /* Stack size */
+    NULL,        /* Parameters */
+    1,           /* Priority */
+    &Task1,      /* Task handle */
+    0);          /* Core 0 */
+    
+  /* Task 2: Trigger reading and motor control (high priority, core 1) */
   xTaskCreatePinnedToCore(
-    Task2code, /* Task function. */
-    "Task2",   /* name of task. */
-    10000,     /* Stack size of task */
-    NULL,      /* parameter of the task */
-    2,         /* priority of the task */
-    &Task2,    /* Task handle to keep track of created task */
-    1);        /* pin task to core 1 */
+    Task2code,   /* Task function */
+    "Task2",     /* Task name */
+    10000,       /* Stack size */
+    NULL,        /* Parameters */
+    2,           /* Priority */
+    &Task2,      /* Task handle */
+    1);          /* Core 1 */
 }
 
 
 /*********************************************************************************************************************/
-/*---------------------------------------------MAIN LOOP IN TASKS----------------------------------------------*/
+/*                                                FreeRTOS Tasks                                                     */
 /*********************************************************************************************************************/
 
 /**
- * Task 1: slotESC state machine: manage OLED display and Encoder, low priority task
+ * @brief Task 1: UI and State Machine
+ * @details Manages OLED display, rotary encoder, and main state machine
+ * @note Runs on Core 0 with lower priority
  */
-void Task1code(void *pvParameters) 
-{
-  for (;;) 
-  {
-    StateMachine_enum prevState = g_currState;  /* Keep track of the state at the previous loop */
-    static uint16_t prevFreqPWM = 0;            /* Keep track if the PWM freq has changed */
-    static MenuState_enum menuState = ITEM_SELECTION;   /* State of the Main Menu */
-    static uint8_t swMajVer, swMinVer, storedVarVersion;/* SW major version, minor version,  storedVariable version stored in the eeprom */
+void Task1code(void *pvParameters) {
+  for (;;) {
+    StateMachine_enum prevState = g_currState;
+    static uint16_t prevFreqPWM = 0;
+    static MenuState_enum menuState = ITEM_SELECTION;
+    static uint8_t swMajVer, swMinVer, storedVarVersion;
 
-    g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH); /* Read VIN */
+    /* Read input voltage */
+    g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
 
-    if (g_currState != INIT) /* If the user params are already fetched from the EEPROM */
-      {
-        g_carSel = g_storedVar.selectedCarNumber;    /* Update global variable telling which car model is actually selected */
-      }
+    /* Update selected car if initialization complete */
+    if (g_currState != INIT) {
+      g_carSel = g_storedVar.selectedCarNumber;
+    }
 
     /* Task 1 state machine */
     switch (g_currState) {
@@ -318,63 +308,65 @@ void Task1code(void *pvParameters)
 }
 
 /**
- * Task 2 performs trigger reading, trigger conditioning and set output PWM
+ * @brief Task 2: Trigger Reading and Motor Control
+ * @details Reads trigger input, applies throttle curve and anti-spin, controls motor PWM
+ * @note Runs on Core 1 with higher priority for real-time motor control
  */
 void Task2code(void *pvParameters) {
-  static unsigned long prevCallTime_uS = 0, deltaTime_uS, currCallTime_uS;  /* Used to keep track of time between executions */
-  static unsigned long currTrigger_raw = 0, prevTrigger_raw = 0;            /* Used to keep track of current and previous trigger readings */
+  static unsigned long prevCallTime_uS = 0;
+  static unsigned long currTrigger_raw = 0, prevTrigger_raw = 0;
 
-  HalfBridge_Enable();  /* TODO: verify if needed */
+  HalfBridge_Enable();
 
-  for (;;) 
-  {
-    currCallTime_uS = micros();                         /* Get current time in uS */
-    deltaTime_uS = currCallTime_uS - prevCallTime_uS;   /* Calculate delta time between current and previous execution */
+  for (;;) {
+    unsigned long currCallTime_uS = micros();
+    unsigned long deltaTime_uS = currCallTime_uS - prevCallTime_uS;
     
-    if (deltaTime_uS > ESC_PERIOD_US) /* This condition ensure that the following code is executed every ESC_PERIOD_US */
-    {
-      prevCallTime_uS = currCallTime_uS;                              /* update last call static memory */
+    /* Execute every ESC_PERIOD_US microseconds */
+    if (deltaTime_uS > ESC_PERIOD_US) {
+      prevCallTime_uS = currCallTime_uS;
 
-      /* Trigger reading and first conditioning (filtering, normalize, deadband) */
+      /* Read and filter trigger input */
       prevTrigger_raw = currTrigger_raw;
-      currTrigger_raw = HAL_ReadTriggerRaw();  /* Read raw trigger value */
-      g_escVar.trigger_raw  = (prevTrigger_raw + currTrigger_raw) / 2;   /* Take the average between current and previous trigger readings --> attenuate disturbs */
-      g_escVar.trigger_norm = normalizeAndClamp(g_escVar.trigger_raw, g_storedVar.minTrigger_raw, g_storedVar.maxTrigger_raw, THROTTLE_NORMALIZED, THROTTLE_REV);  /* Get Raw trigger position and return throttle between 0 and THROTTLE_NORMALIZED */
-      g_escVar.trigger_norm = addDeadBand(g_escVar.trigger_norm, 0, THROTTLE_NORMALIZED, THROTTLE_DEADBAND_NORM); /* Account for deadband */
+      currTrigger_raw = HAL_ReadTriggerRaw();
+      g_escVar.trigger_raw = (prevTrigger_raw + currTrigger_raw) / 2;  /* Simple moving average filter */
       
-      /* Check isf allowed to provide power  to the motor*/
-      if (!(g_currState == CALIBRATION || g_currState == INIT))           /* Do not apply power if in calibration or before initialization (TODO: would be better to have also variables init) */
-      {
-        if (g_escVar.trigger_norm == 0)                                   /* If the trigger is at 0 */
-        {
-          HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].brake); /* Apply brake only (and speed to 0) in case speed set is 0 */
-          g_escVar.outputSpeed_pct=0; // set outputSpeed_pct to 0 so the ramp starts from a 0 value after a brake
-          throttleAntiSpin3(0);       // keep on calling antispin with 0 as input to keep ramp delta time updated
-        }
-        else                                                              /* If the requested speed is > 0 */
-        {
-          /* Throttle -> Speed pipeline , perform time dependent adjustment */
-          g_escVar.outputSpeed_pct   = throttleCurve2(g_escVar.trigger_norm );   /* Map trigger(throttle) to speed (duty) */
-          g_escVar.outputSpeed_pct   = throttleAntiSpin3(g_escVar.outputSpeed_pct); /* Define actual speed output (apply antispin) */
-          HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, 0);         /* Apply output speed (duty) */
+      /* Normalize and apply deadband */
+      g_escVar.trigger_norm = normalizeAndClamp(g_escVar.trigger_raw, g_storedVar.minTrigger_raw, 
+                                                g_storedVar.maxTrigger_raw, THROTTLE_NORMALIZED, THROTTLE_REV);
+      g_escVar.trigger_norm = addDeadBand(g_escVar.trigger_norm, 0, THROTTLE_NORMALIZED, THROTTLE_DEADBAND_NORM);
+      
+      /* Apply motor control (skip if in calibration or init state) */
+      if (!(g_currState == CALIBRATION || g_currState == INIT)) {
+        if (g_escVar.trigger_norm == 0) {
+          /* Apply brake when trigger is released */
+          HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].brake);
+          g_escVar.outputSpeed_pct = 0;
+          throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
+        } else {
+          /* Apply throttle curve and anti-spin */
+          g_escVar.outputSpeed_pct = throttleCurve2(g_escVar.trigger_norm);
+          g_escVar.outputSpeed_pct = throttleAntiSpin3(g_escVar.outputSpeed_pct);
+          HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, 0);
         }
       }
     }
   }
 }
 
-
-/* real loop are in the Tasks */
+/**
+ * @brief Main loop (unused - real loops are in FreeRTOS tasks)
+ */
 void loop() {}
 
 /*********************************************************************************************************************/
-/*---------------------------------------------Setup Function Implementations----------------------------------------------*/
+/*                                           Initialization Functions                                               */
 /*********************************************************************************************************************/
 
-/*
-  Initialize OLED display and encoder.
-  This is done separately from the HW init to shorten the startup time.
-*/
+/**
+ * @brief Initialize OLED display and rotary encoder
+ * @details Performed separately from HW init to reduce startup time
+ */
 void initDisplayAndEncoder() 
 {
   uint16_t rc;
@@ -661,111 +653,88 @@ void printMainMenu(MenuState_enum currMenuState)
   sprintf(msgStr, " %d.%01dV ", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
   obdWriteString(&g_obd, 0, 7 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
 
-  /* Show with a D if Drag Brake is higher than 100%-minSpeed forcing a dual curve when decelerating */
- if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed )
- {  
-    g_escVar.dualCurve = true; // indicates a differnt curve is set when decelerating with high drag brake
-    sprintf(msgStr, "D", debug);
+  /* Show 'D' if Drag Brake is higher than 100%-minSpeed (forcing dual curve when decelerating) */
+  if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {  
+    g_escVar.dualCurve = true;
+    sprintf(msgStr, "D");
     obdWriteString(&g_obd, 0, 12 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
- }
- else/* delete the D if there is not a dual curve */
- {
+  } else {
+    /* Clear the 'D' indicator if no dual curve */
     g_escVar.dualCurve = false;
-    sprintf(msgStr, " ", debug);
+    sprintf(msgStr, " ");
     obdWriteString(&g_obd, 0, 12 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
- }
-}
-
-uint16_t gammaCorrect(uint16_t value, float gamma) {
-  float normalizedValue = (float)value / 1000.0f;
-  float correctedValue = powf(normalizedValue, gamma);
-  return (uint16_t)(correctedValue * 1000.0f);
+  }
 }
 
 
-#define ANTIS_SPEED_START_MIN 30 /*start anntispin only for throttle requests above ANTISPIN_PERC_START% */
-#define ANTIS_SPEED_START_MAX 65 /*start antispin only for throttle requests above ANTISPIN_PERC_START% */
- /**
- * Apply antispin calculation (according to antispin settings) applying a ramp to the output speed to prevent car drift
- * Antispin func. is called every 0,5ms. Input parameter is the requested Speed, which ranges from MinSpeed to MaxSpeed. 
- * the output is following the input (from MinSpeed to MaxSpeed), but with a maximum variation/time, so that if a step is applied at the input, 
- * the output will produce a rampm till the final value.
- * The antispin time is the time taken from minSpeed to MaxSpeed, selected by the user in the global  variable g_storedVar.carParam[g_carSel].antiSpin in [ms]
- * Of course, the ramp time is proportional to the output swing amount. therefore if the requested speed step is only MaxSPeed/2 then 
- * also the ramp time is Antispin/2
- * Motor current is too low at low duty (30-50%), this is not producing spinning for sure. In addition, when starting from stop it is so useful to rise the motor 
- * current quickly to have good acceleration. Therefore the antispin is applied from requested speed values above antispinPercStart.
- * AntispinPercStart has some variations too, it is not a fixed 40% value for instance, but it vary with the carParam[g_carSel].antiSpin user parameter
- * if the carParam[g_carSel].antiSpin setting is very high E.G. 200ms (powerful motor or slippery track), so also the antispinPercStart is low too 
- * if the carParam[g_carSel].antiSpin set is low, the traction is good, so antispinPercStart should be high, 
- * @param requestedSpeed [%] The requested outputSpeed at the end of the throttle -> speed pipeline
- * @return [%] The output speed closer to the requestedSpeed that respect the Antispin settings.
+#define ANTIS_SPEED_START_MIN 30  /* [%] Start anti-spin only for throttle requests above this threshold */
+#define ANTIS_SPEED_START_MAX 65  /* [%] Maximum anti-spin start threshold */
+
+/**
+ * @brief Apply anti-spin control to prevent car drift
+ * @details Applies a ramp to output speed to prevent sudden speed changes that cause wheel spin.
+ *          Anti-spin time is the time taken from minSpeed to maxSpeed, selected by user.
+ *          Anti-spin is bypassed at low duty cycles (< antispinPercStart) where current is too low to cause spinning.
+ *          The antispinPercStart threshold varies with the antiSpin setting:
+ *          - High antiSpin (200ms) = Low threshold (powerful motor/slippery track)
+ *          - Low antiSpin = High threshold (good traction)
+ * 
+ * @param requestedSpeed [%] Requested output speed (0-100%)
+ * @return [%] Actual output speed respecting anti-spin ramp limits
  */
-uint16_t throttleAntiSpin3(uint16_t requestedSpeed) 
-{
-  static uint32_t lastOutputSpeedx1000 = 0, maxDeltaSpeedx1000, outputSpeedX1000;   /* To keep track of output speeds, in a larger scale to increase granularity */
-  static unsigned long prevCall_uS = 0, deltaTime_uS, currCall_uS;    /* To keep track of time between executions */
-  uint32_t outputSpeed;  
-  uint16_t antispinPercStart,minSpeedTmp;/* level at which the antispin starts to be effective (at lower trigger is just bypassed) */    
-
-  currCall_uS = micros();                     /* Get current time in uS */
-  deltaTime_uS = currCall_uS - prevCall_uS;   /* Get delta time from last call of this function */
-  prevCall_uS = currCall_uS;                  /* Update last call static memory */
-
-  /* map(long x, long in_min, long in_max, long out_min, long out_max) */
-  antispinPercStart = map( (long)g_storedVar.carParam[g_carSel].antiSpin, 0 , (long)ANTISPIN_MAX_VALUE, (long)ANTIS_SPEED_START_MAX, (long)ANTIS_SPEED_START_MIN );
+uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
+  static uint32_t lastOutputSpeedx1000 = 0;
+  static unsigned long prevCall_uS = 0;
   
+  unsigned long currCall_uS = micros();
+  unsigned long deltaTime_uS = currCall_uS - prevCall_uS;
+  prevCall_uS = currCall_uS;
 
-  /* Bypass calculation if antiSpin is 0 (OFF) and just return requestedSpeed */
-  if ((g_storedVar.carParam[g_carSel].antiSpin) == 0) 
-  {
-    outputSpeed = requestedSpeed;
-    lastOutputSpeedx1000 = g_storedVar.carParam[g_carSel].minSpeed; // keep last output speed to minspeed, so at next start I can 
-  } 
-  else 
-  {
-    if (requestedSpeed < antispinPercStart) /* if requested speed(duty) is low do not apply antispin, current will be low for sure, so just pass the value */
-    {
-      outputSpeed = requestedSpeed ;
-      lastOutputSpeedx1000 = outputSpeed * 1000;
-    }
-    else
-    {
-      if ((uint32_t)requestedSpeed * 1000 <= lastOutputSpeedx1000)  /* If requestSpeed is decreasing (car braking/slowing) => apply new speed immediately */
-      {
-        outputSpeed = requestedSpeed;
-        lastOutputSpeedx1000 = outputSpeed * 1000;
-      } 
-      else /* Requested speed is increasing (Car is RACING) here apply antispin */
-      {
-        /* minspeed could be overrided by the antispinPercStart, so keep the highest */
-        minSpeedTmp = max((uint16_t)g_storedVar.carParam[g_carSel].minSpeed, antispinPercStart);
-        /* calculate max delta speed  deltaSpeed = ((minSPeedTmp-MaxSpeed)* DeltaTime) / antiSpin (from min speed to max speed) */
-        maxDeltaSpeedx1000 = ((g_storedVar.carParam[g_carSel].maxSpeed - minSpeedTmp  ) * (deltaTime_uS)) / (g_storedVar.carParam[g_carSel].antiSpin);  
-        
-        /* Check if there is room to increase the lastOutputSpeed by a maxdeltaspeed or if the speed is too close to the requested speed*/
-        if (lastOutputSpeedx1000 < ((uint32_t)requestedSpeed * 1000 - maxDeltaSpeedx1000))  
-        {
-          outputSpeedX1000 = (lastOutputSpeedx1000 + maxDeltaSpeedx1000);
-        } 
-        else // we arrived at the target, so just assign the requested speed
-        {
-          outputSpeedX1000 = requestedSpeed * 1000;
-        }
-        
-        /* check in order to start the ramp from minspeed (and not from 0) */
-        if (outputSpeedX1000 < g_storedVar.carParam[g_carSel].minSpeed * 1000)  
-        {
-          outputSpeedX1000 = g_storedVar.carParam[g_carSel].minSpeed * 1000;
-        }
+  /* Calculate dynamic anti-spin start threshold based on anti-spin setting */
+  uint16_t antispinPercStart = map((long)g_storedVar.carParam[g_carSel].antiSpin, 0, (long)ANTISPIN_MAX_VALUE, 
+                                    (long)ANTIS_SPEED_START_MAX, (long)ANTIS_SPEED_START_MIN);
 
-        lastOutputSpeedx1000 = outputSpeedX1000;  /* save latest outspeed, so next iteration of this function can have only the defined delta */
-        outputSpeed = outputSpeedX1000 / 1000;
-      }
-    }
+  /* Bypass anti-spin if disabled */
+  if (g_storedVar.carParam[g_carSel].antiSpin == 0) {
+    lastOutputSpeedx1000 = g_storedVar.carParam[g_carSel].minSpeed * 1000;
+    return requestedSpeed;
   }
 
-  return outputSpeed;
+  /* Bypass anti-spin at low speeds (insufficient current for wheel spin) */
+  if (requestedSpeed < antispinPercStart) {
+    lastOutputSpeedx1000 = requestedSpeed * 1000;
+    return requestedSpeed;
+  }
+
+  /* Allow immediate deceleration (braking) */
+  if ((uint32_t)requestedSpeed * 1000 <= lastOutputSpeedx1000) {
+    lastOutputSpeedx1000 = requestedSpeed * 1000;
+    return requestedSpeed;
+  }
+
+  /* Apply anti-spin ramp for acceleration */
+  uint16_t minSpeedTmp = max((uint16_t)g_storedVar.carParam[g_carSel].minSpeed, antispinPercStart);
+  
+  /* Calculate maximum allowed speed change: deltaSpeed = ((minSpeed-maxSpeed) * deltaTime) / antiSpin */
+  uint32_t maxDeltaSpeedx1000 = ((g_storedVar.carParam[g_carSel].maxSpeed - minSpeedTmp) * deltaTime_uS) / 
+                                 g_storedVar.carParam[g_carSel].antiSpin;
+
+  uint32_t outputSpeedX1000;
+  
+  /* Check if we can increase speed by full delta or if we're close to target */
+  if (lastOutputSpeedx1000 < ((uint32_t)requestedSpeed * 1000 - maxDeltaSpeedx1000)) {
+    outputSpeedX1000 = lastOutputSpeedx1000 + maxDeltaSpeedx1000;
+  } else {
+    outputSpeedX1000 = requestedSpeed * 1000;  /* Target reached */
+  }
+
+  /* Ensure ramp starts from minSpeed, not zero */
+  if (outputSpeedX1000 < g_storedVar.carParam[g_carSel].minSpeed * 1000) {
+    outputSpeedX1000 = g_storedVar.carParam[g_carSel].minSpeed * 1000;
+  }
+
+  lastOutputSpeedx1000 = outputSpeedX1000;
+  return outputSpeedX1000 / 1000;
 }
 
 

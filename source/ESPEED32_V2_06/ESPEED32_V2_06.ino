@@ -251,9 +251,14 @@ void Task1code(void *pvParameters) {
         /* Change menu state if encoder button is clicked */
         if (g_rotaryEncoder.isEncoderButtonClicked()) 
         {
-          menuState = rotary_onButtonClick(menuState);  /* This function is called if the encoder is pressed
-                                                           Take the current menu state and returns the next menu state */
-          g_lastEncoderInteraction = millis();          /* Update last encoder interaction */
+          /* If screensaver is active (timeout exceeded), just wake up - don't process menu action */
+          if (millis() - g_lastEncoderInteraction > SCREENSAVER_TIMEOUT_MS) {
+            g_lastEncoderInteraction = millis();  /* Wake from screensaver */
+          } else {
+            menuState = rotary_onButtonClick(menuState);  /* This function is called if the encoder is pressed
+                                                             Take the current menu state and returns the next menu state */
+            g_lastEncoderInteraction = millis();          /* Update last encoder interaction */
+          }
         }
 
         /* Get encoder position if it was changed*/
@@ -562,6 +567,59 @@ void showScreenCalibration(int16_t adcRaw)
   obdWriteString(&g_obd, 0, 0, 56, msgStr, FONT_6x8, OBD_BLACK, 1);
 }
 
+/**
+ * @brief Display bottom status line with throttle, car name, D indicator and voltage
+ * @details Common function used by both main menu and screensaver
+ */
+void displayStatusLine() {
+  /* Current Output speed - left */
+  sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');  
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
+  
+  /* Car name - left-center (position 5*8 = 40 pixels) */
+  sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
+  obdWriteString(&g_obd, 0, 5 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  
+  /* Show 'D' if Drag Brake is active - right-center (position 10*8 = 80 pixels) */
+  if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {
+    g_escVar.dualCurve = true;
+    sprintf(msgStr, "D");
+    obdWriteString(&g_obd, 0, 10 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  } else {
+    /* Clear the 'D' indicator if no dual curve */
+    g_escVar.dualCurve = false;
+    sprintf(msgStr, " ");
+    obdWriteString(&g_obd, 0, 10 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  }
+  
+  /* Current voltage - right aligned */
+  sprintf(msgStr, "%d.%01dV", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
+  obdWriteString(&g_obd, 0, OLED_WIDTH - 30, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+}
+
+/**
+ * @brief Show screensaver with branding
+ * @details Displays "RCW Racing" logo with LIMITER warning and status line
+ */
+void showScreensaver() {
+  /* Clear screen */
+  obdFill(&g_obd, OBD_WHITE, 1);
+  
+  /* Display "RCW" in extra large font centered */
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"RCW", FONT_16x32, OBD_BLACK, 1);
+  
+  /* Display "Racing" in smaller font centered below */
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - 36) / 2, 34, (char *)"Racing", FONT_6x8, OBD_BLACK, 1);
+  
+  /* Display LIMITER warning if active at same position as in menu */
+  if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT) 
+  {
+    obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
+  }
+  
+  /* Display bottom status line */
+  displayStatusLine();
+}
 
 /**
  * Print the main menu.
@@ -573,6 +631,7 @@ void showScreenCalibration(int16_t adcRaw)
 void printMainMenu(MenuState_enum currMenuState) 
 {
   static uint16_t tmp = 0;
+  static bool screensaverActive = false;
 
   /* "Frame" indicates which items are currently displayed.
      It consist of a lower and upper bound: only the items within this boundaries are displayed.
@@ -587,17 +646,33 @@ void printMainMenu(MenuState_enum currMenuState)
     frameLower = g_encoderMainSelector;
     frameUpper = frameLower - g_mainMenu.lines + 1;
     obdFill(&g_obd, OBD_WHITE, 1);
+    screensaverActive = false;
   } 
   else if (g_encoderMainSelector < frameUpper) 
   {
     frameUpper = g_encoderMainSelector;
     frameLower = frameUpper + g_mainMenu.lines - 1;
     obdFill(&g_obd, OBD_WHITE, 1);
+    screensaverActive = false;
   }
 
-  /* Print main menu only if there was an encoder interaction in the last 100 milliseconds */
-  if (millis() - g_lastEncoderInteraction < 100) 
+  /* Check if screensaver should be shown or menu */
+  if (millis() - g_lastEncoderInteraction > SCREENSAVER_TIMEOUT_MS) 
   {
+    /* Show screensaver */
+    if (!screensaverActive) {
+      screensaverActive = true;
+      showScreensaver();
+    }
+  }
+  /* Print main menu only if there was an encoder interaction recently */
+  else if (millis() - g_lastEncoderInteraction < 100) 
+  {
+    if (screensaverActive) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      screensaverActive = false;
+    }
+    
     for (uint8_t i = 0; i < g_mainMenu.lines; i++)
     {
       /* Print item name */
@@ -645,25 +720,8 @@ void printMainMenu(MenuState_enum currMenuState)
     }
   }
 
-  /* print analytic - statistic line */
-  /* Current Output speed */
-  sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');  
-  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
-  /* Current voltage */
-  sprintf(msgStr, " %d.%01dV ", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
-  obdWriteString(&g_obd, 0, 7 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
-
-  /* Show 'D' if Drag Brake is higher than 100%-minSpeed (forcing dual curve when decelerating) */
-  if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {  
-    g_escVar.dualCurve = true;
-    sprintf(msgStr, "D");
-    obdWriteString(&g_obd, 0, 12 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
-  } else {
-    /* Clear the 'D' indicator if no dual curve */
-    g_escVar.dualCurve = false;
-    sprintf(msgStr, " ");
-    obdWriteString(&g_obd, 0, 12 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
-  }
+  /* Display bottom status line */
+  displayStatusLine();
 }
 
 

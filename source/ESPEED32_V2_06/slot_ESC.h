@@ -52,6 +52,7 @@
 
 /* Timing Constants */
 #define ESC_PERIOD_US   500     /* ESC control loop period [µs] */
+#define SCREENSAVER_TIMEOUT_MS  5000  /* [ms] Time before screensaver activates */
 
 /* Car Configuration */
 #define CAR_MAX_COUNT       10  /* Maximum number of car profiles */

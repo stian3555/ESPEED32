@@ -148,6 +148,7 @@ typedef struct {
   uint16_t trigger_norm;      /* Normalized trigger value (0-THROTTLE_NORMALIZED) */
   uint16_t encoderPos;        /* Current rotary encoder position */
   uint16_t Vin_mV;            /* [mV] Input voltage */
+  uint16_t motorCurrent_mA;   /* [mA] Motor current */
   bool dualCurve;             /* True if deceleration uses different curve */
 } ESC_type;
 

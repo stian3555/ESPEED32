@@ -120,4 +120,7 @@ void onSound();
 void calibSound();
 void keySound();
 
+/* Current Sensing */
+uint16_t HAL_ReadMotorCurrent();
+
 #endif  /* HAL_H_ */

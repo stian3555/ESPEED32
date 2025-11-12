@@ -38,6 +38,10 @@ void HAL_InitHW() {
   /* Initialize serial for debugging */
   Serial.begin(115200);
 
+  /* Configure ADC for current sensing on GPIO25 */
+  analogSetAttenuation(ADC_11db);  /* Set ADC range to 0-3.3V */
+  pinMode(HB_AN_PIN, INPUT);       /* Explicitly set pin as input */
+
 #ifdef TLE493D_MAG
   /* Initialize I2C for TLE493D sensor */
   Wire1.begin(SDA0_PIN, SCL0_PIN, 100000L);
@@ -153,6 +157,27 @@ uint16_t HAL_ReadVoltageDivider(int analogInput, uint32_t rvfbl, uint32_t rvfbh)
   voltage = (voltage * (rvfbl + rvfbh)) / rvfbl;
   
   return voltage;
+}
+
+/**
+ * @brief Read motor current from BTN9960LV IS pin
+ * @details Hardware: IS → 2.2kΩ → GND, IS → 2.2kΩ → D25, D25 → 100nF → GND
+ *          BTN9960LV: IS = ILOAD / kILIS where kILIS ≈ 8500
+ *          Voltage divider gives: V_ADC = (ILOAD / 8500) * 2200 / 2
+ *          Therefore: ILOAD = V_ADC * 7752 mA
+ * @return Motor current in milliamps [mA]
+ */
+uint16_t HAL_ReadMotorCurrent() {
+  uint32_t adcRaw = analogRead(HB_AN_PIN);
+  
+  /* Calculate voltage at ADC pin */
+  uint32_t voltage_mV = (ACD_VOLTAGE_RANGE_MVOLTS * adcRaw) / ACD_RESOLUTION_STEPS;
+  
+  /* Calculate motor current based on BTN9960LV IS characteristic and voltage divider
+     ILOAD [mA] = V_ADC [V] * 7752 = V_ADC [mV] * 7.752 */
+  uint32_t current_mA = (voltage_mV * 7752) / 1000;
+  
+  return (uint16_t)current_mA;
 }
 
 /**

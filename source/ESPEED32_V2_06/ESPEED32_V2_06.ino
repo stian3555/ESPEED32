@@ -128,8 +128,9 @@ void Task1code(void *pvParameters) {
     static MenuState_enum menuState = ITEM_SELECTION;
     static uint8_t swMajVer, swMinVer, storedVarVersion;
 
-    /* Read input voltage */
+    /* Read input voltage and motor current */
     g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
+    g_escVar.motorCurrent_mA = HAL_ReadMotorCurrent();
 
     /* Update selected car if initialization complete */
     if (g_currState != INIT) {
@@ -572,27 +573,31 @@ void showScreenCalibration(int16_t adcRaw)
  * @details Common function used by both main menu and screensaver
  */
 void displayStatusLine() {
-  /* Current Output speed - left */
+  /* Throttle % - left (position 0) */
   sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');  
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
   
-  /* Car name - left-center (position 5*8 = 40 pixels) */
+  /* Car ID - second from left (position 4*8 = 32 pixels) */
   sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
-  obdWriteString(&g_obd, 0, 5 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
   
-  /* Show 'D' if Drag Brake is active - right-center (position 10*8 = 80 pixels) */
+  /* Show 'D' if Drag Brake is active - center (position 7.5*8 = 60 pixels) */
   if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {
     g_escVar.dualCurve = true;
     sprintf(msgStr, "D");
-    obdWriteString(&g_obd, 0, 10 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 60, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
   } else {
     /* Clear the 'D' indicator if no dual curve */
     g_escVar.dualCurve = false;
     sprintf(msgStr, " ");
-    obdWriteString(&g_obd, 0, 10 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 60, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
   }
   
-  /* Current voltage - right aligned */
+  /* Motor current - second from right (position 72 pixels) */
+  sprintf(msgStr, "%d.%01dA", g_escVar.motorCurrent_mA / 1000, (g_escVar.motorCurrent_mA % 1000) / 100);
+  obdWriteString(&g_obd, 0, 72, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  
+  /* Input voltage - right aligned */
   sprintf(msgStr, "%d.%01dV", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
   obdWriteString(&g_obd, 0, OLED_WIDTH - 30, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
 }

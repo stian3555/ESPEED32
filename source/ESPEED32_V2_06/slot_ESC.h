@@ -65,7 +65,7 @@
 /* Rename Car Mode States */
 #define RENAME_CAR_SELECT_OPTION_MODE   0
 #define RENAME_CAR_SELECT_CHAR_MODE     1
-#define RENAME_CAR_MIN_ASCII    33      /* First printable ASCII character */
+#define RENAME_CAR_MIN_ASCII    32      /* First printable ASCII character */
 #define RENAME_CAR_MAX_ASCII    122     /* Last lowercase letter */
 /*********************************************************************************************************************/
 /*                                                 Data Structures                                                   */

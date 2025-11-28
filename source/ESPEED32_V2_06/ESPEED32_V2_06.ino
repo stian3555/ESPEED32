@@ -612,8 +612,9 @@ void showScreensaver() {
   
   /* Display "RCW" in extra large font centered */
   /* obdWriteString(&g_obd, 0, 10, 8, (char *)"Vandaas", FONT_16x32, OBD_BLACK, 1); */
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"RCW", FONT_16x32, OBD_BLACK, 1);
-  
+  /* obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"RCW", FONT_16x32, OBD_BLACK, 1); */
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"JAN", FONT_16x32, OBD_BLACK, 1);
+
   /* Display "Racing" in smaller font centered below */
   obdWriteString(&g_obd, 0, (OLED_WIDTH - 36) / 2, 34, (char *)"Racing", FONT_6x8, OBD_BLACK, 1);
   

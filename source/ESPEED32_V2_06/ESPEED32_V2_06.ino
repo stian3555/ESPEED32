@@ -2,6 +2,7 @@
 /*                                                   Includes                                                        */
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
+#include "screensaver_config.h"  /* Personal screensaver configuration (git-ignored) */
 
 /*********************************************************************************************************************/
 /*                                                   Version Control                                                 */
@@ -779,26 +780,33 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
 /**
  * @brief Show screensaver with branding
- * @details Displays "RCW Racing" logo with LIMITER warning and status line
+ * @details Displays personalized branding with LIMITER warning and status line
+ *          Text is configured in screensaver_config.h (git-ignored)
  */
 void showScreensaver() {
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
 
-  /* Display "RCW" in extra large font centered */
-  /* obdWriteString(&g_obd, 0, 10, 8, (char *)"Vandaas", FONT_16x32, OBD_BLACK, 1); */
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"RCW", FONT_16x32, OBD_BLACK, 1);
-  /* obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"JAN", FONT_16x32, OBD_BLACK, 1); */
+  /* Calculate text width for centering (16 pixels per character for FONT_16x32) */
+  int line1_width = strlen(SCREENSAVER_LINE1) * 16;
+  int line1_x = (OLED_WIDTH - line1_width) / 2;
 
-  /* Display "Racing" in smaller font centered below */
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - 36) / 2, 34, (char *)"Racing", FONT_6x8, OBD_BLACK, 1);
-  
+  /* Display main text in extra large font centered */
+  obdWriteString(&g_obd, 0, line1_x, 8, (char *)SCREENSAVER_LINE1, FONT_16x32, OBD_BLACK, 1);
+
+  /* Calculate text width for centering (6 pixels per character for FONT_6x8) */
+  int line2_width = strlen(SCREENSAVER_LINE2) * 6;
+  int line2_x = (OLED_WIDTH - line2_width) / 2;
+
+  /* Display subtitle in smaller font centered below */
+  obdWriteString(&g_obd, 0, line2_x, 34, (char *)SCREENSAVER_LINE2, FONT_6x8, OBD_BLACK, 1);
+
   /* Display LIMITER warning if active at same position as in menu */
-  if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT) 
+  if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
   {
     obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
   }
-  
+
   /* Display bottom status line */
   displayStatusLine();
 }

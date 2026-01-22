@@ -613,8 +613,12 @@ void initMenuItems() {
  */
 void showScreenWelcome()
 {
-  obdWriteString(&g_obd, 0, 24, 16, (char *)"ESPEED", FONT_12x16, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 20, 32, (char *)"fw. v3.0", FONT_12x16, OBD_BLACK, 1);
+  /* Display "ESPEED" in large font */
+  obdWriteString(&g_obd, 0, 24, 14, (char *)"ESPEED", FONT_12x16, OBD_BLACK, 1);
+
+  /* Display "v3.0" in smaller font, centered below with spacing */
+  /* v3.0 is 4 chars × 6px = 24px wide, center at (128-24)/2 = 52 */
+  obdWriteString(&g_obd, 0, 52, 36, (char *)"v3.0", FONT_6x8, OBD_BLACK, 1);
 }
 
 

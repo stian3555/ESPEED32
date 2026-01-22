@@ -16,12 +16,16 @@
 /*********************************************************************************************************************/
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    7     /* Number of items in main menu */
+#define MENU_ITEMS_COUNT    10    /* Number of items in main menu */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
 #define ITEM_NO_VALUE       0     /* Indicates menu item has no displayable value */
-#define MAX_ITEMS           10    /* Maximum items in any menu */
+#define MAX_ITEMS           20    /* Maximum items in any menu */
+
+/* View Modes */
+#define VIEW_MODE_LIST      0     /* List view (classic menu) */
+#define VIEW_MODE_GRID      1     /* Grid view (race mode) */
 
 /* Default Parameter Values */
 #define MIN_SPEED_DEFAULT         20    /* [%] Minimum motor speed (sensitivity) */
@@ -32,6 +36,7 @@
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
 #define PWM_FREQ_DEFAULT          30    /* [100*Hz] Motor PWM frequency (3.0 kHz) */
+#define BRAKE_BUTTON_REDUCTION_DEFAULT  50   /* [%] Brake reduction when button is pressed */
 
 /* Parameter Limits */
 #define MIN_SPEED_MAX_VALUE       90    /* [%] Maximum allowed minimum speed */
@@ -52,10 +57,22 @@
 
 /* Timing Constants */
 #define ESC_PERIOD_US   500     /* ESC control loop period [µs] */
-#define SCREENSAVER_TIMEOUT_MS  5000  /* [ms] Time before screensaver activates */
+#define SCREENSAVER_TIMEOUT_DEFAULT  20  /* [s] Default screensaver timeout */
+#define SCREENSAVER_TIMEOUT_MAX      120 /* [s] Maximum screensaver timeout */
+
+/* Button Press Timing */
+#define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
+#define BUTTON_DEBOUNCE_AFTER_LONG_MS  1500  /* [ms] Debounce time after long press before accepting short press */
+#define BUTTON_SHORT_PRESS_DEBOUNCE_MS  200  /* [ms] Minimum time between button presses */
+
+/* Sound Configuration */
+#define SOUND_MODE_OFF   0  /* All sounds disabled */
+#define SOUND_MODE_BOOT  1  /* Boot sounds only */
+#define SOUND_MODE_ALL   2  /* All sounds enabled */
+#define SOUND_MODE_DEFAULT  SOUND_MODE_ALL
 
 /* Car Configuration */
-#define CAR_MAX_COUNT       10  /* Maximum number of car profiles */
+#define CAR_MAX_COUNT       20  /* Maximum number of car profiles */
 #define CAR_NAME_MAX_SIZE   5   /* Car name length (4 chars + null terminator) */
 
 /* Menu Options */
@@ -125,6 +142,7 @@ typedef struct {
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */
+  uint16_t brakeButtonReduction;            /* [%] Brake reduction when button pressed (0-100%) */
 } CarParam_type;
 
 /**
@@ -136,6 +154,9 @@ typedef struct {
   uint16_t selectedCarNumber;               /* Currently active car profile */
   int16_t minTrigger_raw;                   /* Calibrated minimum trigger value */
   int16_t maxTrigger_raw;                   /* Calibrated maximum trigger value */
+  uint16_t viewMode;                        /* View mode: LIST or GRID */
+  uint16_t screensaverTimeout;              /* [s] Screensaver timeout in seconds */
+  uint16_t soundMode;                       /* Sound mode: OFF, BOOT, or ALL */
 } StoredVar_type;
 
 /**
@@ -167,7 +188,7 @@ typedef struct {
   ItemValueType_enum type;        /* Value type for display formatting */
   uint16_t maxValue;              /* Maximum allowed value */
   uint16_t minValue;              /* Minimum allowed value */
-  char unit;                      /* Measurement unit character */
+  char unit[4];                   /* Measurement unit string (up to 3 chars + null) */
   uint8_t decimalPoint;           /* Decimal point position (1 or 2) */
   FunctionPointer_type callback;  /* Function called when item is selected */
 } MenuItem_type;

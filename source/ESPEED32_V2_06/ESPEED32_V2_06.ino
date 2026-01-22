@@ -6,9 +6,9 @@
 /*********************************************************************************************************************/
 /*                                                   Version Control                                                 */
 /*********************************************************************************************************************/
-#define SW_MAJOR_VERSION 2
-#define SW_MINOR_VERSION 6
-#define STORED_VAR_VERSION 4  /* Stored variable version - increment when stored structure changes */
+#define SW_MAJOR_VERSION 3
+#define SW_MINOR_VERSION 0
+#define STORED_VAR_VERSION 7  /* Stored variable version - increment when stored structure changes */
 
 /* Last modified: 17/10/2024 */
 /*********************************************************************************************************************/
@@ -142,7 +142,7 @@ void Task1code(void *pvParameters) {
       case INIT:
 
         g_pref.begin("stored_var", false); /* Open the "stored" namespace in read/write mode. If it doesn't exist, it creates it */
-        
+
         if (g_pref.isKey("stored_var_ver") && g_pref.isKey("sw_maj_ver") && g_pref.isKey("sw_min_ver") && g_pref.isKey("user_param")) /* If all keys exists, then check their value */
         {
           /* Get the values of the sw version */
@@ -162,7 +162,9 @@ void Task1code(void *pvParameters) {
               /* Reset Min and Max to the opposite side, in order to have effective calibration */
               g_storedVar.minTrigger_raw = MAX_INT16;
               g_storedVar.maxTrigger_raw = MIN_INT16;
-              calibSound();             /* Play calibration sound */
+              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+                calibSound();             /* Play calibration sound */
+              }
               initDisplayAndEncoder();  /* init and clear OLED and Encoder */
 
               /* Wait until button is released, then go to CALIBRATION state */
@@ -178,7 +180,9 @@ void Task1code(void *pvParameters) {
               g_currState = WELCOME;                    /* Go to WELCOME state */
               g_carSel = g_storedVar.selectedCarNumber; /* now it is safe to address the proper car */
               initDisplayAndEncoder();  /* init and clear OLED and Encoder */
-              onSound();                /* Play ON sound */
+              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+                onSound();                /* Play ON sound */
+              }
             }
 
             g_pref.end(); /* Close the namespace */
@@ -205,7 +209,9 @@ void Task1code(void *pvParameters) {
         /* Reset Min and Max to the opposite side, in order to have effective calibration */
         g_storedVar.minTrigger_raw = MAX_INT16;
         g_storedVar.maxTrigger_raw = MIN_INT16;
-        calibSound();                   /* Play calibration sound */
+        if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+          calibSound();                   /* Play calibration sound */
+        }
         g_currState = CALIBRATION;      /* Go to CALIBRATION state */
         obdFill(&g_obd, OBD_WHITE, 1); /* Clear OLED */
         /* Press and release button to go to CALIBRATION state */
@@ -224,7 +230,9 @@ void Task1code(void *pvParameters) {
         /* Exit calibration if button is presseded */
         if (g_rotaryEncoder.isEncoderButtonClicked())  /* exit calibration and save calibration data to EEPROM */
         {
-          offSound();
+          if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+            offSound();
+          }
           initMenuItems();  /* Init Menu Items */
           saveEEPROM(g_storedVar);  /* Save modified calibration values to EEPROM */
           HalfBridge_Enable();    /* Enable HalfBridge */
@@ -249,11 +257,71 @@ void Task1code(void *pvParameters) {
 
       case RUNNING: /* when the global variable State is in RUNNING the Task2 will elaborate the trigger to produce the PWM out */
 
-        /* Change menu state if encoder button is clicked */
-        if (g_rotaryEncoder.isEncoderButtonClicked()) 
+        /* Set encoder boundaries based on view mode (on first entry) */
+        static bool encoderBoundariesSet = false;
+        if (!encoderBoundariesSet) {
+          if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+            g_rotaryEncoder.setBoundaries(1, 4, false);  /* 4 grid items */
+          } else {
+            g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
+          }
+          encoderBoundariesSet = true;
+        }
+
+        /* Check for long press to toggle view mode */
+        static uint32_t buttonPressStartTime = 0;
+        static bool buttonWasPressed = false;
+        static uint32_t lastLongPressTime = 0;
+
+        if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+          if (!buttonWasPressed) {
+            buttonPressStartTime = millis();
+            buttonWasPressed = true;
+          }
+          /* If button held for defined duration, toggle view mode immediately */
+          if (millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
+              millis() - lastLongPressTime > BUTTON_LONG_PRESS_MS) {
+            lastLongPressTime = millis();  /* Record when long press happened */
+
+            g_storedVar.viewMode = (g_storedVar.viewMode == VIEW_MODE_LIST) ? VIEW_MODE_GRID : VIEW_MODE_LIST;
+
+            /* Clear display completely when switching views */
+            obdFill(&g_obd, OBD_WHITE, 1);
+
+            /* Reset to item selection mode (not value editing) */
+            menuState = ITEM_SELECTION;
+
+            /* Update encoder boundaries for new view mode */
+            if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+              g_rotaryEncoder.setBoundaries(1, 4, false);  /* 4 grid items */
+              g_rotaryEncoder.reset(1);  /* Reset to first grid item */
+            } else {
+              g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
+              g_rotaryEncoder.reset(1);  /* Reset to first menu item */
+            }
+            g_encoderMainSelector = 1;
+            g_escVar.encoderPos = 1;
+
+            saveEEPROM(g_storedVar);
+            if (g_storedVar.soundMode == SOUND_MODE_ALL) {
+              keySound();
+            }
+            g_lastEncoderInteraction = millis();
+
+            /* Clear the encoder click state to prevent short press from triggering */
+            g_rotaryEncoder.isEncoderButtonClicked();
+          }
+        } else {
+          buttonWasPressed = false;
+        }
+
+        /* Change menu state if encoder button is clicked (short press) */
+        /* Only process if sufficient time has passed since last long press */
+        if ((lastLongPressTime == 0 || millis() - lastLongPressTime > BUTTON_DEBOUNCE_AFTER_LONG_MS) &&
+            g_rotaryEncoder.isEncoderButtonClicked())
         {
           /* If screensaver is active (timeout exceeded), just wake up - don't process menu action */
-          if (millis() - g_lastEncoderInteraction > SCREENSAVER_TIMEOUT_MS) {
+          if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
             g_lastEncoderInteraction = millis();  /* Wake from screensaver */
           } else {
             menuState = rotary_onButtonClick(menuState);  /* This function is called if the encoder is pressed
@@ -346,7 +414,14 @@ void Task2code(void *pvParameters) {
       if (!(g_currState == CALIBRATION || g_currState == INIT)) {
         if (g_escVar.trigger_norm == 0) {
           /* Apply brake when trigger is released */
-          HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].brake);
+          /* Check if brake button is pressed to reduce brake strength */
+          uint16_t effectiveBrake = g_storedVar.carParam[g_carSel].brake;
+          if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+            /* Calculate reduced brake: brake - (brake * reduction / 100) */
+            effectiveBrake = g_storedVar.carParam[g_carSel].brake -
+                            ((g_storedVar.carParam[g_carSel].brake * g_storedVar.carParam[g_carSel].brakeButtonReduction) / 100);
+          }
+          HalfBridge_SetPwmDrag(0, effectiveBrake);
           g_escVar.outputSpeed_pct = 0;
           throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
         } else {
@@ -354,6 +429,8 @@ void Task2code(void *pvParameters) {
           g_escVar.outputSpeed_pct = throttleCurve2(g_escVar.trigger_norm);
           g_escVar.outputSpeed_pct = throttleAntiSpin3(g_escVar.outputSpeed_pct);
           HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, 0);
+          /* Update last interaction time to prevent screensaver while driving */
+          g_lastEncoderInteraction = millis();
         }
       }
     }
@@ -416,11 +493,15 @@ void initStoredVariables() {
     g_storedVar.carParam[i].antiSpin = ANTISPIN_DEFAULT;
     g_storedVar.carParam[i].freqPWM = PWM_FREQ_DEFAULT;
     g_storedVar.carParam[i].carNumber = i;
-    sprintf(g_storedVar.carParam[i].carName, "CAR%1d", i);
+    g_storedVar.carParam[i].brakeButtonReduction = BRAKE_BUTTON_REDUCTION_DEFAULT;
+    sprintf(g_storedVar.carParam[i].carName, "CAR%d", i);
   }
   g_storedVar.selectedCarNumber = 0;
   g_storedVar.minTrigger_raw = 0;
   g_storedVar.maxTrigger_raw = ACD_RESOLUTION_STEPS;
+  g_storedVar.viewMode = VIEW_MODE_LIST;
+  g_storedVar.screensaverTimeout = SCREENSAVER_TIMEOUT_DEFAULT;
+  g_storedVar.soundMode = SOUND_MODE_DEFAULT;
 }
 
 
@@ -440,7 +521,7 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[i].name, "BRAKE");
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brake;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  g_mainMenu.item[i].unit = '%';
+  sprintf(g_mainMenu.item[i].unit, "%%");
   g_mainMenu.item[i].maxValue = BRAKE_MAX_VALUE;
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
@@ -448,7 +529,7 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[++i].name, "SENSI");
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].minSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  g_mainMenu.item[i].unit = '%';
+  sprintf(g_mainMenu.item[i].unit, "%%");
   g_mainMenu.item[i].maxValue = min(MIN_SPEED_MAX_VALUE, (int)g_storedVar.carParam[g_carSel].maxSpeed);
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
@@ -456,7 +537,7 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[++i].name, "ANTIS");
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].antiSpin;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  g_mainMenu.item[i].unit = 'm';
+  sprintf(g_mainMenu.item[i].unit, "ms");
   g_mainMenu.item[i].maxValue = ANTISPIN_MAX_VALUE;
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
@@ -464,7 +545,7 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[++i].name, "CURVE");
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  g_mainMenu.item[i].unit = '%';
+  sprintf(g_mainMenu.item[i].unit, "%%");
   g_mainMenu.item[i].maxValue = THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE;
   g_mainMenu.item[i].minValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
   g_mainMenu.item[i].callback = &showCurveSelection;
@@ -472,7 +553,7 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[++i].name, "PWM_F");
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].freqPWM;
   g_mainMenu.item[i].type = VALUE_TYPE_DECIMAL;
-  g_mainMenu.item[i].unit = 'k';
+  sprintf(g_mainMenu.item[i].unit, "k");
   g_mainMenu.item[i].maxValue = FREQ_MAX_VALUE / 100;
   g_mainMenu.item[i].minValue = FREQ_MIN_VALUE / 100;
   g_mainMenu.item[i].decimalPoint = 1;
@@ -481,9 +562,33 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[++i].name, "LIMIT");
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].maxSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  g_mainMenu.item[i].unit = '%';
+  sprintf(g_mainMenu.item[i].unit, "%%");
   g_mainMenu.item[i].maxValue = MAX_SPEED_DEFAULT;
   g_mainMenu.item[i].minValue = max(5, (int)g_storedVar.carParam[g_carSel].minSpeed + 5);
+  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_mainMenu.item[++i].name, "B_BTN");
+  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
+  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_mainMenu.item[i].unit, "%%");
+  g_mainMenu.item[i].maxValue = 100;
+  g_mainMenu.item[i].minValue = 0;
+  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_mainMenu.item[++i].name, "SCRSV");
+  g_mainMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
+  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_mainMenu.item[i].unit, "s");
+  g_mainMenu.item[i].maxValue = SCREENSAVER_TIMEOUT_MAX;
+  g_mainMenu.item[i].minValue = 0;  /* 0 = OFF */
+  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_mainMenu.item[++i].name, "SOUND");
+  g_mainMenu.item[i].value = (void *)&g_storedVar.soundMode;
+  g_mainMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_mainMenu.item[i].unit, "");
+  g_mainMenu.item[i].maxValue = SOUND_MODE_ALL;
+  g_mainMenu.item[i].minValue = SOUND_MODE_OFF;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
   sprintf(g_mainMenu.item[++i].name, "*CAR*");
@@ -505,12 +610,10 @@ void initMenuItems() {
 /**
  * Show the Welcome screen
  */
-void showScreenWelcome() 
+void showScreenWelcome()
 {
-  obdWriteString(&g_obd, 0, 16, 12, (char *)"ESPEED32", FONT_12x16, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 16, 28, (char *)"BRM", FONT_12x16, OBD_BLACK, 1);
-  sprintf(msgStr, "V%d.%02d", SW_MAJOR_VERSION, SW_MINOR_VERSION);  
-  obdWriteString(&g_obd, 0, 16, 44, msgStr, FONT_12x16, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, 24, 16, (char *)"ESPEED", FONT_12x16, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 20, 32, (char *)"fw. v3.0", FONT_12x16, OBD_BLACK, 1);
 }
 
 
@@ -569,37 +672,109 @@ void showScreenCalibration(int16_t adcRaw)
 }
 
 /**
- * @brief Display bottom status line with throttle, car name, D indicator and voltage
+ * @brief Display bottom status line with throttle, car name and voltage
  * @details Common function used by both main menu and screensaver
  */
 void displayStatusLine() {
-  /* Throttle % - left (position 0) */
-  sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');  
+  /* Throttle % - far left (position 0) */
+  sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
-  
-  /* Car ID - second from left (position 4*8 = 32 pixels) */
+
+  /* Car ID - centered */
   sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
-  obdWriteString(&g_obd, 0, 4 * WIDTH8x8, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
-  
-  /* Show 'D' if Drag Brake is active - center (position 7.5*8 = 60 pixels) */
+  uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - carNameWidth) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+
+  /* Update dualCurve flag but don't display 'D' indicator */
   if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {
     g_escVar.dualCurve = true;
-    sprintf(msgStr, "D");
-    obdWriteString(&g_obd, 0, 60, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
   } else {
-    /* Clear the 'D' indicator if no dual curve */
     g_escVar.dualCurve = false;
-    sprintf(msgStr, " ");
-    obdWriteString(&g_obd, 0, 60, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
   }
-  
-  /* Motor current - second from right (position 72 pixels) */
-  sprintf(msgStr, "%d.%01dA", g_escVar.motorCurrent_mA / 1000, (g_escVar.motorCurrent_mA % 1000) / 100);
-  obdWriteString(&g_obd, 0, 72, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
-  
-  /* Input voltage - right aligned */
+
+  /* Input voltage - far right aligned */
   sprintf(msgStr, "%d.%01dV", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
   obdWriteString(&g_obd, 0, OLED_WIDTH - 30, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+}
+
+/**
+ * @brief Display race mode - compact grid showing all key parameters
+ * @details Shows throttle, brake, sensitivity, antispin, curve, limit, car name and voltage
+ * @param selectedItem Item selected for editing (0-5, or 255 if none selected)
+ * @param isEditing True if currently editing a value
+ */
+void displayRaceMode(uint8_t selectedItem, bool isEditing) {
+  static uint16_t lastBrake = 999;
+  static uint16_t lastSensi = 999;
+  static uint16_t lastAntis = 999;
+  static uint16_t lastCurve = 999;
+  static uint8_t lastSelectedItem = 255;
+  static bool lastIsEditing = false;
+
+  /* Vertical layout - label above value, centered */
+  /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE */
+  int col1_center = 32;   /* Center of left half (128/4 = 32) */
+  int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
+
+  /* Check if selection changed - force update of ALL items */
+  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing) {
+    /* Force redraw of all items when selection changes */
+    lastBrake = 999;
+    lastSensi = 999;
+    lastAntis = 999;
+    lastCurve = 999;
+
+    lastSelectedItem = selectedItem;
+    lastIsEditing = isEditing;
+  }
+
+  /* Determine colors based on selection state */
+  uint8_t colorBrake = (selectedItem == 0) ? OBD_WHITE : OBD_BLACK;
+  uint8_t colorSensi = (selectedItem == 1) ? OBD_WHITE : OBD_BLACK;
+  uint8_t colorAntis = (selectedItem == 2) ? OBD_WHITE : OBD_BLACK;
+  uint8_t colorCurve = (selectedItem == 3) ? OBD_WHITE : OBD_BLACK;
+
+  /* BRAKE - left column */
+  if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
+    /* Label - Break is 5 chars × 6px = 30px wide, center at col1_center - 15 */
+    obdWriteString(&g_obd, 0, col1_center - 15, 2, (char *)"Break", FONT_6x8, colorBrake, 1);
+    /* Value - "100%" is 4 chars × 8px = 32px wide, center at col1_center - 16 */
+    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
+    obdWriteString(&g_obd, 0, col1_center - 16, 12, msgStr, FONT_8x8, colorBrake, 1);
+    lastBrake = g_storedVar.carParam[g_carSel].brake;
+  }
+
+  /* SENSI - right column */
+  if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
+    /* Label - Sensi is 5 chars × 6px = 30px wide, shifted 1px right: col2_center - 14 */
+    obdWriteString(&g_obd, 0, col2_center - 14, 2, (char *)"Sensi", FONT_6x8, colorSensi, 1);
+    /* Value */
+    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
+    obdWriteString(&g_obd, 0, col2_center - 16, 12, msgStr, FONT_8x8, colorSensi, 1);
+    lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
+  }
+
+  /* ANTIS - left column, lower */
+  if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis) {
+    /* Label - Antis is 5 chars × 6px = 30px wide, center at col1_center - 15 */
+    obdWriteString(&g_obd, 0, col1_center - 15, 24, (char *)"Antis", FONT_6x8, colorAntis, 1);
+    /* Value - "255ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
+    sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
+    obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
+    lastAntis = g_storedVar.carParam[g_carSel].antiSpin;
+  }
+
+  /* CURVE - right column, lower */
+  if (g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff != lastCurve) {
+    /* Label - Curve is 5 chars × 6px = 30px wide, shifted 1px right: col2_center - 14 */
+    obdWriteString(&g_obd, 0, col2_center - 14, 24, (char *)"Curve", FONT_6x8, colorCurve, 1);
+    /* Value */
+    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+    obdWriteString(&g_obd, 0, col2_center - 16, 34, msgStr, FONT_8x8, colorCurve, 1);
+    lastCurve = g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
+  }
+
+  /* Note: Car name, voltage, and LIMITER warning are displayed by displayStatusLine() */
 }
 
 /**
@@ -609,11 +784,11 @@ void displayStatusLine() {
 void showScreensaver() {
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
-  
+
   /* Display "RCW" in extra large font centered */
   /* obdWriteString(&g_obd, 0, 10, 8, (char *)"Vandaas", FONT_16x32, OBD_BLACK, 1); */
-  /* obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"RCW", FONT_16x32, OBD_BLACK, 1); */
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"JAN", FONT_16x32, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"RCW", FONT_16x32, OBD_BLACK, 1);
+  /* obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 8, (char *)"JAN", FONT_16x32, OBD_BLACK, 1); */
 
   /* Display "Racing" in smaller font centered below */
   obdWriteString(&g_obd, 0, (OLED_WIDTH - 36) / 2, 34, (char *)"Racing", FONT_6x8, OBD_BLACK, 1);
@@ -663,17 +838,50 @@ void printMainMenu(MenuState_enum currMenuState)
     screensaverActive = false;
   }
 
-  /* Check if screensaver should be shown or menu */
-  if (millis() - g_lastEncoderInteraction > SCREENSAVER_TIMEOUT_MS) 
+  /* Check what to display based on view mode */
+  if (g_storedVar.viewMode == VIEW_MODE_GRID)
   {
-    /* Show screensaver */
+    /* GRID mode: always show race mode with editing capability */
+    /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE */
+    static uint8_t gridSelectedItem = 0;  /* Currently selected grid item */
+    static MenuState_enum gridMenuState = ITEM_SELECTION;  /* Grid edit state */
+
+    /* Clear screen if coming from screensaver */
+    if (screensaverActive) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      screensaverActive = false;
+    }
+
+    /* Map encoder position to grid item (0-3) */
+    if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
+    if (g_encoderMainSelector > 4) g_encoderMainSelector = 4;
+    gridSelectedItem = g_encoderMainSelector - 1;
+
+    /* Determine if we're editing based on menu state */
+    bool isEditing = (currMenuState == VALUE_SELECTION);
+
+    displayRaceMode(gridSelectedItem, isEditing);
+
+    /* Print LIMITER warning if LIMIT is any value other than 100% */
+    if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
+    {
+      obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
+    }
+    else
+    {
+      obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)"             ", FONT_8x8, OBD_BLACK, 1);
+    }
+  }
+  /* LIST mode: show screensaver or menu */
+  else if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL) && g_escVar.trigger_norm == 0)
+  {
+    /* Show screensaver if idle and not driving */
     if (!screensaverActive) {
       screensaverActive = true;
       showScreensaver();
     }
   }
-  /* Print main menu only if there was an encoder interaction recently */
-  else if (millis() - g_lastEncoderInteraction < 100) 
+  else
   {
     if (screensaverActive) {
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -691,26 +899,39 @@ void printMainMenu(MenuState_enum currMenuState)
       if (g_mainMenu.item[frameUpper - 1 + i].value != ITEM_NO_VALUE) 
       {
         /* if the value is a number, cast to *(unit16_t *), then print number and unit */
-        if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_INTEGER) 
+        if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_INTEGER)
         {
           /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
-          sprintf(msgStr, "%4d%c", *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value), g_mainMenu.item[frameUpper - 1 + i].unit);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - 60, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
+          sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value), g_mainMenu.item[frameUpper - 1 + i].unit);
+          /* Right-align: calculate text width and position from right edge */
+          int textWidth = strlen(msgStr) * WIDTH12x16;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
         /* If the value is a decimal, cast to *(unit16_t *), divide by 10^decimalPoint then print number and unit */
-        else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_DECIMAL) 
+        else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_DECIMAL)
         {
           /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
           tmp = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
-          sprintf(msgStr, " %d.%01d%c", tmp / 10, (tmp % 10), g_mainMenu.item[frameUpper - 1 + i].unit);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - 60, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
+          sprintf(msgStr, " %d.%01d%s", tmp / 10, (tmp % 10), g_mainMenu.item[frameUpper - 1 + i].unit);
+          /* Right-align: calculate text width and position from right edge */
+          int textWidth = strlen(msgStr) * WIDTH12x16;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
         /* If the value is a string, cast to (char *) then print the string */
-        else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING) 
+        else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING)
         {
-          /* value is a generic pointer to void, so cast to string pointer */
-          sprintf(msgStr, "%s", (char *)(g_mainMenu.item[frameUpper - 1 + i].value));
-          obdWriteString(&g_obd, 0, OLED_WIDTH - (4 * WIDTH12x16), i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
+          /* Special handling for SOUND menu item - display "OFF", "BOOT", or "ALL" with padding */
+          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "SOUND") == 0) {
+            uint16_t soundMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+            sprintf(msgStr, "%4s", (soundMode == SOUND_MODE_OFF) ? "OFF" : ((soundMode == SOUND_MODE_BOOT) ? "BOOT" : "ALL"));
+          }
+          else {
+            /* value is a generic pointer to void, so cast to string pointer */
+            sprintf(msgStr, "%s", (char *)(g_mainMenu.item[frameUpper - 1 + i].value));
+          }
+          /* Right-align: calculate text width and position from right edge */
+          int textWidth = strlen(msgStr) * WIDTH12x16;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
       }
     }
@@ -899,27 +1120,66 @@ void throttleCalibration(int16_t adcRaw)
  * @param currMenuState The current menu state.
  * @return The next menu state.
  */
-MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState) 
+MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
 {
   static unsigned long lastTimePressed = 0;
   static uint16_t selectedParamMaxValue = 100;
   static uint16_t selectedParamMinValue = 0;
-  /* ignore multiple press in that are less than 200ms apart */
-  if (millis() - lastTimePressed < 200)
+  /* Ignore multiple presses that are too close together */
+  if (millis() - lastTimePressed < BUTTON_SHORT_PRESS_DEBOUNCE_MS)
   {
     return currMenuState;
   }
-  
+
   lastTimePressed = millis();
 
   if (currMenuState == ITEM_SELECTION) /* If the current state is ITEM_SELECTION */
   {
+    /* Special handling for GRID mode - map grid item to car parameter */
+    if (g_storedVar.viewMode == VIEW_MODE_GRID)
+    {
+      uint8_t gridItem = g_encoderMainSelector - 1;  /* 0-3 */
+      g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+
+      /* Map grid item to parameter pointer and limits */
+      /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE */
+      switch (gridItem) {
+        case 0:  /* BRAKE */
+          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].brake;
+          selectedParamMaxValue = BRAKE_MAX_VALUE;
+          selectedParamMinValue = 0;
+          break;
+        case 1:  /* SENSI (minSpeed) */
+          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].minSpeed;
+          selectedParamMaxValue = MIN_SPEED_MAX_VALUE;
+          selectedParamMinValue = 0;
+          break;
+        case 2:  /* ANTIS (antiSpin) */
+          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].antiSpin;
+          selectedParamMaxValue = ANTISPIN_MAX_VALUE;
+          selectedParamMinValue = 0;
+          break;
+        case 3:  /* CURVE */
+          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
+          selectedParamMaxValue = THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE;
+          selectedParamMinValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
+          break;
+        default:
+          return ITEM_SELECTION;
+      }
+
+      g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
+      g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);
+      g_escVar.encoderPos = *g_encoderSelectedValuePtr;
+      return VALUE_SELECTION;
+    }
+    /* LIST mode handling */
     /* If an item has no callback, go in menu state VALUE_SELECTION */
-    if (g_mainMenu.item[g_encoderMainSelector - 1].callback == ITEM_NO_CALLBACK) 
+    else if (g_mainMenu.item[g_encoderMainSelector - 1].callback == ITEM_NO_CALLBACK)
     {
       g_rotaryEncoder.setAcceleration(SEL_ACCELERATION); /* Set higher encoder acceleration so it doesn't require too many turns to make a big value change */
-      
-      
+
+
       g_encoderSelectedValuePtr = (uint16_t *)g_mainMenu.item[g_encoderMainSelector - 1].value;   /* Update the g_encoderSelectedValuePtr to point to the value of the selected item.
                                                                                                      value is a generic pointer to void, so cast to uint16_t pointer */
       selectedParamMaxValue = g_mainMenu.item[g_encoderMainSelector - 1].maxValue;                /* Set Max and Min boundaries according to the selected items max and min value */
@@ -927,24 +1187,31 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
       g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);  /* Reset the encoder to the current value of the selected item */
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;   /* Set the encoderPos global variable to the current value of the selected item */
-      return VALUE_SELECTION;                             /* Return the VALUE_SELECTION state */                                  
+      return VALUE_SELECTION;                             /* Return the VALUE_SELECTION state */
     }
     /* if an item has a callback, execute it, then return to ITEM SELECTION */
-    else 
+    else
     {
       g_mainMenu.item[g_encoderMainSelector - 1].callback();  /* Invoke the selected item's callback */
       return ITEM_SELECTION;
     }
-  } 
+  }
   else /* If the current state is VALUE_SELECTION */
   {
     g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);         /* Set the encoder acceleration to MENU_ACCELERATION */
-    g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Set the encoder boundaries to the menu boundaries */
+
+    /* Set boundaries based on view mode */
+    if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+      g_rotaryEncoder.setBoundaries(1, 4, false);  /* 4 grid items */
+    } else {
+      g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Set the encoder boundaries to the menu boundaries */
+    }
+
     g_rotaryEncoder.reset(g_encoderMainSelector);               /* Reset the encoder value to g_encoderMainSelector, so that it doesn't change the selected item */
     g_escVar.encoderPos = g_encoderMainSelector;
-    
+
     saveEEPROM(g_storedVar);  /* Save modified values to EEPROM */
-    return ITEM_SELECTION;    /* Return the ITEM_SELECTION state */   
+    return ITEM_SELECTION;    /* Return the ITEM_SELECTION state */
   }
 }
 

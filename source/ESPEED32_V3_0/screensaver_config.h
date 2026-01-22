@@ -1,19 +1,7 @@
 #ifndef SCREENSAVER_CONFIG_H
 #define SCREENSAVER_CONFIG_H
 
-/**
- * Screensaver Configuration - Default (BOB Racing)
- *
- * This file is git-ignored and will not be committed.
- * You can customize this file with your personal screensaver text.
- *
- * See screensaver_config.h.template for instructions and examples.
- *
- * Ready-made configs (git-ignored, just copy to screensaver_config.h):
- * - screensaver_config_rcw.h
- * - screensaver_config_jan.h
- * - screensaver_config_vandaas.h
- */
+/* Screensaver Configuration - Default (BOB Racing) */
 
 /* Main text displayed in large font (FONT_16x32) */
 #define SCREENSAVER_LINE1 "BOB"

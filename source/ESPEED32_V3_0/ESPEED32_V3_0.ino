@@ -33,9 +33,9 @@ const char* RACE_LABELS[][4] = {
 };
 
 /* Car menu option labels: [language][option] */
-/* Order: SELECT, RENAME, GRID, COPY */
+/* Order: SELECT, RENAME, RACESWP, COPY */
 const char* CAR_MENU_OPTIONS[][4] = {
-  /* NOR */ {"VELG", "NAVNGI", "BYTBIL", "KOPIER"},
+  /* NOR */ {"VELG", "NAVNGI", "RACESWP", "KOPIER"},
   /* ENG */ {"SELECT", "RENAME", "RACESWP", "COPY"},
   /* ACD */ {"SELECT", "RENAME", "RACESWP", "COPY"}
 };
@@ -59,7 +59,7 @@ const char* SOUND_MODE_LABELS[][3] = {
 /* ON/OFF labels: [language][state] */
 /* Order: OFF, ON */
 const char* ON_OFF_LABELS[][2] = {
-  /* NOR */ {"AV", "PÅ"},
+  /* NOR */ {"AV", "PA"},
   /* ENG */ {"OFF", "ON"},
   /* ACD */ {"OFF", "ON"}
 };
@@ -1724,24 +1724,35 @@ void showSelectRenameCar() {
   uint8_t frameUpper = 0;
   uint8_t frameLower = visibleLines - 1;
 
+  /* Track editing state for RACESWP option */
+  bool isEditingRaceswp = false;
+  uint16_t tempRaceswpValue = g_storedVar.gridCarSelectEnabled;
+
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
     /* Get encoder value if changed */
-    selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
-
-    /* Adjust frame if selection moves outside visible area */
-    if (selectedOption > frameLower)
-    {
-      frameLower = selectedOption;
-      frameUpper = frameLower - visibleLines + 1;
-      obdFill(&g_obd, OBD_WHITE, 1);
+    if (!isEditingRaceswp) {
+      selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
+    } else {
+      /* When editing RACESWP, encoder changes the value */
+      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : tempRaceswpValue;
     }
-    else if (selectedOption < frameUpper)
-    {
-      frameUpper = selectedOption;
-      frameLower = frameUpper + visibleLines - 1;
-      obdFill(&g_obd, OBD_WHITE, 1);
+
+    /* Adjust frame if selection moves outside visible area (only when not editing) */
+    if (!isEditingRaceswp) {
+      if (selectedOption > frameLower)
+      {
+        frameLower = selectedOption;
+        frameUpper = frameLower - visibleLines + 1;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+      else if (selectedOption < frameUpper)
+      {
+        frameUpper = selectedOption;
+        frameLower = frameUpper + visibleLines - 1;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
     }
 
     /* Display only the visible items within the frame */
@@ -1769,9 +1780,13 @@ void showSelectRenameCar() {
         {
           /* Grid select option - show label and right-aligned ON/OFF value */
           obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][2], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
-          sprintf(msgStr, "%s", ON_OFF_LABELS[lang][g_storedVar.gridCarSelectEnabled ? 1 : 0]);
+          /* Show temp value when editing, stored value otherwise */
+          uint16_t displayValue = isEditingRaceswp ? tempRaceswpValue : g_storedVar.gridCarSelectEnabled;
+          sprintf(msgStr, "%s", ON_OFF_LABELS[lang][displayValue ? 1 : 0]);
           int textWidth = strlen(msgStr) * WIDTH12x16;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          /* Value is white when editing, follows selection otherwise */
+          uint8_t valueColor = isEditingRaceswp ? OBD_WHITE : (isSelected ? OBD_WHITE : OBD_BLACK);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, valueColor, 1);
           break;
         }
 
@@ -1790,6 +1805,34 @@ void showSelectRenameCar() {
     }
   }
 
+  /* Handle encoder click based on current state */
+  if (selectedOption == CAR_OPTION_GRID_SEL && !isEditingRaceswp) {
+    /* First click on RACESWP: enter edit mode */
+    isEditingRaceswp = true;
+    g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+    g_rotaryEncoder.setBoundaries(0, 1, false);  /* 0=OFF, 1=ON */
+    g_rotaryEncoder.reset(tempRaceswpValue);
+    /* Wait for second click to confirm */
+    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : tempRaceswpValue;
+
+      /* Redraw the RACESWP option with updated value */
+      uint8_t optionScreenPos = CAR_OPTION_GRID_SEL - frameUpper;
+      if (optionScreenPos < visibleLines) {
+        uint8_t yPos = optionScreenPos * HEIGHT12x16;
+        uint16_t lang = g_storedVar.language;
+
+        obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][2], FONT_12x16, OBD_WHITE, 1);
+        sprintf(msgStr, "%s", ON_OFF_LABELS[lang][tempRaceswpValue ? 1 : 0]);
+        int textWidth = strlen(msgStr) * WIDTH12x16;
+        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, OBD_WHITE, 1);
+      }
+    }
+    /* Save the confirmed value */
+    g_storedVar.gridCarSelectEnabled = tempRaceswpValue;
+    selectedOption = CAR_OPTION_GRID_SEL;  /* Mark as handled */
+  }
+
   /* If RENAME option was selected, go to renameCar routine */
   if (selectedOption == CAR_OPTION_RENAME)
   {
@@ -1802,10 +1845,9 @@ void showSelectRenameCar() {
     showCarSelection();
     saveEEPROM(g_storedVar);
   }
-  /* If GRID option was selected, toggle the grid car select setting */
+  /* If RACESWP option was selected, value was already saved in the edit loop above */
   else if (selectedOption == CAR_OPTION_GRID_SEL)
   {
-    g_storedVar.gridCarSelectEnabled = !g_storedVar.gridCarSelectEnabled;
     saveEEPROM(g_storedVar);
   }
   /* If COPY option was selected, go to showCopyCarSettings routine */

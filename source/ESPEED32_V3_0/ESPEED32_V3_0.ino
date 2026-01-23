@@ -19,9 +19,9 @@
 /* Menu item names in different languages: [language][item] */
 /* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, LIMIT, B_BTN, SCRSV, SOUND, RVIEW, LANG, *CAR* */
 const char* MENU_NAMES[][12] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "RVIEW", "LANG", "*BIL*"},
-  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "RVIEW", "LANG", "*CAR*"},
-  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "RVIEW", "LANG", "*CAR*"}
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "VIEW", "LANG", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"},
+  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -661,7 +661,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = LANG_NOR;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][10]);  /* *CAR*/*BIL* */
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][11]);  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)
@@ -770,9 +770,17 @@ void displayStatusLine() {
   /* Determine if CAR is selected in grid mode */
   bool carSelected = false;
   if (g_storedVar.viewMode == VIEW_MODE_GRID && g_storedVar.gridCarSelectEnabled) {
-    /* Check if we're on grid item 4 (CAR) - use global encoder position */
-    if (g_encoderMainSelector == 5) {  /* Encoder is 1-based, item 4 = encoder position 5 */
-      carSelected = true;
+    /* Check if we're on CAR item - position depends on race view mode */
+    if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+      /* SIMPLE mode: CAR is item 2, encoder position 3 */
+      if (g_encoderMainSelector == 3) {
+        carSelected = true;
+      }
+    } else {
+      /* FULL mode: CAR is item 4, encoder position 5 */
+      if (g_encoderMainSelector == 5) {
+        carSelected = true;
+      }
     }
   }
 
@@ -1122,8 +1130,8 @@ void printMainMenu(MenuState_enum currMenuState)
             uint16_t soundMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             sprintf(msgStr, "%4s", (soundMode == SOUND_MODE_OFF) ? "OFF" : ((soundMode == SOUND_MODE_BOOT) ? "BOOT" : "ALL"));
           }
-          /* Special handling for RVIEW menu item - display "OFF", "FULL", or "SIMPLE" */
-          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "RVIEW") == 0) {
+          /* Special handling for VIEW menu item - display "OFF", "FULL", or "SIMPLE" */
+          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
             uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             sprintf(msgStr, "%6s", (raceViewMode == RACE_VIEW_OFF) ? "OFF" : ((raceViewMode == RACE_VIEW_FULL) ? "FULL" : "SIMPLE"));
           }

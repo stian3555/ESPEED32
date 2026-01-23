@@ -1914,7 +1914,7 @@ void showSelectRenameCar() {
     const char* confirmText1 = (lang == LANG_NOR) ? "NULLSTILL ALLE" : "RESET ALL CARS";
     const char* confirmText2 = (lang == LANG_NOR) ? "BILER?" : "?";
     const char* confirmText3 = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
-    const char* cancelText = (lang == LANG_NOR) ? "BREMS=AVBRYT" : "BRAKE BUTTON = CANCEL";
+    const char* cancelText = (lang == LANG_NOR) ? "(BREMSEKNAPP = AVBRYT)" : "(BRAKE BUTTON = CANCEL)";
 
     obdWriteString(&g_obd, 0, 10, 5, (char *)confirmText1, FONT_8x8, OBD_BLACK, 1);
     obdWriteString(&g_obd, 0, 10, 15, (char *)confirmText2, FONT_8x8, OBD_BLACK, 1);

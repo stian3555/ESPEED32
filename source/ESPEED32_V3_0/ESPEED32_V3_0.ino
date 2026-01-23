@@ -715,7 +715,7 @@ void initSettingsMenuItems() {
 
   sprintf(g_settingsMenu.item[i].name, "%s", SETTINGS_MENU_NAMES[lang][0]);  /* SCRSV/SKJSP */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
-  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;  /* Changed to STRING to handle OFF/AV display */
   sprintf(g_settingsMenu.item[i].unit, "s");
   g_settingsMenu.item[i].maxValue = SCREENSAVER_TIMEOUT_MAX;
   g_settingsMenu.item[i].minValue = 0;  /* 0 = OFF */
@@ -2359,8 +2359,16 @@ void showSettingsMenu() {
           uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
           uint16_t lang = g_storedVar.language;
 
+          /* SCRSV menu item - show OFF/AV when 0, otherwise show value with 's' */
+          if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][0]) == 0) {
+            if (value == 0) {
+              sprintf(msgStr, "%3s", ON_OFF_LABELS[lang][0]);  /* OFF/AV */
+            } else {
+              sprintf(msgStr, "%3ds", value);
+            }
+          }
           /* SOUND menu item */
-          if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][1]) == 0) {
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][1]) == 0) {
             sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][value]);
           }
           /* VIEW menu item */

@@ -71,7 +71,8 @@
 /* Timing Constants */
 #define ESC_PERIOD_US   500     /* ESC control loop period [µs] */
 #define SCREENSAVER_TIMEOUT_DEFAULT  20  /* [s] Default screensaver timeout */
-#define SCREENSAVER_TIMEOUT_MAX      120 /* [s] Maximum screensaver timeout */
+#define SCREENSAVER_TIMEOUT_MIN      1   /* [s] Minimum screensaver timeout (0 = OFF) */
+#define SCREENSAVER_TIMEOUT_MAX      240 /* [s] Maximum screensaver timeout */
 #define SCREENSAVER_WAKEUP_THRESHOLD 30  /* [%] Throttle threshold to wake from screensaver */
 
 /* Button Press Timing */

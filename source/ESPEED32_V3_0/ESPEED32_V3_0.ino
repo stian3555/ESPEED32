@@ -25,11 +25,11 @@ const char* MENU_NAMES[][8] = {
 };
 
 /* Settings menu item names: [language][item] */
-/* Order: B_BTN, SCRSV, SOUND, VIEW, LANG, BACK */
-const char* SETTINGS_MENU_NAMES[][6] = {
-  /* NOR */ {"B_KNP", "SKJSP", "LYD", "VISN", "SPRK", "TILBAKE"},
-  /* ENG */ {"B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "BACK"},
-  /* ACD */ {"B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "BACK"}
+/* Order: SCRSV, SOUND, VIEW, LANG, BACK */
+const char* SETTINGS_MENU_NAMES[][5] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -699,21 +699,13 @@ void initMenuItems() {
 
 /**
  * Initialize the settings submenu items
- * Order: B_BTN, SCRSV, SOUND, VIEW, LANG
+ * Order: SCRSV, SOUND, VIEW, LANG, BACK
  */
 void initSettingsMenuItems() {
   int i = 0;
   uint8_t lang = g_storedVar.language;
 
-  sprintf(g_settingsMenu.item[i].name, "%s", SETTINGS_MENU_NAMES[lang][0]);  /* B_BTN/B_KNP */
-  g_settingsMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
-  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_settingsMenu.item[i].unit, "%%");
-  g_settingsMenu.item[i].maxValue = 100;
-  g_settingsMenu.item[i].minValue = 0;
-  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][1]);  /* SCRSV/SKJSP */
+  sprintf(g_settingsMenu.item[i].name, "%s", SETTINGS_MENU_NAMES[lang][0]);  /* SCRSV/SKJSP */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "s");
@@ -721,7 +713,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;  /* 0 = OFF */
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][2]);  /* SOUND/LYD */
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][1]);  /* SOUND/LYD */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.soundMode;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -729,7 +721,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = SOUND_MODE_OFF;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][3]);  /* VIEW/VISN */
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][2]);  /* VIEW/VISN */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -737,7 +729,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = RACE_VIEW_OFF;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][4]);  /* LANG/SPRK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][3]);  /* LANG/SPRK */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.language;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -745,7 +737,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][5]);  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][4]);  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -2229,7 +2221,7 @@ void showCurveSelection()
  * Show the Settings submenu
  * This function is called when SETTINGS item is selected in the main menu
  * It displays and manages navigation through the settings submenu items:
- * B_BTN, SCRSV, SOUND, VIEW, LANG, BACK
+ * SCRSV, SOUND, VIEW, LANG, BACK
  */
 void showSettingsMenu() {
   /* Initialize settings menu items with current values */
@@ -2360,15 +2352,15 @@ void showSettingsMenu() {
           uint16_t lang = g_storedVar.language;
 
           /* SOUND menu item */
-          if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][2]) == 0) {
+          if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][1]) == 0) {
             sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][value]);
           }
           /* VIEW menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][3]) == 0) {
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][2]) == 0) {
             sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][value]);
           }
           /* LANG menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][4]) == 0) {
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][3]) == 0) {
             sprintf(msgStr, "%3s", LANG_LABELS[value]);
           } else {
             sprintf(msgStr, "%3d", value);

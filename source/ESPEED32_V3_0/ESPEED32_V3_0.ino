@@ -1342,6 +1342,141 @@ void showCarSelection() {
 
 
 /**
+ * Show the Copy Car Settings screen. Allows copying all parameters from one car to another.
+ */
+void showCopyCarSettings() {
+  static uint16_t frameUpper = 1;
+  static uint16_t frameLower = g_carMenu.lines;
+  uint16_t sourceCar = 0;
+  uint16_t destCar = 0;
+
+  /* ========== SELECT SOURCE CAR (FROM) ========== */
+  /* Clear screen */
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  /* Set encoder to car selection parameter */
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
+  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  sourceCar = g_storedVar.selectedCarNumber;
+
+  /* Select source car */
+  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  {
+    /* Get encoder value if changed */
+    sourceCar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : sourceCar;
+
+    /* If encoder move out of frame, adjust frame */
+    if (sourceCar > frameLower)
+    {
+      frameLower = sourceCar;
+      frameUpper = frameLower - g_carMenu.lines + 1;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
+    else if (sourceCar < frameUpper)
+    {
+      frameUpper = sourceCar;
+      frameLower = frameUpper + g_carMenu.lines - 1;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
+
+    /* Print car menu */
+    for (uint8_t i = 0; i < g_carMenu.lines; i++)
+    {
+      /* Print the item (car) name */
+      obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_carMenu.item[frameUpper + i].name, FONT_12x16, (sourceCar - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
+      if (g_carMenu.item[frameUpper + i].value != ITEM_NO_VALUE)
+      {
+        /* Print the item value (car number) */
+        sprintf(msgStr, "%2d", *(uint16_t *)(g_carMenu.item[frameUpper + i].value));
+        obdWriteString(&g_obd, 0, OLED_WIDTH - 24, i * HEIGHT12x16, msgStr, FONT_12x16, OBD_BLACK, 1);
+      }
+    }
+
+    /* Print "COPY FROM:" on the bottom of the screen */
+    obdWriteString(&g_obd, 0, 28, OLED_HEIGHT - HEIGHT8x8, (char *)"-COPY FROM:-", FONT_6x8, OBD_WHITE, 1);
+  }
+
+  /* Small delay to prevent double-click */
+  delay(200);
+
+  /* ========== SELECT DESTINATION CAR (TO) ========== */
+  /* Clear screen */
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  /* Reset encoder for destination car selection */
+  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  destCar = g_storedVar.selectedCarNumber;
+
+  /* Reset frame if needed */
+  frameUpper = 1;
+  frameLower = g_carMenu.lines;
+
+  /* Select destination car */
+  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  {
+    /* Get encoder value if changed */
+    destCar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : destCar;
+
+    /* If encoder move out of frame, adjust frame */
+    if (destCar > frameLower)
+    {
+      frameLower = destCar;
+      frameUpper = frameLower - g_carMenu.lines + 1;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
+    else if (destCar < frameUpper)
+    {
+      frameUpper = destCar;
+      frameLower = frameUpper + g_carMenu.lines - 1;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
+
+    /* Print car menu */
+    for (uint8_t i = 0; i < g_carMenu.lines; i++)
+    {
+      /* Print the item (car) name */
+      obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_carMenu.item[frameUpper + i].name, FONT_12x16, (destCar - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
+      if (g_carMenu.item[frameUpper + i].value != ITEM_NO_VALUE)
+      {
+        /* Print the item value (car number) */
+        sprintf(msgStr, "%2d", *(uint16_t *)(g_carMenu.item[frameUpper + i].value));
+        obdWriteString(&g_obd, 0, OLED_WIDTH - 24, i * HEIGHT12x16, msgStr, FONT_12x16, OBD_BLACK, 1);
+      }
+    }
+
+    /* Print "-COPY TO:-" on the bottom of the screen */
+    obdWriteString(&g_obd, 0, 34, OLED_HEIGHT - HEIGHT8x8, (char *)"-COPY TO:-", FONT_6x8, OBD_WHITE, 1);
+  }
+
+  /* Copy all car parameters except carName and carNumber */
+  if (sourceCar != destCar)
+  {
+    g_storedVar.carParam[destCar].minSpeed = g_storedVar.carParam[sourceCar].minSpeed;
+    g_storedVar.carParam[destCar].brake = g_storedVar.carParam[sourceCar].brake;
+    g_storedVar.carParam[destCar].dragBrake = g_storedVar.carParam[sourceCar].dragBrake;
+    g_storedVar.carParam[destCar].maxSpeed = g_storedVar.carParam[sourceCar].maxSpeed;
+    g_storedVar.carParam[destCar].throttleCurveVertex.inputThrottle = g_storedVar.carParam[sourceCar].throttleCurveVertex.inputThrottle;
+    g_storedVar.carParam[destCar].throttleCurveVertex.curveSpeedDiff = g_storedVar.carParam[sourceCar].throttleCurveVertex.curveSpeedDiff;
+    g_storedVar.carParam[destCar].antiSpin = g_storedVar.carParam[sourceCar].antiSpin;
+    g_storedVar.carParam[destCar].freqPWM = g_storedVar.carParam[sourceCar].freqPWM;
+    g_storedVar.carParam[destCar].brakeButtonReduction = g_storedVar.carParam[sourceCar].brakeButtonReduction;
+
+    /* Show confirmation message */
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 34, 24, (char *)"COPIED!", FONT_12x16, OBD_BLACK, 1);
+    delay(1000);
+  }
+
+  /* Reset frame for next time */
+  frameUpper = 1;
+  frameLower = g_carMenu.lines;
+
+  return;
+}
+
+
+/**
  * Show the options to Select or Rename the Car, called upon selecting the CAR item in the main menu
  */
 void showSelectRenameCar() {
@@ -1356,7 +1491,7 @@ void showSelectRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 2, false); /* Boundaries are [0, 2] because there are three options */
+  g_rotaryEncoder.setBoundaries(0, 3, false); /* Boundaries are [0, 3] because there are four options */
   g_rotaryEncoder.reset(selectedOption);
 
   /* Print the "SELECT AN OPTION" */
@@ -1367,12 +1502,13 @@ void showSelectRenameCar() {
   {
     /* Get encoder value if changed */
     selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
-    /* Print the three options */
+    /* Print the four options */
     obdWriteString(&g_obd, 0, 0, 0 * HEIGHT12x16, (char *)"SELECT", FONT_12x16, (selectedOption == CAR_OPTION_SELECT) ? OBD_WHITE : OBD_BLACK, 1);
     obdWriteString(&g_obd, 0, 0, 1 * HEIGHT12x16, (char *)"RENAME", FONT_12x16, (selectedOption == CAR_OPTION_RENAME) ? OBD_WHITE : OBD_BLACK, 1);
     /* Grid select option - show ON/OFF based on current state */
     sprintf(msgStr, "GRID:%s", g_storedVar.gridCarSelectEnabled ? "ON " : "OFF");
     obdWriteString(&g_obd, 0, 0, 2 * HEIGHT12x16, msgStr, FONT_12x16, (selectedOption == CAR_OPTION_GRID_SEL) ? OBD_WHITE : OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16, (char *)"COPY", FONT_12x16, (selectedOption == CAR_OPTION_COPY) ? OBD_WHITE : OBD_BLACK, 1);
   }
 
   /* If RENAME option was selected, go to renameCar routine */
@@ -1391,6 +1527,12 @@ void showSelectRenameCar() {
   else if (selectedOption == CAR_OPTION_GRID_SEL)
   {
     g_storedVar.gridCarSelectEnabled = !g_storedVar.gridCarSelectEnabled;
+    saveEEPROM(g_storedVar);
+  }
+  /* If COPY option was selected, go to showCopyCarSettings routine */
+  else if (selectedOption == CAR_OPTION_COPY)
+  {
+    showCopyCarSettings();
     saveEEPROM(g_storedVar);
   }
 

@@ -16,7 +16,7 @@
 /*********************************************************************************************************************/
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    8     /* Number of items in main menu */
+#define MENU_ITEMS_COUNT    9     /* Number of items in main menu */
 #define SETTINGS_ITEMS_COUNT 5    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */

@@ -860,25 +860,25 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   uint8_t colorBrake = (selectedItem == 0) ? OBD_WHITE : OBD_BLACK;
   uint8_t colorSensi = (selectedItem == 1) ? OBD_WHITE : OBD_BLACK;
 
-  /* BRAKE - left column, using larger font (FONT_12x16) */
+  /* BRAKE - left column, using FONT_12x16 for both label and value */
   if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
-    /* Label - using language-specific text, 5 chars × 6px = 30px wide */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][0]) * 6;
-    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)RACE_LABELS[g_storedVar.language][0], FONT_6x8, colorBrake, 1);
+    /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][0]) * 12;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 0, (char *)RACE_LABELS[g_storedVar.language][0], FONT_12x16, colorBrake, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
-    obdWriteString(&g_obd, 0, col1_center - 24, 14, msgStr, FONT_12x16, colorBrake, 1);
+    obdWriteString(&g_obd, 0, col1_center - 24, 16, msgStr, FONT_12x16, colorBrake, 1);
     lastBrake = g_storedVar.carParam[g_carSel].brake;
   }
 
-  /* SENSI - right column, using larger font (FONT_12x16) */
+  /* SENSI - right column, using FONT_12x16 for both label and value */
   if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
-    /* Label - using language-specific text, 5 chars × 6px = 30px wide, shifted 1px right */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][1]) * 6;
-    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)RACE_LABELS[g_storedVar.language][1], FONT_6x8, colorSensi, 1);
+    /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][1]) * 12;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2), 0, (char *)RACE_LABELS[g_storedVar.language][1], FONT_12x16, colorSensi, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
-    obdWriteString(&g_obd, 0, col2_center - 24, 14, msgStr, FONT_12x16, colorSensi, 1);
+    obdWriteString(&g_obd, 0, col2_center - 24, 16, msgStr, FONT_12x16, colorSensi, 1);
     lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
   }
 

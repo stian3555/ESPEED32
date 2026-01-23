@@ -410,6 +410,29 @@ void Task1code(void *pvParameters) {
           buttonWasPressed = false;
         }
 
+        /* Check for brake button press in LIST view mode - acts as "back" */
+        static bool brakeButtonWasPressedInMenu = false;
+        static uint32_t lastBrakeButtonPressTime = 0;
+        if (g_storedVar.viewMode == VIEW_MODE_LIST && digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+          if (!brakeButtonWasPressedInMenu && millis() - lastBrakeButtonPressTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+            brakeButtonWasPressedInMenu = true;
+            lastBrakeButtonPressTime = millis();
+
+            /* If in VALUE_SELECTION, go back to ITEM_SELECTION */
+            if (menuState == VALUE_SELECTION) {
+              menuState = ITEM_SELECTION;
+              g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+              g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+              g_rotaryEncoder.reset(g_encoderMainSelector);
+              saveEEPROM(g_storedVar);  /* Save any changes made */
+              g_lastEncoderInteraction = millis();
+            }
+            /* If already in ITEM_SELECTION, brake button doesn't do anything in main menu */
+          }
+        } else {
+          brakeButtonWasPressedInMenu = false;
+        }
+
         /* Change menu state if encoder button is clicked (short press) */
         /* Only process if sufficient time has passed since last long press */
         if ((lastLongPressTime == 0 || millis() - lastLongPressTime > BUTTON_DEBOUNCE_AFTER_LONG_MS) &&

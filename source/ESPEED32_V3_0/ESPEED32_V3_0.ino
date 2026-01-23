@@ -27,9 +27,9 @@ const char* MENU_NAMES[][12] = {
 /* Race mode parameter labels: [language][param] */
 /* Order: BRAKE, SENSI, ANTIS, CURVE */
 const char* RACE_LABELS[][4] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve"},
-  /* ENG */ {"Break", "Sensi", "Antis", "Curve"},
-  /* ACD */ {"Break", "Attck", "Choke", "Profl"}
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE"},
+  /* ENG */ {"BREAK", "SENSI", "ANTIS", "CURVE"},
+  /* ACD */ {"BREAK", "ATTCK", "CHOKE", "PROFIL"}
 };
 
 /* Car menu option labels: [language][option] */

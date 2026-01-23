@@ -19,7 +19,7 @@
 /* Menu item names in different languages: [language][item] */
 /* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, LIMIT, B_BTN, SCRSV, SOUND, RVIEW, LANG, *CAR* */
 const char* MENU_NAMES[][12] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "VISN", "LANG", "*BIL*"},
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "VIEW", "LANG", "*BIL*"},
   /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"},
   /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"}
 };
@@ -790,15 +790,15 @@ void displayStatusLine() {
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
 
   /* Car ID - centered with proper clearing and highlighting */
-  sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
-  uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
-
-  /* Check if car changed to force clear of entire car name area */
+  /* Check if car changed to force clear */
   if (g_storedVar.selectedCarNumber != lastCarNum) {
-    /* Clear wider area to handle varying car name lengths (clear 40px centered area) */
-    obdWriteString(&g_obd, 0, (OLED_WIDTH - 40) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"       ", FONT_6x8, OBD_BLACK, 1);
+    /* Clear the car name area completely (max 4 chars × 6px = 24px wide, centered = 52px start) */
+    obdWriteString(&g_obd, 0, 40, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
     lastCarNum = g_storedVar.selectedCarNumber;
   }
+
+  sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
+  uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
 
   /* Determine if CAR is selected in grid mode */
   bool carSelected = false;
@@ -1164,9 +1164,8 @@ void printMainMenu(MenuState_enum currMenuState)
             uint16_t lang = g_storedVar.language;
             sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][soundMode]);
           }
-          /* Special handling for VIEW/VISN menu item - display language-specific labels */
-          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0 ||
-                   strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VISN") == 0) {
+          /* Special handling for VIEW menu item - display language-specific labels */
+          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
             uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             uint16_t lang = g_storedVar.language;
             sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][raceViewMode]);

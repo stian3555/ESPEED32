@@ -32,6 +32,38 @@ const char* RACE_LABELS[][4] = {
   /* ACD */ {"Break", "Attck", "Choke", "Profl"}
 };
 
+/* Car menu option labels: [language][option] */
+/* Order: SELECT, RENAME, GRID, COPY */
+const char* CAR_MENU_OPTIONS[][4] = {
+  /* NOR */ {"VELG", "NAVNGI", "BYTBIL", "KOPIER"},
+  /* ENG */ {"SELECT", "RENAME", "RACESWP", "COPY"},
+  /* ACD */ {"SELECT", "RENAME", "RACESWP", "COPY"}
+};
+
+/* View mode value labels: [language][mode] */
+/* Order: OFF, FULL, SIMPLE */
+const char* VIEW_MODE_LABELS[][3] = {
+  /* NOR */ {"AV", "FULL", "ENKEL"},
+  /* ENG */ {"OFF", "FULL", "SIMPLE"},
+  /* ACD */ {"OFF", "FULL", "SIMPLE"}
+};
+
+/* Sound mode value labels: [language][mode] */
+/* Order: OFF, BOOT, ALL */
+const char* SOUND_MODE_LABELS[][3] = {
+  /* NOR */ {"AV", "START", "ALT"},
+  /* ENG */ {"OFF", "BOOT", "ALL"},
+  /* ACD */ {"OFF", "BOOT", "ALL"}
+};
+
+/* ON/OFF labels: [language][state] */
+/* Order: OFF, ON */
+const char* ON_OFF_LABELS[][2] = {
+  /* NOR */ {"AV", "PÅ"},
+  /* ENG */ {"OFF", "ON"},
+  /* ACD */ {"OFF", "ON"}
+};
+
 /*********************************************************************************************************************/
 /*                                                   Global Variables                                                */
 /*********************************************************************************************************************/
@@ -395,6 +427,7 @@ void Task1code(void *pvParameters) {
           /* If language changed, reinitialize menu items with new language strings */
           if (g_storedVar.language != prevLanguage) {
             initMenuItems();
+            obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen to prevent leftover text */
           }
         }
 
@@ -1124,16 +1157,18 @@ void printMainMenu(MenuState_enum currMenuState)
         /* If the value is a string, cast to (char *) then print the string */
         else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING)
         {
-          /* Special handling for SOUND/LYD menu item - display "OFF", "BOOT", or "ALL" with padding */
+          /* Special handling for SOUND/LYD menu item - display language-specific labels */
           if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "SOUND") == 0 ||
               strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "LYD") == 0) {
             uint16_t soundMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
-            sprintf(msgStr, "%4s", (soundMode == SOUND_MODE_OFF) ? "OFF" : ((soundMode == SOUND_MODE_BOOT) ? "BOOT" : "ALL"));
+            uint16_t lang = g_storedVar.language;
+            sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][soundMode]);
           }
-          /* Special handling for VIEW menu item - display "OFF", "FULL", or "SIMPLE" */
+          /* Special handling for VIEW menu item - display language-specific labels */
           else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
             uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
-            sprintf(msgStr, "%6s", (raceViewMode == RACE_VIEW_OFF) ? "OFF" : ((raceViewMode == RACE_VIEW_FULL) ? "FULL" : "SIMPLE"));
+            uint16_t lang = g_storedVar.language;
+            sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][raceViewMode]);
           }
           /* Special handling for LANG menu item - display "NOR", "ENG", or "ACD" */
           else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "LANG") == 0) {
@@ -1718,34 +1753,36 @@ void showSelectRenameCar() {
       uint8_t yPos = i * HEIGHT12x16;
       bool isSelected = (optionIndex == selectedOption);
 
+      uint16_t lang = g_storedVar.language;
+
       switch (optionIndex)
       {
         case CAR_OPTION_SELECT:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)"SELECT", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][0], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_RENAME:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)"RENAME", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][1], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_GRID_SEL:
         {
           /* Grid select option - show label and right-aligned ON/OFF value */
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)"GRID", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
-          sprintf(msgStr, "%s", g_storedVar.gridCarSelectEnabled ? "ON" : "OFF");
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][2], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          sprintf(msgStr, "%s", ON_OFF_LABELS[lang][g_storedVar.gridCarSelectEnabled ? 1 : 0]);
           int textWidth = strlen(msgStr) * WIDTH12x16;
           obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
         }
 
         case CAR_OPTION_COPY:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)"COPY", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][3], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_BACK:
         {
           /* Display BACK option based on language */
-          const char* backText = (g_storedVar.language == LANG_NOR) ? "TILBAKE" : "BACK";
+          const char* backText = (lang == LANG_NOR) ? "TILBAKE" : "BACK";
           obdWriteString(&g_obd, 0, 0, yPos, (char *)backText, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
         }

@@ -16,7 +16,8 @@
 /*********************************************************************************************************************/
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    12    /* Number of items in main menu */
+#define MENU_ITEMS_COUNT    8     /* Number of items in main menu */
+#define SETTINGS_ITEMS_COUNT 6    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -93,7 +94,8 @@
 #define CAR_OPTION_RENAME   1
 #define CAR_OPTION_GRID_SEL 2
 #define CAR_OPTION_COPY     3
-#define CAR_OPTION_BACK     4
+#define CAR_OPTION_RESET    4
+#define CAR_OPTION_BACK     5
 
 /* Rename Car Mode States */
 #define RENAME_CAR_SELECT_OPTION_MODE   0

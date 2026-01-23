@@ -17,11 +17,19 @@
 /*********************************************************************************************************************/
 
 /* Menu item names in different languages: [language][item] */
-/* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, LIMIT, B_BTN, SCRSV, SOUND, RVIEW, LANG, *CAR* */
-const char* MENU_NAMES[][12] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "VIEW", "LANG", "*BIL*"},
-  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"},
-  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"}
+/* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, LIMIT, SETTINGS, *CAR* */
+const char* MENU_NAMES[][8] = {
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "INNSTILL", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "SETTINGS", "*CAR*"},
+  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "SETTINGS", "*CAR*"}
+};
+
+/* Settings menu item names: [language][item] */
+/* Order: B_BTN, SCRSV, SOUND, VIEW, LANG, BACK */
+const char* SETTINGS_MENU_NAMES[][6] = {
+  /* NOR */ {"B_KNP", "SKJSP", "LYD", "VISN", "SPRK", "TILBAKE"},
+  /* ENG */ {"B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "BACK"},
+  /* ACD */ {"B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -33,11 +41,11 @@ const char* RACE_LABELS[][4] = {
 };
 
 /* Car menu option labels: [language][option] */
-/* Order: SELECT, RENAME, RACESWP, COPY */
-const char* CAR_MENU_OPTIONS[][4] = {
-  /* NOR */ {"VELG", "NAVNGI", "RACESWP", "KOPIER"},
-  /* ENG */ {"SELECT", "RENAME", "RACESWP", "COPY"},
-  /* ACD */ {"SELECT", "RENAME", "RACESWP", "COPY"}
+/* Order: SELECT, RENAME, RACESWP, COPY, RESET */
+const char* CAR_MENU_OPTIONS[][5] = {
+  /* NOR */ {"VELG", "NAVNGI", "RACESWP", "KOPIER", "NULLSTILL"},
+  /* ENG */ {"SELECT", "RENAME", "RACESWP", "COPY", "RESET"},
+  /* ACD */ {"SELECT", "RENAME", "RACESWP", "COPY", "RESET"}
 };
 
 /* View mode value labels: [language][mode] */
@@ -63,6 +71,10 @@ const char* ON_OFF_LABELS[][2] = {
   /* ENG */ {"OFF", "ON"},
   /* ACD */ {"OFF", "ON"}
 };
+
+/* Language labels: [language_code] */
+/* Order: NOR, ENG, ACD */
+const char* LANG_LABELS[] = {"NOR", "ENG", "ACD"};
 
 /*********************************************************************************************************************/
 /*                                                   Global Variables                                                */
@@ -113,6 +125,10 @@ Menu_type g_mainMenu {
   .lines = 3
 };
 
+Menu_type g_settingsMenu {
+  .lines = 3
+};
+
 Menu_type g_carMenu {
   .lines = 3
 };
@@ -122,6 +138,9 @@ Preferences g_pref;
 
 /* UI Timing */
 static uint32_t g_lastEncoderInteraction = 0;  /* Timestamp of last encoder interaction for display power saving */
+
+/* Menu Navigation State */
+static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
 
 /*********************************************************************************************************************/
 /*                                                Function Prototypes                                                */
@@ -654,47 +673,15 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = max(5, (int)g_storedVar.carParam[g_carSel].minSpeed + 5);
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][6]);  /* B_BTN/B_KNP */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][6]);  /* SETTINGS/INNSTILL */
+  g_mainMenu.item[i].value = ITEM_NO_VALUE;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_mainMenu.item[i].unit, "%%");
-  g_mainMenu.item[i].maxValue = 100;
+  sprintf(g_mainMenu.item[i].unit, "");
+  g_mainMenu.item[i].maxValue = 0;
   g_mainMenu.item[i].minValue = 0;
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
+  g_mainMenu.item[i].callback = &showSettingsMenu;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][7]);  /* SCRSV/SKJSP */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
-  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_mainMenu.item[i].unit, "s");
-  g_mainMenu.item[i].maxValue = SCREENSAVER_TIMEOUT_MAX;
-  g_mainMenu.item[i].minValue = 0;  /* 0 = OFF */
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][8]);  /* SOUND/LYD */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.soundMode;
-  g_mainMenu.item[i].type = VALUE_TYPE_STRING;
-  sprintf(g_mainMenu.item[i].unit, "");
-  g_mainMenu.item[i].maxValue = SOUND_MODE_ALL;
-  g_mainMenu.item[i].minValue = SOUND_MODE_OFF;
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][9]);  /* RVIEW */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
-  g_mainMenu.item[i].type = VALUE_TYPE_STRING;
-  sprintf(g_mainMenu.item[i].unit, "");
-  g_mainMenu.item[i].maxValue = RACE_VIEW_SIMPLE;
-  g_mainMenu.item[i].minValue = RACE_VIEW_OFF;
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_mainMenu.item[++i].name, "LANG");
-  g_mainMenu.item[i].value = (void *)&g_storedVar.language;
-  g_mainMenu.item[i].type = VALUE_TYPE_STRING;
-  sprintf(g_mainMenu.item[i].unit, "");
-  g_mainMenu.item[i].maxValue = LANG_ACD;
-  g_mainMenu.item[i].minValue = LANG_NOR;
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][11]);  /* CAR or BIL */
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][7]);  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)
@@ -707,6 +694,64 @@ void initMenuItems() {
     sprintf(g_carMenu.item[j].name, (const char *)g_storedVar.carParam[j].carName);
     g_carMenu.item[j].value = (void *)&g_storedVar.carParam[j].carNumber;
   }
+}
+
+
+/**
+ * Initialize the settings submenu items
+ * Order: B_BTN, SCRSV, SOUND, VIEW, LANG
+ */
+void initSettingsMenuItems() {
+  int i = 0;
+  uint8_t lang = g_storedVar.language;
+
+  sprintf(g_settingsMenu.item[i].name, "%s", SETTINGS_MENU_NAMES[lang][0]);  /* B_BTN/B_KNP */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "%%");
+  g_settingsMenu.item[i].maxValue = 100;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][1]);  /* SCRSV/SKJSP */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "s");
+  g_settingsMenu.item[i].maxValue = SCREENSAVER_TIMEOUT_MAX;
+  g_settingsMenu.item[i].minValue = 0;  /* 0 = OFF */
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][2]);  /* SOUND/LYD */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.soundMode;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = SOUND_MODE_ALL;
+  g_settingsMenu.item[i].minValue = SOUND_MODE_OFF;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][3]);  /* VIEW/VISN */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = RACE_VIEW_SIMPLE;
+  g_settingsMenu.item[i].minValue = RACE_VIEW_OFF;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][4]);  /* LANG/SPRK */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.language;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = LANG_ACD;
+  g_settingsMenu.item[i].minValue = LANG_NOR;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][5]);  /* BACK/TILBAKE */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 }
 
 
@@ -790,15 +835,15 @@ void displayStatusLine() {
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
 
   /* Car ID - centered with proper clearing and highlighting */
-  /* Check if car changed to force clear */
-  if (g_storedVar.selectedCarNumber != lastCarNum) {
-    /* Clear the car name area completely (max 4 chars × 6px = 24px wide, centered = 52px start) */
-    obdWriteString(&g_obd, 0, 40, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
-    lastCarNum = g_storedVar.selectedCarNumber;
-  }
-
   sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
   uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
+
+  /* Only clear car name area when car number changes to prevent flicker */
+  if (g_storedVar.selectedCarNumber != lastCarNum) {
+    /* Clear centered area (48px = 8 chars × 6px) to handle varying name lengths */
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
+    lastCarNum = g_storedVar.selectedCarNumber;
+  }
 
   /* Determine if CAR is selected in grid mode */
   bool carSelected = false;
@@ -1715,11 +1760,11 @@ void showSelectRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 4, false); /* Boundaries are [0, 4] because there are five options */
+  g_rotaryEncoder.setBoundaries(0, 5, false); /* Boundaries are [0, 5] because there are six options */
   g_rotaryEncoder.reset(selectedOption);
 
   /* Setup scrolling frame - can show 4 items at a time */
-  const uint8_t totalOptions = 5;
+  const uint8_t totalOptions = 6;
   const uint8_t visibleLines = 4;
   uint8_t frameUpper = 0;
   uint8_t frameLower = visibleLines - 1;
@@ -1794,6 +1839,10 @@ void showSelectRenameCar() {
           obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][3], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
+        case CAR_OPTION_RESET:
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][4], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          break;
+
         case CAR_OPTION_BACK:
         {
           /* Display BACK option based on language */
@@ -1855,6 +1904,93 @@ void showSelectRenameCar() {
   {
     showCopyCarSettings();
     saveEEPROM(g_storedVar);
+  }
+  /* If RESET option was selected, reset all car parameters with double confirmation */
+  else if (selectedOption == CAR_OPTION_RESET)
+  {
+    /* Clear screen and show first confirmation */
+    obdFill(&g_obd, OBD_WHITE, 1);
+    uint16_t lang = g_storedVar.language;
+    const char* confirmText1 = (lang == LANG_NOR) ? "NULLSTILL ALLE" : "RESET ALL CARS";
+    const char* confirmText2 = (lang == LANG_NOR) ? "BILER?" : "?";
+    const char* confirmText3 = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
+    const char* cancelText = (lang == LANG_NOR) ? "BREMS=AVBRYT" : "BRAKE BUTTON = CANCEL";
+
+    obdWriteString(&g_obd, 0, 10, 5, (char *)confirmText1, FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 15, (char *)confirmText2, FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 30, (char *)confirmText3, FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
+
+    /* Wait for first confirmation click or brake button to cancel */
+    bool cancelled = false;
+    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        cancelled = true;
+        break;
+      }
+      delay(10);
+    }
+    if (cancelled) {
+      /* Show cancelled message */
+      obdFill(&g_obd, OBD_WHITE, 1);
+      const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
+      int textWidth = strlen(cancelledText) * WIDTH12x16;
+      obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
+      delay(1000);
+    } else {
+      delay(200);  /* Debounce */
+
+      /* Show second confirmation */
+      obdFill(&g_obd, OBD_WHITE, 1);
+      const char* confirmText4 = (lang == LANG_NOR) ? "TRYKK IGJEN" : "PRESS AGAIN";
+      const char* confirmText5 = (lang == LANG_NOR) ? "FOR A BEKREFTE" : "TO CONFIRM";
+      obdWriteString(&g_obd, 0, 10, 10, (char *)confirmText4, FONT_8x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 10, 20, (char *)confirmText5, FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
+
+      /* Wait for second confirmation click or brake button to cancel */
+      while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+        if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+          cancelled = true;
+          break;
+        }
+        delay(10);
+      }
+
+      if (cancelled) {
+        /* Show cancelled message */
+        obdFill(&g_obd, OBD_WHITE, 1);
+        const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
+        int textWidth = strlen(cancelledText) * WIDTH12x16;
+        obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
+        delay(1000);
+      } else {
+        delay(200);  /* Debounce */
+
+        /* Reset all car parameters to defaults */
+        for (uint8_t i = 0; i < CAR_MAX_COUNT; i++) {
+          g_storedVar.carParam[i].minSpeed = MIN_SPEED_DEFAULT;
+          g_storedVar.carParam[i].brake = BRAKE_DEFAULT;
+          g_storedVar.carParam[i].dragBrake = DRAG_BRAKE_DEFAULT;
+          g_storedVar.carParam[i].antiSpin = ANTISPIN_DEFAULT;
+          g_storedVar.carParam[i].maxSpeed = MAX_SPEED_DEFAULT;
+          g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT;
+          g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = THROTTLE_CURVE_SPEED_DIFF_DEFAULT;
+          g_storedVar.carParam[i].freqPWM = PWM_FREQ_DEFAULT;
+          g_storedVar.carParam[i].brakeButtonReduction = BRAKE_BUTTON_REDUCTION_DEFAULT;
+          sprintf(g_storedVar.carParam[i].carName, "CAR%d", i);
+        }
+
+        /* Show confirmation message - centered */
+        obdFill(&g_obd, OBD_WHITE, 1);
+        const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
+        int textWidth = strlen(doneText) * WIDTH12x16;
+        obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
+        delay(1500);
+
+        saveEEPROM(g_storedVar);
+      }
+    }
   }
   /* If BACK option was selected, simply exit without changes */
   /* Note: No action needed for BACK, we just fall through to the reset code below */
@@ -2086,6 +2222,182 @@ void showCurveSelection()
   obdFill(&g_obd, OBD_WHITE, 1);    /* Clear screen */
 
   return;
+}
+
+
+/**
+ * Show the Settings submenu
+ * This function is called when SETTINGS item is selected in the main menu
+ * It displays and manages navigation through the settings submenu items:
+ * B_BTN, SCRSV, SOUND, VIEW, LANG, BACK
+ */
+void showSettingsMenu() {
+  /* Initialize settings menu items with current values */
+  initSettingsMenuItems();
+
+  /* Clear screen */
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  /* Set flag that we're in settings menu */
+  g_inSettingsMenu = true;
+
+  /* Set encoder to navigate through settings items (1 to SETTINGS_ITEMS_COUNT) */
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+  g_rotaryEncoder.reset(1);  /* Start at first settings item */
+
+  uint16_t settingsSelector = 1;
+  uint16_t prevSettingsSelector = 0;
+  MenuState_enum settingsMenuState = ITEM_SELECTION;
+  uint16_t *settingsValuePtr = NULL;
+  uint16_t prevLanguage = g_storedVar.language;
+
+  /* Setup scrolling frame - can show 3 items at a time */
+  uint16_t frameUpper = 1;
+  uint16_t frameLower = g_settingsMenu.lines;
+
+  /* Settings menu loop */
+  while (true) {
+    /* Check for button click */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (settingsMenuState == ITEM_SELECTION) {
+        /* Check if BACK button (last item) is selected */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT) {
+          /* BACK selected - exit settings menu */
+          break;
+        }
+        /* Check if selected item has a value to edit */
+        if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
+          /* Enter value editing mode for selected item */
+          settingsMenuState = VALUE_SELECTION;
+          g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+          settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
+          g_rotaryEncoder.setBoundaries(g_settingsMenu.item[settingsSelector - 1].minValue,
+                                       g_settingsMenu.item[settingsSelector - 1].maxValue, false);
+          g_rotaryEncoder.reset(*settingsValuePtr);
+        }
+      } else {
+        /* Exit value editing mode and return to item selection */
+        settingsMenuState = ITEM_SELECTION;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+        g_rotaryEncoder.reset(settingsSelector);
+        saveEEPROM(g_storedVar);  /* Save modified values */
+
+        /* If language changed, reinitialize settings menu items */
+        if (g_storedVar.language != prevLanguage) {
+          initSettingsMenuItems();
+          initMenuItems();  /* Also reinit main menu for language change */
+          prevLanguage = g_storedVar.language;
+          obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
+        }
+      }
+      delay(200);  /* Debounce */
+    }
+
+    /* Read encoder position */
+    if (g_rotaryEncoder.encoderChanged()) {
+      if (settingsMenuState == ITEM_SELECTION) {
+        settingsSelector = g_rotaryEncoder.readEncoder();
+      } else {
+        /* Update the value */
+        *settingsValuePtr = g_rotaryEncoder.readEncoder();
+      }
+    }
+
+    /* Check for long press to exit settings menu */
+    static uint32_t settingsButtonPressStart = 0;
+    static bool settingsButtonWasPressed = false;
+    if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+      if (!settingsButtonWasPressed) {
+        settingsButtonPressStart = millis();
+        settingsButtonWasPressed = true;
+      }
+      if (millis() - settingsButtonPressStart > BUTTON_LONG_PRESS_MS) {
+        /* Long press detected - exit settings menu */
+        break;
+      }
+    } else {
+      settingsButtonWasPressed = false;
+    }
+
+    /* Update frame if selection moves outside visible area */
+    if (settingsMenuState == ITEM_SELECTION) {
+      if (settingsSelector > frameLower) {
+        frameLower = settingsSelector;
+        frameUpper = frameLower - g_settingsMenu.lines + 1;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      } else if (settingsSelector < frameUpper) {
+        frameUpper = settingsSelector;
+        frameLower = frameUpper + g_settingsMenu.lines - 1;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+    }
+
+    /* Display settings menu items */
+    for (uint8_t i = 0; i < g_settingsMenu.lines; i++) {
+      uint16_t itemIndex = frameUpper - 1 + i;
+      if (itemIndex >= SETTINGS_ITEMS_COUNT) break;
+
+      /* Print item name */
+      bool isSelected = (settingsSelector - frameUpper == i && settingsMenuState == ITEM_SELECTION);
+      obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_settingsMenu.item[itemIndex].name,
+                    FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+
+      /* Print item value */
+      if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
+        bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
+
+        if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_INTEGER) {
+          sprintf(msgStr, "%3d%s", *(uint16_t *)(g_settingsMenu.item[itemIndex].value),
+                 g_settingsMenu.item[itemIndex].unit);
+          int textWidth = strlen(msgStr) * WIDTH12x16;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr,
+                        FONT_12x16, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
+        } else if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_STRING) {
+          /* Handle special string values */
+          uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
+          uint16_t lang = g_storedVar.language;
+
+          /* SOUND menu item */
+          if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][2]) == 0) {
+            sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][value]);
+          }
+          /* VIEW menu item */
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][3]) == 0) {
+            sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][value]);
+          }
+          /* LANG menu item */
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][4]) == 0) {
+            sprintf(msgStr, "%3s", LANG_LABELS[value]);
+          } else {
+            sprintf(msgStr, "%3d", value);
+          }
+
+          int textWidth = strlen(msgStr) * WIDTH12x16;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr,
+                        FONT_12x16, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
+        }
+      }
+    }
+
+    vTaskDelay(10);  /* Small delay to prevent watchdog reset */
+  }
+
+  /* Exiting settings menu */
+  g_inSettingsMenu = false;
+
+  /* Reset encoder to main menu */
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.reset(g_encoderMainSelector);
+  g_escVar.encoderPos = g_encoderMainSelector;
+
+  /* Save any changes */
+  saveEEPROM(g_storedVar);
+
+  /* Clear screen */
+  obdFill(&g_obd, OBD_WHITE, 1);
 }
 
 

@@ -13,6 +13,26 @@
 
 /* Last modified: 17/10/2024 */
 /*********************************************************************************************************************/
+/*                                                   Language Strings                                                */
+/*********************************************************************************************************************/
+
+/* Menu item names in different languages: [language][item] */
+/* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, LIMIT, B_BTN, SCRSV, SOUND, RVIEW, LANG, *CAR* */
+const char* MENU_NAMES[][12] = {
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "RVIEW", "LANG", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "RVIEW", "LANG", "*CAR*"},
+  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "RVIEW", "LANG", "*CAR*"}
+};
+
+/* Race mode parameter labels: [language][param] */
+/* Order: BRAKE, SENSI, ANTIS, CURVE */
+const char* RACE_LABELS[][4] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve"},
+  /* ENG */ {"Break", "Sensi", "Antis", "Curve"},
+  /* ACD */ {"Break", "Attck", "Choke", "Profl"}
+};
+
+/*********************************************************************************************************************/
 /*                                                   Global Variables                                                */
 /*********************************************************************************************************************/
 
@@ -366,10 +386,16 @@ void Task1code(void *pvParameters) {
         {
           g_encoderMainSelector = g_escVar.encoderPos;  /* If in ITEM_SELECTION, update the encoder MainSelector with the encoder position */
         }
-        if (menuState == VALUE_SELECTION) 
+        if (menuState == VALUE_SELECTION)
         {
           g_encoderSecondarySelector = g_escVar.encoderPos;         /* If in ITEM_SELECTION, update the encoder SecondaryEncoder with the encoder position */
+          uint16_t prevLanguage = g_storedVar.language;             /* Store previous language for change detection */
           *g_encoderSelectedValuePtr = g_encoderSecondarySelector;  /* Also update the value of the selected parameter */
+
+          /* If language changed, reinitialize menu items with new language strings */
+          if (g_storedVar.language != prevLanguage) {
+            initMenuItems();
+          }
         }
 
         /* Show Main Menu display */
@@ -528,6 +554,7 @@ void initStoredVariables() {
   g_storedVar.soundMode = SOUND_MODE_DEFAULT;
   g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
   g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
+  g_storedVar.language = LANG_DEFAULT;  /* Default language */
 }
 
 
@@ -542,9 +569,10 @@ void initStoredVariables() {
  */
 void initMenuItems() {
   int i = 0;
-  /* Init menu items */
+  uint8_t lang = g_storedVar.language;
+  /* Init menu items - using language-specific names */
 
-  sprintf(g_mainMenu.item[i].name, "BRAKE");
+  sprintf(g_mainMenu.item[i].name, "%s", MENU_NAMES[lang][0]);  /* BRAKE/BREMS */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brake;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -552,7 +580,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "SENSI");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][1]);  /* SENSI/ATTCK */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].minSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -560,7 +588,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "ANTIS");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][2]);  /* ANTIS/CHOKE */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].antiSpin;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "ms");
@@ -568,7 +596,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "CURVE");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][3]);  /* CURVE/KURVE/PROFL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -576,7 +604,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
   g_mainMenu.item[i].callback = &showCurveSelection;
 
-  sprintf(g_mainMenu.item[++i].name, "PWM_F");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][4]);  /* PWM_F */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].freqPWM;
   g_mainMenu.item[i].type = VALUE_TYPE_DECIMAL;
   sprintf(g_mainMenu.item[i].unit, "k");
@@ -585,7 +613,7 @@ void initMenuItems() {
   g_mainMenu.item[i].decimalPoint = 1;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "LIMIT");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][5]);  /* LIMIT */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].maxSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -593,7 +621,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = max(5, (int)g_storedVar.carParam[g_carSel].minSpeed + 5);
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "B_BTN");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][6]);  /* B_BTN/B_KNP */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -601,7 +629,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "SCRSV");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][7]);  /* SCRSV/SKJSP */
   g_mainMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "s");
@@ -609,7 +637,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;  /* 0 = OFF */
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "SOUND");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][8]);  /* SOUND/LYD */
   g_mainMenu.item[i].value = (void *)&g_storedVar.soundMode;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_mainMenu.item[i].unit, "");
@@ -617,7 +645,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = SOUND_MODE_OFF;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "RVIEW");
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][9]);  /* RVIEW */
   g_mainMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_mainMenu.item[i].unit, "");
@@ -625,7 +653,15 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = RACE_VIEW_OFF;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "*CAR*");
+  sprintf(g_mainMenu.item[++i].name, "LANG");
+  g_mainMenu.item[i].value = (void *)&g_storedVar.language;
+  g_mainMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_mainMenu.item[i].unit, "");
+  g_mainMenu.item[i].maxValue = LANG_ACD;
+  g_mainMenu.item[i].minValue = LANG_NOR;
+  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][10]);  /* *CAR*/*BIL* */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)
@@ -785,8 +821,9 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
 
   /* BRAKE - left column, using larger font (FONT_12x16) */
   if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
-    /* Label - Break is 5 chars × 6px = 30px wide */
-    obdWriteString(&g_obd, 0, col1_center - 15, 2, (char *)"Break", FONT_6x8, colorBrake, 1);
+    /* Label - using language-specific text, 5 chars × 6px = 30px wide */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][0]) * 6;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)RACE_LABELS[g_storedVar.language][0], FONT_6x8, colorBrake, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
     obdWriteString(&g_obd, 0, col1_center - 24, 14, msgStr, FONT_12x16, colorBrake, 1);
@@ -795,8 +832,9 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
 
   /* SENSI - right column, using larger font (FONT_12x16) */
   if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
-    /* Label - Sensi is 5 chars × 6px = 30px wide, shifted 1px right */
-    obdWriteString(&g_obd, 0, col2_center - 14, 2, (char *)"Sensi", FONT_6x8, colorSensi, 1);
+    /* Label - using language-specific text, 5 chars × 6px = 30px wide, shifted 1px right */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][1]) * 6;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)RACE_LABELS[g_storedVar.language][1], FONT_6x8, colorSensi, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
     obdWriteString(&g_obd, 0, col2_center - 24, 14, msgStr, FONT_12x16, colorSensi, 1);
@@ -847,8 +885,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
   /* BRAKE - left column */
   if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
-    /* Label - Break is 5 chars × 6px = 30px wide, center at col1_center - 15 */
-    obdWriteString(&g_obd, 0, col1_center - 15, 2, (char *)"Break", FONT_6x8, colorBrake, 1);
+    /* Label - using language-specific text, dynamically centered */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][0]) * 6;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)RACE_LABELS[g_storedVar.language][0], FONT_6x8, colorBrake, 1);
     /* Value - "100%" is 4 chars × 8px = 32px wide, center at col1_center - 16 */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
     obdWriteString(&g_obd, 0, col1_center - 16, 12, msgStr, FONT_8x8, colorBrake, 1);
@@ -857,8 +896,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
   /* SENSI - right column */
   if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
-    /* Label - Sensi is 5 chars × 6px = 30px wide, shifted 1px right: col2_center - 14 */
-    obdWriteString(&g_obd, 0, col2_center - 14, 2, (char *)"Sensi", FONT_6x8, colorSensi, 1);
+    /* Label - using language-specific text, shifted 1px right */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][1]) * 6;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)RACE_LABELS[g_storedVar.language][1], FONT_6x8, colorSensi, 1);
     /* Value */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
     obdWriteString(&g_obd, 0, col2_center - 16, 12, msgStr, FONT_8x8, colorSensi, 1);
@@ -867,8 +907,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
   /* ANTIS - left column, lower */
   if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis) {
-    /* Label - Antis is 5 chars × 6px = 30px wide, center at col1_center - 15 */
-    obdWriteString(&g_obd, 0, col1_center - 15, 24, (char *)"Antis", FONT_6x8, colorAntis, 1);
+    /* Label - using language-specific text, dynamically centered */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][2]) * 6;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)RACE_LABELS[g_storedVar.language][2], FONT_6x8, colorAntis, 1);
     /* Value - "255ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
     sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
     obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
@@ -877,8 +918,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
   /* CURVE - right column, lower */
   if (g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff != lastCurve) {
-    /* Label - Curve is 5 chars × 6px = 30px wide, shifted 1px right: col2_center - 14 */
-    obdWriteString(&g_obd, 0, col2_center - 14, 24, (char *)"Curve", FONT_6x8, colorCurve, 1);
+    /* Label - using language-specific text, shifted 1px right */
+    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][3]) * 6;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 24, (char *)RACE_LABELS[g_storedVar.language][3], FONT_6x8, colorCurve, 1);
     /* Value */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
     obdWriteString(&g_obd, 0, col2_center - 16, 34, msgStr, FONT_8x8, colorCurve, 1);
@@ -1074,8 +1116,9 @@ void printMainMenu(MenuState_enum currMenuState)
         /* If the value is a string, cast to (char *) then print the string */
         else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING)
         {
-          /* Special handling for SOUND menu item - display "OFF", "BOOT", or "ALL" with padding */
-          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "SOUND") == 0) {
+          /* Special handling for SOUND/LYD menu item - display "OFF", "BOOT", or "ALL" with padding */
+          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "SOUND") == 0 ||
+              strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "LYD") == 0) {
             uint16_t soundMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             sprintf(msgStr, "%4s", (soundMode == SOUND_MODE_OFF) ? "OFF" : ((soundMode == SOUND_MODE_BOOT) ? "BOOT" : "ALL"));
           }
@@ -1083,6 +1126,11 @@ void printMainMenu(MenuState_enum currMenuState)
           else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "RVIEW") == 0) {
             uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             sprintf(msgStr, "%6s", (raceViewMode == RACE_VIEW_OFF) ? "OFF" : ((raceViewMode == RACE_VIEW_FULL) ? "FULL" : "SIMPLE"));
+          }
+          /* Special handling for LANG menu item - display "NOR", "ENG", or "ACD" */
+          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "LANG") == 0) {
+            uint16_t language = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+            sprintf(msgStr, "%3s", (language == LANG_NOR) ? "NOR" : ((language == LANG_ENG) ? "ENG" : "ACD"));
           }
           else {
             /* value is a generic pointer to void, so cast to string pointer */

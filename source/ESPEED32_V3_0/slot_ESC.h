@@ -16,7 +16,7 @@
 /*********************************************************************************************************************/
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    11    /* Number of items in main menu */
+#define MENU_ITEMS_COUNT    12    /* Number of items in main menu */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -32,6 +32,12 @@
 #define RACE_VIEW_FULL      1     /* Full race mode (4 parameters: BRAKE, SENSI, ANTIS, CURVE) */
 #define RACE_VIEW_SIMPLE    2     /* Simple race mode (2 parameters: BRAKE, SENSI) */
 #define RACE_VIEW_DEFAULT   RACE_VIEW_FULL
+
+/* Language Settings */
+#define LANG_NOR            0     /* Norwegian language */
+#define LANG_ENG            1     /* English language */
+#define LANG_ACD            2     /* ACD/CarSteen terminology (English-based) */
+#define LANG_DEFAULT        LANG_NOR
 
 /* Default Parameter Values */
 #define MIN_SPEED_DEFAULT         20    /* [%] Minimum motor speed (sensitivity) */
@@ -168,6 +174,7 @@ typedef struct {
   uint16_t soundMode;                       /* Sound mode: OFF, BOOT, or ALL */
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
+  uint16_t language;                        /* Language: NOR, ENG, or ACD */
 } StoredVar_type;
 
 /**

@@ -19,7 +19,7 @@
 /* Menu item names in different languages: [language][item] */
 /* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, LIMIT, B_BTN, SCRSV, SOUND, RVIEW, LANG, *CAR* */
 const char* MENU_NAMES[][12] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "VIEW", "LANG", "*BIL*"},
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "LIMIT", "B_KNP", "SKJSP", "LYD", "VISN", "LANG", "*BIL*"},
   /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"},
   /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "LIMIT", "B_BTN", "SCRSV", "SOUND", "VIEW", "LANG", "*CAR*"}
 };
@@ -1164,8 +1164,9 @@ void printMainMenu(MenuState_enum currMenuState)
             uint16_t lang = g_storedVar.language;
             sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][soundMode]);
           }
-          /* Special handling for VIEW menu item - display language-specific labels */
-          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
+          /* Special handling for VIEW/VISN menu item - display language-specific labels */
+          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0 ||
+                   strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VISN") == 0) {
             uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             uint16_t lang = g_storedVar.language;
             sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][raceViewMode]);

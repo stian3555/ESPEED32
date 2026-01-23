@@ -790,15 +790,15 @@ void displayStatusLine() {
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
 
   /* Car ID - centered with proper clearing and highlighting */
-  /* Check if car changed to force clear */
-  if (g_storedVar.selectedCarNumber != lastCarNum) {
-    /* Clear the car name area completely (max 4 chars × 6px = 24px wide, centered = 52px start) */
-    obdWriteString(&g_obd, 0, 40, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
-    lastCarNum = g_storedVar.selectedCarNumber;
-  }
-
   sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
   uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
+
+  /* Check if car changed to force clear of entire car name area */
+  if (g_storedVar.selectedCarNumber != lastCarNum) {
+    /* Clear wider area to handle varying car name lengths (clear 40px centered area) */
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - 40) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"       ", FONT_6x8, OBD_BLACK, 1);
+    lastCarNum = g_storedVar.selectedCarNumber;
+  }
 
   /* Determine if CAR is selected in grid mode */
   bool carSelected = false;

@@ -16,7 +16,7 @@
 /*********************************************************************************************************************/
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    10    /* Number of items in main menu */
+#define MENU_ITEMS_COUNT    11    /* Number of items in main menu */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -26,6 +26,12 @@
 /* View Modes */
 #define VIEW_MODE_LIST      0     /* List view (classic menu) */
 #define VIEW_MODE_GRID      1     /* Grid view (race mode) */
+
+/* Race Mode View Types */
+#define RACE_VIEW_OFF       0     /* No race mode (list view only) */
+#define RACE_VIEW_FULL      1     /* Full race mode (4 parameters: BRAKE, SENSI, ANTIS, CURVE) */
+#define RACE_VIEW_SIMPLE    2     /* Simple race mode (2 parameters: BRAKE, SENSI) */
+#define RACE_VIEW_DEFAULT   RACE_VIEW_FULL
 
 /* Default Parameter Values */
 #define MIN_SPEED_DEFAULT         20    /* [%] Minimum motor speed (sensitivity) */
@@ -161,6 +167,7 @@ typedef struct {
   uint16_t screensaverTimeout;              /* [s] Screensaver timeout in seconds */
   uint16_t soundMode;                       /* Sound mode: OFF, BOOT, or ALL */
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
+  uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
 } StoredVar_type;
 
 /**

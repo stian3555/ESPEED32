@@ -261,8 +261,18 @@ void Task1code(void *pvParameters) {
         /* Set encoder boundaries based on view mode (on first entry) */
         static bool encoderBoundariesSet = false;
         if (!encoderBoundariesSet) {
+          /* Force LIST mode if race view is OFF */
+          if (g_storedVar.viewMode == VIEW_MODE_GRID && g_storedVar.raceViewMode == RACE_VIEW_OFF) {
+            g_storedVar.viewMode = VIEW_MODE_LIST;
+          }
+
           if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-            uint8_t gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* 5 items if car select enabled, else 4 */
+            uint8_t gridItems;
+            if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+              gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;  /* SIMPLE: BRAKE, SENSI, CAR (optional) */
+            } else {
+              gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (optional) */
+            }
             g_rotaryEncoder.setBoundaries(1, gridItems, false);
           } else {
             g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
@@ -285,7 +295,13 @@ void Task1code(void *pvParameters) {
               millis() - lastLongPressTime > BUTTON_LONG_PRESS_MS) {
             lastLongPressTime = millis();  /* Record when long press happened */
 
-            g_storedVar.viewMode = (g_storedVar.viewMode == VIEW_MODE_LIST) ? VIEW_MODE_GRID : VIEW_MODE_LIST;
+            /* Only allow toggling to GRID mode if race view is not OFF */
+            if (g_storedVar.viewMode == VIEW_MODE_LIST && g_storedVar.raceViewMode != RACE_VIEW_OFF) {
+              g_storedVar.viewMode = VIEW_MODE_GRID;
+            }
+            else if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+              g_storedVar.viewMode = VIEW_MODE_LIST;
+            }
 
             /* Clear display completely when switching views */
             obdFill(&g_obd, OBD_WHITE, 1);
@@ -295,7 +311,12 @@ void Task1code(void *pvParameters) {
 
             /* Update encoder boundaries for new view mode */
             if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-              uint8_t gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* 5 items if car select enabled, else 4 */
+              uint8_t gridItems;
+              if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+                gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;  /* SIMPLE: BRAKE, SENSI, CAR (optional) */
+              } else {
+                gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (optional) */
+              }
               g_rotaryEncoder.setBoundaries(1, gridItems, false);
               g_rotaryEncoder.reset(1);  /* Reset to first grid item */
             } else {
@@ -506,6 +527,7 @@ void initStoredVariables() {
   g_storedVar.screensaverTimeout = SCREENSAVER_TIMEOUT_DEFAULT;
   g_storedVar.soundMode = SOUND_MODE_DEFAULT;
   g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
+  g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
 }
 
 
@@ -593,6 +615,14 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[i].unit, "");
   g_mainMenu.item[i].maxValue = SOUND_MODE_ALL;
   g_mainMenu.item[i].minValue = SOUND_MODE_OFF;
+  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_mainMenu.item[++i].name, "RVIEW");
+  g_mainMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
+  g_mainMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_mainMenu.item[i].unit, "");
+  g_mainMenu.item[i].maxValue = RACE_VIEW_SIMPLE;
+  g_mainMenu.item[i].minValue = RACE_VIEW_OFF;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
   sprintf(g_mainMenu.item[++i].name, "*CAR*");
@@ -724,6 +754,58 @@ void displayStatusLine() {
   sprintf(msgStr, "%d.%01dV", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
   obdWriteString(&g_obd, 0, OLED_WIDTH - 30, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
 }
+
+/**
+ * @brief Display simple race mode - shows only BRAKE and SENSI with larger font
+ * @details Simplified race view with just the two most important parameters
+ * @param selectedItem Item selected for editing (0=BRAKE, 1=SENSI, 2=CAR if enabled)
+ * @param isEditing True if currently editing a value
+ */
+void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
+  static uint16_t lastBrake = 999;
+  static uint16_t lastSensi = 999;
+  static uint8_t lastSelectedItem = 255;
+  static bool lastIsEditing = false;
+
+  /* Simple mode: 0=BRAKE, 1=SENSI, 2=CAR (if enabled) */
+  int col1_center = 32;   /* Center of left half (128/4 = 32) */
+  int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
+
+  /* Check if selection changed - force update of ALL items */
+  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing) {
+    lastBrake = 999;
+    lastSensi = 999;
+    lastSelectedItem = selectedItem;
+    lastIsEditing = isEditing;
+  }
+
+  /* Determine colors based on selection state */
+  uint8_t colorBrake = (selectedItem == 0) ? OBD_WHITE : OBD_BLACK;
+  uint8_t colorSensi = (selectedItem == 1) ? OBD_WHITE : OBD_BLACK;
+
+  /* BRAKE - left column, using larger font (FONT_12x16) */
+  if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
+    /* Label - Break is 5 chars × 6px = 30px wide */
+    obdWriteString(&g_obd, 0, col1_center - 15, 2, (char *)"Break", FONT_6x8, colorBrake, 1);
+    /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
+    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
+    obdWriteString(&g_obd, 0, col1_center - 24, 14, msgStr, FONT_12x16, colorBrake, 1);
+    lastBrake = g_storedVar.carParam[g_carSel].brake;
+  }
+
+  /* SENSI - right column, using larger font (FONT_12x16) */
+  if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
+    /* Label - Sensi is 5 chars × 6px = 30px wide, shifted 1px right */
+    obdWriteString(&g_obd, 0, col2_center - 14, 2, (char *)"Sensi", FONT_6x8, colorSensi, 1);
+    /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide */
+    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
+    obdWriteString(&g_obd, 0, col2_center - 24, 14, msgStr, FONT_12x16, colorSensi, 1);
+    lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
+  }
+
+  /* Note: Car name, voltage, and LIMITER warning are displayed by displayStatusLine() */
+}
+
 
 /**
  * @brief Display race mode - compact grid showing all key parameters
@@ -879,7 +961,9 @@ void printMainMenu(MenuState_enum currMenuState)
   if (g_storedVar.viewMode == VIEW_MODE_GRID)
   {
     /* GRID mode: always show race mode with editing capability */
-    /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR (if enabled) */
+    /* Grid items depend on race view mode:
+       FULL: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR (if enabled)
+       SIMPLE: 0=BRAKE, 1=SENSI, 2=CAR (if enabled) */
     static uint8_t gridSelectedItem = 0;  /* Currently selected grid item */
     static MenuState_enum gridMenuState = ITEM_SELECTION;  /* Grid edit state */
 
@@ -889,8 +973,17 @@ void printMainMenu(MenuState_enum currMenuState)
       screensaverActive = false;
     }
 
-    /* Map encoder position to grid item (0-4) */
-    uint8_t maxGridItem = g_storedVar.gridCarSelectEnabled ? 5 : 4;
+    /* Calculate max grid item based on race view mode */
+    uint8_t maxGridItem;
+    if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+      /* SIMPLE: BRAKE, SENSI, CAR (if enabled) */
+      maxGridItem = g_storedVar.gridCarSelectEnabled ? 3 : 2;
+    }
+    else {
+      /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (if enabled) */
+      maxGridItem = g_storedVar.gridCarSelectEnabled ? 5 : 4;
+    }
+
     if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
     if (g_encoderMainSelector > maxGridItem) g_encoderMainSelector = maxGridItem;
     gridSelectedItem = g_encoderMainSelector - 1;
@@ -898,7 +991,13 @@ void printMainMenu(MenuState_enum currMenuState)
     /* Determine if we're editing based on menu state */
     bool isEditing = (currMenuState == VALUE_SELECTION);
 
-    displayRaceMode(gridSelectedItem, isEditing);
+    /* Call appropriate display function based on race view mode */
+    if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+      displayRaceModeSimple(gridSelectedItem, isEditing);
+    }
+    else {
+      displayRaceMode(gridSelectedItem, isEditing);
+    }
 
     /* Print LIMITER warning if LIMIT is any value other than 100% */
     if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
@@ -979,6 +1078,11 @@ void printMainMenu(MenuState_enum currMenuState)
           if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "SOUND") == 0) {
             uint16_t soundMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             sprintf(msgStr, "%4s", (soundMode == SOUND_MODE_OFF) ? "OFF" : ((soundMode == SOUND_MODE_BOOT) ? "BOOT" : "ALL"));
+          }
+          /* Special handling for RVIEW menu item - display "OFF", "FULL", or "SIMPLE" */
+          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "RVIEW") == 0) {
+            uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+            sprintf(msgStr, "%6s", (raceViewMode == RACE_VIEW_OFF) ? "OFF" : ((raceViewMode == RACE_VIEW_FULL) ? "FULL" : "SIMPLE"));
           }
           else {
             /* value is a generic pointer to void, so cast to string pointer */
@@ -1193,39 +1297,63 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
     /* Special handling for GRID mode - map grid item to car parameter */
     if (g_storedVar.viewMode == VIEW_MODE_GRID)
     {
-      uint8_t gridItem = g_encoderMainSelector - 1;  /* 0-3 */
+      uint8_t gridItem = g_encoderMainSelector - 1;  /* 0-4 (FULL) or 0-2 (SIMPLE) */
       g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
 
-      /* Map grid item to parameter pointer and limits */
-      /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR */
-      switch (gridItem) {
-        case 0:  /* BRAKE */
-          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].brake;
-          selectedParamMaxValue = BRAKE_MAX_VALUE;
-          selectedParamMinValue = 0;
-          break;
-        case 1:  /* SENSI (minSpeed) */
-          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].minSpeed;
-          selectedParamMaxValue = MIN_SPEED_MAX_VALUE;
-          selectedParamMinValue = 0;
-          break;
-        case 2:  /* ANTIS (antiSpin) */
-          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].antiSpin;
-          selectedParamMaxValue = ANTISPIN_MAX_VALUE;
-          selectedParamMinValue = 0;
-          break;
-        case 3:  /* CURVE */
-          g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
-          selectedParamMaxValue = THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE;
-          selectedParamMinValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
-          break;
-        case 4:  /* CAR - select different car */
-          g_encoderSelectedValuePtr = &g_storedVar.selectedCarNumber;
-          selectedParamMaxValue = CAR_MAX_COUNT - 1;
-          selectedParamMinValue = 0;
-          break;
-        default:
-          return ITEM_SELECTION;
+      /* Map grid item to parameter pointer and limits based on race view mode */
+      if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+        /* SIMPLE mode: 0=BRAKE, 1=SENSI, 2=CAR */
+        switch (gridItem) {
+          case 0:  /* BRAKE */
+            g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].brake;
+            selectedParamMaxValue = BRAKE_MAX_VALUE;
+            selectedParamMinValue = 0;
+            break;
+          case 1:  /* SENSI (minSpeed) */
+            g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].minSpeed;
+            selectedParamMaxValue = MIN_SPEED_MAX_VALUE;
+            selectedParamMinValue = 0;
+            break;
+          case 2:  /* CAR - select different car */
+            g_encoderSelectedValuePtr = &g_storedVar.selectedCarNumber;
+            selectedParamMaxValue = CAR_MAX_COUNT - 1;
+            selectedParamMinValue = 0;
+            break;
+          default:
+            return ITEM_SELECTION;
+        }
+      }
+      else {
+        /* FULL mode: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR */
+        switch (gridItem) {
+          case 0:  /* BRAKE */
+            g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].brake;
+            selectedParamMaxValue = BRAKE_MAX_VALUE;
+            selectedParamMinValue = 0;
+            break;
+          case 1:  /* SENSI (minSpeed) */
+            g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].minSpeed;
+            selectedParamMaxValue = MIN_SPEED_MAX_VALUE;
+            selectedParamMinValue = 0;
+            break;
+          case 2:  /* ANTIS (antiSpin) */
+            g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].antiSpin;
+            selectedParamMaxValue = ANTISPIN_MAX_VALUE;
+            selectedParamMinValue = 0;
+            break;
+          case 3:  /* CURVE */
+            g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
+            selectedParamMaxValue = THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE;
+            selectedParamMinValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
+            break;
+          case 4:  /* CAR - select different car */
+            g_encoderSelectedValuePtr = &g_storedVar.selectedCarNumber;
+            selectedParamMaxValue = CAR_MAX_COUNT - 1;
+            selectedParamMinValue = 0;
+            break;
+          default:
+            return ITEM_SELECTION;
+        }
       }
 
       g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
@@ -1262,7 +1390,12 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
 
     /* Set boundaries based on view mode */
     if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-      uint8_t gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* 5 items if car select enabled, else 4 */
+      uint8_t gridItems;
+      if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+        gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;  /* SIMPLE: BRAKE, SENSI, CAR (optional) */
+      } else {
+        gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (optional) */
+      }
       g_rotaryEncoder.setBoundaries(1, gridItems, false);
     } else {
       g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Set the encoder boundaries to the menu boundaries */

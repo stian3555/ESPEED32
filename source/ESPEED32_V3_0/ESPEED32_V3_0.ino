@@ -1680,24 +1680,77 @@ void showSelectRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 3, false); /* Boundaries are [0, 3] because there are four options */
+  g_rotaryEncoder.setBoundaries(0, 4, false); /* Boundaries are [0, 4] because there are five options */
   g_rotaryEncoder.reset(selectedOption);
 
-  /* Print the "SELECT AN OPTION" */
-  obdWriteString(&g_obd, 0, 16, OLED_HEIGHT - HEIGHT8x8, (char *)"-PICK AN OPTION-", FONT_6x8, OBD_WHITE, 1);
+  /* Setup scrolling frame - can show 4 items at a time */
+  const uint8_t totalOptions = 5;
+  const uint8_t visibleLines = 4;
+  uint8_t frameUpper = 0;
+  uint8_t frameLower = visibleLines - 1;
 
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
     /* Get encoder value if changed */
     selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
-    /* Print the four options */
-    obdWriteString(&g_obd, 0, 0, 0 * HEIGHT12x16, (char *)"SELECT", FONT_12x16, (selectedOption == CAR_OPTION_SELECT) ? OBD_WHITE : OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 0, 1 * HEIGHT12x16, (char *)"RENAME", FONT_12x16, (selectedOption == CAR_OPTION_RENAME) ? OBD_WHITE : OBD_BLACK, 1);
-    /* Grid select option - show ON/OFF based on current state */
-    sprintf(msgStr, "GRID:%s", g_storedVar.gridCarSelectEnabled ? "ON " : "OFF");
-    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT12x16, msgStr, FONT_12x16, (selectedOption == CAR_OPTION_GRID_SEL) ? OBD_WHITE : OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16, (char *)"COPY", FONT_12x16, (selectedOption == CAR_OPTION_COPY) ? OBD_WHITE : OBD_BLACK, 1);
+
+    /* Adjust frame if selection moves outside visible area */
+    if (selectedOption > frameLower)
+    {
+      frameLower = selectedOption;
+      frameUpper = frameLower - visibleLines + 1;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
+    else if (selectedOption < frameUpper)
+    {
+      frameUpper = selectedOption;
+      frameLower = frameUpper + visibleLines - 1;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
+
+    /* Display only the visible items within the frame */
+    for (uint8_t i = 0; i < visibleLines; i++)
+    {
+      uint8_t optionIndex = frameUpper + i;
+      if (optionIndex >= totalOptions) break;
+
+      uint8_t yPos = i * HEIGHT12x16;
+      bool isSelected = (optionIndex == selectedOption);
+
+      switch (optionIndex)
+      {
+        case CAR_OPTION_SELECT:
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)"SELECT", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          break;
+
+        case CAR_OPTION_RENAME:
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)"RENAME", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          break;
+
+        case CAR_OPTION_GRID_SEL:
+        {
+          /* Grid select option - show label and right-aligned ON/OFF value */
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)"GRID", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          sprintf(msgStr, "%s", g_storedVar.gridCarSelectEnabled ? "ON" : "OFF");
+          int textWidth = strlen(msgStr) * WIDTH12x16;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          break;
+        }
+
+        case CAR_OPTION_COPY:
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)"COPY", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          break;
+
+        case CAR_OPTION_BACK:
+        {
+          /* Display BACK option based on language */
+          const char* backText = (g_storedVar.language == LANG_NOR) ? "TILBAKE" : "BACK";
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)backText, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          break;
+        }
+      }
+    }
   }
 
   /* If RENAME option was selected, go to renameCar routine */
@@ -1724,6 +1777,8 @@ void showSelectRenameCar() {
     showCopyCarSettings();
     saveEEPROM(g_storedVar);
   }
+  /* If BACK option was selected, simply exit without changes */
+  /* Note: No action needed for BACK, we just fall through to the reset code below */
 
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);

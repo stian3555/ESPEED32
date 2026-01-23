@@ -93,6 +93,7 @@
 #define CAR_OPTION_RENAME   1
 #define CAR_OPTION_GRID_SEL 2
 #define CAR_OPTION_COPY     3
+#define CAR_OPTION_BACK     4
 
 /* Rename Car Mode States */
 #define RENAME_CAR_SELECT_OPTION_MODE   0

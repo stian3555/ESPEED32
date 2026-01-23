@@ -2251,6 +2251,8 @@ void showSettingsMenu() {
   MenuState_enum settingsMenuState = ITEM_SELECTION;
   uint16_t *settingsValuePtr = NULL;
   uint16_t prevLanguage = g_storedVar.language;
+  uint16_t tempLanguage = g_storedVar.language;  /* Temporary language value for editing */
+  bool isEditingLanguage = false;  /* Track if we're editing language */
 
   /* Setup scrolling frame - can show 3 items at a time */
   uint16_t frameUpper = 1;
@@ -2268,6 +2270,11 @@ void showSettingsMenu() {
         }
         /* Check if selected item has a value to edit */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
+          /* Check if this is the LANG item (index 3 in settings menu, 0-based) */
+          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, BACK) */
+            isEditingLanguage = true;
+            tempLanguage = g_storedVar.language;
+          }
           /* Enter value editing mode for selected item */
           settingsMenuState = VALUE_SELECTION;
           g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
@@ -2282,6 +2289,13 @@ void showSettingsMenu() {
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
         g_rotaryEncoder.reset(settingsSelector);
+
+        /* If we were editing language, restore the actual language value */
+        if (isEditingLanguage) {
+          g_storedVar.language = tempLanguage;
+          isEditingLanguage = false;
+        }
+
         saveEEPROM(g_storedVar);  /* Save modified values */
 
         /* If language changed, reinitialize settings menu items */
@@ -2301,7 +2315,12 @@ void showSettingsMenu() {
         settingsSelector = g_rotaryEncoder.readEncoder();
       } else {
         /* Update the value */
-        *settingsValuePtr = g_rotaryEncoder.readEncoder();
+        if (isEditingLanguage) {
+          /* Update temp language value instead of actual language */
+          tempLanguage = g_rotaryEncoder.readEncoder();
+        } else {
+          *settingsValuePtr = g_rotaryEncoder.readEncoder();
+        }
       }
     }
 
@@ -2377,7 +2396,9 @@ void showSettingsMenu() {
           }
           /* LANG menu item */
           else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][3]) == 0) {
-            sprintf(msgStr, "%3s", LANG_LABELS[value]);
+            /* Use tempLanguage when editing, otherwise use actual value */
+            uint16_t displayLang = (isEditingLanguage && isValueSelected) ? tempLanguage : value;
+            sprintf(msgStr, "%3s", LANG_LABELS[displayLang]);
           } else {
             sprintf(msgStr, "%3d", value);
           }

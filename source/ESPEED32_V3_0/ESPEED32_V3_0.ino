@@ -1799,6 +1799,29 @@ void showSelectRenameCar() {
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for brake button press - acts as "back" in CAR menu */
+    static bool brakeBtnInCarMenu = false;
+    static uint32_t lastBrakeBtnCarMenuTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInCarMenu && millis() - lastBrakeBtnCarMenuTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInCarMenu = true;
+        lastBrakeBtnCarMenuTime = millis();
+
+        if (isEditingRaceswp) {
+          /* Cancel RACESWP editing */
+          isEditingRaceswp = false;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(0, 5, false);
+          g_rotaryEncoder.reset(selectedOption);
+        } else {
+          /* Exit CAR menu completely */
+          goto exitCarMenu;
+        }
+      }
+    } else {
+      brakeBtnInCarMenu = false;
+    }
+
     /* Get encoder value if changed */
     if (!isEditingRaceswp) {
       selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
@@ -1886,6 +1909,18 @@ void showSelectRenameCar() {
     g_rotaryEncoder.reset(tempRaceswpValue);
     /* Wait for second click to confirm */
     while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+      /* Check for brake button to cancel editing */
+      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+        /* Cancel editing - restore encoder for option selection */
+        isEditingRaceswp = false;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, 5, false);
+        g_rotaryEncoder.reset(selectedOption);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        break;
+      }
+
       tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : tempRaceswpValue;
 
       /* Redraw the RACESWP option with updated value */
@@ -1900,9 +1935,11 @@ void showSelectRenameCar() {
         obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, OBD_WHITE, 1);
       }
     }
-    /* Save the confirmed value */
-    g_storedVar.gridCarSelectEnabled = tempRaceswpValue;
-    selectedOption = CAR_OPTION_GRID_SEL;  /* Mark as handled */
+    /* Save the confirmed value (only if we didn't cancel) */
+    if (isEditingRaceswp) {
+      g_storedVar.gridCarSelectEnabled = tempRaceswpValue;
+      selectedOption = CAR_OPTION_GRID_SEL;  /* Mark as handled */
+    }
   }
 
   /* If RENAME option was selected, go to renameCar routine */
@@ -2018,6 +2055,7 @@ void showSelectRenameCar() {
   /* If BACK option was selected, simply exit without changes */
   /* Note: No action needed for BACK, we just fall through to the reset code below */
 
+exitCarMenu:
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
   g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
@@ -2345,6 +2383,37 @@ void showSettingsMenu() {
           *settingsValuePtr = g_rotaryEncoder.readEncoder();
         }
       }
+    }
+
+    /* Check for brake button press - acts as "back" in settings menu */
+    static bool brakeBtnInSettings = false;
+    static uint32_t lastBrakeBtnSettingsTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInSettings && millis() - lastBrakeBtnSettingsTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInSettings = true;
+        lastBrakeBtnSettingsTime = millis();
+
+        if (settingsMenuState == VALUE_SELECTION) {
+          /* Go back to item selection */
+          settingsMenuState = ITEM_SELECTION;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+
+          /* If we were editing language, restore the actual language value */
+          if (isEditingLanguage) {
+            g_storedVar.language = tempLanguage;
+            isEditingLanguage = false;
+          }
+
+          saveEEPROM(g_storedVar);
+        } else {
+          /* In ITEM_SELECTION - exit settings menu completely */
+          break;
+        }
+      }
+    } else {
+      brakeBtnInSettings = false;
     }
 
     /* Check for long press to exit settings menu */

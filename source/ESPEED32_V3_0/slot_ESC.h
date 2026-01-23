@@ -59,6 +59,7 @@
 #define ESC_PERIOD_US   500     /* ESC control loop period [µs] */
 #define SCREENSAVER_TIMEOUT_DEFAULT  20  /* [s] Default screensaver timeout */
 #define SCREENSAVER_TIMEOUT_MAX      120 /* [s] Maximum screensaver timeout */
+#define SCREENSAVER_WAKEUP_THRESHOLD 30  /* [%] Throttle threshold to wake from screensaver */
 
 /* Button Press Timing */
 #define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
@@ -78,6 +79,7 @@
 /* Menu Options */
 #define CAR_OPTION_SELECT   0
 #define CAR_OPTION_RENAME   1
+#define CAR_OPTION_GRID_SEL 2
 
 /* Rename Car Mode States */
 #define RENAME_CAR_SELECT_OPTION_MODE   0
@@ -157,6 +159,7 @@ typedef struct {
   uint16_t viewMode;                        /* View mode: LIST or GRID */
   uint16_t screensaverTimeout;              /* [s] Screensaver timeout in seconds */
   uint16_t soundMode;                       /* Sound mode: OFF, BOOT, or ALL */
+  uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
 } StoredVar_type;
 
 /**

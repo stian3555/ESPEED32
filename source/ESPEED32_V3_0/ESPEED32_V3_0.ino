@@ -262,7 +262,8 @@ void Task1code(void *pvParameters) {
         static bool encoderBoundariesSet = false;
         if (!encoderBoundariesSet) {
           if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-            g_rotaryEncoder.setBoundaries(1, 4, false);  /* 4 grid items */
+            uint8_t gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* 5 items if car select enabled, else 4 */
+            g_rotaryEncoder.setBoundaries(1, gridItems, false);
           } else {
             g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
           }
@@ -294,7 +295,8 @@ void Task1code(void *pvParameters) {
 
             /* Update encoder boundaries for new view mode */
             if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-              g_rotaryEncoder.setBoundaries(1, 4, false);  /* 4 grid items */
+              uint8_t gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* 5 items if car select enabled, else 4 */
+              g_rotaryEncoder.setBoundaries(1, gridItems, false);
               g_rotaryEncoder.reset(1);  /* Reset to first grid item */
             } else {
               g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
@@ -503,6 +505,7 @@ void initStoredVariables() {
   g_storedVar.viewMode = VIEW_MODE_LIST;
   g_storedVar.screensaverTimeout = SCREENSAVER_TIMEOUT_DEFAULT;
   g_storedVar.soundMode = SOUND_MODE_DEFAULT;
+  g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
 }
 
 
@@ -681,14 +684,34 @@ void showScreenCalibration(int16_t adcRaw)
  * @details Common function used by both main menu and screensaver
  */
 void displayStatusLine() {
+  static uint16_t lastCarNum = 999;
+
   /* Throttle % - far left (position 0) */
   sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
 
-  /* Car ID - centered */
+  /* Car ID - centered with proper clearing and highlighting */
+  /* Check if car changed to force clear */
+  if (g_storedVar.selectedCarNumber != lastCarNum) {
+    /* Clear the car name area completely (max 4 chars × 6px = 24px wide, centered = 52px start) */
+    obdWriteString(&g_obd, 0, 40, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
+    lastCarNum = g_storedVar.selectedCarNumber;
+  }
+
   sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
   uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - carNameWidth) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+
+  /* Determine if CAR is selected in grid mode */
+  bool carSelected = false;
+  if (g_storedVar.viewMode == VIEW_MODE_GRID && g_storedVar.gridCarSelectEnabled) {
+    /* Check if we're on grid item 4 (CAR) - use global encoder position */
+    if (g_encoderMainSelector == 5) {  /* Encoder is 1-based, item 4 = encoder position 5 */
+      carSelected = true;
+    }
+  }
+
+  uint8_t carColor = carSelected ? OBD_WHITE : OBD_BLACK;
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - carNameWidth) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, carColor, 1);
 
   /* Update dualCurve flag but don't display 'D' indicator */
   if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {
@@ -717,7 +740,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   static bool lastIsEditing = false;
 
   /* Vertical layout - label above value, centered */
-  /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE */
+  /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR (if enabled) */
   int col1_center = 32;   /* Center of left half (128/4 = 32) */
   int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
 
@@ -738,6 +761,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   uint8_t colorSensi = (selectedItem == 1) ? OBD_WHITE : OBD_BLACK;
   uint8_t colorAntis = (selectedItem == 2) ? OBD_WHITE : OBD_BLACK;
   uint8_t colorCurve = (selectedItem == 3) ? OBD_WHITE : OBD_BLACK;
+  uint8_t colorCar = (selectedItem == 4) ? OBD_WHITE : OBD_BLACK;
 
   /* BRAKE - left column */
   if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
@@ -780,6 +804,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   }
 
   /* Note: Car name, voltage, and LIMITER warning are displayed by displayStatusLine() */
+  /* CAR selection (item 4) uses the existing car name display in status line when enabled */
 }
 
 /**
@@ -854,7 +879,7 @@ void printMainMenu(MenuState_enum currMenuState)
   if (g_storedVar.viewMode == VIEW_MODE_GRID)
   {
     /* GRID mode: always show race mode with editing capability */
-    /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE */
+    /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR (if enabled) */
     static uint8_t gridSelectedItem = 0;  /* Currently selected grid item */
     static MenuState_enum gridMenuState = ITEM_SELECTION;  /* Grid edit state */
 
@@ -864,9 +889,10 @@ void printMainMenu(MenuState_enum currMenuState)
       screensaverActive = false;
     }
 
-    /* Map encoder position to grid item (0-3) */
+    /* Map encoder position to grid item (0-4) */
+    uint8_t maxGridItem = g_storedVar.gridCarSelectEnabled ? 5 : 4;
     if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
-    if (g_encoderMainSelector > 4) g_encoderMainSelector = 4;
+    if (g_encoderMainSelector > maxGridItem) g_encoderMainSelector = maxGridItem;
     gridSelectedItem = g_encoderMainSelector - 1;
 
     /* Determine if we're editing based on menu state */
@@ -885,21 +911,38 @@ void printMainMenu(MenuState_enum currMenuState)
     }
   }
   /* LIST mode: show screensaver or menu */
-  else if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL) && g_escVar.trigger_norm == 0)
+  else if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL))
   {
-    /* Show screensaver if idle and not driving */
-    if (!screensaverActive) {
-      screensaverActive = true;
-      showScreensaver();
+    /* Calculate throttle percentage */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
+    /* Show screensaver only once when timeout is reached and throttle below threshold */
+    if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (!screensaverActive) {
+        screensaverActive = true;
+        showScreensaver();
+      }
+      /* Screensaver is active - do nothing, let it display without refreshing */
+    }
+    /* Wake from screensaver if throttle exceeds threshold */
+    else if (screensaverActive) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      screensaverActive = false;
+      g_lastEncoderInteraction = millis();  /* Reset timeout so screensaver doesn't reappear immediately */
+    }
+    /* Throttle is above threshold but screensaver not active - update timeout */
+    else {
+      g_lastEncoderInteraction = millis();  /* Keep resetting timeout while throttle is active */
     }
   }
   else
   {
+    /* Not in screensaver timeout - show normal menu */
     if (screensaverActive) {
       obdFill(&g_obd, OBD_WHITE, 1);
       screensaverActive = false;
     }
-    
+
     for (uint8_t i = 0; i < g_mainMenu.lines; i++)
     {
       /* Print item name */
@@ -1154,7 +1197,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
 
       /* Map grid item to parameter pointer and limits */
-      /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE */
+      /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR */
       switch (gridItem) {
         case 0:  /* BRAKE */
           g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].brake;
@@ -1175,6 +1218,11 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
           g_encoderSelectedValuePtr = &g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
           selectedParamMaxValue = THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE;
           selectedParamMinValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
+          break;
+        case 4:  /* CAR - select different car */
+          g_encoderSelectedValuePtr = &g_storedVar.selectedCarNumber;
+          selectedParamMaxValue = CAR_MAX_COUNT - 1;
+          selectedParamMinValue = 0;
           break;
         default:
           return ITEM_SELECTION;
@@ -1214,7 +1262,8 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
 
     /* Set boundaries based on view mode */
     if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-      g_rotaryEncoder.setBoundaries(1, 4, false);  /* 4 grid items */
+      uint8_t gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* 5 items if car select enabled, else 4 */
+      g_rotaryEncoder.setBoundaries(1, gridItems, false);
     } else {
       g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Set the encoder boundaries to the menu boundaries */
     }
@@ -1307,7 +1356,7 @@ void showSelectRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 1, false); /* Boundaries are [0, 1] because there are only two options */
+  g_rotaryEncoder.setBoundaries(0, 2, false); /* Boundaries are [0, 2] because there are three options */
   g_rotaryEncoder.reset(selectedOption);
 
   /* Print the "SELECT AN OPTION" */
@@ -1318,21 +1367,30 @@ void showSelectRenameCar() {
   {
     /* Get encoder value if changed */
     selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
-    /* Print the two options */
+    /* Print the three options */
     obdWriteString(&g_obd, 0, 0, 0 * HEIGHT12x16, (char *)"SELECT", FONT_12x16, (selectedOption == CAR_OPTION_SELECT) ? OBD_WHITE : OBD_BLACK, 1);
     obdWriteString(&g_obd, 0, 0, 1 * HEIGHT12x16, (char *)"RENAME", FONT_12x16, (selectedOption == CAR_OPTION_RENAME) ? OBD_WHITE : OBD_BLACK, 1);
+    /* Grid select option - show ON/OFF based on current state */
+    sprintf(msgStr, "GRID:%s", g_storedVar.gridCarSelectEnabled ? "ON " : "OFF");
+    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT12x16, msgStr, FONT_12x16, (selectedOption == CAR_OPTION_GRID_SEL) ? OBD_WHITE : OBD_BLACK, 1);
   }
 
   /* If RENAME option was selected, go to renameCar routine */
-  if (selectedOption == CAR_OPTION_RENAME) 
+  if (selectedOption == CAR_OPTION_RENAME)
   {
     showRenameCar();
     saveEEPROM(g_storedVar);
   }
   /* If SELECT option was selected, go to showCarSelection routine */
-  else if (selectedOption == CAR_OPTION_SELECT) 
+  else if (selectedOption == CAR_OPTION_SELECT)
   {
     showCarSelection();
+    saveEEPROM(g_storedVar);
+  }
+  /* If GRID option was selected, toggle the grid car select setting */
+  else if (selectedOption == CAR_OPTION_GRID_SEL)
+  {
+    g_storedVar.gridCarSelectEnabled = !g_storedVar.gridCarSelectEnabled;
     saveEEPROM(g_storedVar);
   }
 

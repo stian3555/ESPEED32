@@ -25,11 +25,11 @@ const char* MENU_NAMES[][9] = {
 };
 
 /* Settings menu item names: [language][item] */
-/* Order: SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK */
+/* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK */
 const char* SETTINGS_MENU_NAMES[][7] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "SKRIFT", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "FSIZE", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "FSIZE", "BACK"}
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -105,7 +105,7 @@ const char* MENU_NAMES_PASCAL[][9] = {
 
 /* Settings menu item names - Pascal Case: [language][item] */
 const char* SETTINGS_MENU_NAMES_PASCAL[][7] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Skrift", "Tilbake"},
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Tilbake"},
   /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Back"},
   /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Back"}
 };
@@ -558,27 +558,14 @@ void Task1code(void *pvParameters) {
               /* Restore original value (cancel changes) */
               if (g_encoderSelectedValuePtr != NULL) {
                 *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
+                g_encoderSelectedValuePtr = NULL;  /* Clear pointer after use */
               }
 
               menuState = ITEM_SELECTION;
               g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-
-              /* Set boundaries based on view mode */
-              if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-                uint8_t gridItems;
-                if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
-                  gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;
-                } else {
-                  gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;
-                }
-                g_rotaryEncoder.setBoundaries(1, gridItems, false);
-              } else {
-                g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
-              }
-
+              g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
               g_rotaryEncoder.reset(g_encoderMainSelector);
-              /* Reinitialize menu items to ensure correct display after cancel */
-              initMenuItems();
+              g_escVar.encoderPos = g_encoderMainSelector;
               /* Clear car editing flag */
               g_isEditingCarSelection = false;
               /* Do NOT save to EEPROM - we're canceling the change */
@@ -890,7 +877,7 @@ void initMenuItems() {
 
 /**
  * Initialize the settings submenu items
- * Order: SCRSV, SOUND, VIEW, LANG, TCASE, BACK
+ * Order: SCRSV, SOUND, VIEW, LANG, CASE, BACK
  */
 void initSettingsMenuItems() {
   int i = 0;
@@ -928,7 +915,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* TCASE/STYL */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* CASE/STYL */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.textCase;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -936,7 +923,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = TEXT_CASE_UPPER;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* FSIZE/SKRIFT */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* FSIZE/STRL */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.listFontSize;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1788,25 +1775,36 @@ void showCarSelection() {
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
 
+  /* Save original value for cancel */
+  uint16_t originalCarNumber = g_storedVar.selectedCarNumber;
+
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
   g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
   g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
 
   /* Exit car selection when encoder is clicked */
-  while (!g_rotaryEncoder.isEncoderButtonClicked()) 
+  while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for brake button press - cancel and exit */
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      g_storedVar.selectedCarNumber = originalCarNumber;  /* Restore original */
+      obdFill(&g_obd, OBD_WHITE, 1);
+      return;
+    }
+
     /* Get encoder value if changed */
     g_storedVar.selectedCarNumber = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : g_storedVar.selectedCarNumber;
-    
+
     /* If encoder move out of frame, adjust frame */
-    if (g_storedVar.selectedCarNumber > frameLower) 
+    if (g_storedVar.selectedCarNumber > frameLower)
     {
       frameLower = g_storedVar.selectedCarNumber;
       frameUpper = frameLower - g_carMenu.lines + 1;
       obdFill(&g_obd, OBD_WHITE, 1);
-    } 
-    else if (g_storedVar.selectedCarNumber < frameUpper) 
+    }
+    else if (g_storedVar.selectedCarNumber < frameUpper)
     {
       frameUpper = g_storedVar.selectedCarNumber;
       frameLower = frameUpper + g_carMenu.lines - 1;
@@ -1814,11 +1812,11 @@ void showCarSelection() {
     }
 
     /* Print car menu */
-    for (uint8_t i = 0; i < g_carMenu.lines; i++) 
+    for (uint8_t i = 0; i < g_carMenu.lines; i++)
     {
       /* Print the item (car) name */
       obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_carMenu.item[frameUpper + i].name, FONT_12x16, (g_storedVar.selectedCarNumber - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
-      if (g_carMenu.item[frameUpper + i].value != ITEM_NO_VALUE) 
+      if (g_carMenu.item[frameUpper + i].value != ITEM_NO_VALUE)
       {
         /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
         sprintf(msgStr, "%2d", *(uint16_t *)(g_carMenu.item[frameUpper + i].value));
@@ -1858,6 +1856,13 @@ void showCopyCarSettings() {
   /* Select source car */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for brake button press - cancel and exit */
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      obdFill(&g_obd, OBD_WHITE, 1);
+      return;
+    }
+
     /* Get encoder value if changed */
     sourceCar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : sourceCar;
 
@@ -1899,7 +1904,8 @@ void showCopyCarSettings() {
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
 
-  /* Reset encoder for destination car selection */
+  /* Reset encoder for destination car selection (CAR_MAX_COUNT = ALL option) */
+  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT, false);  /* 0-19 = cars, 20 = ALL */
   g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
   destCar = g_storedVar.selectedCarNumber;
 
@@ -1907,9 +1913,19 @@ void showCopyCarSettings() {
   frameUpper = 1;
   frameLower = g_carMenu.lines;
 
+  uint8_t visibleLines = g_carMenu.lines;
+  const uint16_t ALL_CARS_OPTION = CAR_MAX_COUNT;  /* Index for "ALL" option */
+
   /* Select destination car */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for brake button press - cancel and exit */
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      obdFill(&g_obd, OBD_WHITE, 1);
+      return;
+    }
+
     /* Get encoder value if changed */
     destCar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : destCar;
 
@@ -1917,26 +1933,34 @@ void showCopyCarSettings() {
     if (destCar > frameLower)
     {
       frameLower = destCar;
-      frameUpper = frameLower - g_carMenu.lines + 1;
+      frameUpper = frameLower - visibleLines + 1;
       obdFill(&g_obd, OBD_WHITE, 1);
     }
     else if (destCar < frameUpper)
     {
       frameUpper = destCar;
-      frameLower = frameUpper + g_carMenu.lines - 1;
+      frameLower = frameUpper + visibleLines - 1;
       obdFill(&g_obd, OBD_WHITE, 1);
     }
 
     /* Print car menu */
-    for (uint8_t i = 0; i < g_carMenu.lines; i++)
+    for (uint8_t i = 0; i < visibleLines; i++)
     {
-      /* Print the item (car) name */
-      obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_carMenu.item[frameUpper + i].name, FONT_12x16, (destCar - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
-      if (g_carMenu.item[frameUpper + i].value != ITEM_NO_VALUE)
-      {
-        /* Print the item value (car number) */
-        sprintf(msgStr, "%2d", *(uint16_t *)(g_carMenu.item[frameUpper + i].value));
-        obdWriteString(&g_obd, 0, OLED_WIDTH - 24, i * HEIGHT12x16, msgStr, FONT_12x16, OBD_BLACK, 1);
+      uint16_t itemIndex = frameUpper + i;
+      bool isSelected = (destCar == itemIndex);
+
+      if (itemIndex == ALL_CARS_OPTION) {
+        /* Print "ALL" option */
+        obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, (char *)"ALL", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+      } else if (itemIndex < CAR_MAX_COUNT) {
+        /* Print the item (car) name */
+        obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_carMenu.item[itemIndex].name, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+        if (g_carMenu.item[itemIndex].value != ITEM_NO_VALUE)
+        {
+          /* Print the item value (car number) */
+          sprintf(msgStr, "%2d", *(uint16_t *)(g_carMenu.item[itemIndex].value));
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 24, i * HEIGHT12x16, msgStr, FONT_12x16, OBD_BLACK, 1);
+        }
       }
     }
 
@@ -1944,9 +1968,28 @@ void showCopyCarSettings() {
     obdWriteString(&g_obd, 0, 34, OLED_HEIGHT - HEIGHT8x8, (char *)"-COPY TO:-", FONT_6x8, OBD_WHITE, 1);
   }
 
-  /* Copy all car parameters except carName and carNumber */
-  if (sourceCar != destCar)
-  {
+  /* Copy car parameters */
+  if (destCar == ALL_CARS_OPTION) {
+    /* Copy to ALL cars (except source car) */
+    for (uint16_t i = 0; i < CAR_MAX_COUNT; i++) {
+      if (i != sourceCar) {
+        g_storedVar.carParam[i].minSpeed = g_storedVar.carParam[sourceCar].minSpeed;
+        g_storedVar.carParam[i].brake = g_storedVar.carParam[sourceCar].brake;
+        g_storedVar.carParam[i].dragBrake = g_storedVar.carParam[sourceCar].dragBrake;
+        g_storedVar.carParam[i].maxSpeed = g_storedVar.carParam[sourceCar].maxSpeed;
+        g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = g_storedVar.carParam[sourceCar].throttleCurveVertex.inputThrottle;
+        g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = g_storedVar.carParam[sourceCar].throttleCurveVertex.curveSpeedDiff;
+        g_storedVar.carParam[i].antiSpin = g_storedVar.carParam[sourceCar].antiSpin;
+        g_storedVar.carParam[i].freqPWM = g_storedVar.carParam[sourceCar].freqPWM;
+        g_storedVar.carParam[i].brakeButtonReduction = g_storedVar.carParam[sourceCar].brakeButtonReduction;
+      }
+    }
+    /* Show confirmation message */
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 0, 24, (char *)"COPIED ALL", FONT_12x16, OBD_BLACK, 1);
+    delay(1000);
+  } else if (sourceCar != destCar) {
+    /* Copy to single car */
     g_storedVar.carParam[destCar].minSpeed = g_storedVar.carParam[sourceCar].minSpeed;
     g_storedVar.carParam[destCar].brake = g_storedVar.carParam[sourceCar].brake;
     g_storedVar.carParam[destCar].dragBrake = g_storedVar.carParam[sourceCar].dragBrake;
@@ -2185,7 +2228,7 @@ void showSelectRenameCar() {
     const char* confirmText1 = (lang == LANG_NOR) ? "NULLSTILL ALLE" : "RESET ALL CARS";
     const char* confirmText2 = (lang == LANG_NOR) ? "BILER?" : "?";
     const char* confirmText3 = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
-    const char* cancelText = (lang == LANG_NOR) ? "(BREMSEKNAPP = AVBRYT)" : "(BRAKE BUTTON = CANCEL)";
+    const char* cancelText = (lang == LANG_NOR) ? "BREMSEKNAPP=AVBRYT" : "BRAKE BUTTON=CANCEL";
 
     obdWriteString(&g_obd, 0, 10, 5, (char *)confirmText1, FONT_8x8, OBD_BLACK, 1);
     obdWriteString(&g_obd, 0, 10, 15, (char *)confirmText2, FONT_8x8, OBD_BLACK, 1);
@@ -2315,8 +2358,16 @@ void showRenameCar() {
   obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
 
   /* Exit car renaming when encoder is clicked AND CONFIRM is selected */
-  while (1) 
+  while (1)
   {
+    /* Check for brake button press - cancel and exit */
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      /* Don't save changes - just exit */
+      obdFill(&g_obd, OBD_WHITE, 1);
+      return;
+    }
+
     /* Get encoder value if changed */
     /* Change selectedOption if in RENAME_CAR_SELECT_OPTION_MODE */
     if (mode == RENAME_CAR_SELECT_OPTION_MODE) 
@@ -2575,19 +2626,19 @@ void showSettingsMenu() {
         /* Check if selected item has a value to edit */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
           /* Check if this is the LANG item (index 3 in settings menu, 0-based) */
-          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK) */
+          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK) */
             isEditingLanguage = true;
             tempLanguage = g_storedVar.language;
             originalSettingsValue = g_storedVar.language;
           }
-          /* Check if this is the TCASE item */
-          else if (settingsSelector == 5) {  /* TCASE is 5th item (SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK) */
+          /* Check if this is the CASE item */
+          else if (settingsSelector == 5) {  /* CASE is 5th item (SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK) */
             isEditingTextCase = true;
             tempTextCase = g_storedVar.textCase;
             originalSettingsValue = g_storedVar.textCase;
           }
           /* Check if this is the FSIZE item */
-          else if (settingsSelector == 6) {  /* FSIZE is 6th item (SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK) */
+          else if (settingsSelector == 6) {  /* FSIZE is 6th item (SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK) */
             isEditingFontSize = true;
             tempFontSize = g_storedVar.listFontSize;
             originalSettingsValue = g_storedVar.listFontSize;
@@ -2750,12 +2801,10 @@ void showSettingsMenu() {
       }
     }
 
-    /* Determine font size and dimensions based on setting */
-    /* Use actual setting when not editing, or temp value when editing font size */
-    uint8_t currentFontSize = isEditingFontSize ? tempFontSize : g_storedVar.listFontSize;
-    uint8_t menuFont = (currentFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
-    uint8_t charWidth = (currentFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
-    uint8_t lineHeight = (currentFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
+    /* Determine font size and dimensions based on actual saved setting (not temp value) */
+    uint8_t menuFont = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
+    uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
+    uint8_t lineHeight = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
 
     /* Display settings menu items */
     for (uint8_t i = 0; i < visibleLines; i++) {
@@ -2804,7 +2853,7 @@ void showSettingsMenu() {
             uint16_t displayLang = (isEditingLanguage && isValueSelected) ? tempLanguage : value;
             sprintf(msgStr, "%3s", LANG_LABELS[displayLang]);
           }
-          /* TCASE menu item */
+          /* CASE menu item */
           else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 4)) == 0) {
             /* Use tempTextCase when editing, otherwise use actual value */
             uint16_t displayTextCase = (isEditingTextCase && isValueSelected) ? tempTextCase : value;

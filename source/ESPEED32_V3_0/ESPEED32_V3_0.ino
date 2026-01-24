@@ -338,8 +338,8 @@ void Task1code(void *pvParameters) {
     g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
     g_escVar.motorCurrent_mA = HAL_ReadMotorCurrent();
 
-    /* Update selected car if initialization complete and not currently editing CAR selection */
-    if (g_currState != INIT && !g_isEditingCarSelection) {
+    /* Update selected car if initialization complete */
+    if (g_currState != INIT) {
       g_carSel = g_storedVar.selectedCarNumber;
     }
 
@@ -1052,18 +1052,14 @@ void displayStatusLine() {
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
 
   /* Car ID - centered with proper clearing and highlighting */
-  /* When editing car selection, show the car being scrolled to (selectedCarNumber), not g_carSel */
-  uint16_t displayCarIndex = g_isEditingCarSelection ? g_storedVar.selectedCarNumber : g_carSel;
-  sprintf(msgStr, "%s", g_storedVar.carParam[displayCarIndex].carName);
+  sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
   uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
 
-  /* Clear car name area when car number changes to prevent flicker */
-  static uint16_t lastDisplayCarIndex = 999;
-  if (displayCarIndex != lastDisplayCarIndex) {
+  /* Clear car name area when car changes to prevent flicker */
+  if (g_carSel != lastCarNum) {
     /* Clear centered area (48px = 8 chars × 6px) to handle varying name lengths */
     obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
-    lastDisplayCarIndex = displayCarIndex;
-    lastCarNum = g_storedVar.selectedCarNumber;
+    lastCarNum = g_carSel;
   }
 
   /* Determine if CAR is selected in grid mode */
@@ -1109,17 +1105,19 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   static uint16_t lastSensi = 999;
   static uint8_t lastSelectedItem = 255;
   static bool lastIsEditing = false;
+  static uint16_t lastCarSel = 999;
 
   /* Simple mode: 0=BRAKE, 1=SENSI, 2=CAR (if enabled) */
   int col1_center = 32;   /* Center of left half (128/4 = 32) */
   int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
 
-  /* Check if selection changed - force update of ALL items */
-  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing) {
+  /* Check if selection or car changed - force update of ALL items */
+  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
     lastBrake = 999;
     lastSensi = 999;
     lastSelectedItem = selectedItem;
     lastIsEditing = isEditing;
+    lastCarSel = g_carSel;
   }
 
   /* Determine colors based on selection state */
@@ -1167,14 +1165,15 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   static uint16_t lastCurve = 999;
   static uint8_t lastSelectedItem = 255;
   static bool lastIsEditing = false;
+  static uint16_t lastCarSel = 999;
 
   /* Vertical layout - label above value, centered */
   /* Grid items: 0=BRAKE, 1=SENSI, 2=ANTIS, 3=CURVE, 4=CAR (if enabled) */
   int col1_center = 32;   /* Center of left half (128/4 = 32) */
   int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
 
-  /* Check if selection changed - force update of ALL items */
-  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing) {
+  /* Check if selection or car changed - force update of ALL items */
+  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
     /* Force redraw of all items when selection changes */
     lastBrake = 999;
     lastSensi = 999;
@@ -1183,6 +1182,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
     lastSelectedItem = selectedItem;
     lastIsEditing = isEditing;
+    lastCarSel = g_carSel;
   }
 
   /* Determine colors based on selection state */

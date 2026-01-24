@@ -1375,33 +1375,31 @@ void printMainMenu(MenuState_enum currMenuState)
     }
   }
   /* LIST mode: show screensaver or menu */
-  else if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL))
-  {
-    /* Calculate throttle percentage */
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+  /* Calculate throttle percentage for screensaver logic */
+  uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Show screensaver only once when timeout is reached and throttle below threshold */
-    if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-      if (!screensaverActive) {
-        screensaverActive = true;
-        showScreensaver();
-      }
-      /* Screensaver is active - do nothing, let it display without refreshing */
-    }
-    /* Wake from screensaver if throttle exceeds threshold */
-    else if (screensaverActive) {
+  /* Keep resetting timeout while throttle is above threshold (prevents screensaver activation) */
+  if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD) {
+    if (screensaverActive) {
+      /* Wake from screensaver */
       obdFill(&g_obd, OBD_WHITE, 1);
       screensaverActive = false;
-      g_lastEncoderInteraction = millis();  /* Reset timeout so screensaver doesn't reappear immediately */
     }
-    /* Throttle is above threshold but screensaver not active - update timeout */
-    else {
-      g_lastEncoderInteraction = millis();  /* Keep resetting timeout while throttle is active */
-    }
+    g_lastEncoderInteraction = millis();
   }
-  else
+
+  if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL))
   {
-    /* Not in screensaver timeout - show normal menu */
+    /* Timeout reached and throttle below threshold - show screensaver */
+    if (!screensaverActive) {
+      screensaverActive = true;
+      showScreensaver();
+    }
+    /* Screensaver is active - don't draw menu */
+  }
+  else if (!screensaverActive)
+  {
+    /* Not in screensaver - show normal menu */
     if (screensaverActive) {
       obdFill(&g_obd, OBD_WHITE, 1);
       screensaverActive = false;

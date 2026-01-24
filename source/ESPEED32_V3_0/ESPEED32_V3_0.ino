@@ -1378,13 +1378,24 @@ void printMainMenu(MenuState_enum currMenuState)
   /* Calculate throttle percentage for screensaver logic */
   uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-  /* Keep resetting timeout while throttle is above threshold (prevents screensaver activation) */
-  if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD) {
-    if (screensaverActive) {
+  /* Track encoder position for screensaver wake-up */
+  static uint16_t screensaverEncoderPos = 0;
+
+  /* Check for any wake-up input (throttle, encoder change, or button press) */
+  if (screensaverActive) {
+    uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+    if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+        currentEncoderPos != screensaverEncoderPos ||
+        digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       /* Wake from screensaver */
       obdFill(&g_obd, OBD_WHITE, 1);
       screensaverActive = false;
+      g_lastEncoderInteraction = millis();
     }
+  }
+
+  /* Keep resetting timeout while throttle is above threshold (prevents screensaver activation) */
+  if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD) {
     g_lastEncoderInteraction = millis();
   }
 
@@ -1393,6 +1404,7 @@ void printMainMenu(MenuState_enum currMenuState)
     /* Timeout reached and throttle below threshold - show screensaver */
     if (!screensaverActive) {
       screensaverActive = true;
+      screensaverEncoderPos = g_rotaryEncoder.readEncoder();  /* Save position when entering screensaver */
       showScreensaver();
     }
     /* Screensaver is active - don't draw menu */
@@ -1400,11 +1412,6 @@ void printMainMenu(MenuState_enum currMenuState)
   else if (!screensaverActive)
   {
     /* Not in screensaver - show normal menu */
-    if (screensaverActive) {
-      obdFill(&g_obd, OBD_WHITE, 1);
-      screensaverActive = false;
-    }
-
     /* Determine font size and dimensions based on setting */
     uint8_t menuFont = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
     uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
@@ -1819,6 +1826,7 @@ void showCarSelection() {
   /* Screensaver support */
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
 
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
@@ -1826,30 +1834,36 @@ void showCarSelection() {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for screensaver timeout */
-    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-        if (!screensaverActive) {
-          screensaverActive = true;
-          showScreensaver();
-        }
-        continue;  /* Don't draw menu while screensaver is active */
-      } else if (screensaverActive) {
-        /* Wake from screensaver - throttle exceeded threshold */
+    /* Check for any wake-up input first (encoder, button, throttle) */
+    bool wakeUpTriggered = false;
+    if (screensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUpTriggered = true;
         screensaverActive = false;
         lastInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
+    /* Check for screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);  /* Small delay to prevent watchdog timeout */
+        continue;  /* Don't draw menu while screensaver is active */
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-        continue;
-      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       g_storedVar.selectedCarNumber = originalCarNumber;  /* Restore original */
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -1859,10 +1873,6 @@ void showCarSelection() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
       g_storedVar.selectedCarNumber = g_rotaryEncoder.readEncoder();
     }
 
@@ -1919,6 +1929,7 @@ void showCopyCarSettings() {
   /* Screensaver support */
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
 
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -1932,30 +1943,36 @@ void showCopyCarSettings() {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for screensaver timeout */
-    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-        if (!screensaverActive) {
-          screensaverActive = true;
-          showScreensaver();
-        }
-        continue;  /* Don't draw menu while screensaver is active */
-      } else if (screensaverActive) {
-        /* Wake from screensaver - throttle exceeded threshold */
+    /* Check for any wake-up input first (encoder, button, throttle) */
+    bool wakeUpTriggered = false;
+    if (screensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUpTriggered = true;
         screensaverActive = false;
         lastInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
+    /* Check for screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);  /* Small delay to prevent watchdog timeout */
+        continue;  /* Don't draw menu while screensaver is active */
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-        continue;
-      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       obdFill(&g_obd, OBD_WHITE, 1);
       return;
@@ -1964,10 +1981,6 @@ void showCopyCarSettings() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
       sourceCar = g_rotaryEncoder.readEncoder();
     }
 
@@ -2031,30 +2044,36 @@ void showCopyCarSettings() {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for screensaver timeout */
-    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-        if (!screensaverActive) {
-          screensaverActive = true;
-          showScreensaver();
-        }
-        continue;  /* Don't draw menu while screensaver is active */
-      } else if (screensaverActive) {
-        /* Wake from screensaver - throttle exceeded threshold */
+    /* Check for any wake-up input first (encoder, button, throttle) */
+    bool wakeUpTriggered = false;
+    if (screensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUpTriggered = true;
         screensaverActive = false;
         lastInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
+    /* Check for screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);  /* Small delay to prevent watchdog timeout */
+        continue;  /* Don't draw menu while screensaver is active */
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-        continue;
-      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       obdFill(&g_obd, OBD_WHITE, 1);
       return;
@@ -2063,10 +2082,6 @@ void showCopyCarSettings() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
       destCar = g_rotaryEncoder.readEncoder();
     }
 
@@ -2186,6 +2201,7 @@ void showSelectRenameCar() {
   /* Screensaver support */
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
 
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
@@ -2193,19 +2209,30 @@ void showSelectRenameCar() {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for screensaver timeout */
-    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-        if (!screensaverActive) {
-          screensaverActive = true;
-          showScreensaver();
-        }
-        continue;  /* Don't draw menu while screensaver is active */
-      } else if (screensaverActive) {
-        /* Wake from screensaver - throttle exceeded threshold */
+    /* Check for any wake-up input first (encoder, button, throttle) */
+    bool wakeUpTriggered = false;
+    if (screensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUpTriggered = true;
         screensaverActive = false;
         lastInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
+      }
+    }
+
+    /* Check for screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);  /* Small delay to prevent watchdog timeout */
+        continue;  /* Don't draw menu while screensaver is active */
       }
     }
 
@@ -2217,11 +2244,6 @@ void showSelectRenameCar() {
         brakeBtnInCarMenu = true;
         lastBrakeBtnCarMenuTime = millis();
         lastInteraction = millis();
-        if (screensaverActive) {
-          screensaverActive = false;
-          obdFill(&g_obd, OBD_WHITE, 1);
-          continue;
-        }
 
         if (isEditingRaceswp) {
           /* Cancel RACESWP editing */
@@ -2241,10 +2263,6 @@ void showSelectRenameCar() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
       if (!isEditingRaceswp) {
         selectedOption = g_rotaryEncoder.readEncoder();
       } else {
@@ -2537,6 +2555,7 @@ void showRenameCar() {
   /* Screensaver support */
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
 
   /* Exit car renaming when encoder is clicked AND CONFIRM is selected */
   while (1)
@@ -2544,16 +2563,14 @@ void showRenameCar() {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for screensaver timeout */
-    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-        if (!screensaverActive) {
-          screensaverActive = true;
-          showScreensaver();
-        }
-        continue;  /* Don't draw menu while screensaver is active */
-      } else if (screensaverActive) {
-        /* Wake from screensaver - throttle exceeded threshold */
+    /* Check for any wake-up input first (encoder, button, throttle) */
+    bool wakeUpTriggered = false;
+    if (screensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUpTriggered = true;
         screensaverActive = false;
         lastInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
@@ -2569,23 +2586,22 @@ void showRenameCar() {
       }
     }
 
+    /* Check for screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);  /* Small delay to prevent watchdog timeout */
+        continue;  /* Don't draw menu while screensaver is active */
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-        /* Redraw static elements */
-        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
-        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
-        for (uint8_t j = 0; j < 8; j++) {
-          obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
-        }
-        obdDrawLine(&g_obd, 72, 22, 80, 22, OBD_BLACK, 1);
-        obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
-        obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
-        continue;
-      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       /* Don't save changes - just exit */
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -2595,19 +2611,6 @@ void showRenameCar() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      if (screensaverActive) {
-        screensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-        /* Redraw static elements */
-        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
-        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
-        for (uint8_t j = 0; j < 8; j++) {
-          obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
-        }
-        obdDrawLine(&g_obd, 72, 22, 80, 22, OBD_BLACK, 1);
-        obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
-        obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
-      }
       /* Change selectedOption if in RENAME_CAR_SELECT_OPTION_MODE */
       if (mode == RENAME_CAR_SELECT_OPTION_MODE) {
         selectedOption = g_rotaryEncoder.readEncoder();
@@ -2868,35 +2871,42 @@ void showSettingsMenu() {
   /* Settings menu loop */
   uint32_t lastSettingsInteraction = millis();
   bool settingsScreensaverActive = false;
+  uint16_t settingsScreensaverEncoderPos = 0;
 
   while (true) {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for screensaver timeout */
-    if (g_storedVar.screensaverTimeout > 0 && millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
-        if (!settingsScreensaverActive) {
-          settingsScreensaverActive = true;
-          showScreensaver();
-        }
-        continue;  /* Don't draw menu while screensaver is active */
-      } else if (settingsScreensaverActive) {
-        /* Wake from screensaver - throttle exceeded threshold */
+    /* Check for any wake-up input first (encoder, button, throttle) */
+    bool wakeUpTriggered = false;
+    if (settingsScreensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != settingsScreensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUpTriggered = true;
         settingsScreensaverActive = false;
         lastSettingsInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
+    /* Check for screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!settingsScreensaverActive) {
+          settingsScreensaverActive = true;
+          settingsScreensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);  /* Small delay to prevent watchdog timeout */
+        continue;  /* Don't draw menu while screensaver is active */
+      }
+    }
+
     /* Check for button click */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       lastSettingsInteraction = millis();
-      if (settingsScreensaverActive) {
-        settingsScreensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-        continue;  /* Just wake up, don't process click */
-      }
       if (settingsMenuState == ITEM_SELECTION) {
         /* Check if BACK button (last item) is selected */
         if (settingsSelector == SETTINGS_ITEMS_COUNT) {
@@ -2985,10 +2995,6 @@ void showSettingsMenu() {
     /* Read encoder position */
     if (g_rotaryEncoder.encoderChanged()) {
       lastSettingsInteraction = millis();
-      if (settingsScreensaverActive) {
-        settingsScreensaverActive = false;
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
       if (settingsMenuState == ITEM_SELECTION) {
         settingsSelector = g_rotaryEncoder.readEncoder();
       } else {
@@ -3020,10 +3026,6 @@ void showSettingsMenu() {
         brakeBtnInSettings = true;
         lastBrakeBtnSettingsTime = millis();
         lastSettingsInteraction = millis();
-        if (settingsScreensaverActive) {
-          settingsScreensaverActive = false;
-          obdFill(&g_obd, OBD_WHITE, 1);
-        }
 
         if (settingsMenuState == VALUE_SELECTION) {
           /* Cancel changes and go back to item selection */

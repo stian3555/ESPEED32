@@ -1052,13 +1052,17 @@ void displayStatusLine() {
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
 
   /* Car ID - centered with proper clearing and highlighting */
-  sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
+  /* When editing car selection, show the car being scrolled to (selectedCarNumber), not g_carSel */
+  uint16_t displayCarIndex = g_isEditingCarSelection ? g_storedVar.selectedCarNumber : g_carSel;
+  sprintf(msgStr, "%s", g_storedVar.carParam[displayCarIndex].carName);
   uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
 
-  /* Only clear car name area when car number changes to prevent flicker */
-  if (g_storedVar.selectedCarNumber != lastCarNum) {
+  /* Clear car name area when car number changes to prevent flicker */
+  static uint16_t lastDisplayCarIndex = 999;
+  if (displayCarIndex != lastDisplayCarIndex) {
     /* Clear centered area (48px = 8 chars × 6px) to handle varying name lengths */
     obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
+    lastDisplayCarIndex = displayCarIndex;
     lastCarNum = g_storedVar.selectedCarNumber;
   }
 

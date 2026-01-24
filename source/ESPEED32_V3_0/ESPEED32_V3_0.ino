@@ -25,11 +25,11 @@ const char* MENU_NAMES[][9] = {
 };
 
 /* Settings menu item names: [language][item] */
-/* Order: SCRSV, SOUND, VIEW, LANG, BACK */
-const char* SETTINGS_MENU_NAMES[][5] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "BACK"}
+/* Order: SCRSV, SOUND, VIEW, LANG, TCASE, BACK */
+const char* SETTINGS_MENU_NAMES[][6] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -76,6 +76,81 @@ const char* ON_OFF_LABELS[][2] = {
 /* Order: NOR, ENG, ACD */
 const char* LANG_LABELS[] = {"NOR", "ENG", "ACD"};
 
+/* Text case style labels: [language][case_style] */
+/* Order: UPPER, PASCAL */
+const char* TEXT_CASE_LABELS[][2] = {
+  /* NOR */ {"UPPER", "Pascal"},
+  /* ENG */ {"UPPER", "Pascal"},
+  /* ACD */ {"UPPER", "Pascal"}
+};
+
+/*********************************************************************************************************************/
+/*                                    Pascal Case String Arrays                                                      */
+/*********************************************************************************************************************/
+
+/* Menu item names - Pascal Case: [language][item] */
+const char* MENU_NAMES_PASCAL[][9] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "Limit", "Innstill", "*Bil*"},
+  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "Limit", "Settings", "*Car*"},
+  /* ACD */ {"Brake", "Attck", "Choke", "Profl", "Pwm_F", "B_Btn", "Limit", "Settings", "*Car*"}
+};
+
+/* Settings menu item names - Pascal Case: [language][item] */
+const char* SETTINGS_MENU_NAMES_PASCAL[][6] = {
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Tcase", "Back"},
+  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Tcase", "Back"}
+};
+
+/* Race mode parameter labels - Pascal Case: [language][param] */
+const char* RACE_LABELS_PASCAL[][4] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve"},
+  /* ENG */ {"Break", "Sensi", "Antis", "Curve"},
+  /* ACD */ {"Break", "Attck", "Choke", "Profil"}
+};
+
+/* Car menu option labels - Pascal Case: [language][option] */
+const char* CAR_MENU_OPTIONS_PASCAL[][5] = {
+  /* NOR */ {"Velg", "Navngi", "Raceswp", "Kopier", "Nullstill"},
+  /* ENG */ {"Select", "Rename", "Raceswp", "Copy", "Reset"},
+  /* ACD */ {"Select", "Rename", "Raceswp", "Copy", "Reset"}
+};
+
+/* View mode value labels - Pascal Case: [language][mode] */
+const char* VIEW_MODE_LABELS_PASCAL[][3] = {
+  /* NOR */ {"Av", "Full", "Enkel"},
+  /* ENG */ {"Off", "Full", "Simple"},
+  /* ACD */ {"Off", "Full", "Simple"}
+};
+
+/* Sound mode value labels - Pascal Case: [language][mode] */
+const char* SOUND_MODE_LABELS_PASCAL[][3] = {
+  /* NOR */ {"Av", "Start", "Alt"},
+  /* ENG */ {"Off", "Boot", "All"},
+  /* ACD */ {"Off", "Boot", "All"}
+};
+
+/* ON/OFF labels - Pascal Case: [language][state] */
+const char* ON_OFF_LABELS_PASCAL[][2] = {
+  /* NOR */ {"Av", "Pa"},
+  /* ENG */ {"Off", "On"},
+  /* ACD */ {"Off", "On"}
+};
+
+/* BACK button labels - UPPER CASE: [language] */
+const char* BACK_LABELS[] = {
+  /* NOR */ "TILBAKE",
+  /* ENG */ "BACK",
+  /* ACD */ "BACK"
+};
+
+/* BACK button labels - Pascal Case: [language] */
+const char* BACK_LABELS_PASCAL[] = {
+  /* NOR */ "Tilbake",
+  /* ENG */ "Back",
+  /* ACD */ "Back"
+};
+
 /*********************************************************************************************************************/
 /*                                                   Global Variables                                                */
 /*********************************************************************************************************************/
@@ -109,6 +184,50 @@ static uint16_t *g_encoderSelectedValuePtr = NULL;    /* Pointer to currently se
 
 /* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
+
+/*********************************************************************************************************************/
+/*                                            Helper Functions for Text Case                                         */
+/*********************************************************************************************************************/
+
+/* Get menu name with current text case style */
+inline const char* getMenuName(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? MENU_NAMES_PASCAL[lang][item] : MENU_NAMES[lang][item];
+}
+
+/* Get settings menu name with current text case style */
+inline const char* getSettingsMenuName(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? SETTINGS_MENU_NAMES_PASCAL[lang][item] : SETTINGS_MENU_NAMES[lang][item];
+}
+
+/* Get race label with current text case style */
+inline const char* getRaceLabel(uint8_t lang, uint8_t param) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? RACE_LABELS_PASCAL[lang][param] : RACE_LABELS[lang][param];
+}
+
+/* Get car menu option with current text case style */
+inline const char* getCarMenuOption(uint8_t lang, uint8_t option) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? CAR_MENU_OPTIONS_PASCAL[lang][option] : CAR_MENU_OPTIONS[lang][option];
+}
+
+/* Get view mode label with current text case style */
+inline const char* getViewModeLabel(uint8_t lang, uint8_t mode) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? VIEW_MODE_LABELS_PASCAL[lang][mode] : VIEW_MODE_LABELS[lang][mode];
+}
+
+/* Get sound mode label with current text case style */
+inline const char* getSoundModeLabel(uint8_t lang, uint8_t mode) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? SOUND_MODE_LABELS_PASCAL[lang][mode] : SOUND_MODE_LABELS[lang][mode];
+}
+
+/* Get ON/OFF label with current text case style */
+inline const char* getOnOffLabel(uint8_t lang, uint8_t state) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? ON_OFF_LABELS_PASCAL[lang][state] : ON_OFF_LABELS[lang][state];
+}
+
+/* Get BACK label with current text case style */
+inline const char* getBackLabel(uint8_t lang) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? BACK_LABELS_PASCAL[lang] : BACK_LABELS[lang];
+}
 
 /* ESC Runtime Variables */
 ESC_type g_escVar {
@@ -630,6 +749,7 @@ void initStoredVariables() {
   g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
   g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
+  g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
 }
 
 
@@ -647,7 +767,7 @@ void initMenuItems() {
   uint8_t lang = g_storedVar.language;
   /* Init menu items - using language-specific names */
 
-  sprintf(g_mainMenu.item[i].name, "%s", MENU_NAMES[lang][0]);  /* BRAKE/BREMS */
+  sprintf(g_mainMenu.item[i].name, "%s", getMenuName(lang, 0));  /* BRAKE/BREMS */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brake;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -655,7 +775,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][1]);  /* SENSI/ATTCK */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 1));  /* SENSI/ATTCK */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].minSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -663,7 +783,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][2]);  /* ANTIS/CHOKE */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 2));  /* ANTIS/CHOKE */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].antiSpin;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "ms");
@@ -671,7 +791,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][3]);  /* CURVE/KURVE/PROFL */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 3));  /* CURVE/KURVE/PROFL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -679,7 +799,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
   g_mainMenu.item[i].callback = &showCurveSelection;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][4]);  /* PWM_F */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 4));  /* PWM_F */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].freqPWM;
   g_mainMenu.item[i].type = VALUE_TYPE_DECIMAL;
   sprintf(g_mainMenu.item[i].unit, "k");
@@ -688,7 +808,7 @@ void initMenuItems() {
   g_mainMenu.item[i].decimalPoint = 1;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][5]);  /* B_BTN/B_KNP */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 5));  /* B_BTN/B_KNP */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -696,7 +816,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][6]);  /* LIMIT */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 6));  /* LIMIT */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].maxSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -704,7 +824,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = max(5, (int)g_storedVar.carParam[g_carSel].minSpeed + 5);
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][7]);  /* SETTINGS/INNSTILL */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 7));  /* SETTINGS/INNSTILL */
   g_mainMenu.item[i].value = ITEM_NO_VALUE;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "");
@@ -712,7 +832,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = &showSettingsMenu;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", MENU_NAMES[lang][8]);  /* CAR or BIL */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 8));  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)
@@ -730,13 +850,13 @@ void initMenuItems() {
 
 /**
  * Initialize the settings submenu items
- * Order: SCRSV, SOUND, VIEW, LANG, BACK
+ * Order: SCRSV, SOUND, VIEW, LANG, TCASE, BACK
  */
 void initSettingsMenuItems() {
   int i = 0;
   uint8_t lang = g_storedVar.language;
 
-  sprintf(g_settingsMenu.item[i].name, "%s", SETTINGS_MENU_NAMES[lang][0]);  /* SCRSV/SKJSP */
+  sprintf(g_settingsMenu.item[i].name, "%s", getSettingsMenuName(lang, 0));  /* SCRSV/SKJSP */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;  /* Changed to STRING to handle OFF/AV display */
   sprintf(g_settingsMenu.item[i].unit, "s");
@@ -744,7 +864,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;  /* 0 = OFF */
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][1]);  /* SOUND/LYD */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 1));  /* SOUND/LYD */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.soundMode;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -752,7 +872,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = SOUND_MODE_OFF;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][2]);  /* VIEW/VISN */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 2));  /* VIEW/VISN */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -760,7 +880,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = RACE_VIEW_OFF;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][3]);  /* LANG/SPRK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 3));  /* LANG/SPRK */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.language;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -768,7 +888,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", SETTINGS_MENU_NAMES[lang][4]);  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* TCASE/TEKST */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.textCase;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = TEXT_CASE_PASCAL;
+  g_settingsMenu.item[i].minValue = TEXT_CASE_UPPER;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -931,8 +1059,9 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   /* BRAKE - left column, using FONT_12x16 for both label and value */
   if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
     /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][0]) * 12;
-    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 0, (char *)RACE_LABELS[g_storedVar.language][0], FONT_12x16, colorBrake, 1);
+    const char* brakeLabel = getRaceLabel(g_storedVar.language, 0);
+    uint8_t labelWidth = strlen(brakeLabel) * 12;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 0, (char *)brakeLabel, FONT_12x16, colorBrake, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
     obdWriteString(&g_obd, 0, col1_center - 24, 16, msgStr, FONT_12x16, colorBrake, 1);
@@ -942,8 +1071,9 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   /* SENSI - right column, using FONT_12x16 for both label and value */
   if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
     /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][1]) * 12;
-    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2), 0, (char *)RACE_LABELS[g_storedVar.language][1], FONT_12x16, colorSensi, 1);
+    const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
+    uint8_t labelWidth = strlen(sensiLabel) * 12;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2), 0, (char *)sensiLabel, FONT_12x16, colorSensi, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
     obdWriteString(&g_obd, 0, col2_center - 24, 16, msgStr, FONT_12x16, colorSensi, 1);
@@ -995,8 +1125,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   /* BRAKE - left column */
   if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
     /* Label - using language-specific text, dynamically centered */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][0]) * 6;
-    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)RACE_LABELS[g_storedVar.language][0], FONT_6x8, colorBrake, 1);
+    const char* brakeLabel = getRaceLabel(g_storedVar.language, 0);
+    uint8_t labelWidth = strlen(brakeLabel) * 6;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)brakeLabel, FONT_6x8, colorBrake, 1);
     /* Value - "100%" is 4 chars × 8px = 32px wide, center at col1_center - 16 */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
     obdWriteString(&g_obd, 0, col1_center - 16, 12, msgStr, FONT_8x8, colorBrake, 1);
@@ -1006,8 +1137,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   /* SENSI - right column */
   if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
     /* Label - using language-specific text, shifted 1px right */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][1]) * 6;
-    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)RACE_LABELS[g_storedVar.language][1], FONT_6x8, colorSensi, 1);
+    const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
+    uint8_t labelWidth = strlen(sensiLabel) * 6;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)sensiLabel, FONT_6x8, colorSensi, 1);
     /* Value */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
     obdWriteString(&g_obd, 0, col2_center - 16, 12, msgStr, FONT_8x8, colorSensi, 1);
@@ -1017,8 +1149,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   /* ANTIS - left column, lower */
   if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis) {
     /* Label - using language-specific text, dynamically centered */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][2]) * 6;
-    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)RACE_LABELS[g_storedVar.language][2], FONT_6x8, colorAntis, 1);
+    const char* antisLabel = getRaceLabel(g_storedVar.language, 2);
+    uint8_t labelWidth = strlen(antisLabel) * 6;
+    obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)antisLabel, FONT_6x8, colorAntis, 1);
     /* Value - "255ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
     sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
     obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
@@ -1028,8 +1161,9 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   /* CURVE - right column, lower */
   if (g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff != lastCurve) {
     /* Label - using language-specific text, shifted 1px right */
-    uint8_t labelWidth = strlen(RACE_LABELS[g_storedVar.language][3]) * 6;
-    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 24, (char *)RACE_LABELS[g_storedVar.language][3], FONT_6x8, colorCurve, 1);
+    const char* curveLabel = getRaceLabel(g_storedVar.language, 3);
+    uint8_t labelWidth = strlen(curveLabel) * 6;
+    obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 24, (char *)curveLabel, FONT_6x8, colorCurve, 1);
     /* Value */
     sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
     obdWriteString(&g_obd, 0, col2_center - 16, 34, msgStr, FONT_8x8, colorCurve, 1);
@@ -1860,20 +1994,20 @@ void showSelectRenameCar() {
       switch (optionIndex)
       {
         case CAR_OPTION_SELECT:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][0], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 0), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_RENAME:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][1], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 1), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_GRID_SEL:
         {
           /* Grid select option - show label and right-aligned ON/OFF value */
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][2], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           /* Show temp value when editing, stored value otherwise */
           uint16_t displayValue = isEditingRaceswp ? tempRaceswpValue : g_storedVar.gridCarSelectEnabled;
-          sprintf(msgStr, "%s", ON_OFF_LABELS[lang][displayValue ? 1 : 0]);
+          sprintf(msgStr, "%s", getOnOffLabel(lang, displayValue ? 1 : 0));
           int textWidth = strlen(msgStr) * WIDTH12x16;
           /* Value is white when editing, follows selection otherwise */
           uint8_t valueColor = isEditingRaceswp ? OBD_WHITE : (isSelected ? OBD_WHITE : OBD_BLACK);
@@ -1882,18 +2016,17 @@ void showSelectRenameCar() {
         }
 
         case CAR_OPTION_COPY:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][3], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 3), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_RESET:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][4], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 4), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_BACK:
         {
-          /* Display BACK option based on language */
-          const char* backText = (lang == LANG_NOR) ? "TILBAKE" : "BACK";
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)backText, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          /* Display BACK option using helper for text case support */
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getBackLabel(lang), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
         }
       }
@@ -1929,8 +2062,8 @@ void showSelectRenameCar() {
         uint8_t yPos = optionScreenPos * HEIGHT12x16;
         uint16_t lang = g_storedVar.language;
 
-        obdWriteString(&g_obd, 0, 0, yPos, (char *)CAR_MENU_OPTIONS[lang][2], FONT_12x16, OBD_WHITE, 1);
-        sprintf(msgStr, "%s", ON_OFF_LABELS[lang][tempRaceswpValue ? 1 : 0]);
+        obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), FONT_12x16, OBD_WHITE, 1);
+        sprintf(msgStr, "%s", getOnOffLabel(lang, tempRaceswpValue ? 1 : 0));
         int textWidth = strlen(msgStr) * WIDTH12x16;
         obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, OBD_WHITE, 1);
       }
@@ -2471,26 +2604,30 @@ void showSettingsMenu() {
           uint16_t lang = g_storedVar.language;
 
           /* SCRSV menu item - show OFF/AV when 0, otherwise show value with 's' */
-          if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][0]) == 0) {
+          if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 0)) == 0) {
             if (value == 0) {
-              sprintf(msgStr, "%3s", ON_OFF_LABELS[lang][0]);  /* OFF/AV */
+              sprintf(msgStr, "%3s", getOnOffLabel(lang, 0));  /* OFF/AV */
             } else {
               sprintf(msgStr, "%3ds", value);
             }
           }
           /* SOUND menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][1]) == 0) {
-            sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][value]);
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 1)) == 0) {
+            sprintf(msgStr, "%5s", getSoundModeLabel(lang, value));
           }
           /* VIEW menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][2]) == 0) {
-            sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][value]);
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 2)) == 0) {
+            sprintf(msgStr, "%6s", getViewModeLabel(lang, value));
           }
           /* LANG menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, SETTINGS_MENU_NAMES[lang][3]) == 0) {
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 3)) == 0) {
             /* Use tempLanguage when editing, otherwise use actual value */
             uint16_t displayLang = (isEditingLanguage && isValueSelected) ? tempLanguage : value;
             sprintf(msgStr, "%3s", LANG_LABELS[displayLang]);
+          }
+          /* TCASE menu item */
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 4)) == 0) {
+            sprintf(msgStr, "%6s", TEXT_CASE_LABELS[lang][value]);
           } else {
             sprintf(msgStr, "%3d", value);
           }

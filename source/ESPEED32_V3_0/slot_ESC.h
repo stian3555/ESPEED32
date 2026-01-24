@@ -17,7 +17,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    9     /* Number of items in main menu */
-#define SETTINGS_ITEMS_COUNT 5    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 6    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -85,6 +85,11 @@
 #define SOUND_MODE_BOOT  1  /* Boot sounds only */
 #define SOUND_MODE_ALL   2  /* All sounds enabled */
 #define SOUND_MODE_DEFAULT  SOUND_MODE_ALL
+
+/* Text Case Style */
+#define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */
+#define TEXT_CASE_PASCAL    1  /* Brake, Sensi, etc. */
+#define TEXT_CASE_DEFAULT   TEXT_CASE_UPPER
 
 /* Car Configuration */
 #define CAR_MAX_COUNT       20  /* Maximum number of car profiles */
@@ -179,6 +184,7 @@ typedef struct {
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
   uint16_t language;                        /* Language: NOR, ENG, or ACD */
+  uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
 } StoredVar_type;
 
 /**

@@ -17,7 +17,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    9     /* Number of items in main menu */
-#define SETTINGS_ITEMS_COUNT 6    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 7    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -90,6 +90,11 @@
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */
 #define TEXT_CASE_PASCAL    1  /* Brake, Sensi, etc. */
 #define TEXT_CASE_DEFAULT   TEXT_CASE_UPPER
+
+/* List View Font Size */
+#define FONT_SIZE_LARGE     0  /* 12x16 font (default) */
+#define FONT_SIZE_SMALL     1  /* 8x8 font (compact) */
+#define FONT_SIZE_DEFAULT   FONT_SIZE_LARGE
 
 /* Car Configuration */
 #define CAR_MAX_COUNT       20  /* Maximum number of car profiles */
@@ -185,6 +190,7 @@ typedef struct {
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
   uint16_t language;                        /* Language: NOR, ENG, or ACD */
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
+  uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
 } StoredVar_type;
 
 /**

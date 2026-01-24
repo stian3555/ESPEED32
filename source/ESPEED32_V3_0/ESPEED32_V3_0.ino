@@ -25,11 +25,11 @@ const char* MENU_NAMES[][9] = {
 };
 
 /* Settings menu item names: [language][item] */
-/* Order: SCRSV, SOUND, VIEW, LANG, TCASE, BACK */
-const char* SETTINGS_MENU_NAMES[][6] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "BACK"}
+/* Order: SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK */
+const char* SETTINGS_MENU_NAMES[][7] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "SKRIFT", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "FSIZE", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "TCASE", "FSIZE", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -84,6 +84,14 @@ const char* TEXT_CASE_LABELS[][2] = {
   /* ACD */ {"UPPER", "Pascal"}
 };
 
+/* Font size labels: [language][size] */
+/* Order: LARGE, SMALL */
+const char* FONT_SIZE_LABELS[][2] = {
+  /* NOR */ {"STOR", "LITEN"},
+  /* ENG */ {"LARGE", "SMALL"},
+  /* ACD */ {"LARGE", "SMALL"}
+};
+
 /*********************************************************************************************************************/
 /*                                    Pascal Case String Arrays                                                      */
 /*********************************************************************************************************************/
@@ -96,10 +104,10 @@ const char* MENU_NAMES_PASCAL[][9] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][6] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Tcase", "Back"},
-  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Tcase", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][7] = {
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Skrift", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Back"},
+  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Back"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
@@ -182,6 +190,7 @@ static uint8_t g_encoderMainSelector = 1;             /* Main menu item selector
 static uint8_t g_encoderSecondarySelector = 0;        /* Secondary value selector */
 static uint16_t *g_encoderSelectedValuePtr = NULL;    /* Pointer to currently selected value */
 static uint16_t g_originalValueBeforeEdit = 0;        /* Store original value when entering VALUE_SELECTION (for cancel) */
+static bool g_isEditingCarSelection = false;          /* Flag to prevent g_carSel update during CAR edit */
 
 /* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
@@ -228,6 +237,11 @@ inline const char* getOnOffLabel(uint8_t lang, uint8_t state) {
 /* Get BACK label with current text case style */
 inline const char* getBackLabel(uint8_t lang) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? BACK_LABELS_PASCAL[lang] : BACK_LABELS[lang];
+}
+
+/* Get number of visible menu lines based on font size */
+inline uint8_t getMenuLines() {
+  return (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? 5 : 3;
 }
 
 /* ESC Runtime Variables */
@@ -324,8 +338,8 @@ void Task1code(void *pvParameters) {
     g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
     g_escVar.motorCurrent_mA = HAL_ReadMotorCurrent();
 
-    /* Update selected car if initialization complete */
-    if (g_currState != INIT) {
+    /* Update selected car if initialization complete and not currently editing CAR selection */
+    if (g_currState != INIT && !g_isEditingCarSelection) {
       g_carSel = g_storedVar.selectedCarNumber;
     }
 
@@ -548,8 +562,25 @@ void Task1code(void *pvParameters) {
 
               menuState = ITEM_SELECTION;
               g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-              g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+
+              /* Set boundaries based on view mode */
+              if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+                uint8_t gridItems;
+                if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+                  gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;
+                } else {
+                  gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;
+                }
+                g_rotaryEncoder.setBoundaries(1, gridItems, false);
+              } else {
+                g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+              }
+
               g_rotaryEncoder.reset(g_encoderMainSelector);
+              /* Reinitialize menu items to ensure correct display after cancel */
+              initMenuItems();
+              /* Clear car editing flag */
+              g_isEditingCarSelection = false;
               /* Do NOT save to EEPROM - we're canceling the change */
               obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
               g_lastEncoderInteraction = millis();
@@ -758,6 +789,7 @@ void initStoredVariables() {
   g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
+  g_storedVar.listFontSize = FONT_SIZE_DEFAULT;  /* Default list view font size */
 }
 
 
@@ -896,7 +928,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* TCASE/TEKST */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* TCASE/STYL */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.textCase;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -904,7 +936,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = TEXT_CASE_UPPER;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* FSIZE/SKRIFT */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.listFontSize;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = FONT_SIZE_SMALL;
+  g_settingsMenu.item[i].minValue = FONT_SIZE_LARGE;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1229,23 +1269,33 @@ void printMainMenu(MenuState_enum currMenuState)
 
   /* "Frame" indicates which items are currently displayed.
      It consist of a lower and upper bound: only the items within this boundaries are displayed.
-     The difference between upper and lower bound is fixed to be g_mainMenu.lines
+     The difference between upper and lower bound is fixed to be visibleLines
      It's important that the encoder boundaries matches the menu items (e.g., 8 items, encoder boundaries must be [1,8]) */
   static uint16_t frameUpper = 1;
-  static uint16_t frameLower = g_mainMenu.lines;
+  static uint16_t frameLower = 3;
+  static uint8_t lastVisibleLines = 3;
+  uint8_t visibleLines = getMenuLines();
+
+  /* If font size changed, reset frame */
+  if (visibleLines != lastVisibleLines) {
+    frameUpper = 1;
+    frameLower = visibleLines;
+    lastVisibleLines = visibleLines;
+    obdFill(&g_obd, OBD_WHITE, 1);
+  }
 
   /* In encoder move out of frame, adjust frame */
-  if (g_encoderMainSelector > frameLower) 
+  if (g_encoderMainSelector > frameLower)
   {
     frameLower = g_encoderMainSelector;
-    frameUpper = frameLower - g_mainMenu.lines + 1;
+    frameUpper = frameLower - visibleLines + 1;
     obdFill(&g_obd, OBD_WHITE, 1);
     screensaverActive = false;
-  } 
-  else if (g_encoderMainSelector < frameUpper) 
+  }
+  else if (g_encoderMainSelector < frameUpper)
   {
     frameUpper = g_encoderMainSelector;
-    frameLower = frameUpper + g_mainMenu.lines - 1;
+    frameLower = frameUpper + visibleLines - 1;
     obdFill(&g_obd, OBD_WHITE, 1);
     screensaverActive = false;
   }
@@ -1335,11 +1385,16 @@ void printMainMenu(MenuState_enum currMenuState)
       screensaverActive = false;
     }
 
-    for (uint8_t i = 0; i < g_mainMenu.lines; i++)
+    /* Determine font size and dimensions based on setting */
+    uint8_t menuFont = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
+    uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
+    uint8_t lineHeight = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
+
+    for (uint8_t i = 0; i < visibleLines; i++)
     {
       /* Print item name */
       /* Item color: WHITE if item is selected, black otherwise */
-      obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_mainMenu.item[frameUpper - 1 + i].name, FONT_12x16, (g_encoderMainSelector - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, i * lineHeight, g_mainMenu.item[frameUpper - 1 + i].name, menuFont, (g_encoderMainSelector - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Only print value if value != ITEM_NO_VALUE */
       /* Value color: WHITE if corresponding item is selected AND menu state is VALUE_SELECTION, black otherwise */
@@ -1351,8 +1406,8 @@ void printMainMenu(MenuState_enum currMenuState)
           /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
           sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value), g_mainMenu.item[frameUpper - 1 + i].unit);
           /* Right-align: calculate text width and position from right edge */
-          int textWidth = strlen(msgStr) * WIDTH12x16;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
+          int textWidth = strlen(msgStr) * charWidth;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr, menuFont, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
         /* If the value is a decimal, cast to *(unit16_t *), divide by 10^decimalPoint then print number and unit */
         else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_DECIMAL)
@@ -1361,8 +1416,8 @@ void printMainMenu(MenuState_enum currMenuState)
           tmp = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
           sprintf(msgStr, " %d.%01d%s", tmp / 10, (tmp % 10), g_mainMenu.item[frameUpper - 1 + i].unit);
           /* Right-align: calculate text width and position from right edge */
-          int textWidth = strlen(msgStr) * WIDTH12x16;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
+          int textWidth = strlen(msgStr) * charWidth;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr, menuFont, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
         /* If the value is a string, cast to (char *) then print the string */
         else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING)
@@ -1390,8 +1445,8 @@ void printMainMenu(MenuState_enum currMenuState)
             sprintf(msgStr, "%s", (char *)(g_mainMenu.item[frameUpper - 1 + i].value));
           }
           /* Right-align: calculate text width and position from right edge */
-          int textWidth = strlen(msgStr) * WIDTH12x16;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr, FONT_12x16, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
+          int textWidth = strlen(msgStr) * charWidth;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr, menuFont, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
       }
     }
@@ -1620,6 +1675,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
             g_encoderSelectedValuePtr = &g_storedVar.selectedCarNumber;
             selectedParamMaxValue = CAR_MAX_COUNT - 1;
             selectedParamMinValue = 0;
+            g_isEditingCarSelection = true;  /* Prevent g_carSel update during edit */
             break;
           default:
             return ITEM_SELECTION;
@@ -1652,6 +1708,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
             g_encoderSelectedValuePtr = &g_storedVar.selectedCarNumber;
             selectedParamMaxValue = CAR_MAX_COUNT - 1;
             selectedParamMinValue = 0;
+            g_isEditingCarSelection = true;  /* Prevent g_carSel update during edit */
             break;
           default:
             return ITEM_SELECTION;
@@ -1708,6 +1765,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
     g_rotaryEncoder.reset(g_encoderMainSelector);               /* Reset the encoder value to g_encoderMainSelector, so that it doesn't change the selected item */
     g_escVar.encoderPos = g_encoderMainSelector;
 
+    g_isEditingCarSelection = false;  /* Clear flag - editing complete */
     saveEEPROM(g_storedVar);  /* Save modified values to EEPROM */
     return ITEM_SELECTION;    /* Return the ITEM_SELECTION state */
   }
@@ -1931,9 +1989,9 @@ void showSelectRenameCar() {
   g_rotaryEncoder.setBoundaries(0, 5, false); /* Boundaries are [0, 5] because there are six options */
   g_rotaryEncoder.reset(selectedOption);
 
-  /* Setup scrolling frame - can show 4 items at a time */
+  /* Setup scrolling frame - number of visible items depends on font size */
   const uint8_t totalOptions = 6;
-  const uint8_t visibleLines = 4;
+  uint8_t visibleLines = getMenuLines();
   uint8_t frameUpper = 0;
   uint8_t frameLower = visibleLines - 1;
 
@@ -1991,13 +2049,18 @@ void showSelectRenameCar() {
       }
     }
 
+    /* Determine font size and dimensions based on setting */
+    uint8_t menuFont = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
+    uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
+    uint8_t lineHeight = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
+
     /* Display only the visible items within the frame */
     for (uint8_t i = 0; i < visibleLines; i++)
     {
       uint8_t optionIndex = frameUpper + i;
       if (optionIndex >= totalOptions) break;
 
-      uint8_t yPos = i * HEIGHT12x16;
+      uint8_t yPos = i * lineHeight;
       bool isSelected = (optionIndex == selectedOption);
 
       uint16_t lang = g_storedVar.language;
@@ -2005,39 +2068,39 @@ void showSelectRenameCar() {
       switch (optionIndex)
       {
         case CAR_OPTION_SELECT:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 0), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 0), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_RENAME:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 1), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 1), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_GRID_SEL:
         {
           /* Grid select option - show label and right-aligned ON/OFF value */
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           /* Show temp value when editing, stored value otherwise */
           uint16_t displayValue = isEditingRaceswp ? tempRaceswpValue : g_storedVar.gridCarSelectEnabled;
           sprintf(msgStr, "%s", getOnOffLabel(lang, displayValue ? 1 : 0));
-          int textWidth = strlen(msgStr) * WIDTH12x16;
+          int textWidth = strlen(msgStr) * charWidth;
           /* Value is white when editing, follows selection otherwise */
           uint8_t valueColor = isEditingRaceswp ? OBD_WHITE : (isSelected ? OBD_WHITE : OBD_BLACK);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, valueColor, 1);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, menuFont, valueColor, 1);
           break;
         }
 
         case CAR_OPTION_COPY:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 3), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 3), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_RESET:
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 4), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 4), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
 
         case CAR_OPTION_BACK:
         {
           /* Display BACK option using helper for text case support */
-          obdWriteString(&g_obd, 0, 0, yPos, (char *)getBackLabel(lang), FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          obdWriteString(&g_obd, 0, 0, yPos, (char *)getBackLabel(lang), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           break;
         }
       }
@@ -2070,13 +2133,17 @@ void showSelectRenameCar() {
       /* Redraw the RACESWP option with updated value */
       uint8_t optionScreenPos = CAR_OPTION_GRID_SEL - frameUpper;
       if (optionScreenPos < visibleLines) {
-        uint8_t yPos = optionScreenPos * HEIGHT12x16;
+        /* Determine font size and dimensions based on setting */
+        uint8_t menuFont = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
+        uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
+        uint8_t lineHeight = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
+        uint8_t yPos = optionScreenPos * lineHeight;
         uint16_t lang = g_storedVar.language;
 
-        obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), FONT_12x16, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), menuFont, OBD_WHITE, 1);
         sprintf(msgStr, "%s", getOnOffLabel(lang, tempRaceswpValue ? 1 : 0));
-        int textWidth = strlen(msgStr) * WIDTH12x16;
-        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, FONT_12x16, OBD_WHITE, 1);
+        int textWidth = strlen(msgStr) * charWidth;
+        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, menuFont, OBD_WHITE, 1);
       }
     }
     /* Save the confirmed value (only if we didn't cancel) */
@@ -2483,10 +2550,17 @@ void showSettingsMenu() {
   uint16_t prevLanguage = g_storedVar.language;
   uint16_t tempLanguage = g_storedVar.language;  /* Temporary language value for editing */
   bool isEditingLanguage = false;  /* Track if we're editing language */
+  uint16_t prevTextCase = g_storedVar.textCase;
+  uint16_t tempTextCase = g_storedVar.textCase;  /* Temporary text case value for editing */
+  bool isEditingTextCase = false;  /* Track if we're editing text case */
+  uint16_t prevFontSize = g_storedVar.listFontSize;
+  uint16_t tempFontSize = g_storedVar.listFontSize;  /* Temporary font size value for editing */
+  bool isEditingFontSize = false;  /* Track if we're editing font size */
 
-  /* Setup scrolling frame - can show 3 items at a time */
+  /* Setup scrolling frame - number of visible items depends on font size */
   uint16_t frameUpper = 1;
-  uint16_t frameLower = g_settingsMenu.lines;
+  uint8_t visibleLines = getMenuLines();
+  uint16_t frameLower = visibleLines;
 
   /* Settings menu loop */
   while (true) {
@@ -2501,24 +2575,37 @@ void showSettingsMenu() {
         /* Check if selected item has a value to edit */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
           /* Check if this is the LANG item (index 3 in settings menu, 0-based) */
-          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, TCASE, BACK) */
+          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK) */
             isEditingLanguage = true;
             tempLanguage = g_storedVar.language;
             originalSettingsValue = g_storedVar.language;
+          }
+          /* Check if this is the TCASE item */
+          else if (settingsSelector == 5) {  /* TCASE is 5th item (SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK) */
+            isEditingTextCase = true;
+            tempTextCase = g_storedVar.textCase;
+            originalSettingsValue = g_storedVar.textCase;
+          }
+          /* Check if this is the FSIZE item */
+          else if (settingsSelector == 6) {  /* FSIZE is 6th item (SCRSV, SOUND, VIEW, LANG, TCASE, FSIZE, BACK) */
+            isEditingFontSize = true;
+            tempFontSize = g_storedVar.listFontSize;
+            originalSettingsValue = g_storedVar.listFontSize;
           } else {
-            /* Save original value for non-language items */
+            /* Save original value for other items */
             settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
             originalSettingsValue = *settingsValuePtr;
           }
           /* Enter value editing mode for selected item */
           settingsMenuState = VALUE_SELECTION;
           g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-          if (!isEditingLanguage) {
+          if (!isEditingLanguage && !isEditingTextCase && !isEditingFontSize) {
             settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
           }
           g_rotaryEncoder.setBoundaries(g_settingsMenu.item[settingsSelector - 1].minValue,
                                        g_settingsMenu.item[settingsSelector - 1].maxValue, false);
-          g_rotaryEncoder.reset(isEditingLanguage ? tempLanguage : *settingsValuePtr);
+          uint16_t resetValue = isEditingLanguage ? tempLanguage : (isEditingTextCase ? tempTextCase : (isEditingFontSize ? tempFontSize : *settingsValuePtr));
+          g_rotaryEncoder.reset(resetValue);
         }
       } else {
         /* Exit value editing mode and return to item selection */
@@ -2527,19 +2614,37 @@ void showSettingsMenu() {
         g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
         g_rotaryEncoder.reset(settingsSelector);
 
-        /* If we were editing language, restore the actual language value */
+        /* If we were editing language, apply the temp language value */
         if (isEditingLanguage) {
           g_storedVar.language = tempLanguage;
           isEditingLanguage = false;
         }
 
+        /* If we were editing text case, apply the temp text case value */
+        if (isEditingTextCase) {
+          g_storedVar.textCase = tempTextCase;
+          isEditingTextCase = false;
+        }
+
+        /* If we were editing font size, apply the temp font size value */
+        if (isEditingFontSize) {
+          g_storedVar.listFontSize = tempFontSize;
+          isEditingFontSize = false;
+        }
+
         saveEEPROM(g_storedVar);  /* Save modified values */
 
-        /* If language changed, reinitialize settings menu items */
-        if (g_storedVar.language != prevLanguage) {
+        /* If language, text case, or font size changed, reinitialize and clear screen */
+        if (g_storedVar.language != prevLanguage || g_storedVar.textCase != prevTextCase || g_storedVar.listFontSize != prevFontSize) {
           initSettingsMenuItems();
-          initMenuItems();  /* Also reinit main menu for language change */
+          initMenuItems();  /* Also reinit main menu */
           prevLanguage = g_storedVar.language;
+          prevTextCase = g_storedVar.textCase;
+          prevFontSize = g_storedVar.listFontSize;
+          /* Reset frame to top when font size changes */
+          visibleLines = getMenuLines();
+          frameUpper = 1;
+          frameLower = visibleLines;
           obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
         }
       }
@@ -2555,6 +2660,12 @@ void showSettingsMenu() {
         if (isEditingLanguage) {
           /* Update temp language value instead of actual language */
           tempLanguage = g_rotaryEncoder.readEncoder();
+        } else if (isEditingTextCase) {
+          /* Update temp text case value instead of actual text case */
+          tempTextCase = g_rotaryEncoder.readEncoder();
+        } else if (isEditingFontSize) {
+          /* Update temp font size value instead of actual font size */
+          tempFontSize = g_rotaryEncoder.readEncoder();
         } else {
           *settingsValuePtr = g_rotaryEncoder.readEncoder();
         }
@@ -2576,6 +2687,16 @@ void showSettingsMenu() {
             tempLanguage = originalSettingsValue;
             g_storedVar.language = originalSettingsValue;
             isEditingLanguage = false;
+          } else if (isEditingTextCase) {
+            /* Restore original text case value (cancel) */
+            tempTextCase = originalSettingsValue;
+            g_storedVar.textCase = originalSettingsValue;
+            isEditingTextCase = false;
+          } else if (isEditingFontSize) {
+            /* Restore original font size value (cancel) */
+            tempFontSize = originalSettingsValue;
+            g_storedVar.listFontSize = originalSettingsValue;
+            isEditingFontSize = false;
           } else if (settingsValuePtr != NULL) {
             /* Restore original value (cancel) */
             *settingsValuePtr = originalSettingsValue;
@@ -2616,24 +2737,31 @@ void showSettingsMenu() {
     if (settingsMenuState == ITEM_SELECTION) {
       if (settingsSelector > frameLower) {
         frameLower = settingsSelector;
-        frameUpper = frameLower - g_settingsMenu.lines + 1;
+        frameUpper = frameLower - visibleLines + 1;
         obdFill(&g_obd, OBD_WHITE, 1);
       } else if (settingsSelector < frameUpper) {
         frameUpper = settingsSelector;
-        frameLower = frameUpper + g_settingsMenu.lines - 1;
+        frameLower = frameUpper + visibleLines - 1;
         obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
+    /* Determine font size and dimensions based on setting */
+    /* Use actual setting when not editing, or temp value when editing font size */
+    uint8_t currentFontSize = isEditingFontSize ? tempFontSize : g_storedVar.listFontSize;
+    uint8_t menuFont = (currentFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
+    uint8_t charWidth = (currentFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
+    uint8_t lineHeight = (currentFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
+
     /* Display settings menu items */
-    for (uint8_t i = 0; i < g_settingsMenu.lines; i++) {
+    for (uint8_t i = 0; i < visibleLines; i++) {
       uint16_t itemIndex = frameUpper - 1 + i;
       if (itemIndex >= SETTINGS_ITEMS_COUNT) break;
 
       /* Print item name */
       bool isSelected = (settingsSelector - frameUpper == i && settingsMenuState == ITEM_SELECTION);
-      obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_settingsMenu.item[itemIndex].name,
-                    FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, i * lineHeight, g_settingsMenu.item[itemIndex].name,
+                    menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Print item value */
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
@@ -2642,9 +2770,9 @@ void showSettingsMenu() {
         if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_INTEGER) {
           sprintf(msgStr, "%3d%s", *(uint16_t *)(g_settingsMenu.item[itemIndex].value),
                  g_settingsMenu.item[itemIndex].unit);
-          int textWidth = strlen(msgStr) * WIDTH12x16;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr,
-                        FONT_12x16, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
+          int textWidth = strlen(msgStr) * charWidth;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
+                        menuFont, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
         } else if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_STRING) {
           /* Handle special string values */
           uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
@@ -2674,14 +2802,22 @@ void showSettingsMenu() {
           }
           /* TCASE menu item */
           else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 4)) == 0) {
-            sprintf(msgStr, "%6s", TEXT_CASE_LABELS[lang][value]);
+            /* Use tempTextCase when editing, otherwise use actual value */
+            uint16_t displayTextCase = (isEditingTextCase && isValueSelected) ? tempTextCase : value;
+            sprintf(msgStr, "%6s", TEXT_CASE_LABELS[lang][displayTextCase]);
+          }
+          /* FSIZE menu item */
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 5)) == 0) {
+            /* Use tempFontSize when editing, otherwise use actual value */
+            uint16_t displayFontSize = (isEditingFontSize && isValueSelected) ? tempFontSize : value;
+            sprintf(msgStr, "%5s", FONT_SIZE_LABELS[lang][displayFontSize]);
           } else {
             sprintf(msgStr, "%3d", value);
           }
 
-          int textWidth = strlen(msgStr) * WIDTH12x16;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * HEIGHT12x16, msgStr,
-                        FONT_12x16, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
+          int textWidth = strlen(msgStr) * charWidth;
+          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
+                        menuFont, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
         }
       }
     }

@@ -544,11 +544,40 @@ void Task1code(void *pvParameters) {
           buttonWasPressed = false;
         }
 
-        /* Check for brake button press in LIST view mode - acts as "back" */
+        /* Check for brake button press - acts as "back" in edit mode */
         static bool brakeButtonWasPressedInMenu = false;
         static uint32_t lastBrakeButtonPressTime = 0;
 
-        if (g_storedVar.viewMode == VIEW_MODE_LIST && digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        /* In GRID mode: brake button exits edit mode (in addition to reducing brake) */
+        if (g_storedVar.viewMode == VIEW_MODE_GRID && menuState == VALUE_SELECTION && digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+          if (!brakeButtonWasPressedInMenu && millis() - lastBrakeButtonPressTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+            brakeButtonWasPressedInMenu = true;
+            lastBrakeButtonPressTime = millis();
+
+            /* Restore original value (cancel changes) */
+            if (g_encoderSelectedValuePtr != NULL) {
+              *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
+              g_encoderSelectedValuePtr = NULL;
+            }
+
+            menuState = ITEM_SELECTION;
+            g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+
+            uint8_t gridItems;
+            if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+              gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;
+            } else {
+              gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;
+            }
+            g_rotaryEncoder.setBoundaries(1, gridItems, false);
+            g_rotaryEncoder.reset(g_encoderMainSelector);
+            g_escVar.encoderPos = g_encoderMainSelector;
+            g_isEditingCarSelection = false;
+            obdFill(&g_obd, OBD_WHITE, 1);
+            g_lastEncoderInteraction = millis();
+          }
+        }
+        else if (g_storedVar.viewMode == VIEW_MODE_LIST && digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
           if (!brakeButtonWasPressedInMenu && millis() - lastBrakeButtonPressTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
             brakeButtonWasPressedInMenu = true;
             lastBrakeButtonPressTime = millis();
@@ -574,7 +603,9 @@ void Task1code(void *pvParameters) {
             }
             /* If already in ITEM_SELECTION, brake button doesn't do anything in main menu */
           }
-        } else {
+        }
+        /* Reset flag when button is released */
+        if (digitalRead(BUTT_PIN) != BUTTON_PRESSED) {
           brakeButtonWasPressedInMenu = false;
         }
 

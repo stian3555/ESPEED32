@@ -88,8 +88,8 @@ const char* TEXT_CASE_LABELS[][2] = {
 /* Order: LARGE, SMALL */
 const char* FONT_SIZE_LABELS[][2] = {
   /* NOR */ {"STOR", "liten"},
-  /* ENG */ {"LARGE", "SMALL"},
-  /* ACD */ {"LARGE", "SMALL"}
+  /* ENG */ {"LARGE", "small"},
+  /* ACD */ {"LARGE", "small"}
 };
 
 /*********************************************************************************************************************/

@@ -181,6 +181,7 @@ AiEsp32RotaryEncoder g_rotaryEncoder = AiEsp32RotaryEncoder(ENCODER_A_PIN, ENCOD
 static uint8_t g_encoderMainSelector = 1;             /* Main menu item selector */
 static uint8_t g_encoderSecondarySelector = 0;        /* Secondary value selector */
 static uint16_t *g_encoderSelectedValuePtr = NULL;    /* Pointer to currently selected value */
+static uint16_t g_originalValueBeforeEdit = 0;        /* Store original value when entering VALUE_SELECTION (for cancel) */
 
 /* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
@@ -532,18 +533,25 @@ void Task1code(void *pvParameters) {
         /* Check for brake button press in LIST view mode - acts as "back" */
         static bool brakeButtonWasPressedInMenu = false;
         static uint32_t lastBrakeButtonPressTime = 0;
+
         if (g_storedVar.viewMode == VIEW_MODE_LIST && digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
           if (!brakeButtonWasPressedInMenu && millis() - lastBrakeButtonPressTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
             brakeButtonWasPressedInMenu = true;
             lastBrakeButtonPressTime = millis();
 
-            /* If in VALUE_SELECTION, go back to ITEM_SELECTION */
+            /* If in VALUE_SELECTION, cancel changes and go back to ITEM_SELECTION */
             if (menuState == VALUE_SELECTION) {
+              /* Restore original value (cancel changes) */
+              if (g_encoderSelectedValuePtr != NULL) {
+                *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
+              }
+
               menuState = ITEM_SELECTION;
               g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
               g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
               g_rotaryEncoder.reset(g_encoderMainSelector);
-              saveEEPROM(g_storedVar);  /* Save any changes made */
+              /* Do NOT save to EEPROM - we're canceling the change */
+              obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
               g_lastEncoderInteraction = millis();
             }
             /* If already in ITEM_SELECTION, brake button doesn't do anything in main menu */
@@ -1577,6 +1585,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
   static unsigned long lastTimePressed = 0;
   static uint16_t selectedParamMaxValue = 100;
   static uint16_t selectedParamMinValue = 0;
+
   /* Ignore multiple presses that are too close together */
   if (millis() - lastTimePressed < BUTTON_SHORT_PRESS_DEBOUNCE_MS)
   {
@@ -1652,6 +1661,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
       g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;
+      g_originalValueBeforeEdit = *g_encoderSelectedValuePtr;  /* Save original value for cancel */
       return VALUE_SELECTION;
     }
     /* LIST mode handling */
@@ -1668,6 +1678,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
       g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);  /* Reset the encoder to the current value of the selected item */
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;   /* Set the encoderPos global variable to the current value of the selected item */
+      g_originalValueBeforeEdit = *g_encoderSelectedValuePtr;  /* Save original value for cancel */
       return VALUE_SELECTION;                             /* Return the VALUE_SELECTION state */
     }
     /* if an item has a callback, execute it, then return to ITEM SELECTION */
@@ -2352,6 +2363,10 @@ void showCurveSelection()
   g_rotaryEncoder.setBoundaries(THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, false);
   g_rotaryEncoder.reset(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
 
+  /* Save original curve value for cancel */
+  uint16_t originalCurveValue = g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
+  bool curveCanceled = false;
+
   /* Calculate the output speed of the throttle curve vertex (as in throttleCurve() function)
      This is calculated as the curveSpeedDiff (from 10% to 90%) percentage of the difference between minSpeed and maxSpeed */
   throttleCurveVertexSpeed = g_storedVar.carParam[g_carSel].minSpeed + (((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
@@ -2370,8 +2385,23 @@ void showCurveSelection()
   obdWriteString(&g_obd, 0, OLED_WIDTH - 32, 26, msgStr, FONT_8x8, OBD_BLACK, 1);
 
   /* Exit curve function when encoder is clicked */
-  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  while (!g_rotaryEncoder.isEncoderButtonClicked() && !curveCanceled)
   {
+    /* Check for brake button press - acts as "cancel" in curve screen */
+    static bool brakeBtnInCurve = false;
+    static uint32_t lastBrakeBtnCurveTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInCurve && millis() - lastBrakeBtnCurveTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInCurve = true;
+        lastBrakeBtnCurveTime = millis();
+        /* Cancel changes - restore original value */
+        g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff = originalCurveValue;
+        curveCanceled = true;
+      }
+    } else {
+      brakeBtnInCurve = false;
+    }
+
     /* Write the trigger value only if it changed */
     if (g_escVar.outputSpeed_pct != prevTrigger)
     {
@@ -2412,7 +2442,12 @@ void showCurveSelection()
   g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
   g_rotaryEncoder.reset(g_encoderMainSelector);
   g_escVar.encoderPos = g_encoderMainSelector;
-  saveEEPROM(g_storedVar);          /* Save modified values to EEPROM */
+
+  /* Only save if not canceled */
+  if (!curveCanceled) {
+    saveEEPROM(g_storedVar);          /* Save modified values to EEPROM */
+  }
+
   obdFill(&g_obd, OBD_WHITE, 1);    /* Clear screen */
 
   return;
@@ -2444,6 +2479,7 @@ void showSettingsMenu() {
   uint16_t prevSettingsSelector = 0;
   MenuState_enum settingsMenuState = ITEM_SELECTION;
   uint16_t *settingsValuePtr = NULL;
+  uint16_t originalSettingsValue = 0;  /* Store original value for cancel */
   uint16_t prevLanguage = g_storedVar.language;
   uint16_t tempLanguage = g_storedVar.language;  /* Temporary language value for editing */
   bool isEditingLanguage = false;  /* Track if we're editing language */
@@ -2465,17 +2501,24 @@ void showSettingsMenu() {
         /* Check if selected item has a value to edit */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
           /* Check if this is the LANG item (index 3 in settings menu, 0-based) */
-          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, BACK) */
+          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, TCASE, BACK) */
             isEditingLanguage = true;
             tempLanguage = g_storedVar.language;
+            originalSettingsValue = g_storedVar.language;
+          } else {
+            /* Save original value for non-language items */
+            settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
+            originalSettingsValue = *settingsValuePtr;
           }
           /* Enter value editing mode for selected item */
           settingsMenuState = VALUE_SELECTION;
           g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-          settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
+          if (!isEditingLanguage) {
+            settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
+          }
           g_rotaryEncoder.setBoundaries(g_settingsMenu.item[settingsSelector - 1].minValue,
                                        g_settingsMenu.item[settingsSelector - 1].maxValue, false);
-          g_rotaryEncoder.reset(*settingsValuePtr);
+          g_rotaryEncoder.reset(isEditingLanguage ? tempLanguage : *settingsValuePtr);
         }
       } else {
         /* Exit value editing mode and return to item selection */
@@ -2527,19 +2570,23 @@ void showSettingsMenu() {
         lastBrakeBtnSettingsTime = millis();
 
         if (settingsMenuState == VALUE_SELECTION) {
-          /* Go back to item selection */
+          /* Cancel changes and go back to item selection */
+          if (isEditingLanguage) {
+            /* Restore original language value (cancel) */
+            tempLanguage = originalSettingsValue;
+            g_storedVar.language = originalSettingsValue;
+            isEditingLanguage = false;
+          } else if (settingsValuePtr != NULL) {
+            /* Restore original value (cancel) */
+            *settingsValuePtr = originalSettingsValue;
+          }
+
           settingsMenuState = ITEM_SELECTION;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
           g_rotaryEncoder.reset(settingsSelector);
-
-          /* If we were editing language, restore the actual language value */
-          if (isEditingLanguage) {
-            g_storedVar.language = tempLanguage;
-            isEditingLanguage = false;
-          }
-
-          saveEEPROM(g_storedVar);
+          /* Do NOT save to EEPROM - we're canceling the change */
+          obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
         } else {
           /* In ITEM_SELECTION - exit settings menu completely */
           break;

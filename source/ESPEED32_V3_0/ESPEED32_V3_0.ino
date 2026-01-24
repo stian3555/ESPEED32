@@ -2662,7 +2662,11 @@ void showSettingsMenu() {
           tempLanguage = g_rotaryEncoder.readEncoder();
         } else if (isEditingTextCase) {
           /* Update temp text case value instead of actual text case */
-          tempTextCase = g_rotaryEncoder.readEncoder();
+          uint16_t newTextCase = g_rotaryEncoder.readEncoder();
+          if (newTextCase != tempTextCase) {
+            tempTextCase = newTextCase;
+            obdFill(&g_obd, OBD_WHITE, 1);  /* Clear to prevent text overlap */
+          }
         } else if (isEditingFontSize) {
           /* Update temp font size value instead of actual font size */
           tempFontSize = g_rotaryEncoder.readEncoder();

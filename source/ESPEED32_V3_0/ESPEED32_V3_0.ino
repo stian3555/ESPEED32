@@ -1374,6 +1374,7 @@ void printMainMenu(MenuState_enum currMenuState)
       obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)"             ", FONT_8x8, OBD_BLACK, 1);
     }
   }
+  else {
   /* LIST mode: show screensaver or menu */
   /* Calculate throttle percentage for screensaver logic */
   uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
@@ -1484,11 +1485,12 @@ void printMainMenu(MenuState_enum currMenuState)
     {
       obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
     } 
-    else 
+    else
     {
       obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)"             ", FONT_8x8, OBD_BLACK, 1);
     }
   }
+  } /* End of else (LIST mode) */
 
   /* Display bottom status line */
   displayStatusLine();

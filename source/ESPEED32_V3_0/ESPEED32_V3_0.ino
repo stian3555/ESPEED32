@@ -1825,11 +1825,22 @@ void showCarSelection() {
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Calculate throttle percentage for screensaver wake-up */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
     /* Check for screensaver timeout */
     if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (!screensaverActive) {
-        screensaverActive = true;
-        showScreensaver();
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          showScreensaver();
+        }
+        continue;  /* Don't draw menu while screensaver is active */
+      } else if (screensaverActive) {
+        /* Wake from screensaver - throttle exceeded threshold */
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
@@ -1920,11 +1931,22 @@ void showCopyCarSettings() {
   /* Select source car */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Calculate throttle percentage for screensaver wake-up */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
     /* Check for screensaver timeout */
     if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (!screensaverActive) {
-        screensaverActive = true;
-        showScreensaver();
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          showScreensaver();
+        }
+        continue;  /* Don't draw menu while screensaver is active */
+      } else if (screensaverActive) {
+        /* Wake from screensaver - throttle exceeded threshold */
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
@@ -2008,11 +2030,22 @@ void showCopyCarSettings() {
   /* Select destination car */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Calculate throttle percentage for screensaver wake-up */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
     /* Check for screensaver timeout */
     if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (!screensaverActive) {
-        screensaverActive = true;
-        showScreensaver();
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          showScreensaver();
+        }
+        continue;  /* Don't draw menu while screensaver is active */
+      } else if (screensaverActive) {
+        /* Wake from screensaver - throttle exceeded threshold */
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
@@ -2159,11 +2192,22 @@ void showSelectRenameCar() {
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Calculate throttle percentage for screensaver wake-up */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
     /* Check for screensaver timeout */
     if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (!screensaverActive) {
-        screensaverActive = true;
-        showScreensaver();
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          showScreensaver();
+        }
+        continue;  /* Don't draw menu while screensaver is active */
+      } else if (screensaverActive) {
+        /* Wake from screensaver - throttle exceeded threshold */
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 
@@ -2499,11 +2543,31 @@ void showRenameCar() {
   /* Exit car renaming when encoder is clicked AND CONFIRM is selected */
   while (1)
   {
+    /* Calculate throttle percentage for screensaver wake-up */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
     /* Check for screensaver timeout */
     if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (!screensaverActive) {
-        screensaverActive = true;
-        showScreensaver();
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          showScreensaver();
+        }
+        continue;  /* Don't draw menu while screensaver is active */
+      } else if (screensaverActive) {
+        /* Wake from screensaver - throttle exceeded threshold */
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        /* Redraw static elements */
+        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+        for (uint8_t j = 0; j < 8; j++) {
+          obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
+        }
+        obdDrawLine(&g_obd, 72, 22, 80, 22, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
       }
     }
 
@@ -2808,11 +2872,22 @@ void showSettingsMenu() {
   bool settingsScreensaverActive = false;
 
   while (true) {
+    /* Calculate throttle percentage for screensaver wake-up */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
     /* Check for screensaver timeout */
     if (g_storedVar.screensaverTimeout > 0 && millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (!settingsScreensaverActive) {
-        settingsScreensaverActive = true;
-        showScreensaver();
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!settingsScreensaverActive) {
+          settingsScreensaverActive = true;
+          showScreensaver();
+        }
+        continue;  /* Don't draw menu while screensaver is active */
+      } else if (settingsScreensaverActive) {
+        /* Wake from screensaver - throttle exceeded threshold */
+        settingsScreensaverActive = false;
+        lastSettingsInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
       }
     }
 

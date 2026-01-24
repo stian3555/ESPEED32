@@ -275,6 +275,7 @@ static uint32_t g_lastEncoderInteraction = 0;  /* Timestamp of last encoder inte
 
 /* Menu Navigation State */
 static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
+static bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 
 /*********************************************************************************************************************/
 /*                                                Function Prototypes                                                */
@@ -1111,8 +1112,8 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   int col1_center = 32;   /* Center of left half (128/4 = 32) */
   int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
 
-  /* Check if selection or car changed - force update of ALL items */
-  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
+  /* Check if forced redraw, selection or car changed - force update of ALL items */
+  if (g_forceRaceRedraw || selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
     lastBrake = 999;
     lastSensi = 999;
     lastSelectedItem = selectedItem;
@@ -1172,8 +1173,8 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   int col1_center = 32;   /* Center of left half (128/4 = 32) */
   int col2_center = 96;   /* Center of right half (128*3/4 = 96) */
 
-  /* Check if selection or car changed - force update of ALL items */
-  if (selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
+  /* Check if forced redraw, selection or car changed - force update of ALL items */
+  if (g_forceRaceRedraw || selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
     /* Force redraw of all items when selection changes */
     lastBrake = 999;
     lastSensi = 999;
@@ -1323,6 +1324,8 @@ void printMainMenu(MenuState_enum currMenuState)
   }
 
   /* Check what to display based on view mode */
+  static uint16_t lastViewMode = 255;  /* Track view mode changes */
+
   if (g_storedVar.viewMode == VIEW_MODE_GRID)
   {
     /* GRID mode: always show race mode with editing capability */
@@ -1331,6 +1334,13 @@ void printMainMenu(MenuState_enum currMenuState)
        SIMPLE: 0=BRAKE, 1=SENSI, 2=CAR (if enabled) */
     static uint8_t gridSelectedItem = 0;  /* Currently selected grid item */
     static MenuState_enum gridMenuState = ITEM_SELECTION;  /* Grid edit state */
+
+    /* Force redraw when entering GRID mode */
+    if (lastViewMode != VIEW_MODE_GRID) {
+      lastViewMode = VIEW_MODE_GRID;
+      g_forceRaceRedraw = true;
+      obdFill(&g_obd, OBD_WHITE, 1);
+    }
 
     /* Clear screen if coming from screensaver */
     if (screensaverActive) {
@@ -1363,6 +1373,7 @@ void printMainMenu(MenuState_enum currMenuState)
     else {
       displayRaceMode(gridSelectedItem, isEditing);
     }
+    g_forceRaceRedraw = false;  /* Reset force redraw flag after display */
 
     /* Print LIMITER warning if LIMIT is any value other than 100% */
     if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
@@ -1376,6 +1387,8 @@ void printMainMenu(MenuState_enum currMenuState)
   }
   else {
   /* LIST mode: show screensaver or menu */
+  lastViewMode = VIEW_MODE_LIST;  /* Track that we're in LIST mode */
+
   /* Calculate throttle percentage for screensaver logic */
   uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 

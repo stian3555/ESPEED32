@@ -2649,9 +2649,26 @@ void showSettingsMenu() {
   uint16_t frameLower = visibleLines;
 
   /* Settings menu loop */
+  uint32_t lastSettingsInteraction = millis();
+  bool settingsScreensaverActive = false;
+
   while (true) {
+    /* Check for screensaver timeout */
+    if (g_storedVar.screensaverTimeout > 0 && millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (!settingsScreensaverActive) {
+        settingsScreensaverActive = true;
+        showScreensaver();
+      }
+    }
+
     /* Check for button click */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastSettingsInteraction = millis();
+      if (settingsScreensaverActive) {
+        settingsScreensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        continue;  /* Just wake up, don't process click */
+      }
       if (settingsMenuState == ITEM_SELECTION) {
         /* Check if BACK button (last item) is selected */
         if (settingsSelector == SETTINGS_ITEMS_COUNT) {
@@ -2739,6 +2756,11 @@ void showSettingsMenu() {
 
     /* Read encoder position */
     if (g_rotaryEncoder.encoderChanged()) {
+      lastSettingsInteraction = millis();
+      if (settingsScreensaverActive) {
+        settingsScreensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
       if (settingsMenuState == ITEM_SELECTION) {
         settingsSelector = g_rotaryEncoder.readEncoder();
       } else {
@@ -2769,6 +2791,11 @@ void showSettingsMenu() {
       if (!brakeBtnInSettings && millis() - lastBrakeBtnSettingsTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
         brakeBtnInSettings = true;
         lastBrakeBtnSettingsTime = millis();
+        lastSettingsInteraction = millis();
+        if (settingsScreensaverActive) {
+          settingsScreensaverActive = false;
+          obdFill(&g_obd, OBD_WHITE, 1);
+        }
 
         if (settingsMenuState == VALUE_SELECTION) {
           /* Cancel changes and go back to item selection */

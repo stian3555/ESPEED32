@@ -1818,11 +1818,29 @@ void showCarSelection() {
   g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
   g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
 
+  /* Screensaver support */
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for screensaver timeout */
+    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (!screensaverActive) {
+        screensaverActive = true;
+        showScreensaver();
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        continue;
+      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       g_storedVar.selectedCarNumber = originalCarNumber;  /* Restore original */
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -1830,7 +1848,14 @@ void showCarSelection() {
     }
 
     /* Get encoder value if changed */
-    g_storedVar.selectedCarNumber = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : g_storedVar.selectedCarNumber;
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+      g_storedVar.selectedCarNumber = g_rotaryEncoder.readEncoder();
+    }
 
     /* If encoder move out of frame, adjust frame */
     if (g_storedVar.selectedCarNumber > frameLower)
@@ -1882,6 +1907,10 @@ void showCopyCarSettings() {
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
 
+  /* Screensaver support */
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
   g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
@@ -1891,15 +1920,36 @@ void showCopyCarSettings() {
   /* Select source car */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for screensaver timeout */
+    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (!screensaverActive) {
+        screensaverActive = true;
+        showScreensaver();
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        continue;
+      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       obdFill(&g_obd, OBD_WHITE, 1);
       return;
     }
 
     /* Get encoder value if changed */
-    sourceCar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : sourceCar;
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+      sourceCar = g_rotaryEncoder.readEncoder();
+    }
 
     /* If encoder move out of frame, adjust frame */
     if (sourceCar > frameLower)
@@ -1939,6 +1989,10 @@ void showCopyCarSettings() {
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
 
+  /* Reset screensaver tracking */
+  lastInteraction = millis();
+  screensaverActive = false;
+
   /* Reset encoder for destination car selection (CAR_MAX_COUNT = ALL option) */
   g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT, false);  /* 0-19 = cars, 20 = ALL */
   g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
@@ -1954,15 +2008,36 @@ void showCopyCarSettings() {
   /* Select destination car */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for screensaver timeout */
+    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (!screensaverActive) {
+        screensaverActive = true;
+        showScreensaver();
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        continue;
+      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       obdFill(&g_obd, OBD_WHITE, 1);
       return;
     }
 
     /* Get encoder value if changed */
-    destCar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : destCar;
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+      destCar = g_rotaryEncoder.readEncoder();
+    }
 
     /* If encoder move out of frame, adjust frame */
     if (destCar > frameLower)
@@ -2077,9 +2152,21 @@ void showSelectRenameCar() {
   bool isEditingRaceswp = false;
   uint16_t tempRaceswpValue = g_storedVar.gridCarSelectEnabled;
 
+  /* Screensaver support */
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+
   /* Exit car selection when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked())
   {
+    /* Check for screensaver timeout */
+    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (!screensaverActive) {
+        screensaverActive = true;
+        showScreensaver();
+      }
+    }
+
     /* Check for brake button press - acts as "back" in CAR menu */
     static bool brakeBtnInCarMenu = false;
     static uint32_t lastBrakeBtnCarMenuTime = 0;
@@ -2087,6 +2174,12 @@ void showSelectRenameCar() {
       if (!brakeBtnInCarMenu && millis() - lastBrakeBtnCarMenuTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
         brakeBtnInCarMenu = true;
         lastBrakeBtnCarMenuTime = millis();
+        lastInteraction = millis();
+        if (screensaverActive) {
+          screensaverActive = false;
+          obdFill(&g_obd, OBD_WHITE, 1);
+          continue;
+        }
 
         if (isEditingRaceswp) {
           /* Cancel RACESWP editing */
@@ -2104,11 +2197,18 @@ void showSelectRenameCar() {
     }
 
     /* Get encoder value if changed */
-    if (!isEditingRaceswp) {
-      selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
-    } else {
-      /* When editing RACESWP, encoder changes the value */
-      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : tempRaceswpValue;
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+      if (!isEditingRaceswp) {
+        selectedOption = g_rotaryEncoder.readEncoder();
+      } else {
+        /* When editing RACESWP, encoder changes the value */
+        tempRaceswpValue = g_rotaryEncoder.readEncoder();
+      }
     }
 
     /* Adjust frame if selection moves outside visible area (only when not editing) */
@@ -2384,7 +2484,7 @@ void showRenameCar() {
   obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
 
   /* Draw the right arrow */
-  for (uint8_t j = 0; j < 8; j++) 
+  for (uint8_t j = 0; j < 8; j++)
   {
     obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
   }
@@ -2392,11 +2492,38 @@ void showRenameCar() {
   obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
   obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
 
+  /* Screensaver support */
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+
   /* Exit car renaming when encoder is clicked AND CONFIRM is selected */
   while (1)
   {
+    /* Check for screensaver timeout */
+    if (g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (!screensaverActive) {
+        screensaverActive = true;
+        showScreensaver();
+      }
+    }
+
     /* Check for brake button press - cancel and exit */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        /* Redraw static elements */
+        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+        for (uint8_t j = 0; j < 8; j++) {
+          obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
+        }
+        obdDrawLine(&g_obd, 72, 22, 80, 22, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
+        continue;
+      }
       delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
       /* Don't save changes - just exit */
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -2404,22 +2531,35 @@ void showRenameCar() {
     }
 
     /* Get encoder value if changed */
-    /* Change selectedOption if in RENAME_CAR_SELECT_OPTION_MODE */
-    if (mode == RENAME_CAR_SELECT_OPTION_MODE) 
-    {
-      selectedOption = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedOption;
-    }
-    /* Change selectedChar if in RENAME_CAR_SELECT_CHAR_MODE */
-    if (mode == RENAME_CAR_SELECT_CHAR_MODE) 
-    {
-      selectedChar = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : selectedChar;
-      tmpName[selectedOption] = (char)selectedChar; /* Change the value of the selected char in the temp name */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        /* Redraw static elements */
+        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+        for (uint8_t j = 0; j < 8; j++) {
+          obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
+        }
+        obdDrawLine(&g_obd, 72, 22, 80, 22, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
+      }
+      /* Change selectedOption if in RENAME_CAR_SELECT_OPTION_MODE */
+      if (mode == RENAME_CAR_SELECT_OPTION_MODE) {
+        selectedOption = g_rotaryEncoder.readEncoder();
+      }
+      /* Change selectedChar if in RENAME_CAR_SELECT_CHAR_MODE */
+      if (mode == RENAME_CAR_SELECT_CHAR_MODE) {
+        selectedChar = g_rotaryEncoder.readEncoder();
+        tmpName[selectedOption] = (char)selectedChar; /* Change the value of the selected char in the temp name */
 
-      /* Draw the upward and downward arrows on the selected char to indicate that it can be changed */
-      for (uint8_t j = 0; j < 6; j++) 
-      {
-        obdDrawLine(&g_obd, 1 + j + (selectedOption * 12), 14 - j, 11 - j + (selectedOption * 12), 14 - j, OBD_BLACK, 1);
-        obdDrawLine(&g_obd, 1 + j + (selectedOption * 12), 33 + j, 11 - j + (selectedOption * 12), 33 + j, OBD_BLACK, 1);
+        /* Draw the upward and downward arrows on the selected char to indicate that it can be changed */
+        for (uint8_t j = 0; j < 6; j++) {
+          obdDrawLine(&g_obd, 1 + j + (selectedOption * 12), 14 - j, 11 - j + (selectedOption * 12), 14 - j, OBD_BLACK, 1);
+          obdDrawLine(&g_obd, 1 + j + (selectedOption * 12), 33 + j, 11 - j + (selectedOption * 12), 33 + j, OBD_BLACK, 1);
+        }
       }
     }
 
@@ -2434,10 +2574,25 @@ void showRenameCar() {
     obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 22, (char *)"OK", FONT_12x16, (selectedOption == CAR_NAME_MAX_SIZE - 1) ? OBD_WHITE : OBD_BLACK, 1);
 
     /* If encoder button is clicked */
-    if (g_rotaryEncoder.isEncoderButtonClicked()) 
+    if (g_rotaryEncoder.isEncoderButtonClicked())
     {
+      lastInteraction = millis();
+      if (screensaverActive) {
+        screensaverActive = false;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        /* Redraw static elements */
+        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+        for (uint8_t j = 0; j < 8; j++) {
+          obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
+        }
+        obdDrawLine(&g_obd, 72, 22, 80, 22, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 23, 80, 23, OBD_BLACK, 1);
+        obdDrawLine(&g_obd, 72, 24, 80, 24, OBD_BLACK, 1);
+        continue;
+      }
       /* Exit renameCar routing when CONFIRM is selected */
-      if (selectedOption == CAR_NAME_MAX_SIZE - 1) 
+      if (selectedOption == CAR_NAME_MAX_SIZE - 1)
       {
         /* Change the name of the Car */
         sprintf(g_storedVar.carParam[g_storedVar.selectedCarNumber].carName, "%s", tmpName);

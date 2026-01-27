@@ -8,7 +8,7 @@
 /*                                                   Version Control                                                 */
 /*********************************************************************************************************************/
 #define SW_MAJOR_VERSION 3
-#define SW_MINOR_VERSION 0
+#define SW_MINOR_VERSION 1
 #define STORED_VAR_VERSION 7  /* Stored variable version - increment when stored structure changes */
 
 /* Last modified: 17/10/2024 */
@@ -716,12 +716,11 @@ void Task2code(void *pvParameters) {
       if (!(g_currState == CALIBRATION || g_currState == INIT)) {
         if (g_escVar.trigger_norm == 0) {
           /* Apply brake when trigger is released */
-          /* Check if brake button is pressed to reduce brake strength */
+          /* Check if brake button is pressed - use alternate brake value */
           uint16_t effectiveBrake = g_storedVar.carParam[g_carSel].brake;
           if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-            /* Calculate reduced brake: brake - (brake * reduction / 100) */
-            effectiveBrake = g_storedVar.carParam[g_carSel].brake -
-                            ((g_storedVar.carParam[g_carSel].brake * g_storedVar.carParam[g_carSel].brakeButtonReduction) / 100);
+            /* Use brakeButtonReduction as alternate brake value (not a reduction) */
+            effectiveBrake = g_storedVar.carParam[g_carSel].brakeButtonReduction;
           }
           HalfBridge_SetPwmDrag(0, effectiveBrake);
           g_escVar.outputSpeed_pct = 0;
@@ -981,9 +980,10 @@ void showScreenWelcome()
   /* Display "ESPEED" in large font */
   obdWriteString(&g_obd, 0, 24, 14, (char *)"ESPEED", FONT_12x16, OBD_BLACK, 1);
 
-  /* Display "v3.0" in smaller font, centered below with spacing */
-  /* v3.0 is 4 chars × 6px = 24px wide, center at (128-24)/2 = 52 */
-  obdWriteString(&g_obd, 0, 52, 36, (char *)"v3.0", FONT_6x8, OBD_BLACK, 1);
+  /* Display version in smaller font, centered below with spacing */
+  sprintf(msgStr, "v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  uint8_t versionWidth = strlen(msgStr) * 6;  /* 6px per char for FONT_6x8 */
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - versionWidth) / 2, 36, msgStr, FONT_6x8, OBD_BLACK, 1);
 }
 
 
@@ -992,7 +992,7 @@ void showScreenWelcome()
  */
 void showScreenPreCalibration() 
 {
-  sprintf(msgStr, "ESPEED32 v%d.%02d", SW_MAJOR_VERSION, SW_MINOR_VERSION);  //print SW version
+  sprintf(msgStr, "ESPEED32 v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);  //print SW version
   obdWriteString(&g_obd, 0, 8, 0, msgStr, FONT_8x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, (OLED_WIDTH / 2) - 48, 1 * HEIGHT8x8, (char *)"Release button", FONT_8x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, (OLED_WIDTH / 2) - 48, 2 * HEIGHT8x8, (char *)"to calibrate", FONT_8x8, OBD_BLACK, 1);
@@ -1007,7 +1007,7 @@ void showScreenPreCalibration()
  */
 void showScreenNoEEPROM() 
 {
-  sprintf(msgStr, "ESPEED32 v%d.%02d", SW_MAJOR_VERSION, SW_MINOR_VERSION);  //print SW version
+  sprintf(msgStr, "ESPEED32 v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);  //print SW version
   obdWriteString(&g_obd, 0, 0, 0, msgStr, FONT_8x8, OBD_WHITE, 1);
   obdWriteString(&g_obd, 0, (OLED_WIDTH / 2) - 64, 3 * HEIGHT8x8, (char *)"EEPROM NOT init!", FONT_8x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, (OLED_WIDTH / 2) - 48, 5 * HEIGHT8x8, (char *)"Press button", FONT_8x8, OBD_BLACK, 1);
@@ -1048,9 +1048,16 @@ void showScreenCalibration(int16_t adcRaw)
 void displayStatusLine() {
   static uint16_t lastCarNum = 999;
 
-  /* Throttle % - far left (position 0) */
-  sprintf(msgStr, "%3d%c", g_escVar.outputSpeed_pct, '%');
-  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
+  /* Throttle % or Brake button preview - far left (position 0) */
+  if (digitalRead(BUTT_PIN) == BUTTON_PRESSED && g_escVar.trigger_norm == 0) {
+    /* Show brake button value when button is held and not on throttle */
+    sprintf(msgStr, "B%3d%c", g_storedVar.carParam[g_carSel].brakeButtonReduction, '%');
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, OBD_WHITE, 1);
+  } else {
+    /* Normal throttle display */
+    sprintf(msgStr, "%4d%c", g_escVar.outputSpeed_pct, '%');
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
+  }
 
   /* Car ID - centered with proper clearing and highlighting */
   sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);

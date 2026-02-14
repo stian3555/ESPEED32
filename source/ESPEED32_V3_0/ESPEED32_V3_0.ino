@@ -8,8 +8,8 @@
 /*                                                   Version Control                                                 */
 /*********************************************************************************************************************/
 #define SW_MAJOR_VERSION 3
-#define SW_MINOR_VERSION 1
-#define STORED_VAR_VERSION 7  /* Stored variable version - increment when stored structure changes */
+#define SW_MINOR_VERSION 2
+#define STORED_VAR_VERSION 8  /* Stored variable version - increment when stored structure changes */
 
 /* Last modified: 17/10/2024 */
 /*********************************************************************************************************************/
@@ -26,10 +26,10 @@ const char* MENU_NAMES[][9] = {
 
 /* Settings menu item names: [language][item] */
 /* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK */
-const char* SETTINGS_MENU_NAMES[][7] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "BACK"}
+const char* SETTINGS_MENU_NAMES[][8] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -104,10 +104,10 @@ const char* MENU_NAMES_PASCAL[][9] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][7] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Back"},
-  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][8] = {
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Back"},
+  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Back"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
@@ -456,8 +456,10 @@ void Task1code(void *pvParameters) {
 
           The user trigger input is being elaborated and the correct speed (PWM) output is being produced for the whole duration of the WELCOME state */
 
-        showScreenWelcome();    /* Show welcome screen */
-        delay(1500);            /* Wait one second */
+        if (g_storedVar.startupDelay > 0) {
+          showScreenWelcome();    /* Show welcome screen */
+          delay(g_storedVar.startupDelay * 10);  /* Configurable startup delay */
+        }
         g_currState = RUNNING;  /* Go to RUNNING state */
         break;
 
@@ -808,6 +810,7 @@ void initStoredVariables() {
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
   g_storedVar.listFontSize = FONT_SIZE_DEFAULT;  /* Default list view font size */
+  g_storedVar.startupDelay = STARTUP_DELAY_DEFAULT;  /* Default startup delay (15 × 10ms = 150ms) */
 }
 
 
@@ -962,7 +965,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = FONT_SIZE_LARGE;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* DELAY */
+  g_settingsMenu.item[i].value = (void *)&g_storedVar.startupDelay;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = STARTUP_DELAY_MAX;
+  g_settingsMenu.item[i].minValue = STARTUP_DELAY_MIN;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -3178,6 +3189,10 @@ void showSettingsMenu() {
             /* Use tempFontSize when editing, otherwise use actual value */
             uint16_t displayFontSize = (isEditingFontSize && isValueSelected) ? tempFontSize : value;
             sprintf(msgStr, "%5s", FONT_SIZE_LABELS[lang][displayFontSize]);
+          }
+          /* DELAY/VENT menu item - show value × 10 as ms */
+          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 6)) == 0) {
+            sprintf(msgStr, "%3dms", value * 10);
           } else {
             sprintf(msgStr, "%3d", value);
           }

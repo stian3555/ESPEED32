@@ -17,7 +17,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    9     /* Number of items in main menu */
-#define SETTINGS_ITEMS_COUNT 7    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 8    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -38,7 +38,7 @@
 #define LANG_NOR            0     /* Norwegian language */
 #define LANG_ENG            1     /* English language */
 #define LANG_ACD            2     /* ACD/CarSteen terminology (English-based) */
-#define LANG_DEFAULT        LANG_NOR
+#define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */
 #define MIN_SPEED_DEFAULT         20    /* [%] Minimum motor speed (sensitivity) */
@@ -74,6 +74,9 @@
 #define SCREENSAVER_TIMEOUT_MIN      1   /* [s] Minimum screensaver timeout (0 = OFF) */
 #define SCREENSAVER_TIMEOUT_MAX      240 /* [s] Maximum screensaver timeout */
 #define SCREENSAVER_WAKEUP_THRESHOLD 20  /* [%] Throttle threshold to wake from screensaver */
+#define STARTUP_DELAY_DEFAULT       15  /* [×10ms] Startup delay (15 = 150ms) */
+#define STARTUP_DELAY_MIN           0   /* [×10ms] Minimum (0 = skip welcome) */
+#define STARTUP_DELAY_MAX           99  /* [×10ms] Maximum (99 = 990ms) */
 
 /* Button Press Timing */
 #define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
@@ -89,7 +92,7 @@
 /* Text Case Style */
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */
 #define TEXT_CASE_PASCAL    1  /* Brake, Sensi, etc. */
-#define TEXT_CASE_DEFAULT   TEXT_CASE_UPPER
+#define TEXT_CASE_DEFAULT   TEXT_CASE_PASCAL
 
 /* List View Font Size */
 #define FONT_SIZE_LARGE     0  /* 12x16 font (default) */
@@ -191,6 +194,7 @@ typedef struct {
   uint16_t language;                        /* Language: NOR, ENG, or ACD */
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
   uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
+  uint16_t startupDelay;                    /* [×10ms] Startup welcome screen delay */
 } StoredVar_type;
 
 /**

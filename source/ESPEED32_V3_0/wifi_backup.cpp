@@ -1,6 +1,7 @@
 #include "wifi_backup.h"
 #include "slot_ESC.h"
 #include "HAL.h"
+#include <Update.h>
 
 /* External references from main .ino */
 extern StoredVar_type g_storedVar;
@@ -19,33 +20,45 @@ static const char WIFI_HTML_PAGE[] PROGMEM = R"rawliteral(
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESPEED32 Backup</title>
+<title>ESPEED32</title>
 <style>
 body{font-family:Arial,sans-serif;max-width:480px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
 h1{color:#e94560;text-align:center;margin-bottom:5px}
 p.sub{text-align:center;color:#888;margin-top:0}
+h2{color:#ccc;font-size:16px;margin-bottom:5px}
 .btn{display:block;width:100%;padding:15px;margin:10px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;box-sizing:border-box}
 .dl{background:#0f3460;color:#fff}
 .dl:hover{background:#1a4a80}
 .ul{background:#e94560;color:#fff}
 .ul:hover{background:#ff6b81}
+.ota{background:#ff8c00;color:#000}
+.ota:hover{background:#ffa500}
 hr{border-color:#333;margin:20px 0}
 input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
-#status{margin:15px 0;padding:12px;border-radius:5px;display:none;text-align:center}
+.st{margin:15px 0;padding:12px;border-radius:5px;display:none;text-align:center}
 .ok{background:#16c79a;color:#000}
 .err{background:#e94560;color:#fff}
+.warn{color:#ff8c00;font-size:13px;text-align:center}
 </style>
 </head>
 <body>
 <h1>ESPEED32</h1>
-<p class="sub">Backup &amp; Restore <span id="devid">%SUFFIX%</span></p>
+<p class="sub">v%VERSION% &middot; <span id="devid">%SUFFIX%</span></p>
+<h2>Backup &amp; Restore</h2>
 <a id="dl" href="/backup"><button class="btn dl">Download Backup</button></a>
-<hr>
 <form id="uf">
 <input type="file" id="fi" accept=".json">
 <button type="submit" class="btn ul">Restore from File</button>
 </form>
-<div id="status"></div>
+<div id="status" class="st"></div>
+<hr>
+<h2>Firmware Update</h2>
+<form id="of">
+<input type="file" id="fw" accept=".bin">
+<button type="submit" class="btn ota">Upload Firmware</button>
+</form>
+<p class="warn">Do not disconnect power during update!</p>
+<div id="ostatus" class="st"></div>
 <script>
 document.getElementById('dl').onclick=function(){
   var d=new Date().toISOString().slice(0,10);
@@ -58,10 +71,21 @@ document.getElementById('uf').onsubmit=function(e){
   if(!f){alert('Select a JSON file first');return}
   var fd=new FormData();fd.append('file',f);
   var s=document.getElementById('status');
-  s.style.display='block';s.className='';s.textContent='Uploading...';
+  s.style.display='block';s.className='st';s.textContent='Uploading...';
   fetch('/restore',{method:'POST',body:fd}).then(function(r){return r.text()}).then(function(t){
-    s.className=t.indexOf('OK')===0?'ok':'err';s.textContent=t;
-  }).catch(function(err){s.className='err';s.textContent='Error: '+err});
+    s.className='st '+(t.indexOf('OK')===0?'ok':'err');s.textContent=t;
+  }).catch(function(err){s.className='st err';s.textContent='Error: '+err});
+};
+document.getElementById('of').onsubmit=function(e){
+  e.preventDefault();
+  var f=document.getElementById('fw').files[0];
+  if(!f){alert('Select a .bin firmware file first');return}
+  var fd=new FormData();fd.append('file',f);
+  var s=document.getElementById('ostatus');
+  s.style.display='block';s.className='st';s.textContent='Uploading firmware...';
+  fetch('/ota',{method:'POST',body:fd}).then(function(r){return r.text()}).then(function(t){
+    s.className='st '+(t.indexOf('OK')===0?'ok':'err');s.textContent=t;
+  }).catch(function(err){s.className='st err';s.textContent='Error: '+err});
 };
 </script>
 </body>
@@ -292,11 +316,19 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
 }
 
 
+/* OTA progress tracking */
+static size_t g_otaTotal = 0;
+static size_t g_otaWritten = 0;
+static bool g_otaInProgress = false;
+
 /* HTTP route handlers */
 
 static void handleRoot() {
   String page = FPSTR(WIFI_HTML_PAGE);
   page.replace("%SUFFIX%", g_wifiSuffix);
+  char ver[8];
+  sprintf(ver, "%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  page.replace("%VERSION%", ver);
   g_wifiServer->send(200, "text/html", page);
 }
 
@@ -339,6 +371,62 @@ static void handleRestore() {
 
 
 /**
+ * @brief Handle OTA firmware upload - streams .bin directly to flash
+ */
+static void handleOtaUpload() {
+  HTTPUpload& upload = g_wifiServer->upload();
+  char msgStr[32];
+
+  if (upload.status == UPLOAD_FILE_START) {
+    g_otaTotal = upload.totalSize;  /* May be 0 if browser doesn't send content-length */
+    g_otaWritten = 0;
+    g_otaInProgress = true;
+
+    /* Show update in progress on OLED */
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 16, 0, (char*)"OTA Update", FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"Updating...", FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Do not power off!", FONT_6x8, OBD_BLACK, 1);
+
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+      g_otaInProgress = false;
+    }
+
+  } else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (Update.write(upload.buf, upload.currentSize) == upload.currentSize) {
+      g_otaWritten += upload.currentSize;
+      /* Update progress on OLED */
+      sprintf(msgStr, "%u KB", (unsigned int)(g_otaWritten / 1024));
+      obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_8x8, OBD_BLACK, 1);
+    }
+
+  } else if (upload.status == UPLOAD_FILE_END) {
+    if (Update.end(true)) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, 8, 24, (char*)"OTA OK!", FONT_12x16, OBD_BLACK, 1);
+    } else {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, 0, 24, (char*)"OTA FAIL!", FONT_12x16, OBD_BLACK, 1);
+    }
+    g_otaInProgress = false;
+  }
+}
+
+/**
+ * @brief Handle OTA completion response - called after upload finishes
+ */
+static void handleOta() {
+  if (Update.hasError()) {
+    g_wifiServer->send(400, "text/plain", "Error: firmware update failed");
+  } else {
+    g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+    delay(1000);
+    ESP.restart();
+  }
+}
+
+
+/**
  * @brief Main WiFi backup/restore screen - called from settings menu
  * @details Starts WiFi AP, runs HTTP server, shows info on OLED.
  *          Returns when user presses encoder button or brake button.
@@ -363,6 +451,7 @@ void showWiFiBackupScreen() {
   g_wifiServer->on("/", handleRoot);
   g_wifiServer->on("/backup", HTTP_GET, handleBackup);
   g_wifiServer->on("/restore", HTTP_POST, handleRestore, handleRestoreUpload);
+  g_wifiServer->on("/ota", HTTP_POST, handleOta, handleOtaUpload);
   g_wifiServer->begin();
 
   /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
@@ -383,13 +472,16 @@ void showWiFiBackupScreen() {
   while (true) {
     g_wifiServer->handleClient();
 
-    if (g_rotaryEncoder.isEncoderButtonClicked()) {
-      break;
-    }
+    /* Block exit during OTA to prevent bricking */
+    if (!g_otaInProgress) {
+      if (g_rotaryEncoder.isEncoderButtonClicked()) {
+        break;
+      }
 
-    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
-      break;
+      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+        break;
+      }
     }
 
     vTaskDelay(1);

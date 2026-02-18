@@ -15,6 +15,10 @@
 /*                                              Configuration Constants                                             */
 /*********************************************************************************************************************/
 
+/* Firmware Version */
+#define SW_MAJOR_VERSION 3
+#define SW_MINOR_VERSION 2
+
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 9  /* Increment when StoredVar_type structure changes */
 

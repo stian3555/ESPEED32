@@ -69,6 +69,7 @@ document.getElementById('uf').onsubmit=function(e){
   e.preventDefault();
   var f=document.getElementById('fi').files[0];
   if(!f){alert('Select a JSON file first');return}
+  if(!f.name.toLowerCase().endsWith('.json')){alert('Only .json files allowed for config restore');return}
   var fd=new FormData();fd.append('file',f);
   var s=document.getElementById('status');
   s.style.display='block';s.className='st';s.textContent='Uploading...';
@@ -80,6 +81,7 @@ document.getElementById('of').onsubmit=function(e){
   e.preventDefault();
   var f=document.getElementById('fw').files[0];
   if(!f){alert('Select a .bin firmware file first');return}
+  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed for firmware update');return}
   var fd=new FormData();fd.append('file',f);
   var s=document.getElementById('ostatus');
   s.style.display='block';s.className='st';s.textContent='Uploading firmware...';

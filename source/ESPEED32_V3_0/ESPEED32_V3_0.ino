@@ -13,11 +13,11 @@
 /*********************************************************************************************************************/
 
 /* Menu item names in different languages: [language][item] */
-/* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, B_BTN, LIMIT, SETTINGS, *CAR* */
-const char* MENU_NAMES[][9] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "LIMIT", "INNSTILL", "*BIL*"},
-  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "*CAR*"},
-  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "*CAR*"}
+/* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, B_BTN, LIMIT, SETTINGS, STATS, *CAR* */
+const char* MENU_NAMES[][10] = {
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "LIMIT", "INNSTILL", "RUNDE", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
+  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "STATS", "*CAR*"}
 };
 
 /* Settings menu item names: [language][item] */
@@ -93,10 +93,10 @@ const char* FONT_SIZE_LABELS[][2] = {
 /*********************************************************************************************************************/
 
 /* Menu item names - Pascal Case: [language][item] */
-const char* MENU_NAMES_PASCAL[][9] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "Limit", "Innstill", "*Bil*"},
-  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "Limit", "Settings", "*Car*"},
-  /* ACD */ {"Brake", "Attck", "Choke", "Profl", "Pwm_F", "B_Btn", "Limit", "Settings", "*Car*"}
+const char* MENU_NAMES_PASCAL[][10] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "Limit", "Innstill", "Runde", "*Bil*"},
+  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "Limit", "Settings", "Stats", "*Car*"},
+  /* ACD */ {"Brake", "Attck", "Choke", "Profl", "Pwm_F", "B_Btn", "Limit", "Settings", "Stats", "*Car*"}
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
@@ -261,7 +261,10 @@ ESC_type g_escVar {
   .trigger_norm = 0,
   .encoderPos = 1,
   .Vin_mV = 0,
-  .dualCurve = false
+  .dualCurve = false,
+  .lapCount = 0,
+  .bestLapTime_ms = 0,
+  .lapStartTime_ms = 0
 };
 
 /* Menu Structures */
@@ -907,7 +910,15 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = &showSettingsMenu;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 8));  /* CAR or BIL */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 8));  /* STATS/RUNDE */
+  g_mainMenu.item[i].value = ITEM_NO_VALUE;
+  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_mainMenu.item[i].unit, "");
+  g_mainMenu.item[i].maxValue = 0;
+  g_mainMenu.item[i].minValue = 0;
+  g_mainMenu.item[i].callback = &showLapStats;
+
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)

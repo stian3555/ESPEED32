@@ -15,9 +15,12 @@
 /*                                              Configuration Constants                                             */
 /*********************************************************************************************************************/
 
+/* Stored Variable Version */
+#define STORED_VAR_VERSION 9  /* Increment when StoredVar_type structure changes */
+
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    9     /* Number of items in main menu */
-#define SETTINGS_ITEMS_COUNT 8    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 9    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -102,6 +105,7 @@
 /* Car Configuration */
 #define CAR_MAX_COUNT       20  /* Maximum number of car profiles */
 #define CAR_NAME_MAX_SIZE   5   /* Car name length (4 chars + null terminator) */
+#define SCREENSAVER_TEXT_MAX 22  /* Screensaver text max length (21 chars + null, fits FONT_6x8 line) */
 
 /* Menu Options */
 #define CAR_OPTION_SELECT   0
@@ -195,6 +199,8 @@ typedef struct {
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
   uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
   uint16_t startupDelay;                    /* [×10ms] Startup welcome screen delay */
+  char screensaverLine1[SCREENSAVER_TEXT_MAX];  /* Screensaver main text (FONT_16x32) */
+  char screensaverLine2[SCREENSAVER_TEXT_MAX];  /* Screensaver subtitle (FONT_6x8) */
 } StoredVar_type;
 
 /**

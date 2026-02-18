@@ -3,13 +3,13 @@
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
 #include "screensaver_config.h"  /* Personal screensaver configuration (git-ignored) */
+#include "wifi_backup.h"
 
 /*********************************************************************************************************************/
 /*                                                   Version Control                                                 */
 /*********************************************************************************************************************/
 #define SW_MAJOR_VERSION 3
 #define SW_MINOR_VERSION 2
-#define STORED_VAR_VERSION 8  /* Stored variable version - increment when stored structure changes */
 
 /* Last modified: 17/10/2024 */
 /*********************************************************************************************************************/
@@ -26,18 +26,18 @@ const char* MENU_NAMES[][9] = {
 
 /* Settings menu item names: [language][item] */
 /* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK */
-const char* SETTINGS_MENU_NAMES[][8] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "BACK"}
+const char* SETTINGS_MENU_NAMES[][9] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "WIFI", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "WIFI", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "WIFI", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
 /* Order: BRAKE, SENSI, ANTIS, CURVE */
 const char* RACE_LABELS[][4] = {
   /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE"},
-  /* ENG */ {"BREAK", "SENSI", "ANTIS", "CURVE"},
-  /* ACD */ {"BREAK", "ATTCK", "CHOKE", "PROFIL"}
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE"},
+  /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFIL"}
 };
 
 /* Car menu option labels: [language][option] */
@@ -104,17 +104,17 @@ const char* MENU_NAMES_PASCAL[][9] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][8] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Back"},
-  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][9] = {
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Wifi", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Wifi", "Back"},
+  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Wifi", "Back"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
 const char* RACE_LABELS_PASCAL[][4] = {
   /* NOR */ {"Brems", "Sensi", "Antis", "Kurve"},
-  /* ENG */ {"Break", "Sensi", "Antis", "Curve"},
-  /* ACD */ {"Break", "Attck", "Choke", "Profil"}
+  /* ENG */ {"Brake", "Sensi", "Antis", "Curve"},
+  /* ACD */ {"Brake", "Attck", "Choke", "Profil"}
 };
 
 /* Car menu option labels - Pascal Case: [language][option] */
@@ -158,6 +158,20 @@ const char* BACK_LABELS_PASCAL[] = {
   /* ENG */ "Back",
   /* ACD */ "Back"
 };
+
+/* UI strings for car selection/copy/rename/reset screens: [language] */
+const char* STR_SELECT_CAR[] = { "-VELG BIL-", "-SELECT THE CAR-", "-SELECT THE CAR-" };
+const char* STR_COPY_FROM[] = { "-KOPIER FRA:-", "-COPY FROM:-", "-COPY FROM:-" };
+const char* STR_COPY_TO[] = { "-KOPIER TIL:-", "-COPY TO:-", "-COPY TO:-" };
+const char* STR_ALL[] = { "ALLE", "ALL", "ALL" };
+const char* STR_COPIED_ALL[] = { "KOPIERT!", "COPIED ALL", "COPIED ALL" };
+const char* STR_COPIED[] = { "KOPIERT!", "COPIED!", "COPIED!" };
+const char* STR_RENAME_CAR[] = { "-GI NYTT NAVN-", "-RENAME THE CAR-", "-RENAME THE CAR-" };
+const char* STR_CONFIRM[] = { "-TRYKK OK FOR GODTA-", "-CLICK OK TO CONFIRM-", "-CLICK OK TO CONFIRM-" };
+const char* STR_LIMITER[] = { " - BEGRENS - ", " - LIMITER - ", " - LIMITER - " };
+const char* STR_CALIBRATION[] = { "KALIBRERING", "CALIBRATION", "CALIBRATION" };
+const char* STR_PRESS_RELEASE[] = { "trykk/slipp gass", "press/releas throttle", "press/releas throttle" };  /* max 21 chars (FONT_6x8) */
+const char* STR_PUSH_DONE[] = { " trykk nar ferdig ", " push when done ", " push when done " };
 
 /*********************************************************************************************************************/
 /*                                                   Global Variables                                                */
@@ -811,6 +825,10 @@ void initStoredVariables() {
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
   g_storedVar.listFontSize = FONT_SIZE_DEFAULT;  /* Default list view font size */
   g_storedVar.startupDelay = STARTUP_DELAY_DEFAULT;  /* Default startup delay (15 × 10ms = 150ms) */
+  strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1, SCREENSAVER_TEXT_MAX - 1);
+  g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
+  g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
 }
 
 
@@ -973,7 +991,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = STARTUP_DELAY_MIN;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* WLAN */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1033,10 +1059,11 @@ void showScreenNoEEPROM()
  */
 void showScreenCalibration(int16_t adcRaw)
 {
-  sprintf(msgStr, "CALIBRATION");
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - 66) / 2, 0, msgStr, FONT_6x8, OBD_WHITE, 1);
+  sprintf(msgStr, "%s", STR_CALIBRATION[g_storedVar.language]);
+  int calWidth = strlen(msgStr) * 6;
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - calWidth) / 2, 0, msgStr, FONT_6x8, OBD_WHITE, 1);
 
-  sprintf(msgStr, "press/releas throttle");
+  sprintf(msgStr, "%s", STR_PRESS_RELEASE[g_storedVar.language]);
   obdWriteString(&g_obd, 0, 0, 8, msgStr, FONT_6x8, OBD_BLACK, 1);
 
   sprintf(msgStr, "Raw throttle %4d  ", adcRaw);
@@ -1048,7 +1075,7 @@ void showScreenCalibration(int16_t adcRaw)
   sprintf(msgStr, "Max throttle %4d   ", g_storedVar.maxTrigger_raw);
   obdWriteString(&g_obd, 0, 0, 40, msgStr, FONT_6x8, OBD_BLACK, 1);
 
-  sprintf(msgStr, " push when done ");
+  sprintf(msgStr, "%s", STR_PUSH_DONE[g_storedVar.language]);
   obdWriteString(&g_obd, 0, 0, 56, msgStr, FONT_6x8, OBD_BLACK, 1);
 }
 
@@ -1273,23 +1300,23 @@ void showScreensaver() {
   obdFill(&g_obd, OBD_WHITE, 1);
 
   /* Calculate text width for centering (16 pixels per character for FONT_16x32) */
-  int line1_width = strlen(SCREENSAVER_LINE1) * 16;
+  int line1_width = strlen(g_storedVar.screensaverLine1) * 16;
   int line1_x = (OLED_WIDTH - line1_width) / 2;
 
   /* Display main text in extra large font centered */
-  obdWriteString(&g_obd, 0, line1_x, 8, (char *)SCREENSAVER_LINE1, FONT_16x32, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, line1_x, 8, g_storedVar.screensaverLine1, FONT_16x32, OBD_BLACK, 1);
 
   /* Calculate text width for centering (6 pixels per character for FONT_6x8) */
-  int line2_width = strlen(SCREENSAVER_LINE2) * 6;
+  int line2_width = strlen(g_storedVar.screensaverLine2) * 6;
   int line2_x = (OLED_WIDTH - line2_width) / 2;
 
   /* Display subtitle in smaller font centered below */
-  obdWriteString(&g_obd, 0, line2_x, 34, (char *)SCREENSAVER_LINE2, FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, line2_x, 34, g_storedVar.screensaverLine2, FONT_6x8, OBD_BLACK, 1);
 
   /* Display LIMITER warning if active at same position as in menu */
   if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
   {
-    obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)STR_LIMITER[g_storedVar.language], FONT_8x8, OBD_WHITE, 1);
   }
 
   /* Display bottom status line */
@@ -1396,7 +1423,7 @@ void printMainMenu(MenuState_enum currMenuState)
     /* Print LIMITER warning if LIMIT is any value other than 100% */
     if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
     {
-      obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)STR_LIMITER[g_storedVar.language], FONT_8x8, OBD_WHITE, 1);
     }
     else
     {
@@ -1514,7 +1541,7 @@ void printMainMenu(MenuState_enum currMenuState)
     /* Print LIMITER warning if LIMIT is any value other than 100% */
     if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT) 
     {
-      obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)" - LIMITER - ", FONT_8x8, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)STR_LIMITER[g_storedVar.language], FONT_8x8, OBD_WHITE, 1);
     } 
     else
     {
@@ -1937,8 +1964,10 @@ void showCarSelection() {
       }
     }
 
-    /* Print "-SELECT THE CAR-" on the bottom of the screen */
-    obdWriteString(&g_obd, 0, 16, OLED_HEIGHT - HEIGHT8x8, (char *)"-SELECT THE CAR-", FONT_6x8, OBD_WHITE, 1);
+    /* Print car selection label on the bottom of the screen */
+    const char* selLabel = STR_SELECT_CAR[g_storedVar.language];
+    int selLabelWidth = strlen(selLabel) * 6;
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - selLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)selLabel, FONT_6x8, OBD_WHITE, 1);
   }
 
   /* Reset encoder and clear is done in caller routine */
@@ -2045,7 +2074,9 @@ void showCopyCarSettings() {
     }
 
     /* Print "COPY FROM:" on the bottom of the screen */
-    obdWriteString(&g_obd, 0, 28, OLED_HEIGHT - HEIGHT8x8, (char *)"-COPY FROM:-", FONT_6x8, OBD_WHITE, 1);
+    const char* fromLabel = STR_COPY_FROM[g_storedVar.language];
+    int fromLabelWidth = strlen(fromLabel) * 6;
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - fromLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)fromLabel, FONT_6x8, OBD_WHITE, 1);
   }
 
   /* Small delay to prevent double-click */
@@ -2140,7 +2171,7 @@ void showCopyCarSettings() {
 
       if (itemIndex == ALL_CARS_OPTION) {
         /* Print "ALL" option */
-        obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, (char *)"ALL", FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+        obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, (char *)STR_ALL[g_storedVar.language], FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
       } else if (itemIndex < CAR_MAX_COUNT) {
         /* Print the item (car) name */
         obdWriteString(&g_obd, 0, 0, i * HEIGHT12x16, g_carMenu.item[itemIndex].name, FONT_12x16, isSelected ? OBD_WHITE : OBD_BLACK, 1);
@@ -2153,8 +2184,10 @@ void showCopyCarSettings() {
       }
     }
 
-    /* Print "-COPY TO:-" on the bottom of the screen */
-    obdWriteString(&g_obd, 0, 34, OLED_HEIGHT - HEIGHT8x8, (char *)"-COPY TO:-", FONT_6x8, OBD_WHITE, 1);
+    /* Print "COPY TO:" on the bottom of the screen */
+    const char* toLabel = STR_COPY_TO[g_storedVar.language];
+    int toLabelWidth = strlen(toLabel) * 6;
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - toLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)toLabel, FONT_6x8, OBD_WHITE, 1);
   }
 
   /* Copy car parameters */
@@ -2175,7 +2208,7 @@ void showCopyCarSettings() {
     }
     /* Show confirmation message */
     obdFill(&g_obd, OBD_WHITE, 1);
-    obdWriteString(&g_obd, 0, 0, 24, (char *)"COPIED ALL", FONT_12x16, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 24, (char *)STR_COPIED_ALL[g_storedVar.language], FONT_12x16, OBD_BLACK, 1);
     delay(1000);
   } else if (sourceCar != destCar) {
     /* Copy to single car */
@@ -2191,7 +2224,7 @@ void showCopyCarSettings() {
 
     /* Show confirmation message */
     obdFill(&g_obd, OBD_WHITE, 1);
-    obdWriteString(&g_obd, 0, 34, 24, (char *)"COPIED!", FONT_12x16, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 34, 24, (char *)STR_COPIED[g_storedVar.language], FONT_12x16, OBD_BLACK, 1);
     delay(1000);
   }
 
@@ -2573,8 +2606,8 @@ void showRenameCar() {
   g_rotaryEncoder.reset(selectedOption);
 
   /* Print "-RENAME THE CAR-"  and "-CLICK OK TO CONFIRM" */
-  obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, 16, 0, (char *)STR_RENAME_CAR[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)STR_CONFIRM[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
 
   /* Draw the right arrow */
   for (uint8_t j = 0; j < 8; j++)
@@ -2608,8 +2641,8 @@ void showRenameCar() {
         lastInteraction = millis();
         obdFill(&g_obd, OBD_WHITE, 1);
         /* Redraw static elements */
-        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
-        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 16, 0, (char *)STR_RENAME_CAR[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)STR_CONFIRM[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
         for (uint8_t j = 0; j < 8; j++) {
           obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
         }
@@ -2679,8 +2712,8 @@ void showRenameCar() {
         screensaverActive = false;
         obdFill(&g_obd, OBD_WHITE, 1);
         /* Redraw static elements */
-        obdWriteString(&g_obd, 0, 16, 0, (char *)"-RENAME THE CAR-", FONT_6x8, OBD_WHITE, 1);
-        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)"-CLICK OK TO CONFIRM-", FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 16, 0, (char *)STR_RENAME_CAR[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, 1, OLED_HEIGHT - HEIGHT8x8, (char *)STR_CONFIRM[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
         for (uint8_t j = 0; j < 8; j++) {
           obdDrawLine(&g_obd, 80 + j, 16 + j, 80 + j, 30 - j, OBD_BLACK, 1);
         }
@@ -2945,6 +2978,14 @@ void showSettingsMenu() {
         if (settingsSelector == SETTINGS_ITEMS_COUNT) {
           /* BACK selected - exit settings menu */
           break;
+        }
+        /* Check if WLAN item is selected (second to last) */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
+          showWiFiBackupScreen();
+          initSettingsMenuItems();
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;  /* Force redraw */
+          continue;
         }
         /* Check if selected item has a value to edit */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {

@@ -16,8 +16,8 @@
 /*********************************************************************************************************************/
 
 /* Firmware Version */
-#define SW_MAJOR_VERSION 3
-#define SW_MINOR_VERSION 3
+#define SW_MAJOR_VERSION 4
+#define SW_MINOR_VERSION 0
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 9  /* Increment when StoredVar_type structure changes */

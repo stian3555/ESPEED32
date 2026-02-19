@@ -15,9 +15,16 @@
 /*                                              Configuration Constants                                             */
 /*********************************************************************************************************************/
 
+/* Firmware Version */
+#define SW_MAJOR_VERSION 4
+#define SW_MINOR_VERSION 0
+
+/* Stored Variable Version */
+#define STORED_VAR_VERSION 9  /* Increment when StoredVar_type structure changes */
+
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    9     /* Number of items in main menu */
-#define SETTINGS_ITEMS_COUNT 8    /* Number of items in settings menu (including BACK) */
+#define MENU_ITEMS_COUNT    10    /* Number of items in main menu (incl. STATS) */
+#define SETTINGS_ITEMS_COUNT 9    /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -102,6 +109,7 @@
 /* Car Configuration */
 #define CAR_MAX_COUNT       20  /* Maximum number of car profiles */
 #define CAR_NAME_MAX_SIZE   5   /* Car name length (4 chars + null terminator) */
+#define SCREENSAVER_TEXT_MAX 22  /* Screensaver text max length (21 chars + null, fits FONT_6x8 line) */
 
 /* Menu Options */
 #define CAR_OPTION_SELECT   0
@@ -116,6 +124,12 @@
 #define RENAME_CAR_SELECT_CHAR_MODE     1
 #define RENAME_CAR_MIN_ASCII    32      /* First printable ASCII character */
 #define RENAME_CAR_MAX_ASCII    122     /* Last lowercase letter */
+
+/* Lap Detection */
+#define LAP_MAX_COUNT        20    /* Max stored lap times */
+#define LAP_MIN_TIME_MS      3000  /* Minimum lap time [ms] */
+#define LAP_GAP_MAX_MS       200   /* Max dead spot duration [ms] */
+#define LAP_VIN_THRESHOLD_MV 2000  /* Voltage threshold for dead spot [mV] */
 /*********************************************************************************************************************/
 /*                                                 Data Structures                                                   */
 /*********************************************************************************************************************/
@@ -195,6 +209,8 @@ typedef struct {
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
   uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
   uint16_t startupDelay;                    /* [×10ms] Startup welcome screen delay */
+  char screensaverLine1[SCREENSAVER_TEXT_MAX];  /* Screensaver main text (FONT_16x32) */
+  char screensaverLine2[SCREENSAVER_TEXT_MAX];  /* Screensaver subtitle (FONT_6x8) */
 } StoredVar_type;
 
 /**
@@ -209,6 +225,11 @@ typedef struct {
   uint16_t Vin_mV;            /* [mV] Input voltage */
   uint16_t motorCurrent_mA;   /* [mA] Motor current */
   bool dualCurve;             /* True if deceleration uses different curve */
+  /* Lap detection */
+  uint16_t lapCount;                    /* Total laps completed */
+  uint32_t lapTimes[LAP_MAX_COUNT];     /* Circular buffer: last 20 lap times [ms] */
+  uint32_t bestLapTime_ms;              /* Best lap time [ms] */
+  uint32_t lapStartTime_ms;             /* When current lap started [ms] */
 } ESC_type;
 
 /**

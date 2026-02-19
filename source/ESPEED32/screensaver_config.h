@@ -7,6 +7,6 @@
 #define SCREENSAVER_LINE1 "BOB"
 
 /* Subtitle text displayed in small font (FONT_6x8) */
-#define SCREENSAVER_LINE2 "Racing"
+#define SCREENSAVER_LINE2 "asdf"
 
 #endif

@@ -15,7 +15,7 @@
 /* Menu item names in different languages: [language][item] */
 /* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, B_BTN, LIMIT, SETTINGS, STATS, *CAR* */
 const char* MENU_NAMES[][10] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "LIMIT", "INNSTILL", "RUNDE", "*BIL*"},
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "LIMIT", "INNSTILL", "STATS", "*BIL*"},
   /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
   /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "STATS", "*CAR*"}
 };
@@ -94,7 +94,7 @@ const char* FONT_SIZE_LABELS[][2] = {
 
 /* Menu item names - Pascal Case: [language][item] */
 const char* MENU_NAMES_PASCAL[][10] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "Limit", "Innstill", "Runde", "*Bil*"},
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "Limit", "Innstill", "Stats", "*Bil*"},
   /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "Limit", "Settings", "Stats", "*Car*"},
   /* ACD */ {"Brake", "Attck", "Choke", "Profl", "Pwm_F", "B_Btn", "Limit", "Settings", "Stats", "*Car*"}
 };
@@ -727,6 +727,53 @@ void Task2code(void *pvParameters) {
                                                 g_storedVar.maxTrigger_raw, THROTTLE_NORMALIZED, THROTTLE_REV);
       g_escVar.trigger_norm = addDeadBand(g_escVar.trigger_norm, 0, THROTTLE_NORMALIZED, THROTTLE_DEADBAND_NORM);
       
+      /* Lap detection via track voltage dead spot */
+      {
+        static uint8_t lapState = 0;  /* 0=TRACKING, 1=GAP, 2=COOLDOWN */
+        static uint32_t gapStartMs = 0;
+        static uint32_t lapRegisteredMs = 0;
+        uint32_t vinRaw = analogRead(AN_VIN_DIV);
+        uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
+                         * (RVIFBL + RVIFBH) / RVIFBL;
+        uint32_t nowMs = millis();
+
+        switch (lapState) {
+          case 0: /* TRACKING */
+            if (vinMv < LAP_VIN_THRESHOLD_MV) {
+              gapStartMs = nowMs;
+              lapState = 1;
+            }
+            break;
+          case 1: /* GAP */
+            if (vinMv >= LAP_VIN_THRESHOLD_MV) {
+              if ((nowMs - gapStartMs) <= LAP_GAP_MAX_MS) {
+                /* Valid dead spot crossing */
+                if (g_escVar.lapStartTime_ms > 0) {
+                  uint32_t lapTime = nowMs - g_escVar.lapStartTime_ms;
+                  uint8_t idx = g_escVar.lapCount % LAP_MAX_COUNT;
+                  g_escVar.lapTimes[idx] = lapTime;
+                  if (g_escVar.lapCount == 0 || lapTime < g_escVar.bestLapTime_ms)
+                    g_escVar.bestLapTime_ms = lapTime;
+                  g_escVar.lapCount++;
+                }
+                g_escVar.lapStartTime_ms = nowMs;
+                lapRegisteredMs = nowMs;
+                lapState = 2;
+              } else {
+                lapState = 0; /* Too long = crash/stop */
+              }
+            } else if ((nowMs - gapStartMs) > LAP_GAP_MAX_MS) {
+              lapState = 0; /* Still in gap and too long - abort */
+            }
+            break;
+          case 2: /* COOLDOWN */
+            if ((nowMs - lapRegisteredMs) >= LAP_MIN_TIME_MS) {
+              lapState = 0;
+            }
+            break;
+        }
+      }
+
       /* Apply motor control (skip if in calibration or init state) */
       if (!(g_currState == CALIBRATION || g_currState == INIT)) {
         if (g_escVar.trigger_norm == 0) {
@@ -942,12 +989,12 @@ void initSettingsMenuItems() {
   int i = 0;
   uint8_t lang = g_storedVar.language;
 
-  sprintf(g_settingsMenu.item[i].name, "%s", getSettingsMenuName(lang, 0));  /* SCRSV/SKJSP */
-  g_settingsMenu.item[i].value = (void *)&g_storedVar.screensaverTimeout;
-  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;  /* Changed to STRING to handle OFF/AV display */
-  sprintf(g_settingsMenu.item[i].unit, "s");
-  g_settingsMenu.item[i].maxValue = SCREENSAVER_TIMEOUT_MAX;
-  g_settingsMenu.item[i].minValue = 0;  /* 0 = OFF */
+  sprintf(g_settingsMenu.item[i].name, "%s", getSettingsMenuName(lang, 0));  /* SCRSV/SKJSP - opens submenu */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
   sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 1));  /* SOUND/LYD */
@@ -2901,6 +2948,501 @@ void showCurveSelection()
 
 
 /**
+ * Show the Lap Stats screen
+ * Displays lap count, best time, current lap time, motor current,
+ * and a scrollable list of the last 20 lap times.
+ * Encoder scrolls through lap list, button click returns to main menu.
+ * Brake button resets lap counter.
+ */
+void showLapStats() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  /* Encoder for scrolling lap list (4 visible rows) */
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, 0, false);
+  g_rotaryEncoder.reset(0);
+
+  int16_t scrollPos = 0;
+  uint16_t prevLapCount = 0xFFFF;
+  uint32_t prevBestLap = 0xFFFF;
+  uint32_t prevCurrentLap = 0xFFFF;
+  uint16_t prevMotorCurrent = 0xFFFF;
+  int16_t prevScrollPos = -1;
+  bool needFullRedraw = true;
+
+  /* Screensaver support */
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
+  /* Title - y=0 (pixel row 0), FONT_8x8 = 8px tall */
+  const char* title = "Stats";
+  uint8_t titleWidth = strlen(title) * 8;
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - titleWidth) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
+
+  while (true) {
+    /* Screensaver handling */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+    if (screensaverActive) {
+      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          currentEncoderPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needFullRedraw = true;
+      }
+    }
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Button click = return to main menu */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
+    }
+
+    /* Brake button = back (exit to main menu) */
+    static bool brakeInStats = false;
+    static uint32_t lastBrakeStats = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeInStats && millis() - lastBrakeStats > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeInStats = true;
+        lastBrakeStats = millis();
+        break;
+      }
+    } else {
+      brakeInStats = false;
+    }
+
+    /* Update encoder scroll boundaries based on lap count */
+    uint16_t totalLaps = g_escVar.lapCount;
+    uint16_t displayLaps = min((uint16_t)LAP_MAX_COUNT, totalLaps);
+    if (displayLaps > 4) {
+      g_rotaryEncoder.setBoundaries(0, displayLaps - 4, false);
+    } else {
+      g_rotaryEncoder.setBoundaries(0, 0, false);
+    }
+    scrollPos = g_rotaryEncoder.readEncoder();
+
+    /* Redraw title if needed */
+    if (needFullRedraw) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, (OLED_WIDTH - titleWidth) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
+      prevLapCount = 0xFFFF;
+      prevBestLap = 0xFFFF;
+      prevCurrentLap = 0xFFFF;
+      prevMotorCurrent = 0xFFFF;
+      prevScrollPos = -1;
+      needFullRedraw = false;
+    }
+
+    /* Row 1 (y=8): "Laps:XX  Best:X.XXs" (FONT_6x8, 21 chars max) */
+    bool lapCountChanged = (totalLaps != prevLapCount);
+    if (lapCountChanged || g_escVar.bestLapTime_ms != prevBestLap) {
+      if (totalLaps > 0) {
+        sprintf(msgStr, "Laps:%-3d Best:%d.%02ds",
+                totalLaps,
+                (int)(g_escVar.bestLapTime_ms / 1000),
+                (int)((g_escVar.bestLapTime_ms % 1000) / 10));
+      } else {
+        sprintf(msgStr, "Laps:0              ");
+      }
+      obdWriteString(&g_obd, 0, 0, 8, msgStr, FONT_6x8, OBD_BLACK, 1);
+      prevLapCount = totalLaps;
+      prevBestLap = g_escVar.bestLapTime_ms;
+    }
+
+    /* Row 2 (y=16): "Curr:X.Xs  mA:XXXX" (FONT_6x8) */
+    uint32_t currentLapTime = 0;
+    if (g_escVar.lapStartTime_ms > 0) {
+      currentLapTime = millis() - g_escVar.lapStartTime_ms;
+    }
+    uint16_t motorCurrent = g_escVar.motorCurrent_mA;
+    /* Update every ~200ms to avoid flicker */
+    if ((currentLapTime / 200) != (prevCurrentLap / 200) || motorCurrent != prevMotorCurrent) {
+      if (g_escVar.lapStartTime_ms > 0) {
+        sprintf(msgStr, "Curr:%d.%ds  mA:%-4d",
+                (int)(currentLapTime / 1000),
+                (int)((currentLapTime % 1000) / 100),
+                motorCurrent);
+      } else {
+        sprintf(msgStr, "Curr:---   mA:%-4d ", motorCurrent);
+      }
+      obdWriteString(&g_obd, 0, 0, 16, msgStr, FONT_6x8, OBD_BLACK, 1);
+      prevCurrentLap = currentLapTime;
+      prevMotorCurrent = motorCurrent;
+    }
+
+    /* Rows 3-6 (y=24,32,40,48): Scrollable lap list, newest first */
+    if (scrollPos != prevScrollPos || lapCountChanged) {
+      for (uint8_t row = 0; row < 4; row++) {
+        uint8_t yPixel = 24 + (row * 8);
+        /* Lap index: newest first, with scroll offset */
+        int16_t lapIdx = (int16_t)totalLaps - 1 - scrollPos - row;
+        if (lapIdx >= 0 && lapIdx < (int16_t)totalLaps) {
+          uint8_t bufIdx = lapIdx % LAP_MAX_COUNT;
+          uint32_t t = g_escVar.lapTimes[bufIdx];
+          bool isBest = (t == g_escVar.bestLapTime_ms && t > 0);
+          sprintf(msgStr, "#%-3d %d.%02ds %s       ",
+                  lapIdx + 1,
+                  (int)(t / 1000),
+                  (int)((t % 1000) / 10),
+                  isBest ? "*" : " ");
+          msgStr[21] = '\0';
+          obdWriteString(&g_obd, 0, 0, yPixel, msgStr, FONT_6x8, OBD_BLACK, 1);
+        } else {
+          obdWriteString(&g_obd, 0, 0, yPixel, (char *)"                     ", FONT_6x8, OBD_BLACK, 1);
+        }
+      }
+      prevScrollPos = scrollPos;
+    }
+
+    /* Row 7 (y=56): Status line (throttle, car name, voltage) */
+    displayStatusLine();
+
+    delay(50);  /* ~20 Hz UI refresh */
+  }
+
+  /* Restore main menu encoder settings */
+  obdFill(&g_obd, OBD_WHITE, 1);
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.reset(g_encoderMainSelector);
+}
+
+
+/**
+ * Character-by-character text editor for screensaver lines.
+ * Inspired by the rename car editor but for longer strings (up to 21 chars).
+ * Encoder moves cursor in SELECT_OPTION mode, changes char value in SELECT_CHAR mode.
+ * Encoder click = toggle mode / confirm when on OK.
+ * Brake button = cancel (no save).
+ */
+static void editScreensaverText(char* text, const char* title) {
+  const uint8_t TEXT_COLS = SCREENSAVER_TEXT_MAX - 1;  /* 21 visible positions */
+
+  /* Working copy padded to full width with spaces */
+  char tmpText[SCREENSAVER_TEXT_MAX];
+  memset(tmpText, ' ', TEXT_COLS);
+  tmpText[TEXT_COLS] = '\0';
+  uint8_t origLen = strnlen(text, TEXT_COLS);
+  memcpy(tmpText, text, origLen);
+
+  uint8_t editMode = RENAME_CAR_SELECT_OPTION_MODE;  /* 0=move cursor, 1=edit char */
+  uint8_t cursorPos = 0;
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  /* Static elements */
+  uint8_t titleW = strnlen(title, 16) * 8;
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - titleW) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK", FONT_12x16, OBD_BLACK, 1);
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, TEXT_COLS, false);  /* 0..20 = chars, 21 = OK */
+  g_rotaryEncoder.reset(0);
+
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
+  while (true) {
+    /* Screensaver handling */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    if (screensaverActive) {
+      uint16_t ep = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          ep != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, (OLED_WIDTH - titleW) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
+        obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK", FONT_12x16, OBD_BLACK, 1);
+      }
+    } else if (g_storedVar.screensaverTimeout > 0 &&
+               millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        screensaverActive = true;
+        screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+        showScreensaver();
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Brake button = cancel */
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      obdFill(&g_obd, OBD_WHITE, 1);
+      return;  /* Do NOT save */
+    }
+
+    /* Encoder changed */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (editMode == RENAME_CAR_SELECT_OPTION_MODE) {
+        cursorPos = (uint8_t)g_rotaryEncoder.readEncoder();
+      } else {
+        tmpText[cursorPos] = (char)g_rotaryEncoder.readEncoder();
+      }
+    }
+
+    /* Draw all 21 text characters - selected char inverted */
+    for (uint8_t c = 0; c < TEXT_COLS; c++) {
+      sprintf(msgStr, "%c", tmpText[c]);
+      bool isCursor = (editMode == RENAME_CAR_SELECT_OPTION_MODE && cursorPos == c);
+      obdWriteString(&g_obd, 0, c * 6, 16, msgStr, FONT_6x8, isCursor ? OBD_WHITE : OBD_BLACK, 1);
+    }
+
+    /* Draw arrows above/below cursor when editing a character */
+    if (editMode == RENAME_CAR_SELECT_CHAR_MODE) {
+      uint8_t cx = cursorPos * 6 + 2;
+      for (uint8_t j = 0; j < 4; j++) {
+        obdDrawLine(&g_obd, cx - j, 11 - j, cx + j, 11 - j, OBD_BLACK, 1);  /* up arrow */
+        obdDrawLine(&g_obd, cx - j, 26 + j, cx + j, 26 + j, OBD_BLACK, 1);  /* down arrow */
+      }
+    } else {
+      /* Clear arrow area */
+      obdWriteString(&g_obd, 0, 0, 8,  (char *)"                     ", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 24, (char *)"                     ", FONT_6x8, OBD_BLACK, 1);
+    }
+
+    /* OK button - highlighted when cursor is at TEXT_COLS position */
+    obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK",
+                   FONT_12x16, (cursorPos == TEXT_COLS) ? OBD_WHITE : OBD_BLACK, 1);
+
+    /* Encoder button */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+
+      if (cursorPos == TEXT_COLS) {
+        /* OK selected - trim trailing spaces and save */
+        int8_t last = (int8_t)TEXT_COLS - 1;
+        while (last >= 0 && tmpText[last] == ' ') last--;
+        tmpText[last + 1] = '\0';
+        strncpy(text, tmpText, SCREENSAVER_TEXT_MAX);
+        text[SCREENSAVER_TEXT_MAX - 1] = '\0';
+        obdFill(&g_obd, OBD_WHITE, 1);
+        return;
+      }
+
+      if (editMode == RENAME_CAR_SELECT_OPTION_MODE) {
+        editMode = RENAME_CAR_SELECT_CHAR_MODE;
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
+        g_rotaryEncoder.reset((uint8_t)tmpText[cursorPos]);
+      } else {
+        editMode = RENAME_CAR_SELECT_OPTION_MODE;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, TEXT_COLS, false);
+        g_rotaryEncoder.reset(cursorPos);
+      }
+    }
+
+    delay(10);
+  }
+}
+
+
+/**
+ * Screensaver settings submenu.
+ * Shows LINE1, LINE2, TIME and BACK.
+ * LINE1/LINE2 open the text editor. TIME edits the timeout inline.
+ * Brake button or BACK = return to settings.
+ */
+void showScreensaverSettings() {
+  const uint8_t SS_ITEMS = 4;
+  uint8_t lang = g_storedVar.language;
+
+  const char* ssNames[SS_ITEMS];
+  if (lang == LANG_NOR) {
+    ssNames[0] = "LINJE1";  ssNames[1] = "LINJE2";
+    ssNames[2] = "TID";     ssNames[3] = "TILBAKE";
+  } else {
+    ssNames[0] = "LINE1";   ssNames[1] = "LINE2";
+    ssNames[2] = "TIME";    ssNames[3] = "BACK";
+  }
+  const char* editorTitleL1 = (lang == LANG_NOR) ? "Linje 1" : "Line 1";
+  const char* editorTitleL2 = (lang == LANG_NOR) ? "Linje 2" : "Line 2";
+  const char* editorTitleTime = (lang == LANG_NOR) ? "Tid" : "Time";
+  (void)editorTitleTime;  /* used below in time edit label */
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
+  g_rotaryEncoder.reset(1);
+
+  uint8_t sel = 1;
+  uint8_t prevSel = 0xFF;
+  bool inTimeEdit = false;
+  uint16_t origTimeout = g_storedVar.screensaverTimeout;
+
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
+  while (true) {
+    /* Screensaver handling */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+    if (screensaverActive) {
+      uint16_t ep = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          ep != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel = 0xFF;  /* Force redraw */
+      }
+    }
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Brake button = cancel time edit / exit submenu */
+    static bool brakePressedSS = false;
+    static uint32_t lastBrakeSS = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakePressedSS && millis() - lastBrakeSS > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakePressedSS = true;
+        lastBrakeSS = millis();
+        lastInteraction = millis();
+        if (inTimeEdit) {
+          g_storedVar.screensaverTimeout = origTimeout;  /* Cancel - restore */
+          inTimeEdit = false;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
+          g_rotaryEncoder.reset(sel);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel = 0xFF;
+        } else {
+          break;  /* Exit to settings menu */
+        }
+      }
+    } else {
+      brakePressedSS = false;
+    }
+
+    /* Encoder */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (inTimeEdit) {
+        g_storedVar.screensaverTimeout = g_rotaryEncoder.readEncoder();
+        prevSel = 0xFF;  /* Redraw TIME row value */
+      } else {
+        sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      }
+    }
+
+    /* Draw items if changed */
+    if (sel != prevSel || inTimeEdit) {
+      for (uint8_t idx = 0; idx < SS_ITEMS; idx++) {
+        uint8_t yPx = (idx + 1) * HEIGHT8x8;  /* y=8,16,24,32 */
+        bool isSelected = (sel == idx + 1);
+        bool isEditingThis = (inTimeEdit && idx == 2);  /* TIME row */
+
+        /* Item name */
+        obdWriteString(&g_obd, 0, 0, yPx, (char *)ssNames[idx], FONT_8x8,
+                       (isSelected || isEditingThis) ? OBD_WHITE : OBD_BLACK, 1);
+
+        /* Value on right side in FONT_6x8 */
+        if (idx == 0) {
+          /* LINE1: show first 10 chars, right-justified */
+          snprintf(msgStr, 11, "%10s", g_storedVar.screensaverLine1);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 60, yPx, msgStr, FONT_6x8, OBD_BLACK, 1);
+        } else if (idx == 1) {
+          /* LINE2: show first 10 chars, right-justified */
+          snprintf(msgStr, 11, "%10s", g_storedVar.screensaverLine2);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 60, yPx, msgStr, FONT_6x8, OBD_BLACK, 1);
+        } else if (idx == 2) {
+          /* TIME: show current timeout, right-justified (4 chars × 6px = 24px from right) */
+          if (g_storedVar.screensaverTimeout == 0) {
+            sprintf(msgStr, "%4s", (lang == LANG_NOR) ? "AV" : "OFF");
+          } else {
+            sprintf(msgStr, "%3ds", g_storedVar.screensaverTimeout);
+          }
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 24, yPx, msgStr, FONT_6x8,
+                         isEditingThis ? OBD_WHITE : OBD_BLACK, 1);
+        }
+      }
+      prevSel = sel;
+    }
+
+    /* Encoder button */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      if (inTimeEdit) {
+        /* Confirm timeout value */
+        inTimeEdit = false;
+        saveEEPROM(g_storedVar);
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
+        g_rotaryEncoder.reset(sel);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel = 0xFF;
+      } else if (sel == 1) {
+        editScreensaverText(g_storedVar.screensaverLine1, editorTitleL1);
+        saveEEPROM(g_storedVar);
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
+        g_rotaryEncoder.reset(sel);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel = 0xFF;
+      } else if (sel == 2) {
+        editScreensaverText(g_storedVar.screensaverLine2, editorTitleL2);
+        saveEEPROM(g_storedVar);
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
+        g_rotaryEncoder.reset(sel);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel = 0xFF;
+      } else if (sel == 3) {
+        /* Enter TIME edit mode */
+        inTimeEdit = true;
+        origTimeout = g_storedVar.screensaverTimeout;
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, SCREENSAVER_TIMEOUT_MAX, false);
+        g_rotaryEncoder.reset(g_storedVar.screensaverTimeout);
+      } else if (sel == 4) {
+        break;  /* BACK */
+      }
+    }
+
+    vTaskDelay(10);
+  }
+
+  saveEEPROM(g_storedVar);
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+
+/**
  * Show the Settings submenu
  * This function is called when SETTINGS item is selected in the main menu
  * It displays and manages navigation through the settings submenu items:
@@ -2985,6 +3527,17 @@ void showSettingsMenu() {
         if (settingsSelector == SETTINGS_ITEMS_COUNT) {
           /* BACK selected - exit settings menu */
           break;
+        }
+        /* Check if SCRSV item is selected (first item) - opens screensaver submenu */
+        if (settingsSelector == 1) {
+          showScreensaverSettings();
+          initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;  /* Force redraw */
+          continue;
         }
         /* Check if WLAN item is selected (second to last) */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {

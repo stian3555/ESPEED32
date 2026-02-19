@@ -124,6 +124,12 @@
 #define RENAME_CAR_SELECT_CHAR_MODE     1
 #define RENAME_CAR_MIN_ASCII    32      /* First printable ASCII character */
 #define RENAME_CAR_MAX_ASCII    122     /* Last lowercase letter */
+
+/* Lap Detection */
+#define LAP_MAX_COUNT        20    /* Max stored lap times */
+#define LAP_MIN_TIME_MS      3000  /* Minimum lap time [ms] */
+#define LAP_GAP_MAX_MS       200   /* Max dead spot duration [ms] */
+#define LAP_VIN_THRESHOLD_MV 2000  /* Voltage threshold for dead spot [mV] */
 /*********************************************************************************************************************/
 /*                                                 Data Structures                                                   */
 /*********************************************************************************************************************/
@@ -219,6 +225,11 @@ typedef struct {
   uint16_t Vin_mV;            /* [mV] Input voltage */
   uint16_t motorCurrent_mA;   /* [mA] Motor current */
   bool dualCurve;             /* True if deceleration uses different curve */
+  /* Lap detection */
+  uint16_t lapCount;                    /* Total laps completed */
+  uint32_t lapTimes[LAP_MAX_COUNT];     /* Circular buffer: last 20 lap times [ms] */
+  uint32_t bestLapTime_ms;              /* Best lap time [ms] */
+  uint32_t lapStartTime_ms;             /* When current lap started [ms] */
 } ESC_type;
 
 /**

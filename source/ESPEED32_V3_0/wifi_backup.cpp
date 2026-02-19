@@ -43,16 +43,16 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </head>
 <body>
 <h1>ESPEED32</h1>
-<p class="sub">v%VERSION% &middot; <span id="devid">%SUFFIX%</span></p>
-<h2>Backup &amp; Restore</h2>
-<a id="dl" href="/backup"><button class="btn dl">Download Backup</button></a>
+<p class="sub">v<span id="ver">%VERSION%</span> &middot; <span id="devid">%SUFFIX%</span></p>
+<h2>Config Backup &amp; Restore (.json)</h2>
+<a id="dl" href="/backup"><button class="btn dl">Download Config Backup</button></a>
 <form id="uf">
 <input type="file" id="fi" accept=".json">
-<button type="submit" class="btn ul">Restore from File</button>
+<button type="submit" class="btn ul">Restore Config</button>
 </form>
 <div id="status" class="st"></div>
 <hr>
-<h2>Firmware Update</h2>
+<h2>Firmware Update (.bin)</h2>
 <form id="of">
 <input type="file" id="fw" accept=".bin">
 <button type="submit" class="btn ota">Upload Firmware</button>
@@ -63,7 +63,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 document.getElementById('dl').onclick=function(){
   var d=new Date().toISOString().slice(0,10);
   var id=document.getElementById('devid').textContent;
-  this.download=d+'-espeed32_'+id+'_backup.json';
+  var v=document.getElementById('ver').textContent;
+  this.download=d+'-espeed32_v'+v+'_'+id+'_backup.json';
 };
 document.getElementById('uf').onsubmit=function(e){
   e.preventDefault();

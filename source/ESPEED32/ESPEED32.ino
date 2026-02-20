@@ -21,11 +21,11 @@ const char* MENU_NAMES[][10] = {
 };
 
 /* Settings menu item names: [language][item] */
-/* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK */
-const char* SETTINGS_MENU_NAMES[][9] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "WIFI", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "WIFI", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "WIFI", "BACK"}
+/* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, DELAY, STATUS, WIFI, BACK */
+const char* SETTINGS_MENU_NAMES[][10] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "STATUS", "WIFI", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -100,10 +100,11 @@ const char* MENU_NAMES_PASCAL[][10] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][9] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Wifi", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Wifi", "Back"},
-  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Wifi", "Back"}
+/* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, DELAY, STATUS, WIFI, BACK */
+const char* SETTINGS_MENU_NAMES_PASCAL[][10] = {
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Status", "Wifi", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Back"},
+  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Back"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
@@ -875,6 +876,10 @@ void initStoredVariables() {
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  g_storedVar.statusSlot[0]  = STATUS_SLOT0_DEFAULT;
+  g_storedVar.statusSlot[1]  = STATUS_SLOT1_DEFAULT;
+  g_storedVar.statusSlot[2]  = STATUS_SLOT2_DEFAULT;
+  g_storedVar.statusSlot[3]  = STATUS_SLOT3_DEFAULT;
 }
 
 
@@ -1045,7 +1050,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = STARTUP_DELAY_MIN;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* WLAN */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* STATUS - opens submenu */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* WIFI */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1053,7 +1066,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1138,60 +1151,72 @@ void showScreenCalibration(int16_t adcRaw)
  * @details Common function used by both main menu and screensaver
  */
 void displayStatusLine() {
-  static uint16_t lastCarNum = 999;
-
-  /* Throttle % or Brake button preview - far left (position 0) */
-  if (digitalRead(BUTT_PIN) == BUTTON_PRESSED && g_escVar.trigger_norm == 0) {
-    /* Show brake button value when button is held and not on throttle */
-    sprintf(msgStr, "B%3d%c", g_storedVar.carParam[g_carSel].brakeButtonReduction, '%');
-    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, OBD_WHITE, 1);
-  } else {
-    /* Normal throttle display */
-    sprintf(msgStr, "%4d%c", g_escVar.outputSpeed_pct, '%');
-    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_8x8, (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK, 1);
-  }
-
-  /* Car ID - centered with proper clearing and highlighting */
-  sprintf(msgStr, "%s", g_storedVar.carParam[g_carSel].carName);
-  uint8_t carNameWidth = strlen(msgStr) * 6;  /* 6 pixels per char for FONT_6x8 */
-
-  /* Clear car name area when car changes to prevent flicker */
-  if (g_carSel != lastCarNum) {
-    /* Clear centered area (48px = 8 chars × 6px) to handle varying name lengths */
-    obdWriteString(&g_obd, 0, (OLED_WIDTH - 48) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, (char *)"        ", FONT_6x8, OBD_BLACK, 1);
-    lastCarNum = g_carSel;
-  }
-
-  /* Determine if CAR is selected in grid mode */
-  bool carSelected = false;
-  if (g_storedVar.viewMode == VIEW_MODE_GRID && g_storedVar.gridCarSelectEnabled) {
-    /* Check if we're on CAR item - position depends on race view mode */
-    if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
-      /* SIMPLE mode: CAR is item 2, encoder position 3 */
-      if (g_encoderMainSelector == 3) {
-        carSelected = true;
-      }
-    } else {
-      /* FULL mode: CAR is item 4, encoder position 5 */
-      if (g_encoderMainSelector == 5) {
-        carSelected = true;
-      }
-    }
-  }
-
-  uint8_t carColor = carSelected ? OBD_WHITE : OBD_BLACK;
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - carNameWidth) / 2, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, carColor, 1);
-
-  /* Update dualCurve flag but don't display 'D' indicator */
+  /* Update dualCurve flag */
   if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {
     g_escVar.dualCurve = true;
   } else {
     g_escVar.dualCurve = false;
   }
 
-  /* Input voltage - far right aligned */
-  sprintf(msgStr, "%d.%01dV", g_escVar.Vin_mV / 1000, (g_escVar.Vin_mV % 1000) / 100);
-  obdWriteString(&g_obd, 0, OLED_WIDTH - 30, 3 * HEIGHT12x16 + HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  const uint8_t Y = 3 * HEIGHT12x16 + HEIGHT8x8;  /* y = 56 (bottom status row) */
+
+  /* Fixed column x-positions for each slot (4 × 32px = 128px total).
+   * Each slot renders 5 chars (30px) left-aligned in its 32px column.
+   * No preliminary erase: writing 5 fixed-width chars directly over the previous 5 chars
+   * eliminates the blank-flash that caused flicker. Blank slots write 5 spaces to clear. */
+  static const uint8_t SLOT_X[STATUS_SLOTS] = {0, 32, 64, 96};
+
+  /* Determine if CAR is selected in grid mode (for car name highlight) */
+  bool carSelected = false;
+  if (g_storedVar.viewMode == VIEW_MODE_GRID && g_storedVar.gridCarSelectEnabled) {
+    if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
+      carSelected = (g_encoderMainSelector == 3);
+    } else {
+      carSelected = (g_encoderMainSelector == 5);
+    }
+  }
+
+  char buf[7];  /* 5 chars + null */
+
+  for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
+    uint16_t slot = g_storedVar.statusSlot[s];
+    uint8_t color = OBD_BLACK;
+
+    switch (slot) {
+      case STATUS_OUTPUT:
+        if (digitalRead(BUTT_PIN) == BUTTON_PRESSED && g_escVar.trigger_norm == 0) {
+          sprintf(buf, "B%3d%%", g_storedVar.carParam[g_carSel].brakeButtonReduction);
+        } else {
+          sprintf(buf, "%3d%%O", g_escVar.outputSpeed_pct);
+        }
+        color = (g_escVar.outputSpeed_pct == 100) ? OBD_WHITE : OBD_BLACK;
+        break;
+      case STATUS_THROTTLE: {
+        uint8_t tpct = (uint8_t)((g_escVar.trigger_norm * 100UL) / THROTTLE_NORMALIZED);
+        sprintf(buf, "%3d%%T", tpct);
+        break;
+      }
+      case STATUS_CAR:
+        snprintf(buf, 6, "%-5s", g_storedVar.carParam[g_carSel].carName);
+        color = carSelected ? OBD_WHITE : OBD_BLACK;
+        break;
+      case STATUS_CURRENT: {
+        uint16_t mA = g_escVar.motorCurrent_mA;
+        sprintf(buf, "%2d.%01dA", mA / 1000, (mA % 1000) / 100);
+        break;
+      }
+      case STATUS_VOLTAGE: {
+        uint16_t v = g_escVar.Vin_mV;
+        sprintf(buf, "%2d.%01dV", v / 1000, (v % 1000) / 100);
+        break;
+      }
+      default:  /* STATUS_BLANK */
+        strcpy(buf, "     ");
+        break;
+    }
+
+    obdWriteString(&g_obd, 0, SLOT_X[s], Y, buf, FONT_6x8, color, 1);
+  }
 }
 
 /**
@@ -1346,7 +1371,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
 /**
  * @brief Show screensaver with branding
- * @details Displays personalized branding with LIMITER warning and status line
+ * @details Displays personalized branding and optional LIMITER warning (full screen, no status line).
  *          Text is configured in screensaver_config.h (git-ignored)
  */
 void showScreensaver() {
@@ -1372,9 +1397,6 @@ void showScreensaver() {
   {
     obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)STR_LIMITER[g_storedVar.language], FONT_8x8, OBD_WHITE, 1);
   }
-
-  /* Display bottom status line */
-  displayStatusLine();
 }
 
 /**
@@ -1520,7 +1542,9 @@ void printMainMenu(MenuState_enum currMenuState)
       screensaverEncoderPos = g_rotaryEncoder.readEncoder();  /* Save position when entering screensaver */
       showScreensaver();
     }
-    /* Screensaver is active - don't draw menu */
+    /* Screensaver is active - don't draw menu.
+     * Yield to FreeRTOS so the IDLE task can feed the watchdog timer. */
+    vTaskDelay(10);
   }
   else if (!screensaverActive)
   {
@@ -1604,8 +1628,10 @@ void printMainMenu(MenuState_enum currMenuState)
   }
   } /* End of else (LIST mode) */
 
-  /* Display bottom status line */
-  displayStatusLine();
+  /* Display bottom status line – only when screensaver is not active */
+  if (!screensaverActive) {
+    displayStatusLine();
+  }
 }
 
 
@@ -3443,6 +3469,202 @@ void showScreensaverSettings() {
 
 
 /**
+ * Status line slot settings submenu.
+ * Items: SLOT 1–4 (select content per fixed column) + BACK.
+ * Live preview of the status bar is shown at y=56 while browsing and editing.
+ * Follows the same ITEM_SELECTION / VALUE_SELECTION pattern as showSettingsMenu().
+ */
+void showStatusSettings() {
+  /* ST_ITEMS: 4 slots + BACK */
+  const uint8_t ST_ITEMS    = STATUS_SLOTS + 1;
+  /* Slot content range: STATUS_BLANK..STATUS_VOLTAGE */
+  const uint8_t ST_SLOT_MAX = STATUS_VOLTAGE;
+
+  uint8_t lang = g_storedVar.language;
+
+  /* Row labels */
+  const char* rowNames[ST_ITEMS];
+  if (lang == LANG_NOR) {
+    rowNames[0] = "FELT 1"; rowNames[1] = "FELT 2";
+    rowNames[2] = "FELT 3"; rowNames[3] = "FELT 4";
+    rowNames[4] = "TILBAKE";
+  } else {
+    rowNames[0] = "SLOT 1"; rowNames[1] = "SLOT 2";
+    rowNames[2] = "SLOT 3"; rowNames[3] = "SLOT 4";
+    rowNames[4] = "BACK";
+  }
+
+  /* Content type labels (max 4 chars, shown right-justified in menu) */
+  const char* slotLabels[ST_SLOT_MAX + 1];
+  if (lang == LANG_NOR) {
+    slotLabels[STATUS_BLANK]    = "---";
+    slotLabels[STATUS_OUTPUT]   = "OUT%";
+    slotLabels[STATUS_THROTTLE] = "GASS";
+    slotLabels[STATUS_CAR]      = "BIL";
+    slotLabels[STATUS_CURRENT]  = "AMPE";
+    slotLabels[STATUS_VOLTAGE]  = "VOLT";
+  } else {
+    slotLabels[STATUS_BLANK]    = "---";
+    slotLabels[STATUS_OUTPUT]   = "OUT%";
+    slotLabels[STATUS_THROTTLE] = "THRO";
+    slotLabels[STATUS_CAR]      = "CAR";
+    slotLabels[STATUS_CURRENT]  = "CURR";
+    slotLabels[STATUS_VOLTAGE]  = "VOLT";
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, ST_ITEMS, false);
+  g_rotaryEncoder.reset(1);
+
+  uint8_t sel          = 1;
+  uint8_t prevSel      = 0xFF;
+  MenuState_enum state = ITEM_SELECTION;
+  uint16_t origValue   = 0;
+  bool forceRedraw     = false;
+
+  uint32_t lastInteraction   = millis();
+  bool screensaverActive     = false;
+  uint16_t screensaverEncPos = 0;
+
+  while (true) {
+    /* Screensaver handling */
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+    if (screensaverActive) {
+      uint16_t ep = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          ep != screensaverEncPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel     = 0xFF;
+        forceRedraw = true;
+      }
+    }
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Brake button */
+    static bool brakeInStatus = false;
+    static uint32_t lastBrakeStatus = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeInStatus && millis() - lastBrakeStatus > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeInStatus = true;
+        lastBrakeStatus = millis();
+        if (state == VALUE_SELECTION) {
+          /* Cancel: restore original value */
+          g_storedVar.statusSlot[sel - 1] = origValue;
+          state = ITEM_SELECTION;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, ST_ITEMS, false);
+          g_rotaryEncoder.reset(sel);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel     = 0xFF;
+          forceRedraw = true;
+        } else {
+          /* Wait for release so brake does not propagate to showSettingsMenu */
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+      }
+    } else {
+      brakeInStatus = false;
+    }
+
+    /* Encoder scroll */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      uint16_t ep = (uint16_t)g_rotaryEncoder.readEncoder();
+      if (state == ITEM_SELECTION) {
+        sel = (uint8_t)ep;
+      } else {
+        g_storedVar.statusSlot[sel - 1] = ep;
+        forceRedraw = true;
+      }
+    }
+
+    /* Draw all items when selection or a slot value changes */
+    if (sel != prevSel || forceRedraw) {
+      forceRedraw = false;
+      for (uint8_t idx = 0; idx < ST_ITEMS; idx++) {
+        uint8_t yPx     = (idx + 1) * HEIGHT8x8;  /* y = 8, 16, 24, 32, 40 */
+        bool isSelected = (sel == idx + 1);
+        bool inEdit     = (state == VALUE_SELECTION && isSelected);
+
+        /* Row label: inverted when selected in ITEM_SELECTION mode */
+        obdWriteString(&g_obd, 0, 0, yPx, (char *)rowNames[idx], FONT_8x8,
+                       (isSelected && state == ITEM_SELECTION) ? OBD_WHITE : OBD_BLACK, 1);
+
+        /* Value label right-justified (4 chars × 6px = 24px from right edge) */
+        if (idx < STATUS_SLOTS) {
+          uint16_t v = g_storedVar.statusSlot[idx];
+          const char* lbl = (v <= ST_SLOT_MAX) ? slotLabels[v] : "???";
+          char vbuf[5];
+          snprintf(vbuf, sizeof(vbuf), "%4s", lbl);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 24, yPx, vbuf, FONT_6x8,
+                         inEdit ? OBD_WHITE : OBD_BLACK, 1);
+        }
+      }
+
+      /* Live preview at y=56: show how the status bar will actually look */
+      displayStatusLine();
+
+      prevSel = sel;
+    }
+
+    /* Encoder click */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      if (state == ITEM_SELECTION) {
+        if (sel == ST_ITEMS) {
+          /* BACK */
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+        /* Enter value selection for this slot */
+        origValue = g_storedVar.statusSlot[sel - 1];
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, ST_SLOT_MAX, false);
+        g_rotaryEncoder.reset(origValue);
+        state       = VALUE_SELECTION;
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel     = 0xFF;
+        forceRedraw = true;
+      } else {
+        /* Confirm: save and return to item selection */
+        saveEEPROM(g_storedVar);
+        state = ITEM_SELECTION;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, ST_ITEMS, false);
+        g_rotaryEncoder.reset(sel);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel     = 0xFF;
+        forceRedraw = true;
+      }
+    }
+
+    vTaskDelay(10);
+  }
+
+  saveEEPROM(g_storedVar);
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+
+/**
  * Show the Settings submenu
  * This function is called when SETTINGS item is selected in the main menu
  * It displays and manages navigation through the settings submenu items:
@@ -3539,12 +3761,23 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;  /* Force redraw */
           continue;
         }
-        /* Check if WLAN item is selected (second to last) */
+        /* Check if STATUS item is selected - opens status slot submenu */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
+          showStatusSettings();
+          initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;
+          continue;
+        }
+        /* Check if WIFI item is selected (second to last, just before BACK) */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
           showWiFiBackupScreen();
           initSettingsMenuItems();
           obdFill(&g_obd, OBD_WHITE, 1);
-          prevSettingsSelector = 0;  /* Force redraw */
+          prevSettingsSelector = 0;
           continue;
         }
         /* Check if selected item has a value to edit */

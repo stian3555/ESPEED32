@@ -20,11 +20,11 @@
 #define SW_MINOR_VERSION 0
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 9  /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 13 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    10    /* Number of items in main menu (incl. STATS) */
-#define SETTINGS_ITEMS_COUNT 9    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 10   /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -125,6 +125,23 @@
 #define RENAME_CAR_MIN_ASCII    32      /* First printable ASCII character */
 #define RENAME_CAR_MAX_ASCII    122     /* Last lowercase letter */
 
+/* Status Line Slot Configuration
+ * 4 fixed columns at x=0,32,64,96 (32px each). Content is 5 chars (30px) per slot.
+ * Blank slots leave their column empty; adjacent slots do not shift. */
+#define STATUS_SLOTS    4   /* Number of fixed positional columns in the status bar */
+/* Content type for each slot (value stored in statusSlot[]) */
+#define STATUS_BLANK    0   /* Empty – column unused */
+#define STATUS_OUTPUT   1   /* Motor output % (5 chars, e.g. " 75%O") */
+#define STATUS_THROTTLE 2   /* Trigger input % (5 chars, e.g. " 75%T") */
+#define STATUS_CAR      3   /* Car name (5 chars, e.g. "CAR1 ") */
+#define STATUS_CURRENT  4   /* Motor current (5 chars, e.g. " 1.5A") */
+#define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
+/* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
+#define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
+#define STATUS_SLOT1_DEFAULT STATUS_CAR
+#define STATUS_SLOT2_DEFAULT STATUS_VOLTAGE
+#define STATUS_SLOT3_DEFAULT STATUS_BLANK
+
 /* Lap Detection */
 #define LAP_MAX_COUNT        20    /* Max stored lap times */
 #define LAP_MIN_TIME_MS      3000  /* Minimum lap time [ms] */
@@ -211,6 +228,8 @@ typedef struct {
   uint16_t startupDelay;                    /* [×10ms] Startup welcome screen delay */
   char screensaverLine1[SCREENSAVER_TEXT_MAX];  /* Screensaver main text (FONT_16x32) */
   char screensaverLine2[SCREENSAVER_TEXT_MAX];  /* Screensaver subtitle (FONT_6x8) */
+  /* Status line slot assignments (see STATUS_* defines) */
+  uint16_t statusSlot[STATUS_SLOTS]; /* content type for each fixed-position column */
 } StoredVar_type;
 
 /**

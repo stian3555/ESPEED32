@@ -283,6 +283,8 @@ static bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 /*                                                Function Prototypes                                                */
 /*********************************************************************************************************************/
 void IRAM_ATTR readEncoderISR();
+static bool resetConfirm(const char* label);
+static void doResetCar();
 
 /*********************************************************************************************************************/
 /*                                                Setup Function                                                     */
@@ -2599,91 +2601,19 @@ void showSelectRenameCar() {
   /* If RESET option was selected, reset all car parameters with double confirmation */
   else if (selectedOption == CAR_OPTION_RESET)
   {
-    /* Clear screen and show first confirmation */
-    obdFill(&g_obd, OBD_WHITE, 1);
     uint16_t lang = g_storedVar.language;
-    const char* confirmText1 = (lang == LANG_NOR) ? "NULLSTILL ALLE" : "RESET ALL CARS";
-    const char* confirmText2 = (lang == LANG_NOR) ? "BILER?" : "?";
-    const char* confirmText3 = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
-    const char* cancelText = (lang == LANG_NOR) ? "BREMSEKNAPP=AVBRYT" : "BRAKE BUTTON=CANCEL";
-
-    obdWriteString(&g_obd, 0, 10, 5, (char *)confirmText1, FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 15, (char *)confirmText2, FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 30, (char *)confirmText3, FONT_6x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
-
-    /* Wait for first confirmation click or brake button to cancel */
-    bool cancelled = false;
-    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        cancelled = true;
-        break;
-      }
-      delay(10);
-    }
-    if (cancelled) {
-      /* Show cancelled message */
+    const char* carLabel = (lang == LANG_NOR) ? "ALLE BILER" : "ALL CARS";
+    bool confirmed = resetConfirm(carLabel);
+    if (confirmed) {
+      doResetCar();
+      saveEEPROM(g_storedVar);
+      initMenuItems();
       obdFill(&g_obd, OBD_WHITE, 1);
-      const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
-      int textWidth = strlen(cancelledText) * WIDTH12x16;
-      obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
-      delay(1000);
-    } else {
-      delay(200);  /* Debounce */
-
-      /* Show second confirmation */
+      const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
+      int tw = strlen(doneText) * WIDTH12x16;
+      obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
+      delay(1500);
       obdFill(&g_obd, OBD_WHITE, 1);
-      const char* confirmText4 = (lang == LANG_NOR) ? "TRYKK IGJEN" : "PRESS AGAIN";
-      const char* confirmText5 = (lang == LANG_NOR) ? "FOR A BEKREFTE" : "TO CONFIRM";
-      obdWriteString(&g_obd, 0, 10, 10, (char *)confirmText4, FONT_8x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 10, 20, (char *)confirmText5, FONT_6x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
-
-      /* Wait for second confirmation click or brake button to cancel */
-      while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-        if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-          cancelled = true;
-          break;
-        }
-        delay(10);
-      }
-
-      if (cancelled) {
-        /* Show cancelled message */
-        obdFill(&g_obd, OBD_WHITE, 1);
-        const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
-        int textWidth = strlen(cancelledText) * WIDTH12x16;
-        obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
-        delay(1000);
-      } else {
-        delay(200);  /* Debounce */
-
-        /* Reset all car parameters to defaults */
-        for (uint8_t i = 0; i < CAR_MAX_COUNT; i++) {
-          g_storedVar.carParam[i].minSpeed = MIN_SPEED_DEFAULT;
-          g_storedVar.carParam[i].brake = BRAKE_DEFAULT;
-          g_storedVar.carParam[i].dragBrake = DRAG_BRAKE_DEFAULT;
-          g_storedVar.carParam[i].antiSpin = ANTISPIN_DEFAULT;
-          g_storedVar.carParam[i].maxSpeed = MAX_SPEED_DEFAULT;
-          g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT;
-          g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = THROTTLE_CURVE_SPEED_DIFF_DEFAULT;
-          g_storedVar.carParam[i].freqPWM = PWM_FREQ_DEFAULT;
-          g_storedVar.carParam[i].brakeButtonReduction = BRAKE_BUTTON_REDUCTION_DEFAULT;
-          g_storedVar.carParam[i].quickBrakeEnabled = QUICK_BRAKE_ENABLED_DEFAULT;
-          g_storedVar.carParam[i].quickBrakeThreshold = QUICK_BRAKE_THRESHOLD_DEFAULT;
-          g_storedVar.carParam[i].quickBrakeStrength = QUICK_BRAKE_STRENGTH_DEFAULT;
-          sprintf(g_storedVar.carParam[i].carName, "CAR%d", i);
-        }
-
-        /* Show confirmation message - centered */
-        obdFill(&g_obd, OBD_WHITE, 1);
-        const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
-        int textWidth = strlen(doneText) * WIDTH12x16;
-        obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
-        delay(1500);
-
-        saveEEPROM(g_storedVar);
-      }
     }
   }
   /* If BACK option was selected, simply exit without changes */
@@ -3704,67 +3634,84 @@ void showStatusSettings() {
 
 
 /**
- * Reset all settings to factory defaults with double-click confirmation.
- * Follows the same pattern as the car reset functionality.
- * Does NOT reset car profiles (use reset car for that) or calibration.
+ * Show a double-click confirmation for a destructive reset action.
+ * @param label  Short label shown on the confirm screen (e.g. "CAR")
+ * @return true if user confirmed twice, false if cancelled
  */
-void showResetSettings() {
-  obdFill(&g_obd, OBD_WHITE, 1);
+static bool resetConfirm(const char* label) {
   uint16_t lang = g_storedVar.language;
+  const char* cancelText = (lang == LANG_NOR) ? "TILBAKE=AVBRYT" : "BACK=CANCEL";
 
-  const char* confirmText1 = (lang == LANG_NOR) ? "NULLSTILL"        : "RESET";
-  const char* confirmText2 = (lang == LANG_NOR) ? "INNSTILLINGER?"   : "SETTINGS?";
-  const char* confirmText3 = (lang == LANG_NOR) ? "TRYKK 2 GANGER"  : "PRESS TWICE";
-  const char* cancelText   = (lang == LANG_NOR) ? "BREMSE=AVBRYT"   : "BRAKE=CANCEL";
-
-  obdWriteString(&g_obd, 0, 10, 5,  (char *)confirmText1, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 10, 15, (char *)confirmText2, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 10, 30, (char *)confirmText3, FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText,   FONT_6x8, OBD_BLACK, 1);
-
-  /* Wait for first confirmation click or brake button to cancel */
-  bool cancelled = false;
-  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { cancelled = true; break; }
-    delay(10);
-  }
-
-  if (cancelled) {
+  auto showCancelled = [&]() {
     obdFill(&g_obd, OBD_WHITE, 1);
-    const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
-    int textWidth = strlen(cancelledText) * WIDTH12x16;
-    obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
+    const char* msg = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
+    int tw = strlen(msg) * WIDTH12x16;
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)msg, FONT_12x16, OBD_BLACK, 1);
     delay(1000);
-    return;
-  }
+    obdFill(&g_obd, OBD_WHITE, 1);
+  };
 
-  delay(200);  /* Debounce */
-
-  /* Second confirmation */
+  /* First confirmation */
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* confirmText4 = (lang == LANG_NOR) ? "TRYKK IGJEN"     : "PRESS AGAIN";
-  const char* confirmText5 = (lang == LANG_NOR) ? "FOR A BEKREFTE"  : "TO CONFIRM";
-  obdWriteString(&g_obd, 0, 10, 10, (char *)confirmText4, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 10, 20, (char *)confirmText5, FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText,   FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 5,  (char *)label, FONT_8x8, OBD_BLACK, 1);
+  const char* pressT = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
+  obdWriteString(&g_obd, 0, 10, 25, (char *)pressT,  FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
 
   while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { cancelled = true; break; }
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      showCancelled();
+      return false;
+    }
     delay(10);
   }
+  delay(200);
 
-  if (cancelled) {
-    obdFill(&g_obd, OBD_WHITE, 1);
-    const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
-    int textWidth = strlen(cancelledText) * WIDTH12x16;
-    obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
-    delay(1000);
-    return;
+  /* Second confirmation - specific label */
+  obdFill(&g_obd, OBD_WHITE, 1);
+  if (lang == LANG_NOR) {
+    obdWriteString(&g_obd, 0, 10, 5,  (char *)"TRYKK IGJEN",     FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 16, (char *)"FOR A NULLSTILLE", FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
+  } else {
+    obdWriteString(&g_obd, 0, 10, 5,  (char *)"PRESS AGAIN",      FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 16, (char *)"TO RESET",         FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
   }
+  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
 
-  delay(200);  /* Debounce */
+  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      showCancelled();
+      return false;
+    }
+    delay(10);
+  }
+  delay(200);
+  return true;
+}
 
-  /* Reset all settings to factory defaults (car profiles are untouched) */
+/** Reset all car profiles to factory defaults. */
+static void doResetCar() {
+  for (uint8_t i = 0; i < CAR_MAX_COUNT; i++) {
+    g_storedVar.carParam[i].minSpeed   = MIN_SPEED_DEFAULT;
+    g_storedVar.carParam[i].brake      = BRAKE_DEFAULT;
+    g_storedVar.carParam[i].dragBrake  = DRAG_BRAKE_DEFAULT;
+    g_storedVar.carParam[i].antiSpin   = ANTISPIN_DEFAULT;
+    g_storedVar.carParam[i].maxSpeed   = MAX_SPEED_DEFAULT;
+    g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT;
+    g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = THROTTLE_CURVE_SPEED_DIFF_DEFAULT;
+    g_storedVar.carParam[i].freqPWM              = PWM_FREQ_DEFAULT;
+    g_storedVar.carParam[i].brakeButtonReduction = BRAKE_BUTTON_REDUCTION_DEFAULT;
+    g_storedVar.carParam[i].quickBrakeEnabled    = QUICK_BRAKE_ENABLED_DEFAULT;
+    g_storedVar.carParam[i].quickBrakeThreshold  = QUICK_BRAKE_THRESHOLD_DEFAULT;
+    g_storedVar.carParam[i].quickBrakeStrength   = QUICK_BRAKE_STRENGTH_DEFAULT;
+    sprintf(g_storedVar.carParam[i].carName, "CAR%d", i);
+  }
+}
+
+/** Reset all settings (non-car, non-calibration) to factory defaults. */
+static void doResetSettings() {
   g_storedVar.viewMode             = VIEW_MODE_LIST;
   g_storedVar.screensaverTimeout   = SCREENSAVER_TIMEOUT_DEFAULT;
   g_storedVar.soundMode            = SOUND_MODE_DEFAULT;
@@ -3778,18 +3725,118 @@ void showResetSettings() {
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+}
 
-  saveEEPROM(g_storedVar);
+/** Reset trigger calibration to factory defaults. */
+static void doResetCalibration() {
+  g_storedVar.minTrigger_raw = 0;
+#if defined(TLE493D_MAG)
+  g_storedVar.maxTrigger_raw = 3600;
+#else
+  g_storedVar.maxTrigger_raw = ACD_RESOLUTION_STEPS;
+#endif
+}
 
-  /* Reinitialize menus to reflect language/font reset */
-  initMenuItems();
-  initSettingsMenuItems();
+/**
+ * Reset submenu. Items: CAR, SETTINGS, CALIBRATION, ALL, BACK.
+ * Each destructive action requires double-click confirmation.
+ */
+void showResetSubmenu() {
+  const uint8_t RS_ITEMS = 5;
+  uint16_t lang = g_storedVar.language;
+
+  const char* rowNames[RS_ITEMS];
+  if (lang == LANG_NOR) {
+    rowNames[0] = "Bil";
+    rowNames[1] = "Innstill.";
+    rowNames[2] = "Kalibrering";
+    rowNames[3] = "Alt";
+    rowNames[4] = "Tilbake";
+  } else {
+    rowNames[0] = "Car";
+    rowNames[1] = "Settings";
+    rowNames[2] = "Calibration";
+    rowNames[3] = "All";
+    rowNames[4] = "Back";
+  }
 
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
-  int textWidth = strlen(doneText) * WIDTH12x16;
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
-  delay(1500);
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, RS_ITEMS, false);
+  g_rotaryEncoder.reset(1);
+
+  uint8_t sel      = 1;
+  uint8_t prevSel  = 0xFF;
+  bool forceRedraw = true;
+
+  static bool brakeInReset = false;
+  static uint32_t lastBrakeReset = 0;
+
+  while (true) {
+    /* Brake exits */
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeInReset && millis() - lastBrakeReset > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeInReset = true;
+        lastBrakeReset = millis();
+        while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+        break;
+      }
+    } else {
+      brakeInReset = false;
+    }
+
+    /* Encoder scroll */
+    if (g_rotaryEncoder.encoderChanged()) {
+      sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      forceRedraw = true;
+    }
+
+    /* Encoder click */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (sel == RS_ITEMS) break;  /* BACK */
+
+      bool confirmed = resetConfirm(rowNames[sel - 1]);
+      if (confirmed) {
+        if (sel == 1) { doResetCar(); }
+        else if (sel == 2) { doResetSettings(); }
+        else if (sel == 3) { doResetCalibration(); }
+        else if (sel == 4) { doResetCar(); doResetSettings(); doResetCalibration(); }
+
+        saveEEPROM(g_storedVar);
+        initMenuItems();
+        initSettingsMenuItems();
+
+        obdFill(&g_obd, OBD_WHITE, 1);
+        const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
+        int tw = strlen(doneText) * WIDTH12x16;
+        obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
+        delay(1500);
+      }
+
+      /* Re-init encoder and redraw submenu */
+      g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+      g_rotaryEncoder.setBoundaries(1, RS_ITEMS, false);
+      g_rotaryEncoder.reset(sel);
+      obdFill(&g_obd, OBD_WHITE, 1);
+      prevSel     = 0xFF;
+      forceRedraw = true;
+    }
+
+    /* Draw */
+    if (forceRedraw || sel != prevSel) {
+      forceRedraw = false;
+      prevSel = sel;
+      for (uint8_t idx = 0; idx < RS_ITEMS; idx++) {
+        uint8_t yPx     = idx * HEIGHT8x8;
+        bool isSelected = (sel == idx + 1);
+        obdWriteString(&g_obd, 0, 0, yPx, (char *)rowNames[idx], FONT_8x8,
+                       isSelected ? OBD_WHITE : OBD_BLACK, 1);
+      }
+    }
+
+    vTaskDelay(10);
+  }
+
   obdFill(&g_obd, OBD_WHITE, 1);
 }
 
@@ -4109,7 +4156,7 @@ void showSettingsMenu() {
         }
         /* Check if RESET item is selected (second to last, just before BACK) */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
-          showResetSettings();
+          showResetSubmenu();
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);

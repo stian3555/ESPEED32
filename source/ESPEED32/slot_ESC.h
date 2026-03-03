@@ -17,14 +17,16 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 4
-#define SW_MINOR_VERSION 3
+#define SW_MINOR_VERSION 4
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 15 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 16 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 12   /* Number of items in settings menu (including BACK) */
+#define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
+#define POWER_SAVE_TIMEOUT_MAX     30   /* [min] Maximum auto power save delay */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -238,6 +240,7 @@ typedef struct {
   char screensaverLine2[SCREENSAVER_TEXT_MAX];  /* Screensaver subtitle (FONT_6x8) */
   /* Status line slot assignments (see STATUS_* defines) */
   uint16_t statusSlot[STATUS_SLOTS]; /* content type for each fixed-position column */
+  uint16_t powerSaveTimeout;         /* [min] Auto power save delay (0=manual only, 1-30 min) */
 } StoredVar_type;
 
 /**

@@ -138,9 +138,9 @@
 #define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
 /* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
 #define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
-#define STATUS_SLOT1_DEFAULT STATUS_CAR
-#define STATUS_SLOT2_DEFAULT STATUS_VOLTAGE
-#define STATUS_SLOT3_DEFAULT STATUS_BLANK
+#define STATUS_SLOT1_DEFAULT STATUS_THROTTLE
+#define STATUS_SLOT2_DEFAULT STATUS_CAR
+#define STATUS_SLOT3_DEFAULT STATUS_VOLTAGE
 
 /* Lap Detection */
 #define LAP_MAX_COUNT        20    /* Max stored lap times */

@@ -339,8 +339,7 @@ void Task1code(void *pvParameters) {
     static MenuState_enum menuState = ITEM_SELECTION;
     static uint8_t swMajVer, swMinVer, storedVarVersion;
 
-    /* Read input voltage and motor current */
-    g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
+    /* Read motor current (voltage is read exclusively in Task2 to avoid ADC contention) */
     g_escVar.motorCurrent_mA = HAL_ReadMotorCurrent();
 
     /* Update selected car if initialization complete */
@@ -366,8 +365,23 @@ void Task1code(void *pvParameters) {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
             initMenuItems();                                                  /* init menu items with EEPROM stored variables */
 
+            /* If calibration reset was requested from settings, go straight to calibration */
+            if (g_pref.getBool("force_calib", false)) {
+              g_pref.putBool("force_calib", false);
+              g_pref.end();
+              g_currState = CALIBRATION;
+              g_storedVar.minTrigger_raw = MAX_INT16;
+              g_storedVar.maxTrigger_raw = MIN_INT16;
+              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+                calibSound();
+              }
+              initDisplayAndEncoder();
+              obdFill(&g_obd, OBD_WHITE, 1);
+              break;
+            }
+
             /* If button is pressed at startup, go to CALIBRATION state */
-            if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) 
+            if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED)
             {
               g_currState = CALIBRATION;      /* Go to CALIBRATION state */
               /* Reset Min and Max to the opposite side, in order to have effective calibration */
@@ -726,6 +740,15 @@ void Task2code(void *pvParameters) {
         uint32_t vinRaw = analogRead(AN_VIN_DIV);
         uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
                          * (RVIFBL + RVIFBH) / RVIFBL;
+
+        /* Update display voltage with 8-sample moving average to filter ADC noise */
+        static uint32_t vinFilter[8] = {0};
+        static uint8_t vinFilterIdx = 0;
+        vinFilter[vinFilterIdx] = vinMv;
+        vinFilterIdx = (vinFilterIdx + 1) % 8;
+        uint32_t vinSum = 0;
+        for (uint8_t f = 0; f < 8; f++) vinSum += vinFilter[f];
+        g_escVar.Vin_mV = (uint16_t)(vinSum / 8);
         uint32_t nowMs = millis();
 
         switch (lapState) {
@@ -2503,11 +2526,10 @@ void showSelectRenameCar() {
           obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           /* Show temp value when editing, stored value otherwise */
           uint16_t displayValue = isEditingRaceswp ? tempRaceswpValue : g_storedVar.gridCarSelectEnabled;
-          sprintf(msgStr, "%s", getOnOffLabel(lang, displayValue ? 1 : 0));
-          int textWidth = strlen(msgStr) * charWidth;
+          sprintf(msgStr, "%3s", getOnOffLabel(lang, displayValue ? 1 : 0));
           /* Value is white when editing, follows selection otherwise */
           uint8_t valueColor = isEditingRaceswp ? OBD_WHITE : (isSelected ? OBD_WHITE : OBD_BLACK);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, menuFont, valueColor, 1);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 3 * charWidth, yPos, msgStr, menuFont, valueColor, 1);
           break;
         }
 
@@ -2563,9 +2585,8 @@ void showSelectRenameCar() {
         uint16_t lang = g_storedVar.language;
 
         obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), menuFont, OBD_WHITE, 1);
-        sprintf(msgStr, "%s", getOnOffLabel(lang, tempRaceswpValue ? 1 : 0));
-        int textWidth = strlen(msgStr) * charWidth;
-        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, menuFont, OBD_WHITE, 1);
+        sprintf(msgStr, "%3s", getOnOffLabel(lang, tempRaceswpValue ? 1 : 0));
+        obdWriteString(&g_obd, 0, OLED_WIDTH - 3 * charWidth, yPos, msgStr, menuFont, OBD_WHITE, 1);
       }
     }
     /* Save the confirmed value (only if we didn't cancel) */
@@ -3797,20 +3818,34 @@ void showResetSubmenu() {
 
       bool confirmed = resetConfirm(rowNames[sel - 1]);
       if (confirmed) {
-        if (sel == 1) { doResetCar(); }
-        else if (sel == 2) { doResetSettings(); }
-        else if (sel == 3) { doResetCalibration(); }
-        else if (sel == 4) { doResetCar(); doResetSettings(); doResetCalibration(); }
-
-        saveEEPROM(g_storedVar);
-        initMenuItems();
-        initSettingsMenuItems();
-
         obdFill(&g_obd, OBD_WHITE, 1);
         const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
         int tw = strlen(doneText) * WIDTH12x16;
         obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
         delay(1500);
+
+        if (sel == 4) {
+          /* Full factory reset: wipe flash, reboot into first-boot path */
+          g_pref.begin("stored_var", false);
+          g_pref.clear();
+          g_pref.end();
+          ESP.restart();
+        }
+
+        if (sel == 1) { doResetCar(); }
+        else if (sel == 2) { doResetSettings(); }
+        else if (sel == 3) { doResetCalibration(); }
+
+        saveEEPROM(g_storedVar);
+        initMenuItems();
+        initSettingsMenuItems();
+
+        if (sel == 3) {
+          g_pref.begin("stored_var", false);
+          g_pref.putBool("force_calib", true);
+          g_pref.end();
+          ESP.restart();
+        }
       }
 
       /* Re-init encoder and redraw submenu */

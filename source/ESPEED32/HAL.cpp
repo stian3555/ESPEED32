@@ -112,8 +112,14 @@ int16_t HAL_ReadTriggerRaw() {
     int16_t y = (data[1] << 4) | (data[4] & 0x0F);
     if (y >= 2048) y -= 4096;
     
-    /* Apply simple moving average filter */
+    /* Apply simple moving average filter (seed with first reading to avoid cold-start drift) */
     static int16_t x_avg = 0, y_avg = 0;
+    static bool filter_init = false;
+    if (!filter_init) {
+      x_avg = x;
+      y_avg = y;
+      filter_init = true;
+    }
     x_avg = (x_avg * 3 + x) / 4;
     y_avg = (y_avg * 3 + y) / 4;
     

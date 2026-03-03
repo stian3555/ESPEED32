@@ -852,7 +852,11 @@ void initStoredVariables() {
   }
   g_storedVar.selectedCarNumber = 0;
   g_storedVar.minTrigger_raw = 0;
-  g_storedVar.maxTrigger_raw = ACD_RESOLUTION_STEPS;
+#if defined(TLE493D_MAG)
+  g_storedVar.maxTrigger_raw = 3600;              /* TLE493D returns angle * 10 (0-3600) */
+#else
+  g_storedVar.maxTrigger_raw = ACD_RESOLUTION_STEPS; /* ADC / other sensors (0-4095) */
+#endif
   g_storedVar.viewMode = VIEW_MODE_LIST;
   g_storedVar.screensaverTimeout = SCREENSAVER_TIMEOUT_DEFAULT;
   g_storedVar.soundMode = SOUND_MODE_DEFAULT;

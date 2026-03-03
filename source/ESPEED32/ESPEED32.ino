@@ -7,13 +7,12 @@
 
 /* Version defined in slot_ESC.h */
 
-/* Last modified: 2026-02-21 */
+/* Last modified: 2026-03-02 */
 /*********************************************************************************************************************/
 /*                                                   Language Strings                                                */
 /*********************************************************************************************************************/
 
 /* Menu item names in different languages: [language][item] */
-/* Order: BRAKE, SENSI, ANTIS, CURVE, PWM_F, B_BTN, LIMIT, SETTINGS, STATS, *CAR* */
 const char* MENU_NAMES[][10] = {
   /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "LIMIT", "INNSTILL", "STATS", "*BIL*"},
   /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
@@ -29,7 +28,6 @@ const char* SETTINGS_MENU_NAMES[][10] = {
 };
 
 /* Race mode parameter labels: [language][param] */
-/* Order: BRAKE, SENSI, ANTIS, CURVE */
 const char* RACE_LABELS[][4] = {
   /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE"},
   /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE"},
@@ -37,7 +35,6 @@ const char* RACE_LABELS[][4] = {
 };
 
 /* Car menu option labels: [language][option] */
-/* Order: SELECT, RENAME, RACESWP, COPY, RESET */
 const char* CAR_MENU_OPTIONS[][5] = {
   /* NOR */ {"VELG", "NAVNGI", "RACESWP", "KOPIER", "NULLSTILL"},
   /* ENG */ {"SELECT", "RENAME", "RACESWP", "COPY", "RESET"},
@@ -45,7 +42,6 @@ const char* CAR_MENU_OPTIONS[][5] = {
 };
 
 /* View mode value labels: [language][mode] */
-/* Order: OFF, FULL, SIMPLE */
 const char* VIEW_MODE_LABELS[][3] = {
   /* NOR */ {"AV", "FULL", "ENKEL"},
   /* ENG */ {"OFF", "FULL", "SIMPLE"},
@@ -53,7 +49,6 @@ const char* VIEW_MODE_LABELS[][3] = {
 };
 
 /* Sound mode value labels: [language][mode] */
-/* Order: OFF, BOOT, ALL */
 const char* SOUND_MODE_LABELS[][3] = {
   /* NOR */ {"AV", "START", "ALT"},
   /* ENG */ {"OFF", "BOOT", "ALL"},
@@ -61,7 +56,6 @@ const char* SOUND_MODE_LABELS[][3] = {
 };
 
 /* ON/OFF labels: [language][state] */
-/* Order: OFF, ON */
 const char* ON_OFF_LABELS[][2] = {
   /* NOR */ {"AV", "PA"},
   /* ENG */ {"OFF", "ON"},
@@ -69,11 +63,9 @@ const char* ON_OFF_LABELS[][2] = {
 };
 
 /* Language labels: [language_code] */
-/* Order: NOR, ENG, ACD */
 const char* LANG_LABELS[] = {"NOR", "ENG", "ACD"};
 
 /* Text case style labels: [language][case_style] */
-/* Order: UPPER, PASCAL */
 const char* TEXT_CASE_LABELS[][2] = {
   /* NOR */ {"UPPER", "Pascal"},
   /* ENG */ {"UPPER", "Pascal"},
@@ -81,7 +73,6 @@ const char* TEXT_CASE_LABELS[][2] = {
 };
 
 /* Font size labels: [language][size] */
-/* Order: LARGE, SMALL */
 const char* FONT_SIZE_LABELS[][2] = {
   /* NOR */ {"STOR", "liten"},
   /* ENG */ {"LARGE", "small"},
@@ -100,7 +91,6 @@ const char* MENU_NAMES_PASCAL[][10] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-/* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, DELAY, STATUS, WIFI, BACK */
 const char* SETTINGS_MENU_NAMES_PASCAL[][10] = {
   /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Status", "Wifi", "Tilbake"},
   /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Back"},

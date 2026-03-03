@@ -366,8 +366,23 @@ void Task1code(void *pvParameters) {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
             initMenuItems();                                                  /* init menu items with EEPROM stored variables */
 
+            /* If calibration reset was requested from settings, go straight to calibration */
+            if (g_pref.getBool("force_calib", false)) {
+              g_pref.putBool("force_calib", false);
+              g_pref.end();
+              g_currState = CALIBRATION;
+              g_storedVar.minTrigger_raw = MAX_INT16;
+              g_storedVar.maxTrigger_raw = MIN_INT16;
+              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+                calibSound();
+              }
+              initDisplayAndEncoder();
+              obdFill(&g_obd, OBD_WHITE, 1);
+              break;
+            }
+
             /* If button is pressed at startup, go to CALIBRATION state */
-            if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) 
+            if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED)
             {
               g_currState = CALIBRATION;      /* Go to CALIBRATION state */
               /* Reset Min and Max to the opposite side, in order to have effective calibration */
@@ -3797,20 +3812,34 @@ void showResetSubmenu() {
 
       bool confirmed = resetConfirm(rowNames[sel - 1]);
       if (confirmed) {
-        if (sel == 1) { doResetCar(); }
-        else if (sel == 2) { doResetSettings(); }
-        else if (sel == 3) { doResetCalibration(); }
-        else if (sel == 4) { doResetCar(); doResetSettings(); doResetCalibration(); }
-
-        saveEEPROM(g_storedVar);
-        initMenuItems();
-        initSettingsMenuItems();
-
         obdFill(&g_obd, OBD_WHITE, 1);
         const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
         int tw = strlen(doneText) * WIDTH12x16;
         obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
         delay(1500);
+
+        if (sel == 4) {
+          /* Full factory reset: wipe flash, reboot into first-boot path */
+          g_pref.begin("stored_var", false);
+          g_pref.clear();
+          g_pref.end();
+          ESP.restart();
+        }
+
+        if (sel == 1) { doResetCar(); }
+        else if (sel == 2) { doResetSettings(); }
+        else if (sel == 3) { doResetCalibration(); }
+
+        saveEEPROM(g_storedVar);
+        initMenuItems();
+        initSettingsMenuItems();
+
+        if (sel == 3) {
+          g_pref.begin("stored_var", false);
+          g_pref.putBool("force_calib", true);
+          g_pref.end();
+          ESP.restart();
+        }
       }
 
       /* Re-init encoder and redraw submenu */

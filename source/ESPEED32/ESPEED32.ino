@@ -21,10 +21,10 @@ const char* MENU_NAMES[][10] = {
 
 /* Settings menu item names: [language][item] */
 /* Order: SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, DELAY, STATUS, WIFI, BACK */
-const char* SETTINGS_MENU_NAMES[][10] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "STATUS", "WIFI", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "BACK"}
+const char* SETTINGS_MENU_NAMES[][11] = {
+  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "STATUS", "WIFI", "NULLSTILL", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "RESET", "BACK"},
+  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "RESET", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -91,10 +91,10 @@ const char* MENU_NAMES_PASCAL[][10] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][10] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Status", "Wifi", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Back"},
-  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][11] = {
+  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Status", "Wifi", "Nullst.", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Reset",   "Back"},
+  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Reset",   "Back"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
@@ -978,7 +978,6 @@ void initMenuItems() {
 
 /**
  * Initialize the settings submenu items
- * Order: SCRSV, SOUND, VIEW, LANG, CASE, BACK
  */
 void initSettingsMenuItems() {
   int i = 0;
@@ -1056,7 +1055,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* BACK/TILBAKE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* RESET/NULLST. */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 10));  /* BACK/TILBAKE */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -3655,6 +3662,97 @@ void showStatusSettings() {
 
 
 /**
+ * Reset all settings to factory defaults with double-click confirmation.
+ * Follows the same pattern as the car reset functionality.
+ * Does NOT reset car profiles (use reset car for that) or calibration.
+ */
+void showResetSettings() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  uint16_t lang = g_storedVar.language;
+
+  const char* confirmText1 = (lang == LANG_NOR) ? "NULLSTILL"        : "RESET";
+  const char* confirmText2 = (lang == LANG_NOR) ? "INNSTILLINGER?"   : "SETTINGS?";
+  const char* confirmText3 = (lang == LANG_NOR) ? "TRYKK 2 GANGER"  : "PRESS TWICE";
+  const char* cancelText   = (lang == LANG_NOR) ? "BREMSE=AVBRYT"   : "BRAKE=CANCEL";
+
+  obdWriteString(&g_obd, 0, 10, 5,  (char *)confirmText1, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 15, (char *)confirmText2, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 30, (char *)confirmText3, FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText,   FONT_6x8, OBD_BLACK, 1);
+
+  /* Wait for first confirmation click or brake button to cancel */
+  bool cancelled = false;
+  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { cancelled = true; break; }
+    delay(10);
+  }
+
+  if (cancelled) {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
+    int textWidth = strlen(cancelledText) * WIDTH12x16;
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
+    delay(1000);
+    return;
+  }
+
+  delay(200);  /* Debounce */
+
+  /* Second confirmation */
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* confirmText4 = (lang == LANG_NOR) ? "TRYKK IGJEN"     : "PRESS AGAIN";
+  const char* confirmText5 = (lang == LANG_NOR) ? "FOR A BEKREFTE"  : "TO CONFIRM";
+  obdWriteString(&g_obd, 0, 10, 10, (char *)confirmText4, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 20, (char *)confirmText5, FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText,   FONT_6x8, OBD_BLACK, 1);
+
+  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { cancelled = true; break; }
+    delay(10);
+  }
+
+  if (cancelled) {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    const char* cancelledText = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
+    int textWidth = strlen(cancelledText) * WIDTH12x16;
+    obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)cancelledText, FONT_12x16, OBD_BLACK, 1);
+    delay(1000);
+    return;
+  }
+
+  delay(200);  /* Debounce */
+
+  /* Reset all settings to factory defaults (car profiles are untouched) */
+  g_storedVar.viewMode             = VIEW_MODE_LIST;
+  g_storedVar.screensaverTimeout   = SCREENSAVER_TIMEOUT_DEFAULT;
+  g_storedVar.soundMode            = SOUND_MODE_DEFAULT;
+  g_storedVar.gridCarSelectEnabled = 0;
+  g_storedVar.raceViewMode         = RACE_VIEW_DEFAULT;
+  g_storedVar.language             = LANG_DEFAULT;
+  g_storedVar.textCase             = TEXT_CASE_DEFAULT;
+  g_storedVar.listFontSize         = FONT_SIZE_DEFAULT;
+  g_storedVar.startupDelay         = STARTUP_DELAY_DEFAULT;
+  strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1, SCREENSAVER_TEXT_MAX - 1);
+  g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
+  g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+
+  saveEEPROM(g_storedVar);
+
+  /* Reinitialize menus to reflect language/font reset */
+  initMenuItems();
+  initSettingsMenuItems();
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
+  int textWidth = strlen(doneText) * WIDTH12x16;
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - textWidth) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
+  delay(1500);
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+
+/**
  * Show the Settings submenu
  * This function is called when SETTINGS item is selected in the main menu
  * It displays and manages navigation through the settings submenu items:
@@ -3752,7 +3850,7 @@ void showSettingsMenu() {
           continue;
         }
         /* Check if STATUS item is selected - opens status slot submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
           showStatusSettings();
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -3762,10 +3860,24 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;
           continue;
         }
-        /* Check if WIFI item is selected (second to last, just before BACK) */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
+        /* Check if WIFI item is selected */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
           showWiFiBackupScreen();
           initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;
+          continue;
+        }
+        /* Check if RESET item is selected (second to last, just before BACK) */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
+          showResetSettings();
+          initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSettingsSelector = 0;
           continue;

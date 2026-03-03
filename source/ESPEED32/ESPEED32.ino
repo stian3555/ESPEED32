@@ -876,10 +876,10 @@ void initStoredVariables() {
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
-  g_storedVar.statusSlot[0]  = STATUS_SLOT0_DEFAULT;
-  g_storedVar.statusSlot[1]  = STATUS_SLOT1_DEFAULT;
-  g_storedVar.statusSlot[2]  = STATUS_SLOT2_DEFAULT;
-  g_storedVar.statusSlot[3]  = STATUS_SLOT3_DEFAULT;
+  g_storedVar.statusSlot[0] = STATUS_SLOT0_DEFAULT;
+  g_storedVar.statusSlot[1] = STATUS_SLOT1_DEFAULT;
+  g_storedVar.statusSlot[2] = STATUS_SLOT2_DEFAULT;
+  g_storedVar.statusSlot[3] = STATUS_SLOT3_DEFAULT;
 }
 
 

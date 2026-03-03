@@ -2518,11 +2518,10 @@ void showSelectRenameCar() {
           obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
           /* Show temp value when editing, stored value otherwise */
           uint16_t displayValue = isEditingRaceswp ? tempRaceswpValue : g_storedVar.gridCarSelectEnabled;
-          sprintf(msgStr, "%s", getOnOffLabel(lang, displayValue ? 1 : 0));
-          int textWidth = strlen(msgStr) * charWidth;
+          sprintf(msgStr, "%3s", getOnOffLabel(lang, displayValue ? 1 : 0));
           /* Value is white when editing, follows selection otherwise */
           uint8_t valueColor = isEditingRaceswp ? OBD_WHITE : (isSelected ? OBD_WHITE : OBD_BLACK);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, menuFont, valueColor, 1);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 3 * charWidth, yPos, msgStr, menuFont, valueColor, 1);
           break;
         }
 
@@ -2578,9 +2577,8 @@ void showSelectRenameCar() {
         uint16_t lang = g_storedVar.language;
 
         obdWriteString(&g_obd, 0, 0, yPos, (char *)getCarMenuOption(lang, 2), menuFont, OBD_WHITE, 1);
-        sprintf(msgStr, "%s", getOnOffLabel(lang, tempRaceswpValue ? 1 : 0));
-        int textWidth = strlen(msgStr) * charWidth;
-        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, yPos, msgStr, menuFont, OBD_WHITE, 1);
+        sprintf(msgStr, "%3s", getOnOffLabel(lang, tempRaceswpValue ? 1 : 0));
+        obdWriteString(&g_obd, 0, OLED_WIDTH - 3 * charWidth, yPos, msgStr, menuFont, OBD_WHITE, 1);
       }
     }
     /* Save the confirmed value (only if we didn't cancel) */

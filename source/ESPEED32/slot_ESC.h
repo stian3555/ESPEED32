@@ -20,10 +20,10 @@
 #define SW_MINOR_VERSION 1
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 13 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 14 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    10    /* Number of items in main menu (incl. STATS) */
+#define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
 #define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
@@ -57,6 +57,9 @@
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
 #define PWM_FREQ_DEFAULT          30    /* [100*Hz] Motor PWM frequency (3.0 kHz) */
 #define BRAKE_BUTTON_REDUCTION_DEFAULT  50   /* [%] Brake reduction when button is pressed */
+#define QUICK_BRAKE_ENABLED_DEFAULT     0    /* Quick brake off by default */
+#define QUICK_BRAKE_THRESHOLD_DEFAULT   10   /* [%] Trigger position where quick brake engages */
+#define QUICK_BRAKE_STRENGTH_DEFAULT    60   /* [%] Brake force in quick brake zone */
 
 /* Parameter Limits */
 #define MIN_SPEED_MAX_VALUE       90    /* [%] Maximum allowed minimum speed */
@@ -67,6 +70,8 @@
 #define THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE  10   /* [%] Throttle curve min */
 #define ANTISPIN_MAX_VALUE        255   /* [ms] Maximum anti-spin time */
 #define FREQ_MIN_VALUE            1000  /* [Hz] Minimum PWM frequency */
+#define QUICK_BRAKE_THRESHOLD_MAX 50    /* [%] Maximum quick brake threshold */
+#define QUICK_BRAKE_STRENGTH_MAX  100   /* [%] Maximum quick brake strength */
 #define MAX_UINT16                32767 /* Maximum 16-bit unsigned value */
 
 /* Display Font Sizes */
@@ -206,6 +211,9 @@ typedef struct {
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */
   uint16_t brakeButtonReduction;            /* [%] Brake reduction when button pressed (0-100%) */
+  uint16_t quickBrakeEnabled;              /* 0=OFF, 1=ON */
+  uint16_t quickBrakeThreshold;            /* [%] Trigger position where quick brake engages */
+  uint16_t quickBrakeStrength;             /* [%] Brake force in quick brake zone */
 } CarParam_type;
 
 /**

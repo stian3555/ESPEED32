@@ -339,8 +339,7 @@ void Task1code(void *pvParameters) {
     static MenuState_enum menuState = ITEM_SELECTION;
     static uint8_t swMajVer, swMinVer, storedVarVersion;
 
-    /* Read input voltage and motor current */
-    g_escVar.Vin_mV = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
+    /* Read motor current (voltage is read exclusively in Task2 to avoid ADC contention) */
     g_escVar.motorCurrent_mA = HAL_ReadMotorCurrent();
 
     /* Update selected car if initialization complete */
@@ -741,6 +740,15 @@ void Task2code(void *pvParameters) {
         uint32_t vinRaw = analogRead(AN_VIN_DIV);
         uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
                          * (RVIFBL + RVIFBH) / RVIFBL;
+
+        /* Update display voltage with 8-sample moving average to filter ADC noise */
+        static uint32_t vinFilter[8] = {0};
+        static uint8_t vinFilterIdx = 0;
+        vinFilter[vinFilterIdx] = vinMv;
+        vinFilterIdx = (vinFilterIdx + 1) % 8;
+        uint32_t vinSum = 0;
+        for (uint8_t f = 0; f < 8; f++) vinSum += vinFilter[f];
+        g_escVar.Vin_mV = (uint16_t)(vinSum / 8);
         uint32_t nowMs = millis();
 
         switch (lapState) {

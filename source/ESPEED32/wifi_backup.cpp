@@ -100,7 +100,7 @@ async function doBackup(){
   if(!usb){var a=document.createElement('a');a.href='/backup';a.download=fn;a.click();return;}
   ss('st','','Reading backup...');
   try{
-    await ws('BACKUP\n');
+    _b='';await ws('BACKUP\n');
     var j=await rb(parseInt(await rl()));
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=fn;a.click();
     ss('st','ok','Backup downloaded');
@@ -120,7 +120,7 @@ document.getElementById('uf').onsubmit=async function(e){
   }
   try{
     var j=await f.text(),b=E.encode(j);
-    await ws('RESTORE\n'+b.length+'\n');
+    _b='';await ws('RESTORE\n'+b.length+'\n');
     var w=port.writable.getWriter();try{await w.write(b);}finally{w.releaseLock();}
     var resp=await rl(20000);
     ss('st',resp.startsWith('OK')?'ok':'err',resp);
@@ -300,8 +300,7 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
     int objStart = json.indexOf('{', searchPos);
     int objEnd = json.indexOf('}', objStart);
     if (objStart < 0 || objEnd < 0) {
-      *errorMsg = "Error: missing car profile " + String(i);
-      return false;
+      break;  /* fewer profiles in backup than CAR_MAX_COUNT — keep defaults for the rest */
     }
     String carJson = json.substring(objStart, objEnd + 1);
     searchPos = objEnd + 1;
@@ -404,14 +403,14 @@ static void handleSerialCommand(const String& cmd) {
       Serial.println("ERR:invalid length");
       return;
     }
-    String json;
-    json.reserve((uint16_t)len + 1);
-    uint32_t t0 = millis();
-    while ((int32_t)json.length() < len) {
-      if (millis() - t0 > 15000) { Serial.println("ERR:timeout"); return; }
-      if (Serial.available()) json += (char)Serial.read();
-      else vTaskDelay(1);
-    }
+    /* Static buffer avoids heap fragmentation for large payloads */
+    static char jsonBuf[8193];
+    Serial.setTimeout(15000);
+    int32_t got = (int32_t)Serial.readBytes(jsonBuf, (size_t)len);
+    Serial.setTimeout(1000);
+    if (got != len) { Serial.println("ERR:timeout"); return; }
+    jsonBuf[len] = '\0';
+    String json(jsonBuf);
     StoredVar_type tempVar;
     String errorMsg;
     if (parseAndValidateJson(json, &tempVar, &errorMsg)) {

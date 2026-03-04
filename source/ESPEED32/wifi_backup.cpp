@@ -181,7 +181,10 @@ static String buildJsonBackup() {
     sprintf(buf, "      \"curveDiff\": %u,\n", c.throttleCurveVertex.curveSpeedDiff); json += buf;
     sprintf(buf, "      \"antiSpin\": %u,\n", c.antiSpin);               json += buf;
     sprintf(buf, "      \"freqPWM\": %u,\n", c.freqPWM);                 json += buf;
-    sprintf(buf, "      \"brakeButton\": %u\n", c.brakeButtonReduction);  json += buf;
+    sprintf(buf, "      \"brakeButton\": %u,\n", c.brakeButtonReduction);  json += buf;
+    sprintf(buf, "      \"quickBrakeEnabled\": %u,\n", c.quickBrakeEnabled);   json += buf;
+    sprintf(buf, "      \"quickBrakeThreshold\": %u,\n", c.quickBrakeThreshold); json += buf;
+    sprintf(buf, "      \"quickBrakeStrength\": %u\n", c.quickBrakeStrength);  json += buf;
     json += "    }";
     if (i < CAR_MAX_COUNT - 1) json += ",";
     json += "\n";
@@ -361,6 +364,14 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
       *errorMsg = "Error: invalid brakeButton in car " + String(i); return false;
     }
     c.brakeButtonReduction = v;
+
+    /* Quick brake fields — optional for backwards compatibility with older backups */
+    if (parseJsonInt(carJson, "quickBrakeEnabled", v) && inRange(v, 0, 1))
+      c.quickBrakeEnabled = v;
+    if (parseJsonInt(carJson, "quickBrakeThreshold", v) && inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX))
+      c.quickBrakeThreshold = v;
+    if (parseJsonInt(carJson, "quickBrakeStrength", v) && inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX))
+      c.quickBrakeStrength = v;
   }
 
   return true;

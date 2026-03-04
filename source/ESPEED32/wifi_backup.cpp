@@ -111,7 +111,8 @@ static String buildJsonBackup() {
   sprintf(buf, "  \"maxTrigger_raw\": %d,\n", g_storedVar.maxTrigger_raw); json += buf;
   sprintf(buf, "  \"viewMode\": %u,\n", g_storedVar.viewMode);           json += buf;
   sprintf(buf, "  \"screensaverTimeout\": %u,\n", g_storedVar.screensaverTimeout); json += buf;
-  sprintf(buf, "  \"soundMode\": %u,\n", g_storedVar.soundMode);         json += buf;
+  sprintf(buf, "  \"soundBoot\": %u,\n", g_storedVar.soundBoot);         json += buf;
+  sprintf(buf, "  \"soundRace\": %u,\n", g_storedVar.soundRace);         json += buf;
   sprintf(buf, "  \"gridCarSelectEnabled\": %u,\n", g_storedVar.gridCarSelectEnabled); json += buf;
   sprintf(buf, "  \"raceViewMode\": %u,\n", g_storedVar.raceViewMode);   json += buf;
   sprintf(buf, "  \"language\": %u,\n", g_storedVar.language);           json += buf;
@@ -217,8 +218,10 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
     sv->viewMode = v;
   if (parseJsonInt(json, "screensaverTimeout", v) && inRange(v, 0, SCREENSAVER_TIMEOUT_MAX))
     sv->screensaverTimeout = v;
-  if (parseJsonInt(json, "soundMode", v) && inRange(v, SOUND_MODE_OFF, SOUND_MODE_ALL))
-    sv->soundMode = v;
+  if (parseJsonInt(json, "soundBoot", v) && inRange(v, 0, 1))
+    sv->soundBoot = v;
+  if (parseJsonInt(json, "soundRace", v) && inRange(v, 0, 1))
+    sv->soundRace = v;
   if (parseJsonInt(json, "gridCarSelectEnabled", v) && inRange(v, 0, 1))
     sv->gridCarSelectEnabled = v;
   if (parseJsonInt(json, "raceViewMode", v) && inRange(v, 0, 2))

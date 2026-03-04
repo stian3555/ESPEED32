@@ -20,13 +20,18 @@
 #define SW_MINOR_VERSION 4
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 16 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 18 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 12   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 6    /* Number of items in settings menu (including BACK) */
+#define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
+#define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
-#define POWER_SAVE_TIMEOUT_MAX     30   /* [min] Maximum auto power save delay */
+#define POWER_SAVE_TIMEOUT_MAX     10   /* [min] Maximum auto power save delay */
+#define DEEP_SLEEP_TIMEOUT_DEFAULT 10   /* [min] Default auto deep sleep delay (0=manual only) */
+#define DEEP_SLEEP_TIMEOUT_MAX     30   /* [min] Maximum auto deep sleep delay */
+#define DEEP_SLEEP_TIMEOUT_MIN     2    /* [min] Minimum auto deep sleep delay */
 #define MENU_ACCELERATION   0     /* Encoder acceleration in menu navigation */
 #define SEL_ACCELERATION    100   /* Encoder acceleration when adjusting values */
 #define ITEM_NO_CALLBACK    0     /* Indicates menu item has no callback function */
@@ -84,7 +89,7 @@
 
 /* Timing Constants */
 #define ESC_PERIOD_US   500     /* ESC control loop period [µs] */
-#define SCREENSAVER_TIMEOUT_DEFAULT  20  /* [s] Default screensaver timeout */
+#define SCREENSAVER_TIMEOUT_DEFAULT  60  /* [s] Default screensaver timeout */
 #define SCREENSAVER_TIMEOUT_MIN      1   /* [s] Minimum screensaver timeout (0 = OFF) */
 #define SCREENSAVER_TIMEOUT_MAX      240 /* [s] Maximum screensaver timeout */
 #define SCREENSAVER_WAKEUP_THRESHOLD 20  /* [%] Throttle threshold to wake from screensaver */
@@ -98,10 +103,9 @@
 #define BUTTON_SHORT_PRESS_DEBOUNCE_MS  200  /* [ms] Minimum time between button presses */
 
 /* Sound Configuration */
-#define SOUND_MODE_OFF   0  /* All sounds disabled */
-#define SOUND_MODE_BOOT  1  /* Boot sounds only */
-#define SOUND_MODE_ALL   2  /* All sounds enabled */
-#define SOUND_MODE_DEFAULT  SOUND_MODE_ALL
+#define SOUND_BOOT_DEFAULT  1  /* Boot sounds on by default (startup, calib, on, off) */
+#define SOUND_RACE_DEFAULT  1  /* Race mode toggle sound on by default */
+#define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
 
 /* Text Case Style */
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */
@@ -229,7 +233,8 @@ typedef struct {
   int16_t maxTrigger_raw;                   /* Calibrated maximum trigger value */
   uint16_t viewMode;                        /* View mode: LIST or GRID */
   uint16_t screensaverTimeout;              /* [s] Screensaver timeout in seconds */
-  uint16_t soundMode;                       /* Sound mode: OFF, BOOT, or ALL */
+  uint16_t soundBoot;                       /* Boot sounds: 0=OFF, 1=ON (startup, calib, on, off) */
+  uint16_t soundRace;                       /* Race mode sound: 0=OFF, 1=ON (toggle beep) */
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
   uint16_t language;                        /* Language: NOR, ENG, or ACD */
@@ -240,7 +245,8 @@ typedef struct {
   char screensaverLine2[SCREENSAVER_TEXT_MAX];  /* Screensaver subtitle (FONT_6x8) */
   /* Status line slot assignments (see STATUS_* defines) */
   uint16_t statusSlot[STATUS_SLOTS]; /* content type for each fixed-position column */
-  uint16_t powerSaveTimeout;         /* [min] Auto power save delay (0=manual only, 1-30 min) */
+  uint16_t powerSaveTimeout;         /* [min] Auto power save delay (0=manual only, 1-10 min) */
+  uint16_t deepSleepTimeout;         /* [min] Auto deep sleep delay (0=manual only, 2-30 min) */
 } StoredVar_type;
 
 /**

@@ -13,16 +13,30 @@
 
 /* Menu item names in different languages: [language][item] */
 const char* MENU_NAMES[][11] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "H-Brems", "LIMIT", "INNSTILL", "STATS", "*BIL*"},
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "H-Brems", "GRENSE", "INNSTILL", "STATS", "*BIL*"},
   /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "Q-Brake", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
   /* ACD */ {"BRAKE", "ATTCK", "CHOKE", "PROFL", "PWM_F", "B_BTN", "Q-Brake", "LIMIT", "SETTINGS", "STATS", "*CAR*"}
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][12] = {
-  /* NOR */ {"SKJSP", "LYD", "VISN", "SPRK", "STYL", "STRL", "VENT", "STATUS", "WIFI", "NULLSTILL", "DVALE", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "RESET", "SLEEP", "BACK"},
-  /* ACD */ {"SCRSV", "SOUND", "VIEW", "LANG", "CASE", "FSIZE", "DELAY", "STATUS", "WIFI", "RESET", "SLEEP", "BACK"}
+const char* SETTINGS_MENU_NAMES[][6] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "NULLSTILL", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "RESET", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "RESET", "BACK"}
+};
+
+/* Power submenu item names: [language][item] */
+const char* POWER_MENU_NAMES[][5] = {
+  /* NOR */ {"SKJSP", "DVALE", "DYP SOV", "OPPSTART", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "BACK"},
+  /* ACD */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "BACK"}
+};
+
+/* Display submenu item names: [language][item] */
+const char* DISPLAY_MENU_NAMES[][6] = {
+  /* NOR */ {"RACEMODUS", "SPRAK", "STYL", "SKRIFTSTRL", "STATUSLINJE", "TILBAKE"},
+  /* ENG */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "STATUS BAR", "BACK"},
+  /* ACD */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "STATUS BAR", "BACK"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -46,11 +60,11 @@ const char* VIEW_MODE_LABELS[][3] = {
   /* ACD */ {"OFF", "FULL", "SIMPLE"}
 };
 
-/* Sound mode value labels: [language][mode] */
-const char* SOUND_MODE_LABELS[][3] = {
-  /* NOR */ {"AV", "START", "ALT"},
-  /* ENG */ {"OFF", "BOOT", "ALL"},
-  /* ACD */ {"OFF", "BOOT", "ALL"}
+/* Sound submenu item names: [language][item] — BOOT, RACE, BACK */
+const char* SOUND_MENU_NAMES[][3] = {
+  /* NOR */ {"OPPSTART", "RACEMODE", "TILBAKE"},
+  /* ENG */ {"BOOT", "RACE", "BACK"},
+  /* ACD */ {"BOOT", "RACE", "BACK"}
 };
 
 /* ON/OFF labels: [language][state] */
@@ -83,16 +97,30 @@ const char* FONT_SIZE_LABELS[][2] = {
 
 /* Menu item names - Pascal Case: [language][item] */
 const char* MENU_NAMES_PASCAL[][11] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "H-Brems", "Limit", "Innstill", "Stats", "*Bil*"},
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "H-Brems", "Grense", "Innstill", "Stats", "*Bil*"},
   /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "Q-Brake", "Limit", "Settings", "Stats", "*Car*"},
   /* ACD */ {"Brake", "Attck", "Choke", "Profl", "Pwm_F", "B_Btn", "Q-Brake", "Limit", "Settings", "Stats", "*Car*"}
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][12] = {
-  /* NOR */ {"Skjsp", "Lyd", "Visn", "Sprk", "Styl", "Strl", "Vent", "Status", "Wifi", "Nullst.", "Dvale", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Reset", "Sleep", "Back"},
-  /* ACD */ {"Scrsv", "Sound", "View", "Lang", "Case", "Fsize", "Delay", "Status", "Wifi", "Reset", "Sleep", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][6] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Nullstill", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Reset", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Reset", "Back"}
+};
+
+/* Power submenu item names - Pascal Case: [language][item] */
+const char* POWER_MENU_NAMES_PASCAL[][5] = {
+  /* NOR */ {"Skjsp", "Dvale", "Dyp Sov", "Oppstart", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Back"},
+  /* ACD */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Back"}
+};
+
+/* Display submenu item names - Pascal Case: [language][item] */
+const char* DISPLAY_MENU_NAMES_PASCAL[][6] = {
+  /* NOR */ {"Racemodus", "Sprak", "Styl", "Skriftstrl", "Statuslinje", "Tilbake"},
+  /* ENG */ {"Race Mode", "Language", "Case", "Font Size", "Status bar", "Back"},
+  /* ACD */ {"Race Mode", "Language", "Case", "Font Size", "Status bar", "Back"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
@@ -116,11 +144,11 @@ const char* VIEW_MODE_LABELS_PASCAL[][3] = {
   /* ACD */ {"Off", "Full", "Simple"}
 };
 
-/* Sound mode value labels - Pascal Case: [language][mode] */
-const char* SOUND_MODE_LABELS_PASCAL[][3] = {
-  /* NOR */ {"Av", "Start", "Alt"},
-  /* ENG */ {"Off", "Boot", "All"},
-  /* ACD */ {"Off", "Boot", "All"}
+/* Sound submenu item names - Pascal Case: [language][item] */
+const char* SOUND_MENU_NAMES_PASCAL[][3] = {
+  /* NOR */ {"Oppstart", "Racemode", "Tilbake"},
+  /* ENG */ {"Boot", "Race", "Back"},
+  /* ACD */ {"Boot", "Race", "Back"}
 };
 
 /* ON/OFF labels - Pascal Case: [language][state] */
@@ -208,6 +236,16 @@ inline const char* getSettingsMenuName(uint8_t lang, uint8_t item) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? SETTINGS_MENU_NAMES_PASCAL[lang][item] : SETTINGS_MENU_NAMES[lang][item];
 }
 
+/* Get power submenu name with current text case style */
+inline const char* getPowerMenuName(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? POWER_MENU_NAMES_PASCAL[lang][item] : POWER_MENU_NAMES[lang][item];
+}
+
+/* Get display submenu name with current text case style */
+inline const char* getDisplayMenuName(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? DISPLAY_MENU_NAMES_PASCAL[lang][item] : DISPLAY_MENU_NAMES[lang][item];
+}
+
 /* Get race label with current text case style */
 inline const char* getRaceLabel(uint8_t lang, uint8_t param) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? RACE_LABELS_PASCAL[lang][param] : RACE_LABELS[lang][param];
@@ -223,9 +261,9 @@ inline const char* getViewModeLabel(uint8_t lang, uint8_t mode) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? VIEW_MODE_LABELS_PASCAL[lang][mode] : VIEW_MODE_LABELS[lang][mode];
 }
 
-/* Get sound mode label with current text case style */
-inline const char* getSoundModeLabel(uint8_t lang, uint8_t mode) {
-  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? SOUND_MODE_LABELS_PASCAL[lang][mode] : SOUND_MODE_LABELS[lang][mode];
+/* Get sound submenu item name with current text case style */
+inline const char* getSoundMenuName(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? SOUND_MENU_NAMES_PASCAL[lang][item] : SOUND_MENU_NAMES[lang][item];
 }
 
 /* Get ON/OFF label with current text case style */
@@ -278,6 +316,60 @@ static uint32_t g_lastEncoderInteraction = 0;  /* Timestamp of last encoder inte
 /* Menu Navigation State */
 static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
 static bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
+static bool g_escapeToMain = false;    /* Set by any submenu long press → cascade-breaks to RUNNING for race mode toggle */
+
+/* Long press tracking shared across all submenus (only one active at a time) */
+static uint32_t g_lpRaceStart = 0;
+static bool g_lpRaceActive = false;
+
+/**
+ * @brief Detect long press on encoder button (shared across all submenus).
+ * @return true once per long press when threshold is exceeded.
+ */
+static bool checkRaceModeEscape() {
+  if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+    if (!g_lpRaceActive) { g_lpRaceStart = millis(); g_lpRaceActive = true; }
+    if (millis() - g_lpRaceStart > BUTTON_LONG_PRESS_MS) {
+      g_lpRaceActive = false;
+      return true;
+    }
+  } else {
+    g_lpRaceActive = false;
+  }
+  return false;
+}
+
+/**
+ * @brief Toggle race/list view mode and reset encoder for new mode.
+ * Called from RUNNING when g_escapeToMain is set, or on direct long press.
+ * @param menuState Reference to RUNNING's menuState (reset to ITEM_SELECTION).
+ * @param lastLongPressTime Reference to guard timestamp (prevent double-trigger).
+ */
+static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPressTime) {
+  if (g_storedVar.viewMode == VIEW_MODE_LIST && g_storedVar.raceViewMode != RACE_VIEW_OFF) {
+    g_storedVar.viewMode = VIEW_MODE_GRID;
+  } else if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+    g_storedVar.viewMode = VIEW_MODE_LIST;
+  }
+  obdFill(&g_obd, OBD_WHITE, 1);
+  menuState = ITEM_SELECTION;
+  if (g_storedVar.viewMode == VIEW_MODE_GRID) {
+    uint8_t gridItems = (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE)
+      ? (g_storedVar.gridCarSelectEnabled ? 3 : 2)
+      : (g_storedVar.gridCarSelectEnabled ? 5 : 4);
+    g_rotaryEncoder.setBoundaries(1, gridItems, false);
+  } else {
+    g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  }
+  g_rotaryEncoder.reset(1);
+  g_encoderMainSelector = 1;
+  g_escVar.encoderPos = 1;
+  lastLongPressTime = millis();
+  saveEEPROM(g_storedVar);
+  if (g_storedVar.soundRace) keySound();
+  g_lastEncoderInteraction = millis();
+  g_rotaryEncoder.isEncoderButtonClicked();  /* consume any pending click */
+}
 
 /*********************************************************************************************************************/
 /*                                                Function Prototypes                                                */
@@ -286,7 +378,13 @@ void IRAM_ATTR readEncoderISR();
 static bool resetConfirm(const char* label);
 static void doResetCar();
 static void showPowerSave();
+static void showDeepSleep();
 static void showSleepSettings();
+static void showDeepSleepSettings();
+static void showSoundSettings();
+static void showPowerSettings();
+static void showDisplaySettings();
+void initDisplayMenuItems();
 
 /*********************************************************************************************************************/
 /*                                                Setup Function                                                     */
@@ -374,7 +472,7 @@ void Task1code(void *pvParameters) {
               g_currState = CALIBRATION;
               g_storedVar.minTrigger_raw = MAX_INT16;
               g_storedVar.maxTrigger_raw = MIN_INT16;
-              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+              if (g_storedVar.soundBoot) {
                 calibSound();
               }
               initDisplayAndEncoder();
@@ -389,7 +487,7 @@ void Task1code(void *pvParameters) {
               /* Reset Min and Max to the opposite side, in order to have effective calibration */
               g_storedVar.minTrigger_raw = MAX_INT16;
               g_storedVar.maxTrigger_raw = MIN_INT16;
-              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+              if (g_storedVar.soundBoot) {
                 calibSound();             /* Play calibration sound */
               }
               initDisplayAndEncoder();  /* init and clear OLED and Encoder */
@@ -407,7 +505,7 @@ void Task1code(void *pvParameters) {
               g_currState = WELCOME;                    /* Go to WELCOME state */
               g_carSel = g_storedVar.selectedCarNumber; /* now it is safe to address the proper car */
               initDisplayAndEncoder();  /* init and clear OLED and Encoder */
-              if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+              if (g_storedVar.soundBoot) {
                 onSound();                /* Play ON sound */
               }
             }
@@ -436,7 +534,7 @@ void Task1code(void *pvParameters) {
         /* Reset Min and Max to the opposite side, in order to have effective calibration */
         g_storedVar.minTrigger_raw = MAX_INT16;
         g_storedVar.maxTrigger_raw = MIN_INT16;
-        if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+        if (g_storedVar.soundBoot) {
           calibSound();                   /* Play calibration sound */
         }
         g_currState = CALIBRATION;      /* Go to CALIBRATION state */
@@ -457,7 +555,7 @@ void Task1code(void *pvParameters) {
         /* Exit calibration if button is presseded */
         if (g_rotaryEncoder.isEncoderButtonClicked())  /* exit calibration and save calibration data to EEPROM */
         {
-          if (g_storedVar.soundMode == SOUND_MODE_ALL || g_storedVar.soundMode == SOUND_MODE_BOOT) {
+          if (g_storedVar.soundBoot) {
             offSound();
           }
           initMenuItems();  /* Init Menu Items */
@@ -508,63 +606,29 @@ void Task1code(void *pvParameters) {
           encoderBoundariesSet = true;
         }
 
-        /* Check for long press to toggle view mode */
-        static uint32_t buttonPressStartTime = 0;
-        static bool buttonWasPressed = false;
+        /* Handle race mode toggle: either from a submenu escape or direct long press */
         static uint32_t lastLongPressTime = 0;
 
-        if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
-          if (!buttonWasPressed) {
-            buttonPressStartTime = millis();
-            buttonWasPressed = true;
-          }
-          /* If button held for defined duration, toggle view mode immediately */
-          if (millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
-              millis() - lastLongPressTime > BUTTON_LONG_PRESS_MS) {
-            lastLongPressTime = millis();  /* Record when long press happened */
-
-            /* Only allow toggling to GRID mode if race view is not OFF */
-            if (g_storedVar.viewMode == VIEW_MODE_LIST && g_storedVar.raceViewMode != RACE_VIEW_OFF) {
-              g_storedVar.viewMode = VIEW_MODE_GRID;
-            }
-            else if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-              g_storedVar.viewMode = VIEW_MODE_LIST;
-            }
-
-            /* Clear display completely when switching views */
-            obdFill(&g_obd, OBD_WHITE, 1);
-
-            /* Reset to item selection mode (not value editing) */
-            menuState = ITEM_SELECTION;
-
-            /* Update encoder boundaries for new view mode */
-            if (g_storedVar.viewMode == VIEW_MODE_GRID) {
-              uint8_t gridItems;
-              if (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE) {
-                gridItems = g_storedVar.gridCarSelectEnabled ? 3 : 2;  /* SIMPLE: BRAKE, SENSI, CAR (optional) */
-              } else {
-                gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (optional) */
-              }
-              g_rotaryEncoder.setBoundaries(1, gridItems, false);
-              g_rotaryEncoder.reset(1);  /* Reset to first grid item */
-            } else {
-              g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
-              g_rotaryEncoder.reset(1);  /* Reset to first menu item */
-            }
-            g_encoderMainSelector = 1;
-            g_escVar.encoderPos = 1;
-
-            saveEEPROM(g_storedVar);
-            if (g_storedVar.soundMode == SOUND_MODE_ALL) {
-              keySound();
-            }
-            g_lastEncoderInteraction = millis();
-
-            /* Clear the encoder click state to prevent short press from triggering */
-            g_rotaryEncoder.isEncoderButtonClicked();
-          }
+        if (g_escapeToMain) {
+          /* Return from submenu long press → toggle race mode immediately */
+          g_escapeToMain = false;
+          applyRaceModeToggle(menuState, lastLongPressTime);
         } else {
-          buttonWasPressed = false;
+          /* Direct long press detection in RUNNING */
+          static uint32_t buttonPressStartTime = 0;
+          static bool buttonWasPressed = false;
+          if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+            if (!buttonWasPressed) {
+              buttonPressStartTime = millis();
+              buttonWasPressed = true;
+            }
+            if (millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
+                millis() - lastLongPressTime > BUTTON_LONG_PRESS_MS) {
+              applyRaceModeToggle(menuState, lastLongPressTime);
+            }
+          } else {
+            buttonWasPressed = false;
+          }
         }
 
         /* Check for brake button press - acts as "back" in edit mode */
@@ -902,7 +966,9 @@ void initStoredVariables() {
   g_storedVar.viewMode = VIEW_MODE_LIST;
   g_storedVar.screensaverTimeout = SCREENSAVER_TIMEOUT_DEFAULT;
   g_storedVar.powerSaveTimeout   = POWER_SAVE_TIMEOUT_DEFAULT;
-  g_storedVar.soundMode = SOUND_MODE_DEFAULT;
+  g_storedVar.deepSleepTimeout   = DEEP_SLEEP_TIMEOUT_DEFAULT;
+  g_storedVar.soundBoot = SOUND_BOOT_DEFAULT;
+  g_storedVar.soundRace = SOUND_RACE_DEFAULT;
   g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
   g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
@@ -1038,7 +1104,7 @@ void initSettingsMenuItems() {
   int i = 0;
   uint8_t lang = g_storedVar.language;
 
-  sprintf(g_settingsMenu.item[i].name, "%s", getSettingsMenuName(lang, 0));  /* SCRSV */
+  sprintf(g_settingsMenu.item[i].name, "%s", getSettingsMenuName(lang, 0));  /* POWER - opens submenu */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1046,15 +1112,52 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 1));  /* SOUND */
-  g_settingsMenu.item[i].value = (void *)&g_storedVar.soundMode;
-  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 1));  /* DISPLAY - opens submenu */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = SOUND_MODE_ALL;
-  g_settingsMenu.item[i].minValue = SOUND_MODE_OFF;
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 2));  /* VIEW */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 2));  /* SOUND - opens submenu */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 3));  /* WIFI */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* RESET */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* BACK */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+}
+
+void initDisplayMenuItems() {
+  int i = 0;
+  uint8_t lang = g_storedVar.language;
+
+  sprintf(g_settingsMenu.item[i].name, "%s", getDisplayMenuName(lang, 0));  /* VIEW */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.raceViewMode;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1062,7 +1165,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = RACE_VIEW_OFF;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 3));  /* LANG */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 1));  /* LANG */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.language;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1070,7 +1173,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* CASE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 2));  /* CASE */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.textCase;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1078,7 +1181,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = TEXT_CASE_UPPER;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* FSIZE */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 3));  /* FSIZE */
   g_settingsMenu.item[i].value = (void *)&g_storedVar.listFontSize;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1086,15 +1189,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = FONT_SIZE_LARGE;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* DELAY */
-  g_settingsMenu.item[i].value = (void *)&g_storedVar.startupDelay;
-  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
-  sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = STARTUP_DELAY_MAX;
-  g_settingsMenu.item[i].minValue = STARTUP_DELAY_MIN;
-  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* STATUS - opens submenu */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 4));  /* STATUS - opens submenu */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1102,31 +1197,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* WIFI */
-  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
-  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
-  sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = 0;
-  g_settingsMenu.item[i].minValue = 0;
-  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* RESET */
-  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
-  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = 0;
-  g_settingsMenu.item[i].minValue = 0;
-  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 10));  /* SLEEP - opens submenu */
-  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
-  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = 0;
-  g_settingsMenu.item[i].minValue = 0;
-  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 11));  /* BACK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 5));  /* BACK */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1607,7 +1678,13 @@ void printMainMenu(MenuState_enum currMenuState)
     if (g_storedVar.powerSaveTimeout > 0 &&
         millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL) + ((uint32_t)g_storedVar.powerSaveTimeout * 60000UL)) {
       showPowerSave();
+      g_lastEncoderInteraction = millis();  /* Restart timers after waking from soft sleep */
       screensaverActive = false;
+    }
+    /* Auto deep sleep: triggers after screensaverTimeout + deepSleepTimeout of inactivity. */
+    if (g_storedVar.deepSleepTimeout > 0 &&
+        millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL) + ((uint32_t)g_storedVar.deepSleepTimeout * 60000UL)) {
+      showDeepSleep();  /* Never returns */
     }
     /* Screensaver is active - don't draw menu.
      * Yield to FreeRTOS so the IDLE task can feed the watchdog timer. */
@@ -1659,15 +1736,8 @@ void printMainMenu(MenuState_enum currMenuState)
         /* If the value is a string, cast to (char *) then print the string */
         else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING)
         {
-          /* SOUND */
-          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "SOUND") == 0 ||
-              strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "LYD") == 0) {
-            uint16_t soundMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
-            uint16_t lang = g_storedVar.language;
-            sprintf(msgStr, "%5s", SOUND_MODE_LABELS[lang][soundMode]);
-          }
           /* Special handling for VIEW menu item - display language-specific labels */
-          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
+          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
             uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             uint16_t lang = g_storedVar.language;
             sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][raceViewMode]);
@@ -2121,6 +2191,9 @@ void showCarSelection() {
     const char* selLabel = STR_SELECT_CAR[g_storedVar.language];
     int selLabelWidth = strlen(selLabel) * 6;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - selLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)selLabel, FONT_6x8, OBD_WHITE, 1);
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
 
   /* Reset encoder and clear is done in caller routine */
@@ -2230,10 +2303,14 @@ void showCopyCarSettings() {
     const char* fromLabel = STR_COPY_FROM[g_storedVar.language];
     int fromLabelWidth = strlen(fromLabel) * 6;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - fromLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)fromLabel, FONT_6x8, OBD_WHITE, 1);
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
 
   /* Small delay to prevent double-click */
   delay(200);
+  if (g_escapeToMain) return;
 
   /* ========== SELECT DESTINATION CAR (TO) ========== */
   /* Clear screen */
@@ -2341,6 +2418,9 @@ void showCopyCarSettings() {
     const char* toLabel = STR_COPY_TO[g_storedVar.language];
     int toLabelWidth = strlen(toLabel) * 6;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - toLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)toLabel, FONT_6x8, OBD_WHITE, 1);
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
 
   /* Copy car parameters */
@@ -2567,6 +2647,9 @@ void showSelectRenameCar() {
         }
       }
     }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; goto exitCarMenu; }
   }
 
   /* Handle encoder click based on current state */
@@ -2618,13 +2701,13 @@ void showSelectRenameCar() {
   if (selectedOption == CAR_OPTION_RENAME)
   {
     showRenameCar();
-    saveEEPROM(g_storedVar);
+    if (!g_escapeToMain) saveEEPROM(g_storedVar);
   }
   /* If SELECT option was selected, go to showCarSelection routine */
   else if (selectedOption == CAR_OPTION_SELECT)
   {
     showCarSelection();
-    saveEEPROM(g_storedVar);
+    if (!g_escapeToMain) saveEEPROM(g_storedVar);
   }
   /* If RACESWP option was selected, value was already saved in the edit loop above */
   else if (selectedOption == CAR_OPTION_GRID_SEL)
@@ -2635,7 +2718,7 @@ void showSelectRenameCar() {
   else if (selectedOption == CAR_OPTION_COPY)
   {
     showCopyCarSettings();
-    saveEEPROM(g_storedVar);
+    if (!g_escapeToMain) saveEEPROM(g_storedVar);
   }
   /* If RESET option was selected, reset all car parameters with double confirmation */
   else if (selectedOption == CAR_OPTION_RESET)
@@ -2842,6 +2925,9 @@ void showRenameCar() {
         }
       }
     }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
 }
 
@@ -2962,6 +3048,9 @@ void showCurveSelection()
       /* Service the watchdog, to prevent CPU reset */
       vTaskDelay(10);
     }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
   }
 
   /* Reset encoder */
@@ -2971,7 +3060,7 @@ void showCurveSelection()
   g_escVar.encoderPos = g_encoderMainSelector;
 
   /* Only save if not canceled */
-  if (!curveCanceled) {
+  if (!curveCanceled && !g_escapeToMain) {
     saveEEPROM(g_storedVar);          /* Save modified values to EEPROM */
   }
 
@@ -3148,6 +3237,9 @@ void showLapStats() {
     /* Row 7 (y=56): Status line (throttle, car name, voltage) */
     displayStatusLine();
 
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
     delay(50);  /* ~20 Hz UI refresh */
   }
 
@@ -3300,16 +3392,18 @@ static void editScreensaverText(char* text, const char* title) {
  * Brake button or BACK = return to settings.
  */
 void showScreensaverSettings() {
-  const uint8_t SS_ITEMS = 4;
+  const uint8_t SS_ITEMS = 5;
   uint8_t lang = g_storedVar.language;
 
   const char* ssNames[SS_ITEMS];
   if (lang == LANG_NOR) {
     ssNames[0] = "LINJE1";  ssNames[1] = "LINJE2";
-    ssNames[2] = "TID";     ssNames[3] = "TILBAKE";
+    ssNames[2] = "TID";     ssNames[3] = "NA";
+    ssNames[4] = "TILBAKE";
   } else {
     ssNames[0] = "LINE1";   ssNames[1] = "LINE2";
-    ssNames[2] = "TIME";    ssNames[3] = "BACK";
+    ssNames[2] = "TIME";    ssNames[3] = "NOW";
+    ssNames[4] = "BACK";
   }
   const char* editorTitleL1 = (lang == LANG_NOR) ? "Linje 1" : "Line 1";
   const char* editorTitleL2 = (lang == LANG_NOR) ? "Linje 2" : "Line 2";
@@ -3358,6 +3452,11 @@ void showScreensaverSettings() {
         continue;
       }
     }
+    /* Also skip draw code if screensaver is active (e.g. activated via NOW button) */
+    if (!wakeUp && screensaverActive) {
+      delay(10);
+      continue;
+    }
 
     /* Brake button = cancel time edit / exit submenu */
     static bool brakePressedSS = false;
@@ -3372,10 +3471,11 @@ void showScreensaverSettings() {
           inTimeEdit = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-          g_rotaryEncoder.reset(sel);
+          g_rotaryEncoder.reset(3);  /* Return to TIME item */
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSel = 0xFF;
         } else {
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
           break;  /* Exit to settings menu */
         }
       }
@@ -3397,7 +3497,7 @@ void showScreensaverSettings() {
     /* Draw items if changed */
     if (sel != prevSel || inTimeEdit) {
       for (uint8_t idx = 0; idx < SS_ITEMS; idx++) {
-        uint8_t yPx = (idx + 1) * HEIGHT8x8;  /* y=8,16,24,32 */
+        uint8_t yPx = (idx + 1) * HEIGHT8x8;  /* y=8,16,24,32,40 */
         bool isSelected = (sel == idx + 1);
         bool isEditingThis = (inTimeEdit && idx == 2);  /* TIME row */
 
@@ -3424,6 +3524,7 @@ void showScreensaverSettings() {
           obdWriteString(&g_obd, 0, OLED_WIDTH - 24, yPx, msgStr, FONT_6x8,
                          isEditingThis ? OBD_WHITE : OBD_BLACK, 1);
         }
+        /* idx==3 (NOW) and idx==4 (BACK) have no value — name only */
       }
       prevSel = sel;
     }
@@ -3464,9 +3565,18 @@ void showScreensaverSettings() {
         g_rotaryEncoder.setBoundaries(0, SCREENSAVER_TIMEOUT_MAX, false);
         g_rotaryEncoder.reset(g_storedVar.screensaverTimeout);
       } else if (sel == 4) {
+        /* NOW: activate screensaver immediately */
+        screensaverActive = true;
+        screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+        showScreensaver();
+        lastInteraction = millis();
+      } else if (sel == 5) {
         break;  /* BACK */
       }
     }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
 
     vTaskDelay(10);
   }
@@ -3664,6 +3774,9 @@ void showStatusSettings() {
       }
     }
 
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
     vTaskDelay(10);
   }
 
@@ -3754,7 +3867,9 @@ static void doResetSettings() {
   g_storedVar.viewMode             = VIEW_MODE_LIST;
   g_storedVar.screensaverTimeout   = SCREENSAVER_TIMEOUT_DEFAULT;
   g_storedVar.powerSaveTimeout     = POWER_SAVE_TIMEOUT_DEFAULT;
-  g_storedVar.soundMode            = SOUND_MODE_DEFAULT;
+  g_storedVar.deepSleepTimeout     = DEEP_SLEEP_TIMEOUT_DEFAULT;
+  g_storedVar.soundBoot            = SOUND_BOOT_DEFAULT;
+  g_storedVar.soundRace            = SOUND_RACE_DEFAULT;
   g_storedVar.gridCarSelectEnabled = 0;
   g_storedVar.raceViewMode         = RACE_VIEW_DEFAULT;
   g_storedVar.language             = LANG_DEFAULT;
@@ -3778,8 +3893,8 @@ static void doResetCalibration() {
 }
 
 /**
- * Power save mode. Turns off display, lowers CPU to 80 MHz, suspends motor task.
- * Wakes on encoder button press.
+ * Soft sleep mode. Shows brief message, reduces CPU to 80 MHz, turns display off,
+ * suspends motor task. Wakes on encoder button press.
  */
 static void showPowerSave() {
   uint16_t lang = g_storedVar.language;
@@ -3791,25 +3906,44 @@ static void showPowerSave() {
   obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
   delay(1200);
 
-  /* Ensure motor/brake is off before suspending Task2 */
+  /* Safe: motor off */
   HalfBridge_SetPwmDrag(0, 0);
-  vTaskSuspend(Task2);               /* Stop motor control on core 1 */
-  setCpuFrequencyMhz(80);            /* Reduce CPU from 240 to 80 MHz */
-  obdPower(&g_obd, 0);               /* Display off */
+  /* Display off */
+  obdPower(&g_obd, 0);
+  /* Reduce CPU frequency to save power */
+  setCpuFrequencyMhz(80);
+  /* Suspend motor control task */
+  vTaskSuspend(Task2);
 
   /* Wait for encoder button press to wake */
-  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-    vTaskDelay(pdMS_TO_TICKS(50));
+  while (digitalRead(ENCODER_BUTTON_PIN) != BUTTON_PRESSED) {
+    vTaskDelay(50);
   }
 
-  /* Wake up */
+  /* Wake up: restore CPU, resume motor task, display on */
   setCpuFrequencyMhz(240);
-  obdPower(&g_obd, 1);
-  delay(50);
   vTaskResume(Task2);
-
+  obdPower(&g_obd, 1);
   obdFill(&g_obd, OBD_WHITE, 1);
-  g_lastEncoderInteraction = millis();
+  delay(200);  /* Debounce */
+}
+
+static void showDeepSleep() {
+  uint16_t lang = g_storedVar.language;
+
+  /* Brief power-off message */
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* msg = (lang == LANG_NOR) ? "SLUKKER..." : "POWERING OFF...";
+  int tw = strlen(msg) * WIDTH8x8;
+  obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
+  delay(1200);
+
+  /* Safe shutdown: motor off, display off */
+  HalfBridge_SetPwmDrag(0, 0);
+  obdPower(&g_obd, 0);
+
+  /* Enter deep sleep - wakes only on power cycle */
+  esp_deep_sleep_start();
 }
 
 /**
@@ -3825,9 +3959,9 @@ static void showSleepSettings() {
   const char* lblOff[3]      = {"AV",       "OFF",       "OFF"};
 
   const uint8_t NUM_ITEMS = 3;  /* 0=INTERVAL, 1=NOW, 2=BACK */
-  uint8_t menuFont  = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8   : FONT_12x16;
-  uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8   : WIDTH12x16;
-  uint8_t lineH     = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? HEIGHT8x8  : HEIGHT12x16;
+  const uint8_t menuFont  = FONT_8x8;
+  const uint8_t charWidth = WIDTH8x8;
+  const uint8_t lineH     = HEIGHT8x8;
 
   int8_t  sel      = 0;
   bool    editing  = false;
@@ -3885,10 +4019,11 @@ static void showSleepSettings() {
         g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
         g_rotaryEncoder.reset(0);
         needRedraw = true;
+        delay(200);
       } else {
+        while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
         break;
       }
-      delay(200);
     }
 
     /* Draw */
@@ -3916,6 +4051,646 @@ static void showSleepSettings() {
       needRedraw = false;
     }
 
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
+    vTaskDelay(10);
+  }
+}
+
+/**
+ * Deep sleep settings submenu: INTERVAL (auto deep-sleep timeout) and NOW (manual deep sleep).
+ * Uses hardcoded FONT_8x8 regardless of listFontSize.
+ */
+static void showDeepSleepSettings() {
+  uint16_t lang = g_storedVar.language;
+
+  const char* lblInterval[3] = {"INTERV.",    "INTERVAL",   "INTERVAL"};
+  const char* lblNow[3]      = {"SLUKK NA",   "SLEEP NOW",  "SLEEP NOW"};
+  const char* lblBack[3]     = {"TILBAKE",    "BACK",       "BACK"};
+  const char* lblOff[3]      = {"AV",         "OFF",        "OFF"};
+
+  const uint8_t NUM_ITEMS = 3;  /* 0=INTERVAL, 1=NOW, 2=BACK */
+
+  int8_t  sel      = 0;
+  bool    editing  = false;
+  uint16_t tmpTimeout = g_storedVar.deepSleepTimeout;
+  bool    needRedraw  = true;
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
+  g_rotaryEncoder.reset(0);
+
+  while (true) {
+    if (g_rotaryEncoder.encoderChanged()) {
+      if (editing) {
+        tmpTimeout = (uint16_t)g_rotaryEncoder.readEncoder();
+      } else {
+        sel = (int8_t)g_rotaryEncoder.readEncoder();
+      }
+      needRedraw = true;
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (editing) {
+        g_storedVar.deepSleepTimeout = tmpTimeout;
+        saveEEPROM(g_storedVar);
+        editing = false;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
+        g_rotaryEncoder.reset(0);
+      } else if (sel == 0) {
+        editing    = true;
+        tmpTimeout = g_storedVar.deepSleepTimeout;
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        /* 0=OFF, DEEP_SLEEP_TIMEOUT_MIN-DEEP_SLEEP_TIMEOUT_MAX; encode 0 as OFF */
+        g_rotaryEncoder.setBoundaries(0, DEEP_SLEEP_TIMEOUT_MAX, false);
+        g_rotaryEncoder.reset(tmpTimeout);
+      } else if (sel == 1) {
+        /* Deep sleep NOW - never returns */
+        showDeepSleep();
+        needRedraw = true;
+      } else {
+        break;
+      }
+      needRedraw = true;
+    }
+
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (editing) {
+        editing = false;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
+        g_rotaryEncoder.reset(0);
+        needRedraw = true;
+        delay(200);
+      } else {
+        while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+        break;
+      }
+    }
+
+    if (needRedraw) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+
+      /* Row 0: INTERVAL + value */
+      bool s0 = (!editing && sel == 0);
+      obdWriteString(&g_obd, 0, 0, 0, (char*)lblInterval[lang], FONT_8x8, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      char valStr[8];
+      uint16_t disp = editing ? tmpTimeout : g_storedVar.deepSleepTimeout;
+      if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", lblOff[lang]);
+      else           snprintf(valStr, sizeof(valStr), "%2dmin", disp);
+      uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * WIDTH8x8);
+      obdWriteString(&g_obd, 0, vx, 0, valStr, FONT_8x8, (s0 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+
+      /* Row 1: NOW */
+      bool s1 = (!editing && sel == 1);
+      obdWriteString(&g_obd, 0, 0, HEIGHT8x8, (char*)lblNow[lang], FONT_8x8, s1 ? OBD_WHITE : OBD_BLACK, 1);
+
+      /* Row 2: BACK */
+      bool s2 = (!editing && sel == 2);
+      obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)lblBack[lang], FONT_8x8, s2 ? OBD_WHITE : OBD_BLACK, 1);
+
+      needRedraw = false;
+    }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
+    vTaskDelay(10);
+  }
+}
+
+/**
+ * Sound settings submenu: BOOT (on/off), RACE (on/off), BACK.
+ * BOOT controls startup/calibration/on/off sounds.
+ * RACE controls the race mode toggle beep.
+ */
+static void showSoundSettings() {
+  const uint8_t SND_ITEMS = SOUND_ITEMS_COUNT;  /* 3: BOOT, RACE, BACK */
+  const uint8_t menuFont  = FONT_8x8;
+  const uint8_t lineH     = HEIGHT8x8;
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, SND_ITEMS, false);
+  g_rotaryEncoder.reset(1);
+
+  uint8_t sel = 1;
+  uint8_t prevSel = 0xFF;
+  bool needRedraw = true;
+
+  uint32_t lastInteraction = millis();
+  bool ssActive = false;
+  uint16_t ssEncoderPos = 0;
+
+  while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
+    /* Screensaver wake-up */
+    if (ssActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != ssEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        ssActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    /* Screensaver timeout */
+    if (!ssActive && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!ssActive) {
+          ssActive = true;
+          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Encoder movement */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      needRedraw = true;
+    }
+
+    /* Encoder button click */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      if (sel == SND_ITEMS) {  /* BACK */
+        break;
+      } else if (sel == 1) {  /* BOOT toggle */
+        g_storedVar.soundBoot = g_storedVar.soundBoot ? 0 : 1;
+        saveEEPROM(g_storedVar);
+      } else if (sel == 2) {  /* RACE toggle */
+        g_storedVar.soundRace = g_storedVar.soundRace ? 0 : 1;
+        saveEEPROM(g_storedVar);
+      }
+      needRedraw = true;
+      delay(200);
+    }
+
+    /* Brake button = back */
+    static bool brakeBtnInSound = false;
+    static uint32_t lastBrakeBtnSoundTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInSound && millis() - lastBrakeBtnSoundTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInSound = true;
+        lastBrakeBtnSoundTime = millis();
+        while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+        break;
+      }
+    } else {
+      brakeBtnInSound = false;
+    }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
+    /* Draw */
+    if (needRedraw || sel != prevSel) {
+      needRedraw = false;
+      prevSel = sel;
+      uint8_t lang = g_storedVar.language;
+      for (uint8_t i = 0; i < SND_ITEMS; i++) {
+        bool isSelected = (sel == i + 1);
+        obdWriteString(&g_obd, 0, 0, i * lineH, (char*)getSoundMenuName(lang, i),
+                       menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+        /* Show ON/OFF value on right for BOOT (i=0) and RACE (i=1) */
+        if (i < 2) {
+          uint16_t state = (i == 0) ? g_storedVar.soundBoot : g_storedVar.soundRace;
+          sprintf(msgStr, "%3s", getOnOffLabel(lang, state));
+          uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
+          obdWriteString(&g_obd, 0, vx, i * lineH, msgStr,
+                         menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+        }
+      }
+    }
+
+    vTaskDelay(10);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+/**
+ * Power settings submenu: SCRSV, SLEEP, DEEP SLEEP, STARTUP DELAY, BACK.
+ * SCRSV/SLEEP/DEEP SLEEP open submenus; STARTUP DELAY is edited inline.
+ */
+static void showPowerSettings() {
+  uint16_t lang = g_storedVar.language;
+  const uint8_t NUM = POWER_ITEMS_COUNT;  /* 5: SCRSV, SLEEP, DEEP SLEEP, STARTUP, BACK */
+  const uint8_t menuFont = FONT_8x8;
+  const uint8_t lineH    = HEIGHT8x8;
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
+  g_rotaryEncoder.reset(0);
+
+  uint8_t sel = 0;
+  bool editing = false;
+  uint16_t tmpDelay = g_storedVar.startupDelay;
+  uint16_t origDelay = g_storedVar.startupDelay;
+  bool needRedraw = true;
+  uint32_t lastInteraction = millis();
+  bool ssActive = false;
+  uint16_t ssEncoderPos = 0;
+
+  while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
+    /* Screensaver wake-up */
+    if (ssActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != ssEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        ssActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    /* Screensaver timeout (not while editing) */
+    if (!ssActive && !editing && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!ssActive) {
+          ssActive = true;
+          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Encoder movement */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (editing) {
+        tmpDelay = (uint16_t)g_rotaryEncoder.readEncoder();
+      } else {
+        sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      }
+      needRedraw = true;
+    }
+
+    /* Encoder button click */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      if (editing) {
+        /* Confirm startup delay */
+        g_storedVar.startupDelay = tmpDelay;
+        saveEEPROM(g_storedVar);
+        editing = false;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
+        g_rotaryEncoder.reset(3);
+        needRedraw = true;
+      } else if (sel == 0) {  /* SCRSV */
+        showScreensaverSettings();
+        if (g_escapeToMain) break;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
+        g_rotaryEncoder.reset(0);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      } else if (sel == 1) {  /* SLEEP */
+        showSleepSettings();
+        if (g_escapeToMain) break;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
+        g_rotaryEncoder.reset(1);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      } else if (sel == 2) {  /* DEEP SLEEP */
+        showDeepSleepSettings();
+        if (g_escapeToMain) break;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
+        g_rotaryEncoder.reset(2);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      } else if (sel == 3) {  /* STARTUP DELAY — enter edit */
+        editing = true;
+        origDelay = g_storedVar.startupDelay;
+        tmpDelay  = g_storedVar.startupDelay;
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, false);
+        g_rotaryEncoder.reset(tmpDelay);
+        needRedraw = true;
+      } else {  /* BACK */
+        break;
+      }
+    }
+
+    /* Brake button = cancel edit or back */
+    static bool brakeBtnInPower = false;
+    static uint32_t lastBrakeBtnPowerTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInPower && millis() - lastBrakeBtnPowerTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInPower = true;
+        lastBrakeBtnPowerTime = millis();
+        if (editing) {
+          g_storedVar.startupDelay = origDelay;
+          tmpDelay = origDelay;
+          editing = false;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
+          g_rotaryEncoder.reset(3);
+          needRedraw = true;
+        } else {
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+      }
+    } else {
+      brakeBtnInPower = false;
+    }
+
+    /* Draw menu */
+    if (needRedraw) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      for (uint8_t i = 0; i < NUM; i++) {
+        bool isHighlighted = editing ? (i == 3) : (sel == i);
+        obdWriteString(&g_obd, 0, 0, i * lineH, (char*)getPowerMenuName(lang, i),
+                       menuFont, isHighlighted ? OBD_WHITE : OBD_BLACK, 1);
+        /* Show startup delay value on the right for item 3 */
+        if (i == 3) {
+          char valStr[7];
+          uint16_t disp = editing ? tmpDelay : g_storedVar.startupDelay;
+          if (disp == 0) snprintf(valStr, sizeof(valStr), "   %s", (lang == LANG_NOR) ? "AV" : "OFF");
+          else           snprintf(valStr, sizeof(valStr), "%3dms", disp * 10);
+          uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * WIDTH8x8);
+          obdWriteString(&g_obd, 0, vx, i * lineH, valStr, menuFont,
+                         isHighlighted ? OBD_WHITE : OBD_BLACK, 1);
+        }
+      }
+      needRedraw = false;
+    }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
+    vTaskDelay(10);
+  }
+}
+
+/**
+ * Display settings submenu: VIEW, LANG, CASE, FSIZE, STATUS, BACK.
+ * Handles value editing for display-related parameters.
+ */
+static void showDisplaySettings() {
+  initDisplayMenuItems();
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  uint16_t lang = g_storedVar.language;
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+  g_rotaryEncoder.reset(1);
+
+  uint16_t sel = 1;
+  uint16_t prevSel = 0;
+  MenuState_enum menuState = ITEM_SELECTION;
+  uint16_t *valuePtr = NULL;
+  uint16_t originalValue = 0;
+
+  uint16_t prevLanguage = g_storedVar.language;
+  uint16_t tempLanguage = g_storedVar.language;
+  bool isEditingLanguage = false;
+  uint16_t prevTextCase = g_storedVar.textCase;
+  uint16_t tempTextCase = g_storedVar.textCase;
+  bool isEditingTextCase = false;
+  uint16_t prevFontSize = g_storedVar.listFontSize;
+  uint16_t tempFontSize = g_storedVar.listFontSize;
+  bool isEditingFontSize = false;
+
+  uint8_t visibleLines = DISPLAY_ITEMS_COUNT;  /* All items fit on screen with FONT_8x8 */
+  uint16_t frameUpper = 1;
+  uint16_t frameLower = visibleLines;
+
+  uint32_t lastInteraction = millis();
+  bool ssActive = false;
+  uint16_t ssEncoderPos = 0;
+
+  while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+
+    /* Screensaver wake-up */
+    if (ssActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != ssEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        ssActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+    }
+
+    /* Screensaver timeout */
+    if (!ssActive && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!ssActive) {
+          ssActive = true;
+          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    /* Encoder button click */
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      if (menuState == ITEM_SELECTION) {
+        if (sel == DISPLAY_ITEMS_COUNT) {  /* BACK */
+          break;
+        }
+        /* STATUS submenu (item 5, index 4, sel = DISPLAY_ITEMS_COUNT - 1) */
+        if (sel == DISPLAY_ITEMS_COUNT - 1) {
+          showStatusSettings();
+          if (g_escapeToMain) break;
+          initDisplayMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(sel);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel = 0;
+          continue;
+        }
+        /* Value items */
+        if (g_settingsMenu.item[sel - 1].value != ITEM_NO_VALUE) {
+          if (sel == 2) {  /* LANG */
+            isEditingLanguage = true;
+            tempLanguage = g_storedVar.language;
+            originalValue = g_storedVar.language;
+          } else if (sel == 3) {  /* CASE */
+            isEditingTextCase = true;
+            tempTextCase = g_storedVar.textCase;
+            originalValue = g_storedVar.textCase;
+          } else if (sel == 4) {  /* FSIZE */
+            isEditingFontSize = true;
+            tempFontSize = g_storedVar.listFontSize;
+            originalValue = g_storedVar.listFontSize;
+          } else {
+            valuePtr = (uint16_t *)g_settingsMenu.item[sel - 1].value;
+            originalValue = *valuePtr;
+          }
+          menuState = VALUE_SELECTION;
+          g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+          if (!isEditingLanguage && !isEditingTextCase && !isEditingFontSize) {
+            valuePtr = (uint16_t *)g_settingsMenu.item[sel - 1].value;
+          }
+          g_rotaryEncoder.setBoundaries(g_settingsMenu.item[sel - 1].minValue,
+                                        g_settingsMenu.item[sel - 1].maxValue, false);
+          uint16_t resetVal = isEditingLanguage ? tempLanguage :
+                              (isEditingTextCase ? tempTextCase :
+                              (isEditingFontSize ? tempFontSize : *valuePtr));
+          g_rotaryEncoder.reset(resetVal);
+        }
+      } else {
+        /* Confirm edit */
+        menuState = ITEM_SELECTION;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+        g_rotaryEncoder.reset(sel);
+        if (isEditingLanguage) { g_storedVar.language = tempLanguage; lang = tempLanguage; isEditingLanguage = false; }
+        if (isEditingTextCase) { g_storedVar.textCase = tempTextCase; isEditingTextCase = false; }
+        if (isEditingFontSize) { g_storedVar.listFontSize = tempFontSize; isEditingFontSize = false; }
+        saveEEPROM(g_storedVar);
+        if (g_storedVar.language != prevLanguage || g_storedVar.textCase != prevTextCase || g_storedVar.listFontSize != prevFontSize) {
+          initMenuItems();
+          initSettingsMenuItems();
+          initDisplayMenuItems();  /* Must be last: shared g_settingsMenu is overwritten by initSettingsMenuItems */
+          prevLanguage = g_storedVar.language;
+          prevTextCase = g_storedVar.textCase;
+          prevFontSize = g_storedVar.listFontSize;
+          /* visibleLines stays DISPLAY_ITEMS_COUNT — submenu always uses FONT_8x8 */
+          frameUpper = 1;
+          frameLower = visibleLines;
+          obdFill(&g_obd, OBD_WHITE, 1);
+          lang = g_storedVar.language;
+        }
+      }
+      delay(200);
+    }
+
+    /* Encoder movement */
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (menuState == ITEM_SELECTION) {
+        sel = g_rotaryEncoder.readEncoder();
+      } else {
+        if (isEditingLanguage) {
+          tempLanguage = g_rotaryEncoder.readEncoder();
+        } else if (isEditingTextCase) {
+          uint16_t newTC = g_rotaryEncoder.readEncoder();
+          if (newTC != tempTextCase) {
+            tempTextCase = newTC;
+            obdFill(&g_obd, OBD_WHITE, 1);
+          }
+        } else if (isEditingFontSize) {
+          tempFontSize = g_rotaryEncoder.readEncoder();
+        } else {
+          *valuePtr = g_rotaryEncoder.readEncoder();
+        }
+      }
+    }
+
+    /* Brake button = cancel edit or back */
+    static bool brakeBtnInDisplay = false;
+    static uint32_t lastBrakeBtnDisplayTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInDisplay && millis() - lastBrakeBtnDisplayTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInDisplay = true;
+        lastBrakeBtnDisplayTime = millis();
+        lastInteraction = millis();
+        if (menuState == VALUE_SELECTION) {
+          if (isEditingLanguage) { tempLanguage = originalValue; g_storedVar.language = originalValue; isEditingLanguage = false; }
+          else if (isEditingTextCase) { tempTextCase = originalValue; g_storedVar.textCase = originalValue; isEditingTextCase = false; }
+          else if (isEditingFontSize) { tempFontSize = originalValue; g_storedVar.listFontSize = originalValue; isEditingFontSize = false; }
+          else if (valuePtr != NULL) { *valuePtr = originalValue; }
+          menuState = ITEM_SELECTION;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(sel);
+          obdFill(&g_obd, OBD_WHITE, 1);
+        } else {
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+      }
+    } else {
+      brakeBtnInDisplay = false;
+    }
+
+    /* Frame scrolling */
+    if (menuState == ITEM_SELECTION) {
+      if (sel > frameLower) {
+        frameLower = sel;
+        frameUpper = frameLower - visibleLines + 1;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      } else if (sel < frameUpper) {
+        frameUpper = sel;
+        frameLower = frameUpper + visibleLines - 1;
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+    }
+
+    /* Display — submenu always uses FONT_8x8 regardless of global listFontSize */
+    const uint8_t menuFont  = FONT_8x8;
+    const uint8_t charWidth = WIDTH8x8;
+    const uint8_t lineHeight = HEIGHT8x8;
+
+    for (uint8_t i = 0; i < visibleLines; i++) {
+      uint16_t itemIdx = frameUpper - 1 + i;
+      if (itemIdx >= DISPLAY_ITEMS_COUNT) break;
+
+      bool isSelected = (sel - frameUpper == i && menuState == ITEM_SELECTION);
+      obdWriteString(&g_obd, 0, 0, i * lineHeight, (char*)getDisplayMenuName(lang, itemIdx),
+                     menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+
+      if (g_settingsMenu.item[itemIdx].value != ITEM_NO_VALUE) {
+        bool isValueSel = (sel - frameUpper == i && menuState == VALUE_SELECTION);
+        uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIdx].value);
+
+        if (itemIdx == 0) {  /* VIEW */
+          sprintf(msgStr, "%6s", getViewModeLabel(g_storedVar.language, value));
+        } else if (itemIdx == 1) {  /* LANG */
+          uint16_t dispLang = (isEditingLanguage && isValueSel) ? tempLanguage : value;
+          sprintf(msgStr, "%3s", LANG_LABELS[dispLang]);
+        } else if (itemIdx == 2) {  /* CASE */
+          uint16_t dispTC = (isEditingTextCase && isValueSel) ? tempTextCase : value;
+          sprintf(msgStr, "%6s", TEXT_CASE_LABELS[g_storedVar.language][dispTC]);
+        } else if (itemIdx == 3) {  /* FSIZE */
+          uint16_t dispFS = (isEditingFontSize && isValueSel) ? tempFontSize : value;
+          sprintf(msgStr, "%5s", FONT_SIZE_LABELS[g_storedVar.language][dispFS]);
+        } else {
+          sprintf(msgStr, "%3d", value);
+        }
+
+        int textWidth = strlen(msgStr) * charWidth;
+        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
+                       menuFont, isValueSel ? OBD_WHITE : OBD_BLACK, 1);
+      }
+    }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
     vTaskDelay(10);
   }
 }
@@ -3931,7 +4706,7 @@ void showResetSubmenu() {
   const char* rowNames[RS_ITEMS];
   if (lang == LANG_NOR) {
     rowNames[0] = "Bil";
-    rowNames[1] = "Innstill.";
+    rowNames[1] = "Innstillinger";
     rowNames[2] = "Kalibrering";
     rowNames[3] = "Alt";
     rowNames[4] = "Tilbake";
@@ -3939,7 +4714,7 @@ void showResetSubmenu() {
     rowNames[0] = "Car";
     rowNames[1] = "Settings";
     rowNames[2] = "Calibration";
-    rowNames[3] = "All";
+    rowNames[3] = "Everything";
     rowNames[4] = "Back";
   }
 
@@ -4030,6 +4805,9 @@ void showResetSubmenu() {
                        isSelected ? OBD_WHITE : OBD_BLACK, 1);
       }
     }
+
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
 
     vTaskDelay(10);
   }
@@ -4219,6 +4997,9 @@ void showQuickBrakeMenu() {
       }
     }
 
+    /* Long press = escape to main for race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+
     vTaskDelay(10);
   }
 
@@ -4233,56 +5014,36 @@ void showQuickBrakeMenu() {
 
 
 /**
- * Show the Settings submenu
- * This function is called when SETTINGS item is selected in the main menu
- * It displays and manages navigation through the settings submenu items:
- * SCRSV, SOUND, VIEW, LANG, BACK
+ * Show the Settings submenu.
+ * Items: POWER (submenu), DISPLAY (submenu), SOUND, WIFI, RESET, BACK.
  */
 void showSettingsMenu() {
-  /* Initialize settings menu items with current values */
   initSettingsMenuItems();
-
-  /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
-
-  /* Set flag that we're in settings menu */
   g_inSettingsMenu = true;
 
-  /* Set encoder to navigate through settings items (1 to SETTINGS_ITEMS_COUNT) */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
   g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
-  g_rotaryEncoder.reset(1);  /* Start at first settings item */
+  g_rotaryEncoder.reset(1);
 
   uint16_t settingsSelector = 1;
   uint16_t prevSettingsSelector = 0;
   MenuState_enum settingsMenuState = ITEM_SELECTION;
   uint16_t *settingsValuePtr = NULL;
-  uint16_t originalSettingsValue = 0;  /* Store original value for cancel */
-  uint16_t prevLanguage = g_storedVar.language;
-  uint16_t tempLanguage = g_storedVar.language;  /* Temporary language value for editing */
-  bool isEditingLanguage = false;  /* Track if we're editing language */
-  uint16_t prevTextCase = g_storedVar.textCase;
-  uint16_t tempTextCase = g_storedVar.textCase;  /* Temporary text case value for editing */
-  bool isEditingTextCase = false;  /* Track if we're editing text case */
-  uint16_t prevFontSize = g_storedVar.listFontSize;
-  uint16_t tempFontSize = g_storedVar.listFontSize;  /* Temporary font size value for editing */
-  bool isEditingFontSize = false;  /* Track if we're editing font size */
+  uint16_t originalSettingsValue = 0;
 
-  /* Setup scrolling frame - number of visible items depends on font size */
   uint16_t frameUpper = 1;
   uint8_t visibleLines = getMenuLines();
   uint16_t frameLower = visibleLines;
 
-  /* Settings menu loop */
   uint32_t lastSettingsInteraction = millis();
   bool settingsScreensaverActive = false;
   uint16_t settingsScreensaverEncoderPos = 0;
 
   while (true) {
-    /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
 
-    /* Check for any wake-up input first (encoder, button, throttle) */
+    /* Screensaver wake-up */
     bool wakeUpTriggered = false;
     if (settingsScreensaverActive) {
       uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
@@ -4296,42 +5057,30 @@ void showSettingsMenu() {
       }
     }
 
-    /* Check for screensaver timeout */
-    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+    /* Screensaver timeout */
+    if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!settingsScreensaverActive) {
           settingsScreensaverActive = true;
           settingsScreensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
         }
-        delay(10);  /* Small delay to prevent watchdog timeout */
-        continue;  /* Don't draw menu while screensaver is active */
+        delay(10);
+        continue;
       }
     }
 
-    /* Check for button click */
+    /* Encoder button click */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       lastSettingsInteraction = millis();
       if (settingsMenuState == ITEM_SELECTION) {
-        /* Check if BACK button (last item) is selected */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT) {
-          /* BACK selected - exit settings menu */
-          break;
-        }
-        /* Check if SCRSV item is selected (first item) - opens screensaver submenu */
+        /* BACK */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT) { break; }
+        /* POWER submenu */
         if (settingsSelector == 1) {
-          showScreensaverSettings();
-          initSettingsMenuItems();
-          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
-          g_rotaryEncoder.reset(settingsSelector);
-          obdFill(&g_obd, OBD_WHITE, 1);
-          prevSettingsSelector = 0;  /* Force redraw */
-          continue;
-        }
-        /* Check if STATUS item is selected - opens status slot submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
-          showStatusSettings();
+          showPowerSettings();
+          if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
@@ -4340,9 +5089,10 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;
           continue;
         }
-        /* Check if WIFI item is selected */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
-          showWiFiBackupScreen();
+        /* DISPLAY submenu */
+        if (settingsSelector == 2) {
+          showDisplaySettings();
+          if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
@@ -4351,9 +5101,22 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;
           continue;
         }
-        /* Check if RESET item is selected */
+        /* SOUND submenu */
+        if (settingsSelector == 3) {
+          showSoundSettings();
+          if (g_escapeToMain) break;
+          initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;
+          continue;
+        }
+        /* WIFI */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
-          showResetSubmenu();
+          showWiFiBackupScreen();
+          if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
@@ -4362,9 +5125,10 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;
           continue;
         }
-        /* Check if SLEEP item is selected - opens sleep submenu */
+        /* RESET */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
-          showSleepSettings();
+          showResetSubmenu();
+          if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
@@ -4373,112 +5137,38 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;
           continue;
         }
-        /* Check if selected item has a value to edit */
+        /* Value items (SOUND=3, DELAY=4) */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
-          /* Check if this is the LANG item (index 3 in settings menu, 0-based) */
-          if (settingsSelector == 4) {  /* LANG is 4th item (SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK) */
-            isEditingLanguage = true;
-            tempLanguage = g_storedVar.language;
-            originalSettingsValue = g_storedVar.language;
-          }
-          /* Check if this is the CASE item */
-          else if (settingsSelector == 5) {  /* CASE is 5th item (SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK) */
-            isEditingTextCase = true;
-            tempTextCase = g_storedVar.textCase;
-            originalSettingsValue = g_storedVar.textCase;
-          }
-          /* Check if this is the FSIZE item */
-          else if (settingsSelector == 6) {  /* FSIZE is 6th item (SCRSV, SOUND, VIEW, LANG, CASE, FSIZE, BACK) */
-            isEditingFontSize = true;
-            tempFontSize = g_storedVar.listFontSize;
-            originalSettingsValue = g_storedVar.listFontSize;
-          } else {
-            /* Save original value for other items */
-            settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
-            originalSettingsValue = *settingsValuePtr;
-          }
-          /* Enter value editing mode for selected item */
+          settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
+          originalSettingsValue = *settingsValuePtr;
           settingsMenuState = VALUE_SELECTION;
           g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-          if (!isEditingLanguage && !isEditingTextCase && !isEditingFontSize) {
-            settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
-          }
           g_rotaryEncoder.setBoundaries(g_settingsMenu.item[settingsSelector - 1].minValue,
-                                       g_settingsMenu.item[settingsSelector - 1].maxValue, false);
-          uint16_t resetValue = isEditingLanguage ? tempLanguage : (isEditingTextCase ? tempTextCase : (isEditingFontSize ? tempFontSize : *settingsValuePtr));
-          g_rotaryEncoder.reset(resetValue);
+                                        g_settingsMenu.item[settingsSelector - 1].maxValue, false);
+          g_rotaryEncoder.reset(*settingsValuePtr);
         }
       } else {
-        /* Exit value editing mode and return to item selection */
+        /* Confirm edit */
         settingsMenuState = ITEM_SELECTION;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
         g_rotaryEncoder.reset(settingsSelector);
-
-        /* If we were editing language, apply the temp language value */
-        if (isEditingLanguage) {
-          g_storedVar.language = tempLanguage;
-          isEditingLanguage = false;
-        }
-
-        /* If we were editing text case, apply the temp text case value */
-        if (isEditingTextCase) {
-          g_storedVar.textCase = tempTextCase;
-          isEditingTextCase = false;
-        }
-
-        /* If we were editing font size, apply the temp font size value */
-        if (isEditingFontSize) {
-          g_storedVar.listFontSize = tempFontSize;
-          isEditingFontSize = false;
-        }
-
-        saveEEPROM(g_storedVar);  /* Save modified values */
-
-        /* If language, text case, or font size changed, reinitialize and clear screen */
-        if (g_storedVar.language != prevLanguage || g_storedVar.textCase != prevTextCase || g_storedVar.listFontSize != prevFontSize) {
-          initSettingsMenuItems();
-          initMenuItems();  /* Also reinit main menu */
-          prevLanguage = g_storedVar.language;
-          prevTextCase = g_storedVar.textCase;
-          prevFontSize = g_storedVar.listFontSize;
-          /* Reset frame to top when font size changes */
-          visibleLines = getMenuLines();
-          frameUpper = 1;
-          frameLower = visibleLines;
-          obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
-        }
+        saveEEPROM(g_storedVar);
       }
-      delay(200);  /* Debounce */
+      delay(200);
     }
 
-    /* Read encoder position */
+    /* Encoder movement */
     if (g_rotaryEncoder.encoderChanged()) {
       lastSettingsInteraction = millis();
       if (settingsMenuState == ITEM_SELECTION) {
         settingsSelector = g_rotaryEncoder.readEncoder();
       } else {
-        /* Update the value */
-        if (isEditingLanguage) {
-          /* Update temp language value instead of actual language */
-          tempLanguage = g_rotaryEncoder.readEncoder();
-        } else if (isEditingTextCase) {
-          /* Update temp text case value instead of actual text case */
-          uint16_t newTextCase = g_rotaryEncoder.readEncoder();
-          if (newTextCase != tempTextCase) {
-            tempTextCase = newTextCase;
-            obdFill(&g_obd, OBD_WHITE, 1);  /* Clear to prevent text overlap */
-          }
-        } else if (isEditingFontSize) {
-          /* Update temp font size value instead of actual font size */
-          tempFontSize = g_rotaryEncoder.readEncoder();
-        } else {
-          *settingsValuePtr = g_rotaryEncoder.readEncoder();
-        }
+        *settingsValuePtr = g_rotaryEncoder.readEncoder();
       }
     }
 
-    /* Check for brake button press - acts as "back" in settings menu */
+    /* Brake button = cancel edit or exit */
     static bool brakeBtnInSettings = false;
     static uint32_t lastBrakeBtnSettingsTime = 0;
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -4486,37 +5176,14 @@ void showSettingsMenu() {
         brakeBtnInSettings = true;
         lastBrakeBtnSettingsTime = millis();
         lastSettingsInteraction = millis();
-
         if (settingsMenuState == VALUE_SELECTION) {
-          /* Cancel changes and go back to item selection */
-          if (isEditingLanguage) {
-            /* Restore original language value (cancel) */
-            tempLanguage = originalSettingsValue;
-            g_storedVar.language = originalSettingsValue;
-            isEditingLanguage = false;
-          } else if (isEditingTextCase) {
-            /* Restore original text case value (cancel) */
-            tempTextCase = originalSettingsValue;
-            g_storedVar.textCase = originalSettingsValue;
-            isEditingTextCase = false;
-          } else if (isEditingFontSize) {
-            /* Restore original font size value (cancel) */
-            tempFontSize = originalSettingsValue;
-            g_storedVar.listFontSize = originalSettingsValue;
-            isEditingFontSize = false;
-          } else if (settingsValuePtr != NULL) {
-            /* Restore original value (cancel) */
-            *settingsValuePtr = originalSettingsValue;
-          }
-
+          if (settingsValuePtr != NULL) { *settingsValuePtr = originalSettingsValue; }
           settingsMenuState = ITEM_SELECTION;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
           g_rotaryEncoder.reset(settingsSelector);
-          /* Do NOT save to EEPROM - we're canceling the change */
-          obdFill(&g_obd, OBD_WHITE, 1);  /* Clear screen */
+          obdFill(&g_obd, OBD_WHITE, 1);
         } else {
-          /* In ITEM_SELECTION - exit settings menu completely */
           break;
         }
       }
@@ -4524,23 +5191,10 @@ void showSettingsMenu() {
       brakeBtnInSettings = false;
     }
 
-    /* Check for long press to exit settings menu */
-    static uint32_t settingsButtonPressStart = 0;
-    static bool settingsButtonWasPressed = false;
-    if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
-      if (!settingsButtonWasPressed) {
-        settingsButtonPressStart = millis();
-        settingsButtonWasPressed = true;
-      }
-      if (millis() - settingsButtonPressStart > BUTTON_LONG_PRESS_MS) {
-        /* Long press detected - exit settings menu */
-        break;
-      }
-    } else {
-      settingsButtonWasPressed = false;
-    }
+    /* Long press encoder button = escape to main + race mode toggle */
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
 
-    /* Update frame if selection moves outside visible area */
+    /* Frame scrolling */
     if (settingsMenuState == ITEM_SELECTION) {
       if (settingsSelector > frameLower) {
         frameLower = settingsSelector;
@@ -4553,100 +5207,38 @@ void showSettingsMenu() {
       }
     }
 
-    /* Determine font size and dimensions based on actual saved setting (not temp value) */
     uint8_t menuFont = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? FONT_8x8 : FONT_12x16;
     uint8_t charWidth = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? WIDTH8x8 : WIDTH12x16;
     uint8_t lineHeight = (g_storedVar.listFontSize == FONT_SIZE_SMALL) ? 8 : HEIGHT12x16;
 
-    /* Display settings menu items */
     for (uint8_t i = 0; i < visibleLines; i++) {
       uint16_t itemIndex = frameUpper - 1 + i;
       if (itemIndex >= SETTINGS_ITEMS_COUNT) break;
 
-      /* Print item name */
       bool isSelected = (settingsSelector - frameUpper == i && settingsMenuState == ITEM_SELECTION);
       obdWriteString(&g_obd, 0, 0, i * lineHeight, g_settingsMenu.item[itemIndex].name,
-                    menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+                     menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
 
-      /* Print item value */
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
         bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
-
-        if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_INTEGER) {
-          sprintf(msgStr, "%3d%s", *(uint16_t *)(g_settingsMenu.item[itemIndex].value),
-                 g_settingsMenu.item[itemIndex].unit);
-          int textWidth = strlen(msgStr) * charWidth;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
-                        menuFont, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
-        } else if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_STRING) {
-          /* Handle special string values */
-          uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
-          uint16_t lang = g_storedVar.language;
-
-          /* SCRSV - 0=OFF, else show seconds */
-          if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 0)) == 0) {
-            if (value == 0) {
-              sprintf(msgStr, "%3s", getOnOffLabel(lang, 0));
-            } else {
-              sprintf(msgStr, "%3ds", value);
-            }
-          }
-          /* SOUND menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 1)) == 0) {
-            sprintf(msgStr, "%5s", getSoundModeLabel(lang, value));
-          }
-          /* VIEW menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 2)) == 0) {
-            sprintf(msgStr, "%6s", getViewModeLabel(lang, value));
-          }
-          /* LANG menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 3)) == 0) {
-            /* Use tempLanguage when editing, otherwise use actual value */
-            uint16_t displayLang = (isEditingLanguage && isValueSelected) ? tempLanguage : value;
-            sprintf(msgStr, "%3s", LANG_LABELS[displayLang]);
-          }
-          /* CASE menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 4)) == 0) {
-            /* Use tempTextCase when editing, otherwise use actual value */
-            uint16_t displayTextCase = (isEditingTextCase && isValueSelected) ? tempTextCase : value;
-            sprintf(msgStr, "%6s", TEXT_CASE_LABELS[lang][displayTextCase]);
-          }
-          /* FSIZE menu item */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 5)) == 0) {
-            /* Use tempFontSize when editing, otherwise use actual value */
-            uint16_t displayFontSize = (isEditingFontSize && isValueSelected) ? tempFontSize : value;
-            sprintf(msgStr, "%5s", FONT_SIZE_LABELS[lang][displayFontSize]);
-          }
-          /* DELAY - stored as ×10ms */
-          else if (strcmp(g_settingsMenu.item[itemIndex].name, getSettingsMenuName(lang, 6)) == 0) {
-            sprintf(msgStr, "%3dms", value * 10);
-          } else {
-            sprintf(msgStr, "%3d", value);
-          }
-
-          int textWidth = strlen(msgStr) * charWidth;
-          obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
-                        menuFont, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
-        }
+        uint16_t lang = g_storedVar.language;
+        uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
+        sprintf(msgStr, "%3d", value);
+        int textWidth = strlen(msgStr) * charWidth;
+        obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
+                       menuFont, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
       }
     }
 
-    vTaskDelay(10);  /* Small delay to prevent watchdog reset */
+    vTaskDelay(10);
   }
 
-  /* Exiting settings menu */
   g_inSettingsMenu = false;
-
-  /* Reset encoder to main menu */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
   g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
   g_rotaryEncoder.reset(g_encoderMainSelector);
   g_escVar.encoderPos = g_encoderMainSelector;
-
-  /* Save any changes */
   saveEEPROM(g_storedVar);
-
-  /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
 }
 

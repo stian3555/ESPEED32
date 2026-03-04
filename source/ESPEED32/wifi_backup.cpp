@@ -82,6 +82,7 @@ async function usbToggle(){
       var b=document.getElementById('ucb');b.textContent='Disconnect USB';b.className='btn ul';
       document.getElementById('otadiv').style.display='none';
       document.getElementById('otausb').style.display='block';
+      try{await ws('VERSION\n');var vr=await rl(3000);var vp=vr.split(',');if(vp.length==2){document.getElementById('devid').textContent=vp[0];document.getElementById('ver').textContent=vp[1].replace('v','');}}catch(x){}
     }catch(e){ss('st','err','USB: '+e.message);}
   }else{
     usb=false;
@@ -375,12 +376,21 @@ static bool g_otaInProgress = false;
 /**
  * @brief Handle a single USB serial backup/restore command.
  * Protocol:
+ *   "VERSION"        → "<id>,v<major>.<minor>\n"  e.g. "F0A4,v4.4"
  *   "BACKUP"         → "<bytecount>\n<json>"
  *   "RESTORE\n<len>" → read len bytes, parse, save; reply "OK..." or "ERR:..."
  * Shared by showUSBBackupScreen(); called when Serial.available() triggers.
  */
 static void handleSerialCommand(const String& cmd) {
-  if (cmd == "BACKUP") {
+  if (cmd == "VERSION") {
+    uint64_t mac = ESP.getEfuseMac();
+    char resp[16];
+    sprintf(resp, "%02X%02X,v%d.%d", (uint8_t)(mac >> 8), (uint8_t)(mac),
+            SW_MAJOR_VERSION, SW_MINOR_VERSION);
+    Serial.println(resp);
+    Serial.flush();
+
+  } else if (cmd == "BACKUP") {
     String json = buildJsonBackup();
     Serial.print(json.length());
     Serial.print('\n');

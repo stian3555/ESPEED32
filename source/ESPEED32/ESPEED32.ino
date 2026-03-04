@@ -5036,30 +5036,22 @@ void showQuickBrakeMenu() {
 static void showAboutScreen() {
   obdFill(&g_obd, OBD_WHITE, 1);
 
-  /* Title */
-  obdWriteString(&g_obd, 0, 0, 0 * HEIGHT8x8, (char*)"    About", FONT_8x8, 0, 1);
-
-  /* Firmware version */
-  char line[24];
-  sprintf(line, "FW:   v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
-  obdWriteString(&g_obd, 0, 0, 1 * HEIGHT8x8, line, FONT_6x8, 0, 1);
-
-  /* Stored variable version */
-  sprintf(line, "Data: v%d", STORED_VAR_VERSION);
-  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, 0, 1);
-
-  /* Device ID (last 2 bytes of MAC, same as WiFi SSID suffix) */
   uint64_t mac = ESP.getEfuseMac();
+  char line[24];
+
+  obdWriteString(&g_obd, 0, 44, 0 * HEIGHT8x8, (char*)"About", FONT_8x8, OBD_BLACK, 1);
+
+  sprintf(line, "FW:   v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+
+  sprintf(line, "Data: v%d", STORED_VAR_VERSION);
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+
   sprintf(line, "ID:   %02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
-  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
 
-  /* Build date */
   sprintf(line, "Built:%s", __DATE__);
-  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, line, FONT_6x8, 0, 1);
-
-  /* Free heap */
-  sprintf(line, "Heap: %lu KB", (unsigned long)(ESP.getFreeHeap() / 1024));
-  obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+  obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
 
   /* Wait for encoder button or brake button */
   static bool aboutBtnHeld = false;

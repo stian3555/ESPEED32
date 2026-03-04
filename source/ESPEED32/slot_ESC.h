@@ -20,7 +20,7 @@
 #define SW_MINOR_VERSION 5
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 18 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 19 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */

@@ -69,7 +69,7 @@ function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.text
 /* Background pump: continuously fills _b; one read in-flight at a time */
 async function pump(){while(usb){try{var{value,done}=await _r.read();if(done)break;_b+=D.decode(value);}catch(e){break;}}}
 /* Read one line (polls _b with timeout) */
-async function rl(ms){ms=ms||5000;var t=Date.now()+ms;while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var i=_b.indexOf('\n'),r=_b.slice(0,i);_b=_b.slice(i+1);return r;}
+async function rl(ms){ms=ms||5000;var t=Date.now()+ms;while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var i=_b.indexOf('\n'),r=_b.slice(0,i).replace(/\r$/,'');_b=_b.slice(i+1);return r;}
 /* Read exactly n chars (polls _b with timeout) */
 async function rb(n,ms){ms=ms||15000;var t=Date.now()+ms;while(_b.length<n){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var r=_b.slice(0,n);_b=_b.slice(n);return r;}
 async function ws(s){var w=port.writable.getWriter();try{await w.write(E.encode(s));}finally{w.releaseLock();}}

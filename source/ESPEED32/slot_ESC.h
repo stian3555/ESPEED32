@@ -57,7 +57,6 @@
 /* Default Parameter Values */
 #define MIN_SPEED_DEFAULT         20    /* [%] Minimum motor speed (sensitivity) */
 #define BRAKE_DEFAULT             95    /* [%] Brake strength */
-#define DRAG_BRAKE_DEFAULT        100   /* [%] Drag brake strength */
 #define ANTISPIN_DEFAULT          30    /* [ms] Anti-spin ramp time */
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
@@ -209,7 +208,6 @@ typedef struct {
 typedef struct {
   uint16_t minSpeed;                        /* [%] Minimum motor speed (0-90%) */
   uint16_t brake;                           /* [%] Brake strength (0-100%) */
-  uint16_t dragBrake;                       /* [%] Drag brake strength (0-100%) */
   uint16_t maxSpeed;                        /* [%] Maximum motor speed (5-100%) */
   ThrottleCurveVertex_type throttleCurveVertex;  /* Throttle response curve */
   uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-255ms) */
@@ -260,7 +258,6 @@ typedef struct {
   uint16_t encoderPos;        /* Current rotary encoder position */
   uint16_t Vin_mV;            /* [mV] Input voltage */
   uint16_t motorCurrent_mA;   /* [mA] Motor current */
-  bool dualCurve;             /* True if deceleration uses different curve */
   /* Lap detection */
   uint16_t lapCount;                    /* Total laps completed */
   uint32_t lapTimes[LAP_MAX_COUNT];     /* Circular buffer: last 20 lap times [ms] */

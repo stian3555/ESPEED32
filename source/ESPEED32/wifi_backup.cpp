@@ -175,7 +175,6 @@ static String buildJsonBackup() {
     sprintf(buf, "      \"name\": \"%s\",\n", c.carName);                json += buf;
     sprintf(buf, "      \"minSpeed\": %u,\n", c.minSpeed);               json += buf;
     sprintf(buf, "      \"brake\": %u,\n", c.brake);                     json += buf;
-    sprintf(buf, "      \"dragBrake\": %u,\n", c.dragBrake);             json += buf;
     sprintf(buf, "      \"maxSpeed\": %u,\n", c.maxSpeed);               json += buf;
     sprintf(buf, "      \"curveInput\": %u,\n", c.throttleCurveVertex.inputThrottle); json += buf;
     sprintf(buf, "      \"curveDiff\": %u,\n", c.throttleCurveVertex.curveSpeedDiff); json += buf;
@@ -329,11 +328,6 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
       *errorMsg = "Error: invalid brake in car " + String(i); return false;
     }
     c.brake = v;
-
-    if (!parseJsonInt(carJson, "dragBrake", v) || !inRange(v, 0, DRAG_MAX_VALUE)) {
-      *errorMsg = "Error: invalid dragBrake in car " + String(i); return false;
-    }
-    c.dragBrake = v;
 
     if (!parseJsonInt(carJson, "maxSpeed", v) || !inRange(v, 5, 100)) {
       *errorMsg = "Error: invalid maxSpeed in car " + String(i); return false;

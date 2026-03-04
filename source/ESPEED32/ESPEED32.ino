@@ -288,7 +288,6 @@ ESC_type g_escVar {
   .trigger_norm = 0,
   .encoderPos = 1,
   .Vin_mV = 0,
-  .dualCurve = false,
   .lapCount = 0,
   .bestLapTime_ms = 0,
   .lapStartTime_ms = 0
@@ -945,7 +944,6 @@ void initStoredVariables() {
   for (int i = 0; i < CAR_MAX_COUNT; i++) {
     g_storedVar.carParam[i].minSpeed = MIN_SPEED_DEFAULT;
     g_storedVar.carParam[i].brake = BRAKE_DEFAULT;
-    g_storedVar.carParam[i].dragBrake = DRAG_BRAKE_DEFAULT;
     g_storedVar.carParam[i].maxSpeed = MAX_SPEED_DEFAULT;
     g_storedVar.carParam[i].throttleCurveVertex = { THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT, THROTTLE_CURVE_SPEED_DIFF_DEFAULT };
     g_storedVar.carParam[i].antiSpin = ANTISPIN_DEFAULT;
@@ -1299,13 +1297,6 @@ void showScreenCalibration(int16_t adcRaw)
  * @details Common function used by both main menu and screensaver
  */
 void displayStatusLine() {
-  /* Update dualCurve flag */
-  if (g_storedVar.carParam[g_carSel].dragBrake > 100 - (uint16_t)g_storedVar.carParam[g_carSel].minSpeed) {
-    g_escVar.dualCurve = true;
-  } else {
-    g_escVar.dualCurve = false;
-  }
-
   const uint8_t Y = 3 * HEIGHT12x16 + HEIGHT8x8;  /* y = 56 (bottom status row) */
 
   /* Fixed column x-positions for each slot (4 × 32px = 128px total).
@@ -2447,7 +2438,6 @@ void showCopyCarSettings() {
       if (i != sourceCar) {
         g_storedVar.carParam[i].minSpeed = g_storedVar.carParam[sourceCar].minSpeed;
         g_storedVar.carParam[i].brake = g_storedVar.carParam[sourceCar].brake;
-        g_storedVar.carParam[i].dragBrake = g_storedVar.carParam[sourceCar].dragBrake;
         g_storedVar.carParam[i].maxSpeed = g_storedVar.carParam[sourceCar].maxSpeed;
         g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = g_storedVar.carParam[sourceCar].throttleCurveVertex.inputThrottle;
         g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = g_storedVar.carParam[sourceCar].throttleCurveVertex.curveSpeedDiff;
@@ -2467,7 +2457,6 @@ void showCopyCarSettings() {
     /* Copy to single car */
     g_storedVar.carParam[destCar].minSpeed = g_storedVar.carParam[sourceCar].minSpeed;
     g_storedVar.carParam[destCar].brake = g_storedVar.carParam[sourceCar].brake;
-    g_storedVar.carParam[destCar].dragBrake = g_storedVar.carParam[sourceCar].dragBrake;
     g_storedVar.carParam[destCar].maxSpeed = g_storedVar.carParam[sourceCar].maxSpeed;
     g_storedVar.carParam[destCar].throttleCurveVertex.inputThrottle = g_storedVar.carParam[sourceCar].throttleCurveVertex.inputThrottle;
     g_storedVar.carParam[destCar].throttleCurveVertex.curveSpeedDiff = g_storedVar.carParam[sourceCar].throttleCurveVertex.curveSpeedDiff;
@@ -3865,7 +3854,6 @@ static void doResetCar() {
   for (uint8_t i = 0; i < CAR_MAX_COUNT; i++) {
     g_storedVar.carParam[i].minSpeed   = MIN_SPEED_DEFAULT;
     g_storedVar.carParam[i].brake      = BRAKE_DEFAULT;
-    g_storedVar.carParam[i].dragBrake  = DRAG_BRAKE_DEFAULT;
     g_storedVar.carParam[i].antiSpin   = ANTISPIN_DEFAULT;
     g_storedVar.carParam[i].maxSpeed   = MAX_SPEED_DEFAULT;
     g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT;

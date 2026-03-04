@@ -14,7 +14,7 @@ static WebServer* g_wifiServer = nullptr;
 static String g_uploadBuffer;
 static char g_wifiSuffix[5] = "";  /* MAC-based suffix, e.g. "A3B4" */
 
-/* HTML page served to browser */
+/* HTML page served to browser - supports both WiFi (HTTP) and USB (WebSerial) */
 static const char WIFI_HTML_PAGE[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -27,68 +27,113 @@ h1{color:#e94560;text-align:center;margin-bottom:5px}
 p.sub{text-align:center;color:#888;margin-top:0}
 h2{color:#ccc;font-size:16px;margin-bottom:5px}
 .btn{display:block;width:100%;padding:15px;margin:10px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;box-sizing:border-box}
-.dl{background:#0f3460;color:#fff}
-.dl:hover{background:#1a4a80}
-.ul{background:#e94560;color:#fff}
-.ul:hover{background:#ff6b81}
-.ota{background:#ff8c00;color:#000}
-.ota:hover{background:#ffa500}
+.dl{background:#0f3460;color:#fff}.dl:hover{background:#1a4a80}
+.ul{background:#e94560;color:#fff}.ul:hover{background:#ff6b81}
+.ota{background:#ff8c00;color:#000}.ota:hover{background:#ffa500}
+.usb{background:#16c79a;color:#000}.usb:hover{background:#20e0ab}
 hr{border-color:#333;margin:20px 0}
 input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 .st{margin:15px 0;padding:12px;border-radius:5px;display:none;text-align:center}
-.ok{background:#16c79a;color:#000}
-.err{background:#e94560;color:#fff}
+.ok{background:#16c79a;color:#000}.err{background:#e94560;color:#fff}
 .warn{color:#ff8c00;font-size:13px;text-align:center}
+#usbbar{display:none;margin-bottom:10px}
 </style>
 </head>
 <body>
 <h1>ESPEED32</h1>
 <p class="sub">v<span id="ver">%VERSION%</span> &middot; <span id="devid">%SUFFIX%</span></p>
+<div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
 <h2>Config Backup &amp; Restore (.json)</h2>
-<a id="dl" href="/backup"><button class="btn dl">Download Config Backup</button></a>
+<button class="btn dl" onclick="doBackup()">Download Config Backup</button>
 <form id="uf">
 <input type="file" id="fi" accept=".json">
 <button type="submit" class="btn ul">Restore Config</button>
 </form>
-<div id="status" class="st"></div>
+<div id="st" class="st"></div>
 <hr>
 <h2>Firmware Update (.bin)</h2>
+<div id="otadiv">
 <form id="of">
 <input type="file" id="fw" accept=".bin">
 <button type="submit" class="btn ota">Upload Firmware</button>
 </form>
 <p class="warn">Do not disconnect power during update!</p>
-<div id="ostatus" class="st"></div>
+</div>
+<p id="otausb" style="display:none" class="warn">Firmware update requires WiFi mode.</p>
+<div id="ost" class="st"></div>
 <script>
-document.getElementById('dl').onclick=function(){
-  var d=new Date().toISOString().slice(0,10);
-  var id=document.getElementById('devid').textContent;
-  var v=document.getElementById('ver').textContent;
-  this.download=d+'-espeed32_v'+v+'_'+id+'_backup.json';
-};
-document.getElementById('uf').onsubmit=function(e){
+var port=null,usb=false,_b='',_r=null,_pump=null;
+var E=new TextEncoder(),D=new TextDecoder();
+if('serial' in navigator)document.getElementById('usbbar').style.display='block';
+function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
+/* Background pump: continuously fills _b; one read in-flight at a time */
+async function pump(){while(usb){try{var{value,done}=await _r.read();if(done)break;_b+=D.decode(value);}catch(e){break;}}}
+/* Read one line (polls _b with timeout) */
+async function rl(ms){ms=ms||5000;var t=Date.now()+ms;while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var i=_b.indexOf('\n'),r=_b.slice(0,i);_b=_b.slice(i+1);return r;}
+/* Read exactly n chars (polls _b with timeout) */
+async function rb(n,ms){ms=ms||15000;var t=Date.now()+ms;while(_b.length<n){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var r=_b.slice(0,n);_b=_b.slice(n);return r;}
+async function ws(s){var w=port.writable.getWriter();try{await w.write(E.encode(s));}finally{w.releaseLock();}}
+async function usbToggle(){
+  if(!usb){
+    try{
+      port=await navigator.serial.requestPort();
+      await port.open({baudRate:115200});
+      _b='';_r=port.readable.getReader();usb=true;_pump=pump();
+      var b=document.getElementById('ucb');b.textContent='Disconnect USB';b.className='btn ul';
+      document.getElementById('otadiv').style.display='none';
+      document.getElementById('otausb').style.display='block';
+    }catch(e){ss('st','err','USB: '+e.message);}
+  }else{
+    usb=false;
+    if(_r){try{await _r.cancel();}catch(x){}}_r=null;
+    if(_pump){try{await _pump;}catch(x){}}_pump=null;
+    _b='';try{await port.close();}catch(x){}port=null;
+    var b=document.getElementById('ucb');b.textContent='Connect via USB (WebSerial)';b.className='btn usb';
+    document.getElementById('otadiv').style.display='block';
+    document.getElementById('otausb').style.display='none';
+  }
+}
+async function doBackup(){
+  var d=new Date().toISOString().slice(0,10),id=document.getElementById('devid').textContent,v=document.getElementById('ver').textContent;
+  var fn=d+'-espeed32_v'+v+'_'+id+'_backup.json';
+  if(!usb){var a=document.createElement('a');a.href='/backup';a.download=fn;a.click();return;}
+  ss('st','','Reading backup...');
+  try{
+    await ws('BACKUP\n');
+    var j=await rb(parseInt(await rl()));
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=fn;a.click();
+    ss('st','ok','Backup downloaded');
+  }catch(e){ss('st','err',e.message+' \u2013 re-enter USB mode on device');}
+}
+document.getElementById('uf').onsubmit=async function(e){
   e.preventDefault();
   var f=document.getElementById('fi').files[0];
-  if(!f){alert('Select a JSON file first');return}
-  if(!f.name.toLowerCase().endsWith('.json')){alert('Only .json files allowed for config restore');return}
-  var fd=new FormData();fd.append('file',f);
-  var s=document.getElementById('status');
-  s.style.display='block';s.className='st';s.textContent='Uploading...';
-  fetch('/restore',{method:'POST',body:fd}).then(function(r){return r.text()}).then(function(t){
-    s.className='st '+(t.indexOf('OK')===0?'ok':'err');s.textContent=t;
-  }).catch(function(err){s.className='st err';s.textContent='Error: '+err});
+  if(!f){alert('Select a JSON file');return;}
+  if(!f.name.toLowerCase().endsWith('.json')){alert('Only .json files allowed');return;}
+  ss('st','','Uploading...');
+  if(!usb){
+    var fd=new FormData();fd.append('file',f);
+    try{var r=await fetch('/restore',{method:'POST',body:fd});var t=await r.text();ss('st',t.startsWith('OK')?'ok':'err',t);}
+    catch(x){ss('st','err',''+x);}
+    return;
+  }
+  try{
+    var j=await f.text(),b=E.encode(j);
+    await ws('RESTORE\n'+b.length+'\n');
+    var w=port.writable.getWriter();try{await w.write(b);}finally{w.releaseLock();}
+    var resp=await rl(20000);
+    ss('st',resp.startsWith('OK')?'ok':'err',resp);
+  }catch(x){ss('st','err',x.message+' \u2013 re-enter USB mode on device');}
 };
-document.getElementById('of').onsubmit=function(e){
+document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
   var f=document.getElementById('fw').files[0];
-  if(!f){alert('Select a .bin firmware file first');return}
-  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed for firmware update');return}
+  if(!f){alert('Select a .bin file');return;}
+  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
+  ss('ost','','Uploading firmware...');
   var fd=new FormData();fd.append('file',f);
-  var s=document.getElementById('ostatus');
-  s.style.display='block';s.className='st';s.textContent='Uploading firmware...';
-  fetch('/ota',{method:'POST',body:fd}).then(function(r){return r.text()}).then(function(t){
-    s.className='st '+(t.indexOf('OK')===0?'ok':'err');s.textContent=t;
-  }).catch(function(err){s.className='st err';s.textContent='Error: '+err});
+  try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.startsWith('OK')?'ok':'err',t);}
+  catch(x){ss('ost','err',''+x);}
 };
 </script>
 </body>
@@ -327,6 +372,51 @@ static size_t g_otaTotal = 0;
 static size_t g_otaWritten = 0;
 static bool g_otaInProgress = false;
 
+/**
+ * @brief Handle a single USB serial backup/restore command.
+ * Protocol:
+ *   "BACKUP"         → "<bytecount>\n<json>"
+ *   "RESTORE\n<len>" → read len bytes, parse, save; reply "OK..." or "ERR:..."
+ * Shared by showUSBBackupScreen(); called when Serial.available() triggers.
+ */
+static void handleSerialCommand(const String& cmd) {
+  if (cmd == "BACKUP") {
+    String json = buildJsonBackup();
+    Serial.print(json.length());
+    Serial.print('\n');
+    Serial.print(json);
+    Serial.flush();
+
+  } else if (cmd == "RESTORE") {
+    String lenStr = Serial.readStringUntil('\n');
+    int32_t len = lenStr.toInt();
+    if (len <= 0 || len > 8192) {
+      Serial.println("ERR:invalid length");
+      return;
+    }
+    String json;
+    json.reserve((uint16_t)len + 1);
+    uint32_t t0 = millis();
+    while ((int32_t)json.length() < len) {
+      if (millis() - t0 > 15000) { Serial.println("ERR:timeout"); return; }
+      if (Serial.available()) json += (char)Serial.read();
+      else vTaskDelay(1);
+    }
+    StoredVar_type tempVar;
+    String errorMsg;
+    if (parseAndValidateJson(json, &tempVar, &errorMsg)) {
+      g_storedVar = tempVar;
+      saveEEPROM(g_storedVar);
+      Serial.println("OK - Settings restored");
+      Serial.flush();
+      delay(500);
+      ESP.restart();
+    } else {
+      Serial.println("ERR:" + errorMsg);
+    }
+  }
+}
+
 /* HTTP route handlers */
 
 static void handleRoot() {
@@ -499,6 +589,50 @@ void showWiFiBackupScreen() {
   g_wifiServer = nullptr;
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_OFF);
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+
+/**
+ * @brief USB backup/restore screen - called from settings menu (USB item).
+ * @details Shows a mini guide on the OLED and handles BACKUP/RESTORE serial commands.
+ *          No WiFi is started. Returns when user presses encoder button or brake button.
+ */
+void showUSBBackupScreen() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, 20, 0,              (char*)"USB Backup", FONT_8x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  2 * HEIGHT8x8,  (char*)"1. Connect USB cable",  FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  3 * HEIGHT8x8,  (char*)"2. Open espeed32.html", FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  4 * HEIGHT8x8,  (char*)"   in Chrome/Edge",     FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  5 * HEIGHT8x8,  (char*)"3. Click Connect USB",  FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  7 * HEIGHT8x8,  (char*)"Btn/Enc to exit",       FONT_6x8,  OBD_BLACK, 1);
+
+  static bool brakeBtnInUsb = false;
+  static uint32_t lastBrakeBtnUsbTime = 0;
+
+  while (true) {
+    if (g_rotaryEncoder.isEncoderButtonClicked()) break;
+
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInUsb && millis() - lastBrakeBtnUsbTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInUsb = true;
+        lastBrakeBtnUsbTime = millis();
+        while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+        break;
+      }
+    } else {
+      brakeBtnInUsb = false;
+    }
+
+    if (Serial.available()) {
+      String cmd = Serial.readStringUntil('\n');
+      cmd.trim();
+      handleSerialCommand(cmd);
+    }
+
+    vTaskDelay(1);
+  }
 
   obdFill(&g_obd, OBD_WHITE, 1);
 }

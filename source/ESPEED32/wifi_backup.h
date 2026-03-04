@@ -10,7 +10,8 @@
 #define WIFI_AP_CHANNEL     1
 #define WIFI_MAX_CONNECTIONS 1
 
-/* Function prototype - called from settings menu */
+/* Function prototypes - called from settings menu */
 void showWiFiBackupScreen();
+void showUSBBackupScreen();
 
 #endif

@@ -19,10 +19,10 @@ const char* MENU_NAMES[][11] = {
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][6] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "NULLSTILL", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "RESET", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "RESET", "BACK"}
+const char* SETTINGS_MENU_NAMES[][7] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "USB", "NULLSTILL", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "BACK"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -103,10 +103,10 @@ const char* MENU_NAMES_PASCAL[][11] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][6] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Nullstill", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Reset", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Reset", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][7] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Usb", "Nullstill", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Back"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */
@@ -1136,7 +1136,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* RESET */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* USB */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -1144,7 +1144,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* BACK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* RESET */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* BACK */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -5114,8 +5122,20 @@ void showSettingsMenu() {
           continue;
         }
         /* WIFI */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
           showWiFiBackupScreen();
+          if (g_escapeToMain) break;
+          initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;
+          continue;
+        }
+        /* USB */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
+          showUSBBackupScreen();
           if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);

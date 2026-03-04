@@ -552,7 +552,7 @@ void showWiFiBackupScreen() {
 
   /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
   obdFill(&g_obd, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 40, 0, (char*)"WiFi", FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 40, 0, (char*)"WiFi mode", FONT_8x8, OBD_BLACK, 1);
 
   sprintf(msgStr, "SSID: %s", ssid);
   obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
@@ -601,12 +601,11 @@ void showWiFiBackupScreen() {
  */
 void showUSBBackupScreen() {
   obdFill(&g_obd, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 20, 0,              (char*)"USB Backup", FONT_8x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 20, 0,              (char*)"USB mode", FONT_8x8,  OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  2 * HEIGHT8x8,  (char*)"1. Connect USB cable",  FONT_6x8,  OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  3 * HEIGHT8x8,  (char*)"2. Open espeed32.html", FONT_6x8,  OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  4 * HEIGHT8x8,  (char*)"   in Chrome/Edge",     FONT_6x8,  OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  5 * HEIGHT8x8,  (char*)"3. Click Connect USB",  FONT_6x8,  OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0,  7 * HEIGHT8x8,  (char*)"Btn/Enc to exit",       FONT_6x8,  OBD_BLACK, 1);
 
   static bool brakeBtnInUsb = false;
   static uint32_t lastBrakeBtnUsbTime = 0;

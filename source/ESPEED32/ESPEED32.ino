@@ -19,10 +19,10 @@ const char* MENU_NAMES[][11] = {
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][7] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "USB", "NULLSTILL", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "BACK"}
+const char* SETTINGS_MENU_NAMES[][8] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "USB", "NULLSTILL", "INFO", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "ABOUT", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "ABOUT", "BACK"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -103,10 +103,10 @@ const char* MENU_NAMES_PASCAL[][11] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][7] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Usb", "Nullstill", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Back"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][8] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Usb", "Nullstill", "Info", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "About", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "About", "Back"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */
@@ -384,6 +384,7 @@ static void showDeepSleepSettings();
 static void showSoundSettings();
 static void showPowerSettings();
 static void showDisplaySettings();
+static void showAboutScreen();
 void initDisplayMenuItems();
 
 /*********************************************************************************************************************/
@@ -1152,7 +1153,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* BACK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* ABOUT/INFO */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* BACK */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -5022,8 +5031,59 @@ void showQuickBrakeMenu() {
 
 
 /**
+ * Show device information screen (firmware version, stored var version, device ID, build date, free heap).
+ */
+static void showAboutScreen() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+
+  /* Title */
+  obdWriteString(&g_obd, 0, 0, 0 * HEIGHT8x8, (char*)"    About", FONT_8x8, 0, 1);
+
+  /* Firmware version */
+  char line[24];
+  sprintf(line, "FW:   v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  obdWriteString(&g_obd, 0, 0, 1 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+
+  /* Stored variable version */
+  sprintf(line, "Data: v%d", STORED_VAR_VERSION);
+  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+
+  /* Device ID (last 2 bytes of MAC, same as WiFi SSID suffix) */
+  uint64_t mac = ESP.getEfuseMac();
+  sprintf(line, "ID:   %02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+
+  /* Build date */
+  sprintf(line, "Built:%s", __DATE__);
+  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+
+  /* Free heap */
+  sprintf(line, "Heap: %lu KB", (unsigned long)(ESP.getFreeHeap() / 1024));
+  obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, line, FONT_6x8, 0, 1);
+
+  /* Wait for encoder button or brake button */
+  static bool aboutBtnHeld = false;
+  aboutBtnHeld = false;
+  while (true) {
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      break;
+    }
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!aboutBtnHeld) {
+        aboutBtnHeld = true;
+      }
+    } else {
+      if (aboutBtnHeld) break;
+    }
+    vTaskDelay(1);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+/**
  * Show the Settings submenu.
- * Items: POWER (submenu), DISPLAY (submenu), SOUND, WIFI, RESET, BACK.
+ * Items: POWER (submenu), DISPLAY (submenu), SOUND, WIFI, USB, RESET, ABOUT, BACK.
  */
 void showSettingsMenu() {
   initSettingsMenuItems();
@@ -5122,7 +5182,7 @@ void showSettingsMenu() {
           continue;
         }
         /* WIFI */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
           showWiFiBackupScreen();
           if (g_escapeToMain) break;
           initSettingsMenuItems();
@@ -5134,7 +5194,7 @@ void showSettingsMenu() {
           continue;
         }
         /* USB */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
           showUSBBackupScreen();
           if (g_escapeToMain) break;
           initSettingsMenuItems();
@@ -5146,9 +5206,20 @@ void showSettingsMenu() {
           continue;
         }
         /* RESET */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
           showResetSubmenu();
           if (g_escapeToMain) break;
+          initSettingsMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          g_rotaryEncoder.reset(settingsSelector);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSettingsSelector = 0;
+          continue;
+        }
+        /* ABOUT */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 1) {
+          showAboutScreen();
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);

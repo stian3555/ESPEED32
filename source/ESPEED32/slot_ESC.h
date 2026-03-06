@@ -24,7 +24,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 8    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 9    /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */

@@ -61,6 +61,14 @@ void HalfBridge_Enable() {
 }
 
 /**
+ * @brief Run half-bridge self-diagnosis
+ * @return btn99x0::NO_ERROR or btn99x0::FAULT_CURRENT_ERROR
+ */
+uint16_t HalfBridge_GetDiagnosis() {
+  return halfBridge.get_diagnosis();
+}
+
+/**
  * @brief Test motor with various PWM patterns
  * @details Full speed -> coast -> brake sequence
  */

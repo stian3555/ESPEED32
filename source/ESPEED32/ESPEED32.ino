@@ -5282,6 +5282,12 @@ static void showAboutScreen() {
   sprintf(line, "Built:%s", __DATE__);
   obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
 
+  /* Easter egg */
+  delay(400);
+  sound(NOTE_A, 100); delay(80);
+  sound(NOTE_A, 350); delay(80);
+  sound(NOTE_A, 100);
+
   /* Wait for encoder button or brake button */
   static bool aboutBtnHeld = false;
   aboutBtnHeld = false;

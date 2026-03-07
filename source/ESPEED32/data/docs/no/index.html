@@ -131,9 +131,9 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 <main>
   <header>
     <h1>ESPEED32 Brukermanual</h1>
-    <p class="lead">Brukerfokusert guide for bilbanekjoring: oppstart, viktige kjoreinnstillinger, menyer og backup/restore.</p>
+    <p class="lead">Brukerfokusert guide for bilbanekjøring: oppstart, viktige kjøreinnstillinger, menyer og backup/restore.</p>
     <nav class="top">
-      <a class="btn primary" href="/">Aapne Backup-side</a>
+      <a class="btn primary" href="/">Åpne Backup-side</a>
       <a class="btn ghost" href="/docs/no" data-doc-lang="no">Norsk</a>
       <a class="btn ghost" href="/docs/en" data-doc-lang="en">English</a>
       <a class="btn ghost" href="/docs/es" data-doc-lang="es">Espanol</a>
@@ -144,7 +144,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <select id="theme-select">
         <option value="system">System</option>
         <option value="light">Lys</option>
-        <option value="dark">Mork</option>
+        <option value="dark">Mørk</option>
       </select>
     </div>
     <ul class="sources">
@@ -159,10 +159,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>1. Hurtigstart</h2>
     <ol>
       <li>Start kontrolleren normalt.</li>
-      <li>Roter encoder for aa bla i meny.</li>
-      <li>Kort trykk encoder: gaa inn/ut av redigering eller aapne undermeny.</li>
+      <li>Roter encoder for å bla i meny.</li>
+      <li>Kort trykk encoder: gå inn/ut av redigering eller åpne undermeny.</li>
       <li>Kort trykk bremseknapp i redigering: avbryt (restore opprinnelig verdi).</li>
-      <li>Langt trykk encoder (~1s): veksle LIST og race-grid (naar race view ikke er OFF).</li>
+      <li>Langt trykk encoder (~1s): veksle LIST og race-grid (når race view ikke er OFF).</li>
     </ol>
   </section>
 
@@ -178,7 +178,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ol>
       <li>Hold encoder inne under oppstart til kalibreringsskjerm vises.</li>
       <li>Trykk/slipp trigger helt flere ganger.</li>
-      <li>Trykk encoder for aa lagre.</li>
+      <li>Trykk encoder for å lagre.</li>
       <li>Verifiser 0% gass ved sluppet trigger og 100% ved full trigger.</li>
     </ol>
     <figure class="doc-media">
@@ -188,23 +188,23 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>3. Viktig under kjoring: BRAKE, B_BTN og Q-BRAKE</h2>
+    <h2>3. Viktig under kjøring: BRAKE, B_BTN og Q-BRAKE</h2>
     <h3>BRAKE</h3>
-    <p>Naar trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
+    <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
     <h3>B_BTN (Brake Button)</h3>
     <ul>
       <li><code>B_BTN</code> er en alternativ bremseverdi (0..100%), ikke en relativ reduksjon.</li>
-      <li>Den brukes kun naar trigger = 0 og du holder bremseknappen inne.</li>
+      <li>Den brukes kun når trigger = 0 og du holder bremseknappen inne.</li>
       <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
-      <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten aa endre grunninnstilling.</li>
+      <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
     </ul>
     <h3>Q-BRAKE (Quick Brake)</h3>
     <ul>
       <li>Aktiveres bare hvis <code>Q-BRAKE</code> er ON.</li>
-      <li>Gir en pre-release bremsesone: brems starter mens triggeren er paa vei ut, foer den er helt sluppet.</li>
-      <li>Naar trigger er over 0 men under terskelen, brukes <code>Strength</code> som bremsekraft.</li>
+      <li>Gir en pre-release bremsesone: brems starter mens triggeren er på vei ut, før den er helt sluppet.</li>
+      <li>Når trigger er over 0 men under terskelen, brukes <code>Strength</code> som bremsekraft.</li>
       <li><code>Threshold</code> range: 0..50%. <code>Strength</code> range: 0..100%.</li>
-      <li>Praktisk bruk: faa tidligere innbremsing ved trigger-slipp uten aa matte gaa helt til null.</li>
+      <li>Praktisk bruk: få tidligere innbremsing ved trigger-slipp uten å måtte gå helt til null.</li>
     </ul>
   </section>
 
@@ -222,12 +222,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </thead>
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0..100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
-        <tr><td><code>SENSI</code></td><td>0..90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved forste triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0..255 ms</td><td>30</td><td>Antispinn-rampetid. Hoeyere verdi = mykere effektoppbygging.</td></tr>
-        <tr><td><code>CURVE</code></td><td>10..90 %</td><td>50</td><td>Gasskurve. 50 = lineaer. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
-        <tr><td><code>PWM_F</code></td><td>1.0..5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Hoeyere frekvens gir ofte mykere lavgass.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0..90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0..255 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10..90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0..5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0..100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + terskel/styrke</td><td>OFF</td><td>Egen bremsesone naer trigger-slipp.</td></tr>
+        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + terskel/styrke</td><td>OFF</td><td>Egen bremsesone nær trigger-slipp.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)..100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
         <tr><td><code>CAR</code></td><td>0..19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
@@ -235,7 +235,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     </table>
     <figure class="doc-media">
       <img src="/docs/assets/curve_examples.png" alt="Linear, Soft og Hard curve eksempler">
-      <figcaption>CURVE-eksempler fra manual: Linear (50%), Soft (lavere verdi), Hard (hoeyere verdi).</figcaption>
+      <figcaption>CURVE-eksempler fra manual: Linear (50%), Soft (lavere verdi), Hard (høyere verdi).</figcaption>
     </figure>
   </section>
 
@@ -243,7 +243,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>5. Race view (LIST vs GRID)</h2>
     <ul>
       <li><span class="badge">LIST</span> klassisk menyvisning med alle hoveditems.</li>
-      <li><span class="badge">GRID</span> race-skjerm for rask justering under kjoring.</li>
+      <li><span class="badge">GRID</span> race-skjerm for rask justering under kjøring.</li>
       <li><code>DISPLAY -> RACE MODE</code>: OFF / FULL / SIMPLE.</li>
       <li>FULL grid: BRAKE, SENSI, ANTIS, CURVE (+ CAR hvis <code>RACESWP</code> er ON).</li>
       <li>SIMPLE grid: BRAKE, SENSI (+ CAR hvis <code>RACESWP</code> er ON).</li>
@@ -263,42 +263,42 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>7. SETTINGS og stroemforbruk</h2>
+    <h2>7. SETTINGS og strømforbruk</h2>
     <h3>POWER-undermeny</h3>
     <ul>
-      <li><code>SCRSV</code>: screensaver-tekst (linje1/linje2), timeout og vis naa.</li>
-      <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep naa (wake med encoder-knapp).</li>
+      <li><code>SCRSV</code>: screensaver-tekst (linje1/linje2), timeout og vis nå.</li>
+      <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
       <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2..30 min) + manuell.</li>
       <li><code>STARTUP</code>: velkomstforsinkelse 0..990 ms i 10 ms steg.</li>
     </ul>
-    <h3>Anslatt stroemforbruk (kontroller-elektronikk)</h3>
+    <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
     <table>
       <thead>
         <tr><th>Tilstand</th><th>Anslag</th><th>Kommentar</th></tr>
       </thead>
       <tbody>
         <tr><td>Oppstart</td><td>120 mA</td><td>Kort fase ved boot og init.</td></tr>
-        <tr><td>Normal drift</td><td>100 mA</td><td>Typisk meny/kjoring uten WiFi.</td></tr>
+        <tr><td>Normal drift</td><td>100 mA</td><td>Typisk meny/kjøring uten WiFi.</td></tr>
         <tr><td>WiFi-modul aktiv</td><td>150 mA</td><td>AP-modus og webserver aktiv.</td></tr>
         <tr><td>Screensaver</td><td>80 mA</td><td>Display aktiv, lav aktivitet.</td></tr>
         <tr><td>SLEEP (soft)</td><td>55 mA (estimert)</td><td>OLED av, CPU 80 MHz, motor-task suspendert.</td></tr>
         <tr><td>DEEP SLEEP</td><td>10 mA (estimert)</td><td>Power-off lignende modus, vekkes med power-cycle.</td></tr>
       </tbody>
     </table>
-    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og maaleoppsett. Motorlast til bilen kommer i tillegg.</p>
+    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg.</p>
   </section>
 
   <section>
-    <h2>8. Kjoeretips</h2>
+    <h2>8. Kjøretips</h2>
     <ul>
-      <li>Juster en parameter av gangen, og kjor 5-10 runder mellom hver endring.</li>
-      <li>Start med <code>SENSI</code>, deretter <code>BRAKE</code>, saa <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
-      <li>1/32-biler paa glatt bane: prov hoeyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
-      <li>1/24-biler paa bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
-      <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for aa endre BRAKE mellom heat.</li>
+      <li>Juster en parameter av gangen, og kjør 5-10 runder mellom hver endring.</li>
+      <li>Start med <code>SENSI</code>, deretter <code>BRAKE</code>, så <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
+      <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
+      <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
+      <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
       <li>Bruk <code>Q-BRAKE</code> lav terskel (5-12%) og moderat styrke (40-70%) for mer rolig inngang i tekniske partier.</li>
-      <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller ok <code>ANTIS</code>.</li>
-      <li>Hvis bilen foeles treg ut av sving: ok <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
+      <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
+      <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
     </ul>
   </section>
 
@@ -306,18 +306,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>9. WiFi/USB backup, restore og OTA</h2>
     <h3>WiFi</h3>
     <ol>
-      <li>Gaa til <code>SETTINGS -> WIFI</code>.</li>
+      <li>Gå til <code>SETTINGS -> WIFI</code>.</li>
       <li>Koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>).</li>
-      <li>Aapne IP vist paa OLED (vanligvis <code>192.168.4.1</code>).</li>
+      <li>Åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
       <li>Bruk siden til <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
     </ol>
     <h3>USB</h3>
     <ol>
-      <li>Gaa til <code>SETTINGS -> USB</code>.</li>
+      <li>Gå til <code>SETTINGS -> USB</code>.</li>
       <li>Bruk Chrome/Edge (WebSerial).</li>
       <li>Backup/restore fungerer over USB; OTA krever WiFi-modus.</li>
     </ol>
-    <p class="warn">Koble aldri fra stroem under OTA-opplasting.</p>
+    <p class="warn">Koble aldri fra strøm under OTA-opplasting.</p>
   </section>
 
   <section>

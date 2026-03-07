@@ -1,6 +1,8 @@
 #include "wifi_backup.h"
 #include "slot_ESC.h"
 #include "HAL.h"
+#include <FS.h>
+#include <SPIFFS.h>
 #include <Update.h>
 
 /* External references from main .ino */
@@ -13,130 +15,61 @@ extern void saveEEPROM(StoredVar_type toSave);
 static WebServer* g_wifiServer = nullptr;
 static String g_uploadBuffer;
 static char g_wifiSuffix[5] = "";  /* MAC-based suffix, e.g. "A3B4" */
+static bool g_spiffsMounted = false;
 
-/* HTML page served to browser - supports both WiFi (HTTP) and USB (WebSerial) */
-static const char WIFI_HTML_PAGE[] PROGMEM = R"rawliteral(
+/* Minimal fallback page if /ui/index.html is missing on SPIFFS */
+static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESPEED32</title>
+<title>ESPEED32 Recovery</title>
+</head>
+<body style="font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 12px;">
+<h1>ESPEED32 Recovery Page</h1>
+<p>Missing SPIFFS file: <code>/ui/index.html</code></p>
+<p>This page is intentionally minimal.</p>
+<p><a href="/backup">Download Config Backup (.json)</a></p>
+<form method="POST" action="/ota" enctype="multipart/form-data">
+  <p><b>Firmware Recovery (.bin)</b></p>
+  <input type="file" name="file" accept=".bin" required>
+  <button type="submit">Upload Firmware</button>
+</form>
+<p><b>Restore full web UI:</b></p>
+<ol>
+  <li>Ensure <code>source/ESPEED32/data/ui/index.html</code> exists.</li>
+  <li>Upload SPIFFS image to the controller.</li>
+  <li>Reload <code>/</code>.</li>
+</ol>
+</body>
+</html>
+)rawliteral";
+
+/* Fallback page shown if docs are missing from SPIFFS */
+static const char DOCS_MISSING_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 Docs Not Found</title>
 <style>
-body{font-family:Arial,sans-serif;max-width:480px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
-h1{color:#e94560;text-align:center;margin-bottom:5px}
-p.sub{text-align:center;color:#888;margin-top:0}
-h2{color:#ccc;font-size:16px;margin-bottom:5px}
-.btn{display:block;width:100%;padding:15px;margin:10px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;box-sizing:border-box}
-.dl{background:#0f3460;color:#fff}.dl:hover{background:#1a4a80}
-.ul{background:#e94560;color:#fff}.ul:hover{background:#ff6b81}
-.ota{background:#ff8c00;color:#000}.ota:hover{background:#ffa500}
-.usb{background:#16c79a;color:#000}.usb:hover{background:#20e0ab}
-hr{border-color:#333;margin:20px 0}
-input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
-.st{margin:15px 0;padding:12px;border-radius:5px;display:none;text-align:center}
-.ok{background:#16c79a;color:#000}.err{background:#e94560;color:#fff}
-.warn{color:#ff8c00;font-size:13px;text-align:center}
-#usbbar{display:none;margin-bottom:10px}
+body{font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
+h1{color:#e94560;margin-bottom:8px}
+code{background:#111;padding:2px 6px;border-radius:4px}
+li{margin:8px 0}
+a{color:#7ed6ff}
 </style>
 </head>
 <body>
-<h1>ESPEED32</h1>
-<p class="sub">v<span id="ver">%VERSION%</span> &middot; <span id="devid">%SUFFIX%</span></p>
-<div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
-<h2>Config Backup &amp; Restore (.json)</h2>
-<button class="btn dl" onclick="doBackup()">Download Config Backup</button>
-<form id="uf">
-<input type="file" id="fi" accept=".json">
-<button type="submit" class="btn ul">Restore Config</button>
-</form>
-<div id="st" class="st"></div>
-<hr>
-<h2>Firmware Update (.bin)</h2>
-<div id="otadiv">
-<form id="of">
-<input type="file" id="fw" accept=".bin">
-<button type="submit" class="btn ota">Upload Firmware</button>
-</form>
-<p class="warn">Do not disconnect power during update!</p>
-</div>
-<p id="otausb" style="display:none" class="warn">Firmware update requires WiFi mode.</p>
-<div id="ost" class="st"></div>
-<script>
-var port=null,usb=false,_b='',_r=null,_pump=null;
-var E=new TextEncoder(),D=new TextDecoder();
-if('serial' in navigator)document.getElementById('usbbar').style.display='block';
-function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
-/* Background pump: continuously fills _b; one read in-flight at a time */
-async function pump(){while(usb){try{var{value,done}=await _r.read();if(done)break;_b+=D.decode(value);}catch(e){break;}}}
-/* Read one line (polls _b with timeout) */
-async function rl(ms){ms=ms||5000;var t=Date.now()+ms;while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var i=_b.indexOf('\n'),r=_b.slice(0,i).replace(/\r$/,'');_b=_b.slice(i+1);return r;}
-/* Read exactly n chars (polls _b with timeout) */
-async function rb(n,ms){ms=ms||15000;var t=Date.now()+ms;while(_b.length<n){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var r=_b.slice(0,n);_b=_b.slice(n);return r;}
-async function ws(s){var w=port.writable.getWriter();try{await w.write(E.encode(s));}finally{w.releaseLock();}}
-async function usbToggle(){
-  if(!usb){
-    try{
-      port=await navigator.serial.requestPort();
-      await port.open({baudRate:115200});
-      _b='';_r=port.readable.getReader();usb=true;_pump=pump();
-      var b=document.getElementById('ucb');b.textContent='Disconnect USB';b.className='btn ul';
-      document.getElementById('otadiv').style.display='none';
-      document.getElementById('otausb').style.display='block';
-      try{await ws('VERSION\n');var vr=await rl(3000);var vp=vr.split(',');if(vp.length==2){document.getElementById('devid').textContent=vp[0];document.getElementById('ver').textContent=vp[1].replace('v','');}}catch(x){}
-    }catch(e){ss('st','err','USB: '+e.message);}
-  }else{
-    usb=false;
-    if(_r){try{await _r.cancel();}catch(x){}}_r=null;
-    if(_pump){try{await _pump;}catch(x){}}_pump=null;
-    _b='';try{await port.close();}catch(x){}port=null;
-    var b=document.getElementById('ucb');b.textContent='Connect via USB (WebSerial)';b.className='btn usb';
-    document.getElementById('otadiv').style.display='block';
-    document.getElementById('otausb').style.display='none';
-  }
-}
-async function doBackup(){
-  var d=new Date().toISOString().slice(0,10),id=document.getElementById('devid').textContent,v=document.getElementById('ver').textContent;
-  var fn=d+'-espeed32_v'+v+'_'+id+'_backup.json';
-  if(!usb){var a=document.createElement('a');a.href='/backup';a.download=fn;a.click();return;}
-  ss('st','','Reading backup...');
-  try{
-    _b='';await ws('BACKUP\n');
-    var j=await rb(parseInt(await rl()));
-    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=fn;a.click();
-    ss('st','ok','Backup downloaded');
-  }catch(e){ss('st','err',e.message+' \u2013 re-enter USB mode on device');}
-}
-document.getElementById('uf').onsubmit=async function(e){
-  e.preventDefault();
-  var f=document.getElementById('fi').files[0];
-  if(!f){alert('Select a JSON file');return;}
-  if(!f.name.toLowerCase().endsWith('.json')){alert('Only .json files allowed');return;}
-  ss('st','','Uploading...');
-  if(!usb){
-    var fd=new FormData();fd.append('file',f);
-    try{var r=await fetch('/restore',{method:'POST',body:fd});var t=await r.text();ss('st',t.startsWith('OK')?'ok':'err',t);}
-    catch(x){ss('st','err',''+x);}
-    return;
-  }
-  try{
-    var j=await f.text(),b=E.encode(j);
-    _b='';await ws('RESTORE\n'+b.length+'\n');
-    var w=port.writable.getWriter();try{await w.write(b);}finally{w.releaseLock();}
-    var resp=await rl(20000);
-    ss('st',resp.startsWith('OK')?'ok':'err',resp);
-  }catch(x){ss('st','err',x.message+' \u2013 re-enter USB mode on device');}
-};
-document.getElementById('of').onsubmit=async function(e){
-  e.preventDefault();
-  var f=document.getElementById('fw').files[0];
-  if(!f){alert('Select a .bin file');return;}
-  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  ss('ost','','Uploading firmware...');
-  var fd=new FormData();fd.append('file',f);
-  try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.startsWith('OK')?'ok':'err',t);}
-  catch(x){ss('ost','err',''+x);}
-};
-</script>
+<h1>Documentation Not Found</h1>
+<p>Could not open <code>%PATH%</code> from SPIFFS.</p>
+<p>To update docs on the controller:</p>
+<ol>
+<li>Edit files in <code>source/ESPEED32/data/docs/</code> (Git source of truth).</li>
+<li>Upload the filesystem image from your IDE (SPIFFS upload).</li>
+<li>Refresh this page.</li>
+</ol>
+<p><a href="/">Back to backup/restore page</a></p>
 </body>
 </html>
 )rawliteral";
@@ -377,6 +310,49 @@ static size_t g_otaTotal = 0;
 static size_t g_otaWritten = 0;
 static bool g_otaInProgress = false;
 
+/* Documentation helpers (served from SPIFFS) */
+static const char* getUiPath() {
+  return "/ui/index.html";
+}
+
+static const char* getDefaultDocsPath() {
+  return (g_storedVar.language == LANG_NOR) ? "/docs/no/index.html" : "/docs/en/index.html";
+}
+
+static bool streamFileFromSpiffs(const char* path, const char* contentType) {
+  if (!g_spiffsMounted) {
+    return false;
+  }
+
+  File file = SPIFFS.open(path, FILE_READ);
+  if (!file) {
+    String gzPath = String(path) + ".gz";
+    file = SPIFFS.open(gzPath, FILE_READ);
+    if (!file) {
+      return false;
+    }
+    g_wifiServer->sendHeader("Content-Encoding", "gzip");
+  }
+
+  g_wifiServer->streamFile(file, contentType);
+  file.close();
+  return true;
+}
+
+static bool streamHtmlFromSpiffs(const char* path) {
+  return streamFileFromSpiffs(path, "text/html; charset=utf-8");
+}
+
+static void sendUiFallback() {
+  g_wifiServer->send(200, "text/html; charset=utf-8", FPSTR(UI_FALLBACK_HTML));
+}
+
+static void sendDocsMissing(const char* requestedPath) {
+  String page = FPSTR(DOCS_MISSING_HTML);
+  page.replace("%PATH%", requestedPath);
+  g_wifiServer->send(404, "text/html; charset=utf-8", page);
+}
+
 /**
  * @brief Handle a single USB serial backup/restore command.
  * Protocol:
@@ -433,18 +409,85 @@ static void handleSerialCommand(const String& cmd) {
 
 /* HTTP route handlers */
 
-static void handleRoot() {
-  String page = FPSTR(WIFI_HTML_PAGE);
-  page.replace("%SUFFIX%", g_wifiSuffix);
+static void handleInfo() {
   char ver[8];
   sprintf(ver, "%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
-  page.replace("%VERSION%", ver);
-  g_wifiServer->send(200, "text/html", page);
+
+  String json;
+  json.reserve(128);
+  json += "{\"deviceId\":\"";
+  json += g_wifiSuffix;
+  json += "\",\"version\":\"";
+  json += ver;
+  json += "\",\"docsPath\":\"";
+  json += getDefaultDocsPath();
+  json += "\"}";
+
+  g_wifiServer->send(200, "application/json", json);
+}
+
+static void handleRoot() {
+  if (!streamHtmlFromSpiffs(getUiPath())) {
+    sendUiFallback();
+  }
+}
+
+static void handleUi() {
+  if (!streamHtmlFromSpiffs(getUiPath())) {
+    sendUiFallback();
+  }
 }
 
 static void handleBackup() {
   String json = buildJsonBackup();
   g_wifiServer->send(200, "application/json", json);
+}
+
+static void handleDocsDefault() {
+  const char* defaultPath = getDefaultDocsPath();
+  if (!streamHtmlFromSpiffs(defaultPath) &&
+      !streamHtmlFromSpiffs("/docs/en/index.html") &&
+      !streamHtmlFromSpiffs("/docs/no/index.html") &&
+      !streamHtmlFromSpiffs("/docs/es/index.html") &&
+      !streamHtmlFromSpiffs("/docs/de/index.html")) {
+    sendDocsMissing(defaultPath);
+  }
+}
+
+static void handleDocsEn() {
+  if (!streamHtmlFromSpiffs("/docs/en/index.html")) {
+    sendDocsMissing("/docs/en/index.html");
+  }
+}
+
+static void handleDocsNo() {
+  if (!streamHtmlFromSpiffs("/docs/no/index.html")) {
+    sendDocsMissing("/docs/no/index.html");
+  }
+}
+
+static void handleDocsEs() {
+  if (!streamHtmlFromSpiffs("/docs/es/index.html")) {
+    sendDocsMissing("/docs/es/index.html");
+  }
+}
+
+static void handleDocsDe() {
+  if (!streamHtmlFromSpiffs("/docs/de/index.html")) {
+    sendDocsMissing("/docs/de/index.html");
+  }
+}
+
+static void handleDocsCurveAsset() {
+  if (!streamFileFromSpiffs("/docs/assets/curve_examples.png", "image/png")) {
+    g_wifiServer->send(404, "text/plain", "Missing asset: /docs/assets/curve_examples.png");
+  }
+}
+
+static void handleDocsTriggerAsset() {
+  if (!streamFileFromSpiffs("/docs/assets/trig_cal.png", "image/png")) {
+    g_wifiServer->send(404, "text/plain", "Missing asset: /docs/assets/trig_cal.png");
+  }
 }
 
 static void handleRestoreUpload() {
@@ -556,10 +599,35 @@ void showWiFiBackupScreen() {
   delay(100);
   IPAddress ip = WiFi.softAPIP();
 
+  /* Mount SPIFFS for static documentation pages (optional) */
+  g_spiffsMounted = SPIFFS.begin(false);
+
   /* Start web server */
   g_wifiServer = new WebServer(80);
   g_wifiServer->on("/", handleRoot);
+  g_wifiServer->on("/index.html", HTTP_GET, handleRoot);
+  g_wifiServer->on("/ui", HTTP_GET, handleUi);
+  g_wifiServer->on("/ui/", HTTP_GET, handleUi);
+  g_wifiServer->on("/ui/index.html", HTTP_GET, handleUi);
+  g_wifiServer->on("/api/info", HTTP_GET, handleInfo);
   g_wifiServer->on("/backup", HTTP_GET, handleBackup);
+  g_wifiServer->on("/docs", HTTP_GET, handleDocsDefault);
+  g_wifiServer->on("/docs/", HTTP_GET, handleDocsDefault);
+  g_wifiServer->on("/docs/index.html", HTTP_GET, handleDocsDefault);
+  g_wifiServer->on("/docs/en", HTTP_GET, handleDocsEn);
+  g_wifiServer->on("/docs/en/", HTTP_GET, handleDocsEn);
+  g_wifiServer->on("/docs/en/index.html", HTTP_GET, handleDocsEn);
+  g_wifiServer->on("/docs/no", HTTP_GET, handleDocsNo);
+  g_wifiServer->on("/docs/no/", HTTP_GET, handleDocsNo);
+  g_wifiServer->on("/docs/no/index.html", HTTP_GET, handleDocsNo);
+  g_wifiServer->on("/docs/es", HTTP_GET, handleDocsEs);
+  g_wifiServer->on("/docs/es/", HTTP_GET, handleDocsEs);
+  g_wifiServer->on("/docs/es/index.html", HTTP_GET, handleDocsEs);
+  g_wifiServer->on("/docs/de", HTTP_GET, handleDocsDe);
+  g_wifiServer->on("/docs/de/", HTTP_GET, handleDocsDe);
+  g_wifiServer->on("/docs/de/index.html", HTTP_GET, handleDocsDe);
+  g_wifiServer->on("/docs/assets/curve_examples.png", HTTP_GET, handleDocsCurveAsset);
+  g_wifiServer->on("/docs/assets/trig_cal.png", HTTP_GET, handleDocsTriggerAsset);
   g_wifiServer->on("/restore", HTTP_POST, handleRestore, handleRestoreUpload);
   g_wifiServer->on("/ota", HTTP_POST, handleOta, handleOtaUpload);
   g_wifiServer->begin();
@@ -603,6 +671,10 @@ void showWiFiBackupScreen() {
   g_wifiServer = nullptr;
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_OFF);
+  if (g_spiffsMounted) {
+    SPIFFS.end();
+    g_spiffsMounted = false;
+  }
 
   obdFill(&g_obd, OBD_WHITE, 1);
 }

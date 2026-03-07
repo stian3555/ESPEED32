@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 Guia de Usuario (ES)</title>
+<style>
+:root{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#151a1f;
+    --paper:#1f262e;
+    --ink:#eef2f7;
+    --muted:#b8c7d8;
+    --line:#39495a;
+    --accent:#ff6b5d;
+    --accent-2:#59b9dd;
+    --chip:#283340;
+    --chip-border:#405061;
+    --code-bg:#242f3b;
+    --code-border:#3b4b5b;
+    --pre-bg:#1a232c;
+    --pre-border:#324254;
+    --th-bg:#2a3441;
+    --ghost:#283340;
+    --shadow:0 10px 24px rgba(0,0,0,.35);
+  }
+}
+html[data-theme="light"]{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+html[data-theme="dark"]{
+  --bg:#151a1f;
+  --paper:#1f262e;
+  --ink:#eef2f7;
+  --muted:#b8c7d8;
+  --line:#39495a;
+  --accent:#ff6b5d;
+  --accent-2:#59b9dd;
+  --chip:#283340;
+  --chip-border:#405061;
+  --code-bg:#242f3b;
+  --code-border:#3b4b5b;
+  --pre-bg:#1a232c;
+  --pre-border:#324254;
+  --th-bg:#2a3441;
+  --ghost:#283340;
+  --shadow:0 10px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Segoe UI",Tahoma,Verdana,sans-serif;
+  background:
+    linear-gradient(120deg,rgba(180,35,24,.08),rgba(31,106,138,.08)),
+    repeating-linear-gradient(0deg,transparent 0 30px,rgba(25,25,25,.02) 30px 31px),
+    var(--bg);
+}
+main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+header{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:30px;line-height:1.1}
+p.lead{margin:0;color:var(--muted)}
+nav.top{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
+a.primary{background:var(--accent);color:#fff}
+a.secondary{background:var(--accent-2);color:#fff}
+a.ghost{background:var(--ghost);color:var(--ink)}
+section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{margin:0 0 10px;font-size:20px}
+h3{margin:14px 0 8px;font-size:16px}
+p{margin:8px 0;line-height:1.45}
+ul,ol{margin:8px 0 0 20px;padding:0}
+li{margin:4px 0;line-height:1.4}
+code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1px 5px}
+pre{margin:8px 0 0;padding:12px;border-radius:10px;border:1px solid var(--pre-border);background:var(--pre-bg);overflow:auto;line-height:1.3}
+.small{font-size:13px;color:var(--muted)}
+.warn{color:var(--accent);font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--th-bg)}
+.badge{display:inline-block;background:var(--chip);border:1px solid var(--chip-border);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--ink)}
+.theme-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.theme-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.theme-tools select{padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+figure.doc-media{margin:10px 0 0}
+figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+@media (max-width:760px){
+  h1{font-size:24px}
+  table{font-size:13px}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ESPEED32 Guia de Usuario</h1>
+    <p class="lead">Guia practica para usar el controlador en pista: arranque, ajustes clave de conduccion, menus y backup/restore.</p>
+    <nav class="top">
+      <a class="btn primary" href="/">Abrir pagina de Backup</a>
+      <a class="btn secondary" href="/docs/no">Norsk</a>
+      <a class="btn ghost" href="/docs/en">English</a>
+      <a class="btn ghost" href="/docs/es">Espanol</a>
+      <a class="btn ghost" href="/docs/de">Deutsch</a>
+    </nav>
+    <div class="theme-tools">
+      <label for="theme-select">Tema</label>
+      <select id="theme-select">
+        <option value="system">Sistema</option>
+        <option value="light">Claro</option>
+        <option value="dark">Oscuro</option>
+      </select>
+    </div>
+    <p class="small">Fuentes: firmware (SW v4.6), <code>DOC/ESPEED32QuickStartGuide_EN_v1.02.docx</code>, <code>DOC/ESPEED32QuickStartGuide_NO_v1.02.docx</code> y <code>DOC/ESPEED32ExtendedGuide_NO_v1.02.docx</code>.</p>
+  </header>
+
+  <section>
+    <h2>1. Inicio rapido</h2>
+    <ol>
+      <li>Enciende el controlador normalmente.</li>
+      <li>Gira el encoder para moverte por el menu.</li>
+      <li>Pulsacion corta del encoder: entrar/salir de edicion o abrir submenu.</li>
+      <li>Pulsacion corta del boton de freno durante edicion: cancelar (restaurar valor original).</li>
+      <li>Pulsacion larga del encoder (~1s): cambiar entre vista LIST y GRID (si race view no esta en OFF).</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. Arranque, calibracion y self-test</h2>
+    <ul>
+      <li>Recalibra el trigger despues de actualizar firmware o si cambias su mecanica.</li>
+      <li><code>Power ON</code>: arranque normal y luego modo RUNNING.</li>
+      <li>Mantener <code>encoder button</code> al encender: calibracion del trigger.</li>
+      <li>Mantener <code>brake button</code> al encender: Self-Test (9 pasos).</li>
+    </ul>
+    <h3>Flujo de calibracion</h3>
+    <ol>
+      <li>Mantener encoder al encender hasta ver la pantalla de calibracion.</li>
+      <li>Pulsar y soltar el trigger completamente varias veces.</li>
+      <li>Pulsar encoder una vez para guardar.</li>
+      <li>Verificar 0% con trigger suelto y 100% con trigger al maximo.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="/docs/assets/trig_cal.png" alt="Calibracion del trigger">
+      <figcaption>Calibracion: mueve el trigger por todo su recorrido varias veces para mapear bien 0-100%.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>3. Clave en conduccion: BRAKE, B_BTN y Q-BRAKE</h2>
+    <h3>BRAKE</h3>
+    <p>Con trigger completamente suelto, el controlador aplica frenado normal usando el valor <code>BRAKE</code>.</p>
+    <h3>B_BTN (Brake Button)</h3>
+    <ul>
+      <li><code>B_BTN</code> es un valor alternativo de freno (0..100%), no una reduccion relativa.</li>
+      <li>Solo se aplica cuando trigger = 0 y mantienes pulsado el boton de freno.</li>
+      <li>Si la barra de estado muestra OUTPUT, se ve <code>Bxxx%</code> mientras el boton esta pulsado.</li>
+      <li>Uso tipico: frenado temporal mas duro/suave en curvas sin tocar el setup base.</li>
+    </ul>
+    <h3>Q-BRAKE (Quick Brake)</h3>
+    <ul>
+      <li>Solo activo cuando <code>Q-BRAKE</code> esta en ON.</li>
+      <li>Funciona como zona de frenado pre-release: empieza a frenar antes de soltar el trigger del todo.</li>
+      <li>Con trigger por encima de 0 pero debajo del umbral, usa <code>Strength</code> como fuerza de freno.</li>
+      <li><code>Threshold</code>: 0..50%. <code>Strength</code>: 0..100%.</li>
+      <li>Uso practico: iniciar la frenada antes en la entrada de curva sin llegar primero a trigger cero.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Parametros del menu principal</h2>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Rango</th><th>Default</th><th>Descripcion</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0..100 %</td><td>95</td><td>Frenado con trigger suelto.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0..90 % (y &lt;= LIMIT)</td><td>20</td><td>Potencia minima al primer movimiento de trigger.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0..255 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10..90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0..5.0 kHz</td><td>3.0</td><td>Frecuencia PWM del motor.</td></tr>
+        <tr><td><code>B_BTN</code></td><td>0..100 %</td><td>50</td><td>Valor alternativo de freno con boton de freno + trigger suelto.</td></tr>
+        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Zona de frenado cerca de trigger suelto.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)..100 %</td><td>100</td><td>Salida maxima del motor.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Vueltas, mejor vuelta e historial.</td></tr>
+        <tr><td><code>CAR</code></td><td>0..19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
+      </tbody>
+    </table>
+    <figure class="doc-media">
+      <img src="/docs/assets/curve_examples.png" alt="Ejemplos de curva Linear, Soft y Hard">
+      <figcaption>Ejemplos CURVE del manual: Linear (50%), Soft (valor menor), Hard (valor mayor).</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>5. Vista de carrera (LIST vs GRID)</h2>
+    <ul>
+      <li><span class="badge">LIST</span> menu clasico con todos los items.</li>
+      <li><span class="badge">GRID</span> pantalla rapida para ajustar durante conduccion.</li>
+      <li><code>DISPLAY -> RACE MODE</code>: OFF / FULL / SIMPLE.</li>
+      <li>FULL: BRAKE, SENSI, ANTIS, CURVE (+ CAR si <code>RACESWP</code> esta ON).</li>
+      <li>SIMPLE: BRAKE, SENSI (+ CAR si <code>RACESWP</code> esta ON).</li>
+      <li>Pulsacion larga del encoder cambia LIST/GRID.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. Flujo del menu CAR</h2>
+    <ul>
+      <li><code>SELECT</code>: elegir perfil activo (0..19).</li>
+      <li><code>RENAME</code>: editor de 4 caracteres (ASCII 32..122).</li>
+      <li><code>RACESWP</code>: ON permite cambio de perfil directo desde GRID.</li>
+      <li><code>COPY</code>: copiar de un perfil a otro o a todos.</li>
+      <li><code>RESET</code>: reset de perfiles de coche (con confirmacion).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. SETTINGS y consumo estimado</h2>
+    <h3>Submenu POWER</h3>
+    <ul>
+      <li><code>SCRSV</code>: texto de screensaver, timeout y mostrar ahora.</li>
+      <li><code>SLEEP</code>: sleep automatico + sleep manual (wake con encoder).</li>
+      <li><code>DEEP SLEEP</code>: deep sleep automatico (0 o 2..30 min) + manual.</li>
+      <li><code>STARTUP</code>: retardo de bienvenida 0..990 ms.</li>
+    </ul>
+    <h3>Consumo estimado (electronica del controlador)</h3>
+    <table>
+      <thead>
+        <tr><th>Estado</th><th>Estimacion</th><th>Nota</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Arranque</td><td>120 mA</td><td>Fase corta de boot.</td></tr>
+        <tr><td>Operacion normal</td><td>100 mA</td><td>Uso tipico sin WiFi.</td></tr>
+        <tr><td>WiFi activo</td><td>150 mA</td><td>Modo AP + servidor web.</td></tr>
+        <tr><td>Screensaver</td><td>80 mA</td><td>Baja actividad.</td></tr>
+        <tr><td>SLEEP (soft)</td><td>55 mA (estimado)</td><td>OLED off, CPU 80 MHz, task de motor suspendida.</td></tr>
+        <tr><td>DEEP SLEEP</td><td>10 mA (estimado)</td><td>Estado tipo apagado, wake por ciclo de alimentacion.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Valores estimados; dependen de tension, hardware y metodo de medicion. La carga del motor del coche no esta incluida.</p>
+  </section>
+
+  <section>
+    <h2>8. Consejos de conduccion</h2>
+    <ul>
+      <li>Cambia un parametro por vez y prueba 5-10 vueltas antes del siguiente cambio.</li>
+      <li>Orden recomendado: <code>SENSI</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
+      <li>1/32 en pista deslizante: subir <code>ANTIS</code> (100-150 ms) y usar <code>CURVE</code> &lt; 50.</li>
+      <li>1/24 con buen grip: <code>ANTIS</code> bajo (0-40 ms) y <code>CURVE</code> 50-70.</li>
+      <li>Usa <code>B_BTN</code> como ajuste temporal de curva, sin cambiar BRAKE base.</li>
+      <li>Usa <code>Q-BRAKE</code> con threshold bajo (5-12%) y strength medio (40-70%) para zonas tecnicas.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>9. WiFi/USB backup, restore y OTA</h2>
+    <h3>WiFi</h3>
+    <ol>
+      <li>Entrar en <code>SETTINGS -> WIFI</code>.</li>
+      <li>Conectar a <code>ESPEED32_XXXX</code> (password <code>espeed32</code>).</li>
+      <li>Abrir la IP mostrada en OLED (normalmente <code>192.168.4.1</code>).</li>
+      <li>Usar la pagina para <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> y <code>/docs</code>.</li>
+    </ol>
+    <h3>USB</h3>
+    <ol>
+      <li>Entrar en <code>SETTINGS -> USB</code>.</li>
+      <li>Usar Chrome/Edge (WebSerial).</li>
+      <li>Backup/restore funciona por USB; OTA requiere modo WiFi.</li>
+    </ol>
+    <p class="warn">No cortes alimentacion durante OTA.</p>
+  </section>
+
+  <section>
+    <h2>10. Arbol de menu (mapa completo)</h2>
+<pre>ROOT (Main Menu)
+|- BRAKE
+|- SENSI
+|- ANTIS
+|- CURVE (graph view)
+|- PWM_F
+|- B_BTN
+|- Q-BRAKE
+|  |- Enable (ON/OFF)
+|  |- Threshold (%)
+|  |- Strength (%)
+|  `- Back
+|- LIMIT
+|- SETTINGS
+|  |- POWER
+|  |  |- SCRSV
+|  |  |  |- LINE1
+|  |  |  |- LINE2
+|  |  |  |- TIME (0..240 s, 0=OFF)
+|  |  |  |- NOW
+|  |  |  `- BACK
+|  |  |- SLEEP
+|  |  |  |- INTERVAL (0..10 min, 0=OFF)
+|  |  |  |- SLEEP NOW
+|  |  |  `- BACK
+|  |  |- DEEP SLEEP
+|  |  |  |- INTERVAL (0 or 2..30 min)
+|  |  |  |- SLEEP NOW (power-off)
+|  |  |  `- BACK
+|  |  |- STARTUP (0..99 x 10ms)
+|  |  `- BACK
+|  |- DISPLAY
+|  |  |- RACE MODE (OFF/FULL/SIMPLE)
+|  |  |- LANGUAGE (NOR/ENG/ACD)
+|  |  |- CASE (UPPER/Pascal)
+|  |  |- FONT SIZE (LARGE/small)
+|  |  |- STATUS BAR
+|  |  |  |- SLOT 1
+|  |  |  |- SLOT 2
+|  |  |  |- SLOT 3
+|  |  |  |- SLOT 4
+|  |  |  `- BACK
+|  |  `- BACK
+|  |- SOUND
+|  |  |- BOOT (ON/OFF)
+|  |  |- RACE (ON/OFF)
+|  |  `- BACK
+|  |- WIFI
+|  |- USB
+|  |- RESET
+|  |  |- CAR
+|  |  |- SETTINGS
+|  |  |- CALIBRATION
+|  |  |- EVERYTHING
+|  |  `- BACK
+|  |- TEST (Self-Test, 9 steps)
+|  |- ABOUT
+|  `- BACK
+|- STATS
+`- CAR
+   |- SELECT
+   |- RENAME
+   |- RACESWP (grid car select ON/OFF)
+   |- COPY
+   |- RESET
+   `- BACK</pre>
+  </section>
+
+</main>
+<script>
+(function(){
+  var key = "espeed32-doc-theme";
+  var root = document.documentElement;
+  var select = document.getElementById("theme-select");
+  if (!select) return;
+
+  var saved = localStorage.getItem(key);
+  if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
+  select.value = saved;
+
+  function apply(mode){
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+  }
+
+  apply(saved);
+  select.addEventListener("change", function(){
+    localStorage.setItem(key, select.value);
+    apply(select.value);
+  });
+})();
+</script>
+</body>
+</html>

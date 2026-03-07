@@ -193,7 +193,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
     <h3>B_BTN (Brake Button)</h3>
     <ul>
-      <li><code>B_BTN</code> er en alternativ bremseverdi (0..100%), ikke en relativ reduksjon.</li>
+      <li><code>B_BTN</code> er en alternativ bremseverdi (0-100%), ikke en relativ reduksjon.</li>
       <li>Den brukes kun når trigger = 0 og du holder bremseknappen inne.</li>
       <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
       <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
@@ -203,7 +203,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Aktiveres bare hvis <code>Q-BRAKE</code> er ON.</li>
       <li>Gir en pre-release bremsesone: brems starter mens triggeren er på vei ut, før den er helt sluppet.</li>
       <li>Når trigger er over 0 men under terskelen, brukes <code>Strength</code> som bremsekraft.</li>
-      <li><code>Threshold</code> range: 0..50%. <code>Strength</code> range: 0..100%.</li>
+      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
       <li>Praktisk bruk: få tidligere innbremsing ved trigger-slipp uten å måtte gå helt til null.</li>
     </ul>
   </section>
@@ -221,16 +221,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>BRAKE</code></td><td>0..100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
-        <tr><td><code>SENSI</code></td><td>0..90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0..255 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging.</td></tr>
-        <tr><td><code>CURVE</code></td><td>10..90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
-        <tr><td><code>PWM_F</code></td><td>1.0..5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
-        <tr><td><code>B_BTN</code></td><td>0..100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
+        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
         <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + terskel/styrke</td><td>OFF</td><td>Egen bremsesone nær trigger-slipp.</td></tr>
-        <tr><td><code>LIMIT</code></td><td>(SENSI+5)..100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
-        <tr><td><code>CAR</code></td><td>0..19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
     <figure class="doc-media">
@@ -254,8 +254,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   <section>
     <h2>6. CAR-meny i praksis</h2>
     <ul>
-      <li><code>SELECT</code>: velg aktiv bilprofil (0..19).</li>
-      <li><code>RENAME</code>: 4-tegns navn (ASCII 32..122), redigert tegn for tegn.</li>
+      <li><code>SELECT</code>: velg aktiv bilprofil (0-19).</li>
+      <li><code>RENAME</code>: 4-tegns navn (ASCII 32-122), redigert tegn for tegn.</li>
       <li><code>RACESWP</code>: ON gir mulighet for car-select direkte i GRID-view.</li>
       <li><code>COPY</code>: kopier fra en profil til en annen eller til ALL.</li>
       <li><code>RESET</code>: nullstill alle bilprofiler (krever bekreftelse).</li>
@@ -268,8 +268,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>SCRSV</code>: screensaver-tekst (linje1/linje2), timeout og vis nå.</li>
       <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
-      <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2..30 min) + manuell.</li>
-      <li><code>STARTUP</code>: velkomstforsinkelse 0..990 ms i 10 ms steg.</li>
+      <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
+      <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
     </ul>
     <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
     <table>
@@ -340,18 +340,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- SCRSV
 |  |  |  |- LINE1
 |  |  |  |- LINE2
-|  |  |  |- TIME (0..240 s, 0=OFF)
+|  |  |  |- TIME (0-240 s, 0=OFF)
 |  |  |  |- NOW
 |  |  |  `- BACK
 |  |  |- SLEEP
-|  |  |  |- INTERVAL (0..10 min, 0=OFF)
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  |- SLEEP NOW
 |  |  |  `- BACK
 |  |  |- DEEP SLEEP
-|  |  |  |- INTERVAL (0 eller 2..30 min)
+|  |  |  |- INTERVAL (0 eller 2-30 min)
 |  |  |  |- SLEEP NOW (strup/av)
 |  |  |  `- BACK
-|  |  |- STARTUP (0..99 x 10ms)
+|  |  |- STARTUP (0-99 x 10ms)
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

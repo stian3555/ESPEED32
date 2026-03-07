@@ -193,7 +193,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p>When trigger is fully released, the controller applies normal braking using the <code>BRAKE</code> value.</p>
     <h3>B_BTN (Brake Button)</h3>
     <ul>
-      <li><code>B_BTN</code> is an alternate brake percentage (0..100%), not a relative reduction.</li>
+      <li><code>B_BTN</code> is an alternate brake percentage (0-100%), not a relative reduction.</li>
       <li>It is applied only when trigger = 0 and you hold the brake button.</li>
       <li>If the status bar shows OUTPUT, it displays <code>Bxxx%</code> while the brake button is held.</li>
       <li>Typical use: temporary extra hard/soft corner entry braking without changing base setup.</li>
@@ -203,7 +203,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Active only when <code>Q-BRAKE</code> is set to ON.</li>
       <li>Works as a pre-release brake zone: braking starts before trigger is fully released.</li>
       <li>When trigger is above 0 but below threshold, controller applies <code>Strength</code> as brake force.</li>
-      <li><code>Threshold</code> range: 0..50%. <code>Strength</code> range: 0..100%.</li>
+      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
       <li>Practical use: earlier corner-entry braking during trigger release, without going fully to zero first.</li>
     </ul>
   </section>
@@ -221,16 +221,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><th>Item</th><th>Range</th><th>Default</th><th>Description</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>BRAKE</code></td><td>0..100 %</td><td>95</td><td>Brake force when trigger is released.</td></tr>
-        <tr><td><code>SENSI</code></td><td>0..90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0..255 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup.</td></tr>
-        <tr><td><code>CURVE</code></td><td>10..90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
-        <tr><td><code>PWM_F</code></td><td>1.0..5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
-        <tr><td><code>B_BTN</code></td><td>0..100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Brake force when trigger is released.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
+        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
         <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Dedicated brake zone near trigger release.</td></tr>
-        <tr><td><code>LIMIT</code></td><td>(SENSI+5)..100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Lap counter, best lap, and scrollable lap history.</td></tr>
-        <tr><td><code>CAR</code></td><td>0..19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
       </tbody>
     </table>
     <figure class="doc-media">
@@ -254,8 +254,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   <section>
     <h2>6. CAR menu workflow</h2>
     <ul>
-      <li><code>SELECT</code>: choose active car profile (0..19).</li>
-      <li><code>RENAME</code>: 4-character name editor (ASCII 32..122).</li>
+      <li><code>SELECT</code>: choose active car profile (0-19).</li>
+      <li><code>RENAME</code>: 4-character name editor (ASCII 32-122).</li>
       <li><code>RACESWP</code>: ON allows profile switching directly from GRID mode.</li>
       <li><code>COPY</code>: copy from one profile to another, or to ALL profiles.</li>
       <li><code>RESET</code>: reset all car profiles (with confirmation).</li>
@@ -268,8 +268,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>SCRSV</code>: screensaver line1/line2 text, timeout, and show-now.</li>
       <li><code>SLEEP</code>: auto sleep timeout + manual sleep now (wake with encoder button).</li>
-      <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2..30 min) + manual.</li>
-      <li><code>STARTUP</code>: welcome delay 0..990 ms in 10 ms steps.</li>
+      <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2-30 min) + manual.</li>
+      <li><code>STARTUP</code>: welcome delay 0-990 ms in 10 ms steps.</li>
     </ul>
     <h3>Estimated current draw (controller electronics)</h3>
     <table>
@@ -340,18 +340,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- SCRSV
 |  |  |  |- LINE1
 |  |  |  |- LINE2
-|  |  |  |- TIME (0..240 s, 0=OFF)
+|  |  |  |- TIME (0-240 s, 0=OFF)
 |  |  |  |- NOW
 |  |  |  `- BACK
 |  |  |- SLEEP
-|  |  |  |- INTERVAL (0..10 min, 0=OFF)
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  |- SLEEP NOW
 |  |  |  `- BACK
 |  |  |- DEEP SLEEP
-|  |  |  |- INTERVAL (0 or 2..30 min)
+|  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  |- SLEEP NOW (power-off)
 |  |  |  `- BACK
-|  |  |- STARTUP (0..99 x 10ms)
+|  |  |- STARTUP (0-99 x 10ms)
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

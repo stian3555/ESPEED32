@@ -193,7 +193,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p>Bei komplett losgelassenem Trigger verwendet der Controller den normalen Bremswert <code>BRAKE</code>.</p>
     <h3>B_BTN (Brake Button)</h3>
     <ul>
-      <li><code>B_BTN</code> ist ein alternativer Bremswert (0..100%), keine relative Reduktion.</li>
+      <li><code>B_BTN</code> ist ein alternativer Bremswert (0-100%), keine relative Reduktion.</li>
       <li>Er wird nur genutzt, wenn Trigger = 0 und der Bremsknopf gehalten wird.</li>
       <li>Wenn die Statuszeile OUTPUT anzeigt, erscheint <code>Bxxx%</code> solange der Knopf gehalten wird.</li>
       <li>Typischer Einsatz: temporaer haerteres/weicheres Einbremsen ohne Basis-Setup zu aendern.</li>
@@ -203,7 +203,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Nur aktiv, wenn <code>Q-BRAKE</code> auf ON steht.</li>
       <li>Arbeitet als Pre-Release-Bremszone: Bremsung beginnt, bevor der Trigger ganz losgelassen ist.</li>
       <li>Liegt Trigger ueber 0, aber unter dem Threshold, wird <code>Strength</code> als Bremskraft genutzt.</li>
-      <li><code>Threshold</code>: 0..50%. <code>Strength</code>: 0..100%.</li>
+      <li><code>Threshold</code>: 0-50%. <code>Strength</code>: 0-100%.</li>
       <li>Praktischer Nutzen: frueheres Einbremsen beim Loesen des Triggers, ohne erst auf null zu gehen.</li>
     </ul>
   </section>
@@ -215,16 +215,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><th>Item</th><th>Bereich</th><th>Default</th><th>Beschreibung</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>BRAKE</code></td><td>0..100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
-        <tr><td><code>SENSI</code></td><td>0..90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0..255 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau.</td></tr>
-        <tr><td><code>CURVE</code></td><td>10..90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
-        <tr><td><code>PWM_F</code></td><td>1.0..5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
-        <tr><td><code>B_BTN</code></td><td>0..100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
+        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
         <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Zusaetzliche Bremszone nahe Trigger-Release.</td></tr>
-        <tr><td><code>LIMIT</code></td><td>(SENSI+5)..100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, Bestzeit, Verlauf.</td></tr>
-        <tr><td><code>CAR</code></td><td>0..19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
     <figure class="doc-media">
@@ -248,8 +248,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   <section>
     <h2>6. CAR-Menue Ablauf</h2>
     <ul>
-      <li><code>SELECT</code>: aktives Profil waehlen (0..19).</li>
-      <li><code>RENAME</code>: 4-Zeichen Name (ASCII 32..122).</li>
+      <li><code>SELECT</code>: aktives Profil waehlen (0-19).</li>
+      <li><code>RENAME</code>: 4-Zeichen Name (ASCII 32-122).</li>
       <li><code>RACESWP</code>: ON erlaubt Profilwechsel direkt im GRID.</li>
       <li><code>COPY</code>: von einem Profil auf ein anderes oder auf alle kopieren.</li>
       <li><code>RESET</code>: alle Fahrzeugprofile zuruecksetzen (mit Bestaetigung).</li>
@@ -262,8 +262,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>SCRSV</code>: Screensaver Text, Timeout, Sofort-Anzeige.</li>
       <li><code>SLEEP</code>: Auto-Sleep + manueller Sleep (Wake ueber Encoder-Knopf).</li>
-      <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2..30 min) + manuell.</li>
-      <li><code>STARTUP</code>: Startverzoegerung 0..990 ms.</li>
+      <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2-30 min) + manuell.</li>
+      <li><code>STARTUP</code>: Startverzoegerung 0-990 ms.</li>
     </ul>
     <h3>Geschaetzter Stromverbrauch (Controller-Elektronik)</h3>
     <table>
@@ -332,18 +332,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- SCRSV
 |  |  |  |- LINE1
 |  |  |  |- LINE2
-|  |  |  |- TIME (0..240 s, 0=OFF)
+|  |  |  |- TIME (0-240 s, 0=OFF)
 |  |  |  |- NOW
 |  |  |  `- BACK
 |  |  |- SLEEP
-|  |  |  |- INTERVAL (0..10 min, 0=OFF)
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  |- SLEEP NOW
 |  |  |  `- BACK
 |  |  |- DEEP SLEEP
-|  |  |  |- INTERVAL (0 or 2..30 min)
+|  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  |- SLEEP NOW (power-off)
 |  |  |  `- BACK
-|  |  |- STARTUP (0..99 x 10ms)
+|  |  |- STARTUP (0-99 x 10ms)
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

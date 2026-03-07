@@ -107,6 +107,8 @@ li{margin:4px 0;line-height:1.4}
 code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1px 5px}
 pre{margin:8px 0 0;padding:12px;border-radius:10px;border:1px solid var(--pre-border);background:var(--pre-bg);overflow:auto;line-height:1.3}
 .small{font-size:13px;color:var(--muted)}
+.sources{margin:8px 0 0 18px;padding:0}
+.sources li{font-size:13px;color:var(--muted);line-height:1.35}
 .warn{color:var(--accent);font-weight:700}
 table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
 th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
@@ -144,7 +146,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <option value="dark">Mork</option>
       </select>
     </div>
-    <p class="small">Kilder brukt: firmware (SW v4.6), <code>DOC/ESPEED32QuickStartGuide_NO_v1.02.docx</code>, <code>DOC/ESPEED32ExtendedGuide_NO_v1.02.docx</code>, <code>DOC/ESPEED32QuickStartGuide_NO_v1.02.pdf</code> og <code>DOC/ESPEED32ExtendedGuide_NO_v1.02.pdf</code>.</p>
+    <ul class="sources">
+      <li>Firmware-kilde: ESPEED32 SW v4.7 (<code>source/ESPEED32/</code>).</li>
+      <li>Lokale manualer i repo: Quick Start + Extended Guide (DOC-mappen, DOCX/PDF).</li>
+      <li>ACD-referanse: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
+      <li>CarSteen-referanse: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
+    </ul>
   </header>
 
   <section>
@@ -202,6 +209,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 
   <section>
     <h2>4. Hovedparametere i Main Menu</h2>
+    <h3>Terminologi-profiler</h3>
+    <ul>
+      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
+      <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
+    </ul>
     <table>
       <thead>
         <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
@@ -341,7 +354,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
-|  |  |- LANGUAGE (NOR/ENG/ACD)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
 |  |  |- STATUS BAR

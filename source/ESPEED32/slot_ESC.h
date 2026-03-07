@@ -51,7 +51,8 @@
 /* Language Settings */
 #define LANG_NOR            0     /* Norwegian language */
 #define LANG_ENG            1     /* English language */
-#define LANG_ACD            2     /* ACD/CarSteen terminology (English-based) */
+#define LANG_CS             2     /* CarSteen terminology (English-based) */
+#define LANG_ACD            3     /* ACD terminology (English-based) */
 #define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */
@@ -235,7 +236,7 @@ typedef struct {
   uint16_t soundRace;                       /* Race mode sound: 0=OFF, 1=ON (toggle beep) */
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
-  uint16_t language;                        /* Language: NOR, ENG, or ACD */
+  uint16_t language;                        /* Language: NOR, ENG, CS, or ACD */
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
   uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
   uint16_t startupDelay;                    /* [×10ms] Startup welcome screen delay */

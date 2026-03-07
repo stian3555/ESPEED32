@@ -5,6 +5,9 @@
 #include "slot_ESC.h"
 #include <math.h>
 
+static constexpr uint16_t TLE493D_I2C_STABILIZE_MS = 100;
+static constexpr int BOOT_SOUND_NOTE_MS = 20;
+
 /* Include appropriate sensor library based on selection */
 #ifdef AS5600_MAG
   #include "AS5600.h"
@@ -48,7 +51,7 @@ void HAL_InitHW() {
 #ifdef TLE493D_MAG
   /* Initialize I2C for TLE493D sensor */
   Wire1.begin(SDA0_PIN, SCL0_PIN, 100000L);
-  delay(100);  /* Wait for I2C stabilization */
+  delay(TLE493D_I2C_STABILIZE_MS);  /* Wait for I2C stabilization */
   
   /* Configure TLE493D sensor */
   Wire1.beginTransmission(ADDRESS);
@@ -214,8 +217,8 @@ void offSound() {
  * @brief Play power-on sound (C -> E)
  */
 void onSound() { 
-  sound(NOTE_C, 30);
-  sound(NOTE_E, 30);
+  sound(NOTE_C, BOOT_SOUND_NOTE_MS);
+  sound(NOTE_E, BOOT_SOUND_NOTE_MS);
 }
 
 /**

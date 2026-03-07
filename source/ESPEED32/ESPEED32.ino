@@ -607,7 +607,7 @@ void Task1code(void *pvParameters) {
 
         if (g_storedVar.startupDelay > 0) {
           showScreenWelcome();    /* Show welcome screen */
-          delay(g_storedVar.startupDelay * 10);  /* Configurable startup delay */
+          delay(g_storedVar.startupDelay * STARTUP_DELAY_STEP_MS);  /* Configurable startup delay */
         }
         g_currState = RUNNING;  /* Go to RUNNING state */
         break;
@@ -1004,7 +1004,7 @@ void initStoredVariables() {
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
   g_storedVar.listFontSize = FONT_SIZE_DEFAULT;  /* Default list view font size */
-  g_storedVar.startupDelay = STARTUP_DELAY_DEFAULT;  /* Default startup delay (15 × 10ms = 150ms) */
+  g_storedVar.startupDelay = STARTUP_DELAY_DEFAULT;  /* Default startup delay (0 = immediate) */
   strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);

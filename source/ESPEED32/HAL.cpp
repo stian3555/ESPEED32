@@ -8,7 +8,8 @@
 /* Include appropriate sensor library based on selection */
 #ifdef AS5600_MAG
   #include "AS5600.h"
-  AS5600 as5600;  /* AS5600 magnetic sensor instance */
+  AS5600 as5600(&Wire1);  /* AS5600 magnetic sensor instance */
+  #define ADDRESS 0x36
 
 #elif defined(AS5600L_MAG)
   #include "AS5600L.h"
@@ -37,7 +38,9 @@
 void HAL_InitHW() {
   /* Initialize serial for debugging */
   Serial.begin(115200);
-
+#ifdef AS5600_MAG
+  Wire1.begin(SDA0_PIN, SCL0_PIN, 400000L);
+#endif
   /* Configure ADC for current sensing on GPIO25 */
   analogSetAttenuation(ADC_11db);  /* Set ADC range to 0-3.3V */
   pinMode(HB_AN_PIN, INPUT);       /* Explicitly set pin as input */

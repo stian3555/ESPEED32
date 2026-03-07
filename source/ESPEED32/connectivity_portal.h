@@ -1,5 +1,5 @@
-#ifndef WIFI_BACKUP_H_
-#define WIFI_BACKUP_H_
+#ifndef CONNECTIVITY_PORTAL_H_
+#define CONNECTIVITY_PORTAL_H_
 
 #include <WiFi.h>
 #include <WebServer.h>
@@ -11,7 +11,7 @@
 #define WIFI_MAX_CONNECTIONS 1
 
 /* Function prototypes - called from settings menu */
-void showWiFiBackupScreen();
-void showUSBBackupScreen();
+void showWiFiPortalScreen();
+void showUSBPortalScreen();
 
 #endif

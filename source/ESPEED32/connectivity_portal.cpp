@@ -1,4 +1,4 @@
-#include "wifi_backup.h"
+#include "connectivity_portal.h"
 #include "slot_ESC.h"
 #include "HAL.h"
 #include <FS.h>
@@ -365,7 +365,7 @@ static void sendDocsMissing(const char* requestedPath) {
  *   "VERSION"        → "<id>,v<major>.<minor>\n"  e.g. "F0A4,v4.4"
  *   "BACKUP"         → "<bytecount>\n<json>"
  *   "RESTORE\n<len>" → read len bytes, parse, save; reply "OK..." or "ERR:..."
- * Shared by showUSBBackupScreen(); called when Serial.available() triggers.
+ * Shared by showUSBPortalScreen(); called when Serial.available() triggers.
  */
 static void handleSerialCommand(const String& cmd) {
   if (cmd == "VERSION") {
@@ -590,7 +590,7 @@ static void handleOta() {
  * @details Starts WiFi AP, runs HTTP server, shows info on OLED.
  *          Returns when user presses encoder button or brake button.
  */
-void showWiFiBackupScreen() {
+void showWiFiPortalScreen() {
   char msgStr[32];
 
   /* Build unique SSID from chip MAC address (last 2 bytes) */
@@ -692,7 +692,7 @@ void showWiFiBackupScreen() {
  * @details Shows a mini guide on the OLED and handles BACKUP/RESTORE serial commands.
  *          No WiFi is started. Returns when user presses encoder button or brake button.
  */
-void showUSBBackupScreen() {
+void showUSBPortalScreen() {
   obdFill(&g_obd, OBD_WHITE, 1);
   const char* usbTitle = "USB mode";
   obdWriteString(&g_obd, 0, centerX8x8(usbTitle), 0,  (char*)usbTitle, FONT_8x8, OBD_BLACK, 1);

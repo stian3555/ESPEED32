@@ -44,4 +44,4 @@ Firmware serves docs from:
 - `/docs/es`
 - `/docs/de`
 
-Routes are implemented in `source/ESPEED32/wifi_backup.cpp`.
+Routes are implemented in `source/ESPEED32/connectivity_portal.cpp`.

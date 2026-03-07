@@ -3,7 +3,7 @@
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
 #include "screensaver_config.h"  /* Personal screensaver configuration (git-ignored) */
-#include "wifi_backup.h"
+#include "connectivity_portal.h"
 
 /* Version defined in slot_ESC.h */
 
@@ -5410,7 +5410,7 @@ void showSettingsMenu() {
         }
         /* WIFI */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
-          showWiFiBackupScreen();
+          showWiFiPortalScreen();
           if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -5422,7 +5422,7 @@ void showSettingsMenu() {
         }
         /* USB */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
-          showUSBBackupScreen();
+          showUSBPortalScreen();
           if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);

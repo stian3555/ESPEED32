@@ -69,7 +69,7 @@ function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.text
 /* Background pump: continuously fills _b; one read in-flight at a time */
 async function pump(){while(usb){try{var{value,done}=await _r.read();if(done)break;_b+=D.decode(value);}catch(e){break;}}}
 /* Read one line (polls _b with timeout) */
-async function rl(ms){ms=ms||5000;var t=Date.now()+ms;while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var i=_b.indexOf('\n'),r=_b.slice(0,i);_b=_b.slice(i+1);return r;}
+async function rl(ms){ms=ms||5000;var t=Date.now()+ms;while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var i=_b.indexOf('\n'),r=_b.slice(0,i).replace(/\r$/,'');_b=_b.slice(i+1);return r;}
 /* Read exactly n chars (polls _b with timeout) */
 async function rb(n,ms){ms=ms||15000;var t=Date.now()+ms;while(_b.length<n){if(Date.now()>t)throw new Error('Device not responding');await new Promise(r=>setTimeout(r,50));}var r=_b.slice(0,n);_b=_b.slice(n);return r;}
 async function ws(s){var w=port.writable.getWriter();try{await w.write(E.encode(s));}finally{w.releaseLock();}}
@@ -175,13 +175,15 @@ static String buildJsonBackup() {
     sprintf(buf, "      \"name\": \"%s\",\n", c.carName);                json += buf;
     sprintf(buf, "      \"minSpeed\": %u,\n", c.minSpeed);               json += buf;
     sprintf(buf, "      \"brake\": %u,\n", c.brake);                     json += buf;
-    sprintf(buf, "      \"dragBrake\": %u,\n", c.dragBrake);             json += buf;
     sprintf(buf, "      \"maxSpeed\": %u,\n", c.maxSpeed);               json += buf;
     sprintf(buf, "      \"curveInput\": %u,\n", c.throttleCurveVertex.inputThrottle); json += buf;
     sprintf(buf, "      \"curveDiff\": %u,\n", c.throttleCurveVertex.curveSpeedDiff); json += buf;
     sprintf(buf, "      \"antiSpin\": %u,\n", c.antiSpin);               json += buf;
     sprintf(buf, "      \"freqPWM\": %u,\n", c.freqPWM);                 json += buf;
-    sprintf(buf, "      \"brakeButton\": %u\n", c.brakeButtonReduction);  json += buf;
+    sprintf(buf, "      \"brakeButton\": %u,\n", c.brakeButtonReduction);  json += buf;
+    sprintf(buf, "      \"quickBrakeEnabled\": %u,\n", c.quickBrakeEnabled);   json += buf;
+    sprintf(buf, "      \"quickBrakeThreshold\": %u,\n", c.quickBrakeThreshold); json += buf;
+    sprintf(buf, "      \"quickBrakeStrength\": %u\n", c.quickBrakeStrength);  json += buf;
     json += "    }";
     if (i < CAR_MAX_COUNT - 1) json += ",";
     json += "\n";
@@ -327,11 +329,6 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
     }
     c.brake = v;
 
-    if (!parseJsonInt(carJson, "dragBrake", v) || !inRange(v, 0, DRAG_MAX_VALUE)) {
-      *errorMsg = "Error: invalid dragBrake in car " + String(i); return false;
-    }
-    c.dragBrake = v;
-
     if (!parseJsonInt(carJson, "maxSpeed", v) || !inRange(v, 5, 100)) {
       *errorMsg = "Error: invalid maxSpeed in car " + String(i); return false;
     }
@@ -361,6 +358,14 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
       *errorMsg = "Error: invalid brakeButton in car " + String(i); return false;
     }
     c.brakeButtonReduction = v;
+
+    /* Quick brake fields — optional for backwards compatibility with older backups */
+    if (parseJsonInt(carJson, "quickBrakeEnabled", v) && inRange(v, 0, 1))
+      c.quickBrakeEnabled = v;
+    if (parseJsonInt(carJson, "quickBrakeThreshold", v) && inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX))
+      c.quickBrakeThreshold = v;
+    if (parseJsonInt(carJson, "quickBrakeStrength", v) && inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX))
+      c.quickBrakeStrength = v;
   }
 
   return true;

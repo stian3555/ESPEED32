@@ -343,6 +343,12 @@ static bool streamHtmlFromSpiffs(const char* path) {
   return streamFileFromSpiffs(path, "text/html; charset=utf-8");
 }
 
+static int centerX8x8(const char* text) {
+  int widthPx = strlen(text) * WIDTH8x8;
+  int x = (OLED_WIDTH - widthPx) / 2;
+  return (x < 0) ? 0 : x;
+}
+
 static void sendUiFallback() {
   g_wifiServer->send(200, "text/html; charset=utf-8", FPSTR(UI_FALLBACK_HTML));
 }
@@ -634,7 +640,8 @@ void showWiFiBackupScreen() {
 
   /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
   obdFill(&g_obd, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 40, 0, (char*)"WiFi mode", FONT_8x8, OBD_BLACK, 1);
+  const char* wifiTitle = "WiFi mode";
+  obdWriteString(&g_obd, 0, centerX8x8(wifiTitle), 0, (char*)wifiTitle, FONT_8x8, OBD_BLACK, 1);
 
   sprintf(msgStr, "SSID: %s", ssid);
   obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
@@ -687,7 +694,8 @@ void showWiFiBackupScreen() {
  */
 void showUSBBackupScreen() {
   obdFill(&g_obd, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 20, 0,              (char*)"USB mode", FONT_8x8,  OBD_BLACK, 1);
+  const char* usbTitle = "USB mode";
+  obdWriteString(&g_obd, 0, centerX8x8(usbTitle), 0,  (char*)usbTitle, FONT_8x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  2 * HEIGHT8x8,  (char*)"1. Connect USB cable",  FONT_6x8,  OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  3 * HEIGHT8x8,  (char*)"2. Open espeed32.html", FONT_6x8,  OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  4 * HEIGHT8x8,  (char*)"   in Chrome/Edge",     FONT_6x8,  OBD_BLACK, 1);

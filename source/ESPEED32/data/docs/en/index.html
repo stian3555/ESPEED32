@@ -97,6 +97,7 @@ nav.top{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
 a.primary{background:var(--accent);color:#fff}
 a.secondary{background:var(--accent-2);color:#fff}
+a.btn.lang-active{background:var(--accent-2);color:#fff}
 a.ghost{background:var(--ghost);color:var(--ink)}
 section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
 h2{margin:0 0 10px;font-size:20px}
@@ -133,10 +134,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="lead">User-focused guide for slot car racing: startup, key driving controls, menus, and backup/restore.</p>
     <nav class="top">
       <a class="btn primary" href="/">Open Backup Page</a>
-      <a class="btn secondary" href="/docs/no">Norsk</a>
-      <a class="btn ghost" href="/docs/en">English</a>
-      <a class="btn ghost" href="/docs/es">Espanol</a>
-      <a class="btn ghost" href="/docs/de">Deutsch</a>
+      <a class="btn ghost" href="/docs/no" data-doc-lang="no">Norsk</a>
+      <a class="btn ghost" href="/docs/en" data-doc-lang="en">English</a>
+      <a class="btn ghost" href="/docs/es" data-doc-lang="es">Espanol</a>
+      <a class="btn ghost" href="/docs/de" data-doc-lang="de">Deutsch</a>
     </nav>
     <div class="theme-tools">
       <label for="theme-select">Theme</label>
@@ -147,7 +148,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </select>
     </div>
     <ul class="sources">
-      <li>Firmware source: ESPEED32 SW v4.7 (<code>source/ESPEED32/</code>).</li>
+      <li>Firmware source: ESPEED32 v4.7 (<code>source/ESPEED32/</code>).</li>
       <li>Local manuals in repo: Quick Start + Extended Guide (DOC folder, DOCX/PDF).</li>
       <li>ACD reference: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
       <li>CarSteen reference: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
@@ -412,6 +413,20 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     localStorage.setItem(key, select.value);
     apply(select.value);
   });
+
+  var path = (window.location.pathname || "").toLowerCase();
+  var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
+  if (path.indexOf("/docs/no") === 0) activeLang = "no";
+  else if (path.indexOf("/docs/en") === 0) activeLang = "en";
+  else if (path.indexOf("/docs/es") === 0) activeLang = "es";
+  else if (path.indexOf("/docs/de") === 0) activeLang = "de";
+
+  var langLinks = document.querySelectorAll("a[data-doc-lang]");
+  for (var i = 0; i < langLinks.length; i++) {
+    var link = langLinks[i];
+    if (link.getAttribute("data-doc-lang") === activeLang) link.classList.add("lang-active");
+    else link.classList.remove("lang-active");
+  }
 })();
 </script>
 </body>

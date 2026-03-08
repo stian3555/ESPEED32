@@ -4187,6 +4187,9 @@ static void showPowerSave(uint32_t inactivityStartMs) {
   obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
   delay(1200);
 
+  /* Sleep mode policy: always disable WiFi/AP while sleeping. */
+  stopTimedWiFiPortal();
+
   /* Safe: motor off */
   HalfBridge_SetPwmDrag(0, 0);
   /* Display off */

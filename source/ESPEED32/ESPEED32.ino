@@ -382,6 +382,14 @@ static bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screens
   if (g_storedVar.screensaverTimeout == 0) return false;
 
   uint32_t now = millis();
+
+  /* OTA safety lock: do not enter sleep/deep sleep while upload is active. */
+  if (isOtaInProgress()) {
+    *lastInteraction = now;
+    if (screensaverActive != NULL) *screensaverActive = false;
+    return false;
+  }
+
   uint32_t idleMs = now - *lastInteraction;
   uint32_t screensaverMs = (uint32_t)g_storedVar.screensaverTimeout * 1000UL;
 
@@ -448,6 +456,11 @@ static void serviceTimedWiFiPortal() {
   }
 
   if ((int32_t)(millis() - g_wifiTimedStopAtMs) >= 0) {
+    if (isOtaInProgress()) {
+      /* Keep portal alive during OTA and retry timed stop later. */
+      g_wifiTimedStopAtMs = millis() + 1000UL;
+      return;
+    }
     stopWiFiPortal();
     g_wifiTimedActive = false;
   }
@@ -463,6 +476,9 @@ static void startTimedWiFiPortal(uint16_t minutes) {
 }
 
 static void stopTimedWiFiPortal() {
+  if (isOtaInProgress()) {
+    return;
+  }
   g_wifiTimedActive = false;
   if (isWiFiPortalActive()) {
     stopWiFiPortal();
@@ -4178,6 +4194,10 @@ static void showPowerSave() {
 }
 
 static void showPowerSave(uint32_t inactivityStartMs) {
+  if (isOtaInProgress()) {
+    return;
+  }
+
   uint16_t lang = g_storedVar.language;
 
   /* Brief sleep message */
@@ -4219,6 +4239,10 @@ static void showPowerSave(uint32_t inactivityStartMs) {
 }
 
 static void showDeepSleep() {
+  if (isOtaInProgress()) {
+    return;
+  }
+
   uint16_t lang = g_storedVar.language;
 
   /* Brief power-off message */

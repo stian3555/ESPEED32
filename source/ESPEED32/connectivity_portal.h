@@ -19,6 +19,7 @@ bool startWiFiPortal();
 void stopWiFiPortal();
 void serviceWiFiPortal();
 bool isWiFiPortalActive();
+bool isOtaInProgress();
 IPAddress getWiFiPortalIP();
 void getWiFiPortalSsid(char* out, size_t outLen);
 

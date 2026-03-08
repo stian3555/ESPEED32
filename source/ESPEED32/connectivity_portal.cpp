@@ -1098,6 +1098,10 @@ bool isWiFiPortalActive() {
   return g_wifiServer != nullptr;
 }
 
+bool isOtaInProgress() {
+  return g_otaInProgress;
+}
+
 bool startWiFiPortal() {
   if (g_wifiServer != nullptr) {
     return true;
@@ -1138,6 +1142,10 @@ void serviceWiFiPortal() {
 }
 
 void stopWiFiPortal() {
+  if (g_otaInProgress) {
+    return;
+  }
+
   if (g_wifiServer != nullptr) {
     g_wifiServer->stop();
     delete g_wifiServer;

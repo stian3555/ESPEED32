@@ -18,12 +18,17 @@ h2{color:#ccc;font-size:16px;margin-bottom:5px}
 .aux{background:#3a4a6a;color:#fff}.aux:hover{background:#4d618a}
 hr{border-color:#333;margin:20px 0}
 input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
-.st{margin:15px 0;padding:12px;border-radius:5px;display:none;text-align:center}
-.ok{background:#16c79a;color:#000}.err{background:#e94560;color:#fff}
+.st{margin:12px 0;padding:10px 12px;border-radius:8px;display:none;text-align:left;font-size:13px;line-height:1.35;border:1px solid transparent}
+.ok{background:#0f2a22;color:#9bf7da;border-color:#1e8e6e}
+.err{background:#311a22;color:#ffd2da;border-color:#b44b68}
 .warn{color:#ff8c00;font-size:13px;text-align:center}
 #usbbar{display:none;margin-bottom:10px}
 .card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
 .editor-panel{display:none}
+.section-stack{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.action-card{border:1px solid #2b3448;border-radius:10px;padding:12px;background:#0f1728}
+.action-title{font-size:12px;letter-spacing:.3px;color:#9dd7ff;text-transform:uppercase;margin:0 0 6px 0}
+.action-note{font-size:12px;color:#9aa7c7;margin:0 0 8px 0}
 .row{display:flex;flex-direction:column;margin-bottom:10px}
 .row label{font-size:13px;color:#bbb;margin-bottom:4px}
 .row input,.row select{padding:8px;border-radius:6px;border:1px solid #444;background:#0b0f18;color:#eee}
@@ -44,11 +49,21 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
 <h2>Config Backup &amp; Restore (.json)</h2>
+<div class="section-stack">
+<section class="action-card" aria-labelledby="backup-title">
+<p id="backup-title" class="action-title">Download Backup</p>
+<p class="action-note">Create a JSON snapshot of current settings and car profiles.</p>
 <button id="btn-backup" class="btn dl" onclick="doBackup()">Download Config Backup</button>
+</section>
+<section class="action-card" aria-labelledby="restore-title">
+<p id="restore-title" class="action-title">Restore Backup</p>
+<p class="action-note">Upload a previously exported JSON backup to restore configuration.</p>
 <form id="uf">
 <input type="file" id="fi" accept=".json">
 <button type="submit" class="btn ul">Restore Config</button>
 </form>
+</section>
+</div>
 <div id="st" class="st"></div>
 <hr>
 <h2>Advanced Config Editor</h2>

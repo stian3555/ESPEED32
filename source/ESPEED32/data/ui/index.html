@@ -68,14 +68,12 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <hr>
 <div id="fw-section">
 <h2>Firmware Update (WiFi only, .bin)</h2>
-<div id="otadiv">
 <form id="of">
 <input type="file" id="fw" accept=".bin">
-<button type="submit" class="btn ota">Upload Firmware</button>
+<button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware</button>
 </form>
 <p class="warn">Do not disconnect power during update.</p>
-</div>
-<p id="otausb" style="display:none" class="warn">Firmware update is available in WiFi mode only.</p>
+<p id="ota-note" style="display:none" class="warn"></p>
 <div id="ost" class="st"></div>
 </div>
 <script>
@@ -101,12 +99,11 @@ function applyHostedMode(){
   if(!hostedMode) return;
   var note=document.getElementById('hosted-note');
   if(note) note.style.display='block';
-  var fwSection=document.getElementById('fw-section');
-  if(fwSection) fwSection.style.display='none';
   var b=document.getElementById('btn-backup');
   if(b) b.textContent='Download Config Backup (USB)';
   var restoreBtn=document.querySelector('#uf button[type="submit"]');
   if(restoreBtn) restoreBtn.textContent='Restore Config (USB)';
+  updateFirmwareUiState();
 }
 
 function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
@@ -116,6 +113,7 @@ function applyInfo(){
   document.getElementById('devid').textContent=info.deviceId||'----';
   document.getElementById('ver').textContent=info.version||'-';
   updateDocsLinkState();
+  updateFirmwareUiState();
 }
 
 function setBtnDisabled(id,disabled){
@@ -164,6 +162,32 @@ function updateDocsLinkState(){
   }
 }
 
+function firmwareUpdateUnavailableReason(){
+  if(hostedMode){
+    return 'Firmware update unavailable in hosted mode. Open controller WiFi page to upload firmware.';
+  }
+  if(usb){
+    return 'Firmware update unavailable while USB WebSerial is connected. Disconnect USB to use WiFi OTA.';
+  }
+  return '';
+}
+
+function updateFirmwareUiState(){
+  var input=document.getElementById('fw');
+  var btn=document.getElementById('btn-ota-upload');
+  var note=document.getElementById('ota-note');
+  if(!input || !btn || !note) return;
+
+  var reason=firmwareUpdateUnavailableReason();
+  var disabled=(reason!=='');
+
+  input.disabled=disabled;
+  btn.disabled=disabled;
+  btn.classList.toggle('disabled',disabled);
+  note.style.display=disabled?'block':'none';
+  note.textContent=reason;
+}
+
 function setUsbReadyState(ready,msg){
   usbReady=!!ready;
   var b=document.getElementById('ucb');
@@ -171,6 +195,7 @@ function setUsbReadyState(ready,msg){
     b.textContent=usbReady?'Disconnect USB':'Disconnect USB (not ready)';
   }
   updateDocsLinkState();
+  updateFirmwareUiState();
   if(msg){ss('st',usbReady?'ok':'err',msg);}
 }
 
@@ -254,8 +279,7 @@ async function usbToggle(){
       var b=document.getElementById('ucb');
       b.textContent='Disconnect USB';
       b.className='btn ul';
-      document.getElementById('otadiv').style.display='none';
-      document.getElementById('otausb').style.display='block';
+      updateFirmwareUiState();
       var ready=await ensureUsbReady(true);
       if(!ready){
         ss('st','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
@@ -277,8 +301,7 @@ async function usbToggle(){
     var b2=document.getElementById('ucb');
     b2.textContent='Connect via USB (WebSerial)';
     b2.className='btn usb';
-    document.getElementById('otadiv').style.display='block';
-    document.getElementById('otausb').style.display='none';
+    updateFirmwareUiState();
   }
 }
 
@@ -639,6 +662,11 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
+  var fwDisabledReason=firmwareUpdateUnavailableReason();
+  if(fwDisabledReason){
+    ss('ost','err',fwDisabledReason);
+    return;
+  }
   var f=document.getElementById('fw').files[0];
   if(!f){alert('Select a .bin file');return;}
   if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
@@ -652,6 +680,7 @@ hostedMode=detectHostedMode();
 applyHostedMode();
 if('serial' in navigator){document.getElementById('usbbar').style.display='block';}
 setEditorUiReady(false);
+updateFirmwareUiState();
 loadInfo();
 </script>
 </body>

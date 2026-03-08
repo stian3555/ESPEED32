@@ -696,7 +696,7 @@ static bool streamHtmlFromSpiffs(const char* path) {
   return streamFileFromSpiffs(path, "text/html; charset=utf-8");
 }
 
-static int centerX8x8(const char* text) {
+int centerX8x8(const char* text) {
   int widthPx = strlen(text) * WIDTH8x8;
   int x = (OLED_WIDTH - widthPx) / 2;
   return (x < 0) ? 0 : x;

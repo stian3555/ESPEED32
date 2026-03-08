@@ -409,6 +409,11 @@ async function applyEditor(saveAfter){
       payload[f.id]=coerceFieldValue(f,el.value);
     });
 
+    /* If Global tab changed active car, keep editor context on that car after Apply/Save. */
+    if((!carSel || carSel.value==='') && typeof payload.selectedCarNumber==='number' && !isNaN(payload.selectedCarNumber)){
+      payload.carIndex=payload.selectedCarNumber;
+    }
+
     if(usb){
       var patch=JSON.stringify(payload);
       var pb=E.encode(patch);
@@ -426,7 +431,11 @@ async function applyEditor(saveAfter){
       if(isNaN(outLen) || outLen<0 || outLen>20000) throw new Error('Invalid APPLY response');
       var outState=await rb(outLen,15000);
       state=JSON.parse(outState);
-      editorCarIndex=payload.carIndex;
+      if(state && state.selectedCarNumber!=null && typeof payload.selectedCarNumber==='number'){
+        editorCarIndex=parseInt(state.selectedCarNumber,10);
+      }else{
+        editorCarIndex=payload.carIndex;
+      }
 
       if(saveAfter){
         await ws('SAVE\n');
@@ -445,7 +454,11 @@ async function applyEditor(saveAfter){
       var j=await r.json();
       if(!r.ok || !j.ok) throw new Error((j&&j.error)?j.error:'apply failed');
       state=j.state||state;
-      editorCarIndex=payload.carIndex;
+      if(state && state.selectedCarNumber!=null && typeof payload.selectedCarNumber==='number'){
+        editorCarIndex=parseInt(state.selectedCarNumber,10);
+      }else{
+        editorCarIndex=payload.carIndex;
+      }
 
       if(saveAfter){
         var rs=await fetch('/api/save',{method:'POST'});

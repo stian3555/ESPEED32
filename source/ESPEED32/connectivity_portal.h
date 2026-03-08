@@ -22,4 +22,7 @@ bool isWiFiPortalActive();
 IPAddress getWiFiPortalIP();
 void getWiFiPortalSsid(char* out, size_t outLen);
 
+/* Shared OLED helper for centered 8x8 titles */
+int centerX8x8(const char* text);
+
 #endif

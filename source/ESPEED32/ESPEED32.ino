@@ -5289,7 +5289,7 @@ static void showSelfTest() {
 
   /* ======== Intro screen ======== */
   obdFill(&g_obd, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 28, 0 * HEIGHT8x8, (char*)"Self-Test", FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, centerX8x8("Self-Test"), 0 * HEIGHT8x8, (char*)"Self-Test", FONT_8x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  2 * HEIGHT8x8, (char*)"9 hardware checks", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  4 * HEIGHT8x8, (char*)"Enc btn = PASS/next", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0,  5 * HEIGHT8x8, (char*)"Brk btn = FAIL/skip", FONT_6x8, OBD_BLACK, 1);
@@ -5466,7 +5466,7 @@ static void showAboutScreen() {
   uint64_t mac = ESP.getEfuseMac();
   char line[24];
 
-  obdWriteString(&g_obd, 0, 44, 0 * HEIGHT8x8, (char*)"About", FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, centerX8x8("About"), 0 * HEIGHT8x8, (char*)"About", FONT_8x8, OBD_BLACK, 1);
 
   sprintf(line, "FW:   v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
   obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);

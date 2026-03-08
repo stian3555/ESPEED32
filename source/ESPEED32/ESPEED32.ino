@@ -4385,7 +4385,7 @@ static void showSoundSettings() {
 
 /**
  * WiFi submenu.
- * Items: INFO PAGE, AUTO OFF (minutes), START/STOP BG, BACK.
+ * Items: INFO PAGE, AUTO OFF (minutes), START/STOP WIFI, BACK.
  * MINUTES is a runtime-only value used for timed background activation.
  */
 static void showWiFiSettings() {
@@ -4393,8 +4393,8 @@ static void showWiFiSettings() {
 
   const char* lblOpen[4]    = {"INFO SIDE",   "INFO PAGE", "INFO PAGE", "INFO PAGE"};
   const char* lblTimer[4]   = {"AUTO AV",     "AUTO OFF",  "AUTO OFF",  "AUTO OFF"};
-  const char* lblStartBg[4] = {"START BAKGR", "START BG",  "START BG",  "START BG"};
-  const char* lblStopBg[4]  = {"STOPP BAKGR", "STOP BG",   "STOP BG",   "STOP BG"};
+  const char* lblStartBg[4] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI"};
+  const char* lblStopBg[4]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI"};
 
   const uint8_t NUM_ITEMS = 4;  /* 0=NOW, 1=MINUTES, 2=ACTIVE, 3=BACK */
   const uint8_t menuFont = FONT_8x8;

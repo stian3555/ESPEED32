@@ -410,6 +410,26 @@ static bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screens
 }
 
 /**
+ * @brief Consume wake-up input so it doesn't also trigger menu actions.
+ * @details Prevents one wake press from being interpreted as BACK/OK in nested menus.
+ * @param wakeTriggered True when current loop woke from screensaver.
+ * @return true if caller should skip the rest of this iteration.
+ */
+static bool consumeScreensaverWakeInput(bool wakeTriggered) {
+  if (!wakeTriggered) return false;
+
+  g_lastEncoderInteraction = millis();
+  g_rotaryEncoder.isEncoderButtonClicked();  /* consume pending click edge */
+
+  uint32_t guardStart = millis();
+  while (digitalRead(BUTT_PIN) == BUTTON_PRESSED &&
+         (uint32_t)(millis() - guardStart) < BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+    vTaskDelay(1);
+  }
+  return true;
+}
+
+/**
  * @brief Toggle race/list view mode and reset encoder for new mode.
  * Called from RUNNING when g_escapeToMain is set, or on direct long press.
  * @param menuState Reference to RUNNING's menuState (reset to ITEM_SELECTION).
@@ -2291,6 +2311,8 @@ void showCarSelection() {
     }
 
     /* Check for screensaver timeout */
+    if (consumeScreensaverWakeInput(wakeUpTriggered)) { continue; }
+
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
@@ -2408,6 +2430,8 @@ void showCopyCarSettings() {
     }
 
     /* Check for screensaver timeout */
+    if (consumeScreensaverWakeInput(wakeUpTriggered)) { continue; }
+
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
@@ -2518,6 +2542,8 @@ void showCopyCarSettings() {
     }
 
     /* Check for screensaver timeout */
+    if (consumeScreensaverWakeInput(wakeUpTriggered)) { continue; }
+
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
@@ -2695,6 +2721,8 @@ void showSelectRenameCar() {
     }
 
     /* Check for screensaver timeout */
+    if (consumeScreensaverWakeInput(wakeUpTriggered)) { continue; }
+
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
@@ -2993,6 +3021,8 @@ void showRenameCar() {
     }
 
     /* Check for screensaver timeout */
+    if (consumeScreensaverWakeInput(wakeUpTriggered)) { continue; }
+
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 && millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
@@ -3291,6 +3321,8 @@ void showLapStats() {
         needFullRedraw = true;
       }
     }
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -3621,6 +3653,8 @@ void showScreensaverSettings() {
         prevSel = 0xFF;  /* Force redraw */
       }
     }
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -3851,6 +3885,8 @@ void showStatusSettings() {
         forceRedraw = true;
       }
     }
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -4041,6 +4077,8 @@ static bool resetConfirm(const char* label) {
       }
     }
 
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -4097,6 +4135,8 @@ static bool resetConfirm(const char* label) {
         drawSecondConfirm();
       }
     }
+
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
@@ -4305,6 +4345,8 @@ static void showSleepSettings() {
       }
     }
 
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -4464,6 +4506,8 @@ static void showDeepSleepSettings() {
         needRedraw = true;
       }
     }
+
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
@@ -4745,6 +4789,8 @@ static void showWiFiSettings() {
         needRedraw = true;
       }
     }
+
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
@@ -5342,6 +5388,8 @@ void showResetSubmenu() {
       }
     }
 
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -5516,6 +5564,8 @@ void showQuickBrakeMenu() {
         forceRedraw = true;
       }
     }
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -5938,6 +5988,8 @@ static void showAboutScreen() {
       }
     }
 
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
@@ -6028,6 +6080,8 @@ void showSettingsMenu() {
     }
 
     /* Screensaver timeout */
+    if (consumeScreensaverWakeInput(wakeUpTriggered)) { continue; }
+
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {

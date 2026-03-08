@@ -137,7 +137,7 @@ if [[ "$PURGE" -eq 1 ]]; then
   fi
 
   echo "[SPIFFS] Erasing partition at $PARTITION_OFFSET (size $PARTITION_SIZE)"
-  "$ESPTOOL_BIN" --chip esp32 --port "$PORT" --baud "$BAUD" --before default_reset --after hard_reset erase_region "$PARTITION_OFFSET" "$PARTITION_SIZE"
+  "$ESPTOOL_BIN" --chip esp32 --port "$PORT" --baud "$BAUD" --before default-reset --after hard-reset erase-region "$PARTITION_OFFSET" "$PARTITION_SIZE"
   echo "[SPIFFS] Purge complete"
   exit 0
 fi
@@ -154,6 +154,6 @@ if [[ "$BUILD_ONLY" -eq 1 ]]; then
 fi
 
 echo "[SPIFFS] Uploading to $PORT at offset $PARTITION_OFFSET (baud $BAUD)"
-"$ESPTOOL_BIN" --chip esp32 --port "$PORT" --baud "$BAUD" --before default_reset --after hard_reset write_flash "$PARTITION_OFFSET" "$IMAGE_PATH"
+"$ESPTOOL_BIN" --chip esp32 --port "$PORT" --baud "$BAUD" --before default-reset --after hard-reset write-flash "$PARTITION_OFFSET" "$IMAGE_PATH"
 
 echo "[SPIFFS] Upload complete"

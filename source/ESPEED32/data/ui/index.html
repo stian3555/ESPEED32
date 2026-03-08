@@ -78,7 +78,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <div id="ost" class="st"></div>
 </div>
 <script>
-var port=null,usb=false,_b='',_r=null,_pump=null;
+var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
 var info={deviceId:'----',version:'-',docsPath:'docs/'};
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
@@ -115,6 +115,43 @@ function applyInfo(){
   document.getElementById('devid').textContent=info.deviceId||'----';
   document.getElementById('ver').textContent=info.version||'-';
   document.getElementById('docs-link').href=info.docsPath||'/docs';
+}
+
+function setUsbReadyState(ready,msg){
+  usbReady=!!ready;
+  var b=document.getElementById('ucb');
+  if(b && usb){
+    b.textContent=usbReady?'Disconnect USB':'Disconnect USB (not ready)';
+  }
+  if(msg){ss('st',usbReady?'ok':'err',msg);}
+}
+
+async function probeUsbVersion(){
+  _b='';
+  await ws('VERSION\n');
+  var vr=await rl(2000);
+  var vp=vr.split(',');
+  if(vp.length!==2) throw new Error('No command reply');
+  return {
+    deviceId:vp[0]||'',
+    version:(vp[1]||'').replace('v','')
+  };
+}
+
+async function ensureUsbReady(silent){
+  if(!usb) return false;
+  if(usbReady) return true;
+  try{
+    var v=await probeUsbVersion();
+    if(v.deviceId) info.deviceId=v.deviceId;
+    if(v.version) info.version=v.version;
+    applyInfo();
+    setUsbReadyState(true,silent?'':'USB command channel ready');
+    return true;
+  }catch(_){
+    setUsbReadyState(false,silent?'':'USB connected, but device command channel is not ready');
+    return false;
+  }
 }
 
 async function loadInfo(){
@@ -171,19 +208,16 @@ async function usbToggle(){
       b.className='btn ul';
       document.getElementById('otadiv').style.display='none';
       document.getElementById('otausb').style.display='block';
-      try{
-        await ws('VERSION\n');
-        var vr=await rl(3000);
-        var vp=vr.split(',');
-        if(vp.length===2){
-          info.deviceId=vp[0]||info.deviceId;
-          info.version=(vp[1]||'').replace('v','')||info.version;
-          applyInfo();
-        }
-      }catch(_){ }
+      var ready=await ensureUsbReady(true);
+      if(!ready){
+        ss('st','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
+      }else{
+        ss('st','ok','USB connected');
+      }
     }catch(e){ss('st','err','USB: '+e.message);}
   }else{
     usb=false;
+    usbReady=false;
     if(_r){try{await _r.cancel();}catch(_){}}
     _r=null;
     if(_pump){try{await _pump;}catch(_){}}
@@ -215,6 +249,7 @@ async function doBackup(){
   }
   ss('st','','Reading backup...');
   try{
+    if(!(await ensureUsbReady(false))) return;
     _b='';
     await ws('BACKUP\n');
     var j=await rb(parseInt(await rl(),10));
@@ -223,10 +258,14 @@ async function doBackup(){
     a2.download=fn;
     a2.click();
     ss('st','ok','Backup downloaded');
-  }catch(e){ss('st','err',e.message+' - re-enter USB mode on device');}
+  }catch(e){
+    usbReady=false;
+    ss('st','err',e.message+' - retry USB connect');
+  }
 }
 
 async function usbReadJsonResponse(cmd,waitMs){
+  if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
   _b='';
   await ws(cmd+'\n');
   var len=parseInt(await rl(waitMs||5000),10);
@@ -316,6 +355,10 @@ function renderEditor(){
   var editCar=(typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?editorCarIndex:((state.carIndex!=null)?state.carIndex:state.selectedCarNumber);
   if(isNaN(editCar)) editCar=0;
   editorCarIndex=editCar;
+  var globalValues=Object.assign({},state.global||{});
+  if(globalValues.selectedCarNumber==null && state.selectedCarNumber!=null){
+    globalValues.selectedCarNumber=state.selectedCarNumber;
+  }
 
   var carOpts='';
   for(var i=0;i<(schema.carCount||20);i++){
@@ -326,7 +369,7 @@ function renderEditor(){
     renderGroupedFields(
       'g',
       schema.global,
-      state.global,
+      globalValues,
       categorizeGlobalField,
       ['Race & Driving','Power & Startup','Display & Language','Status Slots','Sound','Screensaver Text','Other']
     );
@@ -450,6 +493,7 @@ async function applyEditor(saveAfter){
     }
 
     if(usb){
+      if(!(await ensureUsbReady(false))) return;
       var patch=JSON.stringify(payload);
       var pb=E.encode(patch);
       _b='';
@@ -504,6 +548,7 @@ async function applyEditor(saveAfter){
     renderEditor();
     ss('edst','ok',saveAfter?'Applied and saved to flash':'Applied live (RAM only)');
   }catch(e){
+    usbReady=false;
     ss('edst','err','Apply failed: '+e.message);
   }
 }
@@ -525,6 +570,7 @@ document.getElementById('uf').onsubmit=async function(e){
     return;
   }
   try{
+    if(!(await ensureUsbReady(false))) return;
     var j=await f.text(),b=E.encode(j);
     _b='';
     await ws('RESTORE\n'+b.length+'\n');
@@ -532,7 +578,10 @@ document.getElementById('uf').onsubmit=async function(e){
     try{await w.write(b);}finally{w.releaseLock();}
     var resp=await rl(20000);
     ss('st',resp.indexOf('OK')===0?'ok':'err',resp);
-  }catch(x){ss('st','err',x.message+' - re-enter USB mode on device');}
+  }catch(x){
+    usbReady=false;
+    ss('st','err',x.message+' - retry USB connect');
+  }
 };
 
 document.getElementById('of').onsubmit=async function(e){

@@ -16,6 +16,7 @@ static WebServer* g_wifiServer = nullptr;
 static String g_uploadBuffer;
 static char g_wifiSuffix[5] = "";  /* MAC-based suffix, e.g. "A3B4" */
 static bool g_spiffsMounted = false;
+static String g_serialCmdLine;
 
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
 static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
@@ -453,6 +454,7 @@ static String buildStateJson(uint8_t carIndex) {
   json += buf;
 
   json += "\"global\":{";
+  snprintf(buf, sizeof(buf), "\"selectedCarNumber\":%u,", g_storedVar.selectedCarNumber); json += buf;
   snprintf(buf, sizeof(buf), "\"viewMode\":%u,", g_storedVar.viewMode); json += buf;
   snprintf(buf, sizeof(buf), "\"screensaverTimeout\":%u,", g_storedVar.screensaverTimeout); json += buf;
   snprintf(buf, sizeof(buf), "\"powerSaveTimeout\":%u,", g_storedVar.powerSaveTimeout); json += buf;
@@ -710,6 +712,43 @@ static void sendDocsMissing(const char* requestedPath) {
   String page = FPSTR(DOCS_MISSING_HTML);
   page.replace("%PATH%", requestedPath);
   g_wifiServer->send(404, "text/html; charset=utf-8", page);
+}
+
+static void handleSerialCommand(const String& cmd);
+
+/**
+ * @brief Non-blocking USB serial command pump.
+ * @details Reads one newline-terminated command and dispatches it. Called frequently
+ *          from normal UI loops so WebSerial works outside the USB info screen too.
+ */
+static void serviceUsbSerialCommands() {
+  while (Serial.available() > 0) {
+    char ch = (char)Serial.read();
+
+    if (ch == '\r') {
+      continue;
+    }
+
+    if (ch == '\n') {
+      if (g_serialCmdLine.length() > 0) {
+        String cmd = g_serialCmdLine;
+        g_serialCmdLine = "";
+        cmd.trim();
+        if (cmd.length() > 0) {
+          handleSerialCommand(cmd);
+          return;  /* handle one command per call */
+        }
+      }
+      continue;
+    }
+
+    if (g_serialCmdLine.length() < 64) {
+      g_serialCmdLine += ch;
+    } else {
+      /* Corrupted/too-long command line: drop until next newline. */
+      g_serialCmdLine = "";
+    }
+  }
 }
 
 /**
@@ -1141,6 +1180,11 @@ void serviceWiFiPortal() {
   }
 }
 
+void serviceConnectivityPortal() {
+  serviceWiFiPortal();
+  serviceUsbSerialCommands();
+}
+
 void stopWiFiPortal() {
   if (g_otaInProgress) {
     return;
@@ -1207,7 +1251,7 @@ void showWiFiPortalScreen() {
 
   /* Service loop - handle HTTP requests until user exits */
   while (true) {
-    serviceWiFiPortal();
+    serviceConnectivityPortal();
 
     /* Block exit during OTA to prevent bricking */
     if (!g_otaInProgress) {
@@ -1250,7 +1294,7 @@ void showUSBPortalScreen() {
   static uint32_t lastBrakeBtnUsbTime = 0;
 
   while (true) {
-    serviceWiFiPortal();
+    serviceConnectivityPortal();
 
     if (g_rotaryEncoder.isEncoderButtonClicked()) break;
 
@@ -1263,12 +1307,6 @@ void showUSBPortalScreen() {
       }
     } else {
       brakeBtnInUsb = false;
-    }
-
-    if (Serial.available()) {
-      String cmd = Serial.readStringUntil('\n');
-      cmd.trim();
-      handleSerialCommand(cmd);
     }
 
     vTaskDelay(1);

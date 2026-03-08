@@ -99,14 +99,13 @@ json_value() {
 run_filtered_cmd() {
   local rc
   set +e
-  "$@" 2>&1 | awk '
-    /esp_bt\.h:16,/ { next }
-    /esp32-hal-(bt|misc)\.c:(29|30):/ { next }
-    /esp_bredr_cfg\.h:18:9: note:.*BT: forcing BR\/EDR max sync conn eff to 1/ { skip_caret=1; next }
-    /#pragma message \("BT: forcing BR\/EDR max sync conn eff to 1 \(Bluedroid HFP requires SCO\/eSCO\)"\)/ { skip_caret=1; next }
-    skip_caret && /^[[:space:]]*\|[[:space:]]+\^~~~~~~$/ { skip_caret=0; next }
-    { print }
-  '
+  "$@" 2>&1 | sed \
+    -e '/esp_bt\.h:16,/d' \
+    -e '/esp32-hal-bt\.c:30:/d' \
+    -e '/esp32-hal-misc\.c:29:/d' \
+    -e '/esp_bredr_cfg\.h:18:9: note:.*BT: forcing BR\/EDR max sync conn eff to 1/d' \
+    -e '/#pragma message ("BT: forcing BR\/EDR max sync conn eff to 1 (Bluedroid HFP requires SCO\/eSCO)")/d' \
+    -e '/^[[:space:]]*\|[[:space:]]\+\^~~~~~~$/d'
   rc=${PIPESTATUS[0]}
   set -e
   return "$rc"

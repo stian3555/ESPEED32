@@ -18,6 +18,7 @@ void showUSBPortalScreen();
 bool startWiFiPortal();
 void stopWiFiPortal();
 void serviceWiFiPortal();
+void serviceConnectivityPortal();
 bool isWiFiPortalActive();
 bool isOtaInProgress();
 IPAddress getWiFiPortalIP();

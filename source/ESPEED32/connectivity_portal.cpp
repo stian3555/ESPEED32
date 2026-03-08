@@ -4,6 +4,7 @@
 #include <FS.h>
 #include <SPIFFS.h>
 #include <Update.h>
+#include <esp_mac.h>
 
 /* External references from main .ino */
 extern StoredVar_type g_storedVar;
@@ -16,6 +17,12 @@ static WebServer* g_wifiServer = nullptr;
 static String g_uploadBuffer;
 static char g_wifiSuffix[5] = "";  /* MAC-based suffix, e.g. "A3B4" */
 static bool g_spiffsMounted = false;
+static String g_serialCmdLine;
+
+static bool readMacAddress(esp_mac_type_t type, uint8_t out[6]) {
+  if (out == nullptr) return false;
+  return esp_read_mac(out, type) == ESP_OK;
+}
 
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
 static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
@@ -453,6 +460,7 @@ static String buildStateJson(uint8_t carIndex) {
   json += buf;
 
   json += "\"global\":{";
+  snprintf(buf, sizeof(buf), "\"selectedCarNumber\":%u,", g_storedVar.selectedCarNumber); json += buf;
   snprintf(buf, sizeof(buf), "\"viewMode\":%u,", g_storedVar.viewMode); json += buf;
   snprintf(buf, sizeof(buf), "\"screensaverTimeout\":%u,", g_storedVar.screensaverTimeout); json += buf;
   snprintf(buf, sizeof(buf), "\"powerSaveTimeout\":%u,", g_storedVar.powerSaveTimeout); json += buf;
@@ -712,6 +720,43 @@ static void sendDocsMissing(const char* requestedPath) {
   g_wifiServer->send(404, "text/html; charset=utf-8", page);
 }
 
+static void handleSerialCommand(const String& cmd);
+
+/**
+ * @brief Non-blocking USB serial command pump.
+ * @details Reads one newline-terminated command and dispatches it. Called frequently
+ *          from normal UI loops so WebSerial works outside the USB info screen too.
+ */
+static void serviceUsbSerialCommands() {
+  while (Serial.available() > 0) {
+    char ch = (char)Serial.read();
+
+    if (ch == '\r') {
+      continue;
+    }
+
+    if (ch == '\n') {
+      if (g_serialCmdLine.length() > 0) {
+        String cmd = g_serialCmdLine;
+        g_serialCmdLine = "";
+        cmd.trim();
+        if (cmd.length() > 0) {
+          handleSerialCommand(cmd);
+          return;  /* handle one command per call */
+        }
+      }
+      continue;
+    }
+
+    if (g_serialCmdLine.length() < 64) {
+      g_serialCmdLine += ch;
+    } else {
+      /* Corrupted/too-long command line: drop until next newline. */
+      g_serialCmdLine = "";
+    }
+  }
+}
+
 /**
  * @brief Handle a single USB serial backup/restore command.
  * Protocol:
@@ -726,9 +771,19 @@ static void sendDocsMissing(const char* requestedPath) {
  */
 static void handleSerialCommand(const String& cmd) {
   if (cmd == "VERSION") {
-    uint64_t mac = ESP.getEfuseMac();
+    uint8_t idHi = 0;
+    uint8_t idLo = 0;
+    uint8_t wifiMac[6] = {0};
+    if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+      idHi = wifiMac[4];
+      idLo = wifiMac[5];
+    } else {
+      uint64_t mac = ESP.getEfuseMac();
+      idHi = (uint8_t)(mac >> 8);
+      idLo = (uint8_t)(mac);
+    }
     char resp[16];
-    sprintf(resp, "%02X%02X,v%d.%d", (uint8_t)(mac >> 8), (uint8_t)(mac),
+    sprintf(resp, "%02X%02X,v%d.%d", idHi, idLo,
             SW_MAJOR_VERSION, SW_MINOR_VERSION);
     Serial.println(resp);
     Serial.flush();
@@ -1041,8 +1096,13 @@ static void buildWifiSuffixIfNeeded() {
   if (g_wifiSuffix[0] != '\0') {
     return;
   }
-  uint64_t mac = ESP.getEfuseMac();
-  sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  uint8_t wifiMac[6] = {0};
+  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+    sprintf(g_wifiSuffix, "%02X%02X", wifiMac[4], wifiMac[5]);
+  } else {
+    uint64_t mac = ESP.getEfuseMac();
+    sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  }
 }
 
 void getWiFiPortalSsid(char* out, size_t outLen) {
@@ -1141,6 +1201,11 @@ void serviceWiFiPortal() {
   }
 }
 
+void serviceConnectivityPortal() {
+  serviceWiFiPortal();
+  serviceUsbSerialCommands();
+}
+
 void stopWiFiPortal() {
   if (g_otaInProgress) {
     return;
@@ -1192,7 +1257,7 @@ void showWiFiPortalScreen() {
 
   /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* wifiTitle = "WiFi mode";
+  const char* wifiTitle = "WiFi info";
   obdWriteString(&g_obd, 0, centerX8x8(wifiTitle), 0, (char*)wifiTitle, FONT_8x8, OBD_BLACK, 1);
 
   sprintf(msgStr, "SSID: %s", ssid);
@@ -1207,7 +1272,7 @@ void showWiFiPortalScreen() {
 
   /* Service loop - handle HTTP requests until user exits */
   while (true) {
-    serviceWiFiPortal();
+    serviceConnectivityPortal();
 
     /* Block exit during OTA to prevent bricking */
     if (!g_otaInProgress) {
@@ -1250,7 +1315,7 @@ void showUSBPortalScreen() {
   static uint32_t lastBrakeBtnUsbTime = 0;
 
   while (true) {
-    serviceWiFiPortal();
+    serviceConnectivityPortal();
 
     if (g_rotaryEncoder.isEncoderButtonClicked()) break;
 
@@ -1263,12 +1328,6 @@ void showUSBPortalScreen() {
       }
     } else {
       brakeBtnInUsb = false;
-    }
-
-    if (Serial.available()) {
-      String cmd = Serial.readStringUntil('\n');
-      cmd.trim();
-      handleSerialCommand(cmd);
     }
 
     vTaskDelay(1);

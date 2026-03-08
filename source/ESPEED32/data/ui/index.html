@@ -41,8 +41,9 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <h1>ESPEED32</h1>
 <p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
 <div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
+<p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
 <h2>Config Backup &amp; Restore (.json)</h2>
-<button class="btn dl" onclick="doBackup()">Download Config Backup</button>
+<button id="btn-backup" class="btn dl" onclick="doBackup()">Download Config Backup</button>
 <form id="uf">
 <input type="file" id="fi" accept=".json">
 <button type="submit" class="btn ul">Restore Config</button>
@@ -61,9 +62,10 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </div>
 <hr>
 <h2>User Guide</h2>
-<a id="docs-link" class="btn doc" href="/docs" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
 <p class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
 <hr>
+<div id="fw-section">
 <h2>Firmware Update (.bin)</h2>
 <div id="otadiv">
 <form id="of">
@@ -74,11 +76,37 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </div>
 <p id="otausb" style="display:none" class="warn">Firmware update requires WiFi mode.</p>
 <div id="ost" class="st"></div>
+</div>
 <script>
 var port=null,usb=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
-var info={deviceId:'----',version:'-',docsPath:'/docs'};
+var info={deviceId:'----',version:'-',docsPath:'docs/'};
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
+var hostedMode=false;
+
+function isLikelyDeviceHost(h){
+  return h==='192.168.4.1' || h==='localhost' || h==='127.0.0.1' || /\.local$/i.test(h||'');
+}
+
+function detectHostedMode(){
+  var qs=new URLSearchParams(location.search);
+  var mode=(qs.get('mode')||'').toLowerCase();
+  if(mode==='hosted') return true;
+  if(mode==='device') return false;
+  return !isLikelyDeviceHost(location.hostname||'');
+}
+
+function applyHostedMode(){
+  if(!hostedMode) return;
+  var note=document.getElementById('hosted-note');
+  if(note) note.style.display='block';
+  var fwSection=document.getElementById('fw-section');
+  if(fwSection) fwSection.style.display='none';
+  var b=document.getElementById('btn-backup');
+  if(b) b.textContent='Download Config Backup (USB)';
+  var restoreBtn=document.querySelector('#uf button[type="submit"]');
+  if(restoreBtn) restoreBtn.textContent='Restore Config (USB)';
+}
 
 function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
@@ -174,6 +202,10 @@ async function usbToggle(){
 async function doBackup(){
   var d=new Date().toISOString().slice(0,10);
   var fn=d+'-espeed32_v'+info.version+'_'+info.deviceId+'_backup.json';
+  if(hostedMode && !usb){
+    ss('st','err','Hosted page: connect via USB first.');
+    return;
+  }
   if(!usb){
     var a=document.createElement('a');
     a.href='/backup';
@@ -349,6 +381,7 @@ async function toggleEditor(){
 }
 
 async function loadEditorSchema(){
+  if(hostedMode && !usb) throw new Error('Hosted page requires USB connection');
   if(usb){
     schema=await usbReadJsonResponse('SCHEMA',7000);
     return;
@@ -362,6 +395,7 @@ async function loadEditorState(car){
   if(typeof car==='number' && !isNaN(car)){
     editorCarIndex=car;
   }
+  if(hostedMode && !usb) throw new Error('Hosted page requires USB connection');
   if(usb){
     var usbCmd='STATE'+((typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?(' '+editorCarIndex):'');
     state=await usbReadJsonResponse(usbCmd,7000);
@@ -393,6 +427,7 @@ async function refreshEditor(silent){
 
 async function applyEditor(saveAfter){
   if(!schema || !state){ss('edst','err','Editor not ready');return;}
+  if(hostedMode && !usb){ss('edst','err','Hosted page: connect via USB first.');return;}
   try{
     var payload={};
     var carSel=document.getElementById('edit-car');
@@ -478,6 +513,10 @@ document.getElementById('uf').onsubmit=async function(e){
   var f=document.getElementById('fi').files[0];
   if(!f){alert('Select a JSON file');return;}
   if(!f.name.toLowerCase().endsWith('.json')){alert('Only .json files allowed');return;}
+  if(hostedMode && !usb){
+    ss('st','err','Hosted page: connect via USB first.');
+    return;
+  }
   ss('st','','Uploading...');
   if(!usb){
     var fd=new FormData();
@@ -507,6 +546,8 @@ document.getElementById('of').onsubmit=async function(e){
   try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('ost','err',''+x);}
 };
 
+hostedMode=detectHostedMode();
+applyHostedMode();
 if('serial' in navigator){document.getElementById('usbbar').style.display='block';}
 loadInfo();
 </script>

@@ -48,3 +48,35 @@ Firmware serves docs from:
 - `/docs/de`
 
 Routes are implemented in `source/ESPEED32/connectivity_portal.cpp`.
+
+## Optional GitHub Pages hosting
+
+You can host these docs online (for example on GitHub Pages) without duplicating content.
+
+Recommended approach:
+
+1. Keep `source/ESPEED32/data/docs/` as the single source of truth.
+2. Publish those files to your Pages site via CI.
+3. Optionally publish `source/ESPEED32/data/ui/index.html` online too.
+
+Repository workflow:
+
+- `.github/workflows/pages.yml` publishes:
+  - `/docs/` from `source/ESPEED32/data/docs/`
+  - `/ui/` from `source/ESPEED32/data/ui/`
+  - `/` (landing) from `source/ESPEED32/data/ui/index.html`
+- Triggered automatically on push to `main` when docs/UI files change.
+
+Notes for online UI publishing:
+
+- The same `ui/index.html` can run in two modes:
+  - device mode (served by controller): full WiFi + OTA + local API support
+  - hosted mode (served from internet): USB-first mode, WiFi/OTA hidden
+- Hosted mode is auto-detected by hostname and can be overridden with query:
+  - `?mode=hosted`
+  - `?mode=device`
+
+Custom domain:
+
+- Add a `CNAME` file in repository root (example: `docs.yourdomain.com`).
+- The workflow copies it to the published artifact automatically.

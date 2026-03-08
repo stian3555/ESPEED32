@@ -133,11 +133,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h1>ESPEED32 User Manual</h1>
     <p class="lead">User-focused guide for slot car racing: startup, key driving controls, menus, and backup/restore.</p>
     <nav class="top">
-      <a class="btn primary" href="/">Open Backup Page</a>
-      <a class="btn ghost" href="/docs/no" data-doc-lang="no">Norsk</a>
-      <a class="btn ghost" href="/docs/en" data-doc-lang="en">English</a>
-      <a class="btn ghost" href="/docs/es" data-doc-lang="es">Espanol</a>
-      <a class="btn ghost" href="/docs/de" data-doc-lang="de">Deutsch</a>
+      <a class="btn primary" href="../../">Open Backup Page</a>
+      <a class="btn ghost" href="../no/" data-doc-lang="no">Norsk</a>
+      <a class="btn ghost" href="../en/" data-doc-lang="en">English</a>
+      <a class="btn ghost" href="../es/" data-doc-lang="es">Espanol</a>
+      <a class="btn ghost" href="../de/" data-doc-lang="de">Deutsch</a>
     </nav>
     <div class="theme-tools">
       <label for="theme-select">Theme</label>
@@ -182,7 +182,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Verify throttle reads 0% at released trigger and 100% at full pull.</li>
     </ol>
     <figure class="doc-media">
-      <img src="/docs/assets/trig_cal.png" alt="Trigger calibration">
+      <img src="../assets/trig_cal.png" alt="Trigger calibration">
       <figcaption>Calibration: move trigger through full travel several times for correct 0-100% mapping.</figcaption>
     </figure>
   </section>
@@ -234,7 +234,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </tbody>
     </table>
     <figure class="doc-media">
-      <img src="/docs/assets/curve_examples.png" alt="Linear, Soft and Hard curve examples">
+      <img src="../assets/curve_examples.png" alt="Linear, Soft and Hard curve examples">
       <figcaption>CURVE examples from manual: Linear (50%), Soft (lower value), Hard (higher value).</figcaption>
     </figure>
   </section>
@@ -424,10 +424,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 
   var path = (window.location.pathname || "").toLowerCase();
   var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
-  if (path.indexOf("/docs/no") === 0) activeLang = "no";
-  else if (path.indexOf("/docs/en") === 0) activeLang = "en";
-  else if (path.indexOf("/docs/es") === 0) activeLang = "es";
-  else if (path.indexOf("/docs/de") === 0) activeLang = "de";
+  if (path.indexOf("/docs/no") !== -1) activeLang = "no";
+  else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
+  else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
+  else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
 
   var langLinks = document.querySelectorAll("a[data-doc-lang]");
   for (var i = 0; i < langLinks.length; i++) {

@@ -1402,6 +1402,16 @@ void displayStatusLine() {
   }
 
   char buf[7];  /* 5 chars + null */
+  int8_t wifiSlot = -1;
+
+  if (isWiFiPortalActive()) {
+    for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
+      if (g_storedVar.statusSlot[s] == STATUS_BLANK) {
+        wifiSlot = (int8_t)s;
+        break;
+      }
+    }
+  }
 
   for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
     uint16_t slot = g_storedVar.statusSlot[s];
@@ -1436,21 +1446,15 @@ void displayStatusLine() {
         break;
       }
       default:  /* STATUS_BLANK */
-        strcpy(buf, "     ");
+        if (wifiSlot == (int8_t)s) {
+          strcpy(buf, "WIFI ");
+        } else {
+          strcpy(buf, "     ");
+        }
         break;
     }
 
     obdWriteString(&g_obd, 0, SLOT_X[s], Y, buf, FONT_6x8, color, 1);
-  }
-
-  /* Optional WiFi marker: use first blank status slot if available */
-  if (isWiFiPortalActive()) {
-    for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
-      if (g_storedVar.statusSlot[s] == STATUS_BLANK) {
-        obdWriteString(&g_obd, 0, SLOT_X[s], Y, (char*)"WIFI ", FONT_6x8, OBD_BLACK, 1);
-        break;
-      }
-    }
   }
 }
 

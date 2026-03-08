@@ -149,6 +149,12 @@ echo "[SPIFFS] Building image from $DATA_DIR"
 
 echo "[SPIFFS] Image ready: $IMAGE_PATH"
 
+if [[ ! -f "$IMAGE_PATH" ]]; then
+  echo "[SPIFFS] ERROR: Image file not found after build: $IMAGE_PATH" >&2
+  ls -la "$BUILD_DIR" >&2 || true
+  exit 1
+fi
+
 if [[ "$BUILD_ONLY" -eq 1 ]]; then
   exit 0
 fi

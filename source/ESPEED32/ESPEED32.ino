@@ -2292,7 +2292,7 @@ void showCarSelection() {
   uint16_t screensaverEncoderPos = 0;
 
   /* Exit car selection when encoder is clicked */
-  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  while (true)
   {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
@@ -2377,6 +2377,11 @@ void showCarSelection() {
     int selLabelWidth = strlen(selLabel) * 6;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - selLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)selLabel, FONT_6x8, OBD_WHITE, 1);
 
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
+    }
+
     /* Long press = escape to main for race mode toggle */
     if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
@@ -2411,7 +2416,7 @@ void showCopyCarSettings() {
   sourceCar = g_storedVar.selectedCarNumber;
 
   /* Select source car */
-  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  while (true)
   {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
@@ -2494,6 +2499,11 @@ void showCopyCarSettings() {
     int fromLabelWidth = strlen(fromLabel) * 6;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - fromLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)fromLabel, FONT_6x8, OBD_WHITE, 1);
 
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
+    }
+
     /* Long press = escape to main for race mode toggle */
     if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
@@ -2523,7 +2533,7 @@ void showCopyCarSettings() {
   const uint16_t ALL_CARS_OPTION = CAR_MAX_COUNT;  /* Index for "ALL" option */
 
   /* Select destination car */
-  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  while (true)
   {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
@@ -2614,6 +2624,11 @@ void showCopyCarSettings() {
     int toLabelWidth = strlen(toLabel) * 6;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - toLabelWidth) / 2, OLED_HEIGHT - HEIGHT8x8, (char *)toLabel, FONT_6x8, OBD_WHITE, 1);
 
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
+    }
+
     /* Long press = escape to main for race mode toggle */
     if (checkRaceModeEscape()) { g_escapeToMain = true; return; }
   }
@@ -2702,7 +2717,7 @@ void showSelectRenameCar() {
   uint16_t screensaverEncoderPos = 0;
 
   /* Exit car selection when encoder is clicked */
-  while (!g_rotaryEncoder.isEncoderButtonClicked())
+  while (true)
   {
     /* Calculate throttle percentage for screensaver wake-up */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
@@ -2844,6 +2859,11 @@ void showSelectRenameCar() {
           break;
         }
       }
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
     }
 
     /* Long press = escape to main for race mode toggle */
@@ -4062,7 +4082,7 @@ static bool resetConfirm(const char* label) {
   bool screensaverActive = false;
   uint16_t screensaverEncoderPos = 0;
 
-  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+  while (true) {
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
 
@@ -4111,6 +4131,10 @@ static bool resetConfirm(const char* label) {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
     }
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
+    }
     delay(10);
   }
   delay(200);
@@ -4121,7 +4145,7 @@ static bool resetConfirm(const char* label) {
   screensaverActive = false;
   screensaverEncoderPos = 0;
 
-  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+  while (true) {
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
 
@@ -4169,6 +4193,10 @@ static bool resetConfirm(const char* label) {
     }
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
+    }
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      break;
     }
     delay(10);
   }

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 User Manual (EN)</title>
+<style>
+:root{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#151a1f;
+    --paper:#1f262e;
+    --ink:#eef2f7;
+    --muted:#b8c7d8;
+    --line:#39495a;
+    --accent:#ff6b5d;
+    --accent-2:#59b9dd;
+    --chip:#283340;
+    --chip-border:#405061;
+    --code-bg:#242f3b;
+    --code-border:#3b4b5b;
+    --pre-bg:#1a232c;
+    --pre-border:#324254;
+    --th-bg:#2a3441;
+    --ghost:#283340;
+    --shadow:0 10px 24px rgba(0,0,0,.35);
+  }
+}
+html[data-theme="light"]{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+html[data-theme="dark"]{
+  --bg:#151a1f;
+  --paper:#1f262e;
+  --ink:#eef2f7;
+  --muted:#b8c7d8;
+  --line:#39495a;
+  --accent:#ff6b5d;
+  --accent-2:#59b9dd;
+  --chip:#283340;
+  --chip-border:#405061;
+  --code-bg:#242f3b;
+  --code-border:#3b4b5b;
+  --pre-bg:#1a232c;
+  --pre-border:#324254;
+  --th-bg:#2a3441;
+  --ghost:#283340;
+  --shadow:0 10px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Segoe UI",Tahoma,Verdana,sans-serif;
+  background:
+    linear-gradient(120deg,rgba(180,35,24,.08),rgba(31,106,138,.08)),
+    repeating-linear-gradient(0deg,transparent 0 30px,rgba(25,25,25,.02) 30px 31px),
+    var(--bg);
+}
+main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+header{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:30px;line-height:1.1}
+p.lead{margin:0;color:var(--muted)}
+nav.top{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
+a.primary{background:var(--accent);color:#fff}
+a.secondary{background:var(--accent-2);color:#fff}
+a.btn.lang-active{background:var(--accent-2);color:#fff}
+a.ghost{background:var(--ghost);color:var(--ink)}
+section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{margin:0 0 10px;font-size:20px}
+h3{margin:14px 0 8px;font-size:16px}
+p{margin:8px 0;line-height:1.45}
+ul,ol{margin:8px 0 0 20px;padding:0}
+li{margin:4px 0;line-height:1.4}
+code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1px 5px}
+pre{margin:8px 0 0;padding:12px;border-radius:10px;border:1px solid var(--pre-border);background:var(--pre-bg);overflow:auto;line-height:1.3}
+.small{font-size:13px;color:var(--muted)}
+.sources{margin:8px 0 0 18px;padding:0}
+.sources li{font-size:13px;color:var(--muted);line-height:1.35}
+.warn{color:var(--accent);font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--th-bg)}
+.badge{display:inline-block;background:var(--chip);border:1px solid var(--chip-border);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--ink)}
+.theme-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.theme-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.theme-tools select{padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+figure.doc-media{margin:10px 0 0}
+figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+@media (max-width:760px){
+  h1{font-size:24px}
+  table{font-size:13px}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ESPEED32 User Manual</h1>
+    <p class="lead">User-focused guide for slot car racing: startup, key driving controls, menus, and backup/restore.</p>
+    <nav class="top">
+      <a class="btn primary" href="../../">Open Backup Page</a>
+      <a class="btn ghost" href="../no/" data-doc-lang="no">Norsk</a>
+      <a class="btn ghost" href="../en/" data-doc-lang="en">English</a>
+      <a class="btn ghost" href="../es/" data-doc-lang="es">Espanol</a>
+      <a class="btn ghost" href="../de/" data-doc-lang="de">Deutsch</a>
+    </nav>
+    <div class="theme-tools">
+      <label for="theme-select">Theme</label>
+      <select id="theme-select">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+    <ul class="sources">
+      <li>Firmware source: ESPEED32 v4.7 (<code>source/ESPEED32/</code>).</li>
+      <li>Local manuals in repo: Quick Start + Extended Guide (DOC folder, DOCX/PDF).</li>
+      <li>ACD reference: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
+      <li>CarSteen reference: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
+    </ul>
+  </header>
+
+  <section>
+    <h2>1. Quick start</h2>
+    <ol>
+      <li>Power the controller normally.</li>
+      <li>Rotate encoder to move through menu items.</li>
+      <li>Short press encoder: enter/exit value editing or open submenu.</li>
+      <li>Short press brake button while editing: cancel (restore original value).</li>
+      <li>Long press encoder (~1s): toggle LIST and race GRID view (when race view is not OFF).</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. Startup, calibration and self-test</h2>
+    <ul>
+      <li>Recalibrate trigger after firmware update, or if trigger mechanics have changed.</li>
+      <li><code>Power ON</code>: normal startup, then RUNNING mode.</li>
+      <li>Hold <code>encoder button</code> during power on: trigger calibration.</li>
+      <li>Hold <code>brake button</code> during power on: Self-Test (9 steps).</li>
+    </ul>
+    <h3>Calibration flow</h3>
+    <ol>
+      <li>Hold encoder while powering on until calibration screen appears.</li>
+      <li>Fully press/release trigger several times.</li>
+      <li>Press encoder once to store calibration.</li>
+      <li>Verify throttle reads 0% at released trigger and 100% at full pull.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="../assets/trig_cal.png" alt="Trigger calibration">
+      <figcaption>Calibration: move trigger through full travel several times for correct 0-100% mapping.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>3. Critical while driving: BRAKE, B_BTN and Q-BRAKE</h2>
+    <h3>BRAKE</h3>
+    <p>When trigger is fully released, the controller applies normal braking using the <code>BRAKE</code> value.</p>
+    <h3>B_BTN (Brake Button)</h3>
+    <ul>
+      <li><code>B_BTN</code> is an alternate brake percentage (0-100%), not a relative reduction.</li>
+      <li>It is applied only when trigger = 0 and you hold the brake button.</li>
+      <li>If the status bar shows OUTPUT, it displays <code>Bxxx%</code> while the brake button is held.</li>
+      <li>Typical use: temporary extra hard/soft corner entry braking without changing base setup.</li>
+    </ul>
+    <h3>Q-BRAKE (Quick Brake)</h3>
+    <ul>
+      <li>Active only when <code>Q-BRAKE</code> is set to ON.</li>
+      <li>Works as a pre-release brake zone: braking starts before trigger is fully released.</li>
+      <li>When trigger is above 0 but below threshold, controller applies <code>Strength</code> as brake force.</li>
+      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
+      <li>Practical use: earlier corner-entry braking during trigger release, without going fully to zero first.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Main menu parameters</h2>
+    <h3>Terminology profiles</h3>
+    <ul>
+      <li><code>ENG</code>: generic naming (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
+      <li><code>CS</code>: CarSteen-style terms (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: ACD-style terms where directly applicable (<code>SENSI</code> and <code>CHOKE</code> for limit). <code>ANTIS</code> remains anti-spin because the ACD manual does not define a separate Choke2 term.</li>
+    </ul>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Range</th><th>Default</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Brake force when trigger is released.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
+        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
+        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Dedicated brake zone near trigger release.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Lap counter, best lap, and scrollable lap history.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
+      </tbody>
+    </table>
+    <figure class="doc-media">
+      <img src="../assets/curve_examples.png" alt="Linear, Soft and Hard curve examples">
+      <figcaption>CURVE examples from manual: Linear (50%), Soft (lower value), Hard (higher value).</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>5. Race view behavior (LIST vs GRID)</h2>
+    <ul>
+      <li><span class="badge">LIST</span> classic menu with all main items.</li>
+      <li><span class="badge">GRID</span> race screen for fast edits while driving.</li>
+      <li><code>DISPLAY -> RACE MODE</code>: OFF / FULL / SIMPLE.</li>
+      <li>FULL grid: BRAKE, SENSI, ANTIS, CURVE (+ CAR if <code>RACESWP</code> is ON).</li>
+      <li>SIMPLE grid: BRAKE, SENSI (+ CAR if <code>RACESWP</code> is ON).</li>
+      <li>Long encoder press toggles LIST/GRID.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. CAR menu workflow</h2>
+    <ul>
+      <li><code>SELECT</code>: choose active car profile (0-19).</li>
+      <li><code>RENAME</code>: 4-character name editor (ASCII 32-122).</li>
+      <li><code>RACESWP</code>: ON allows profile switching directly from GRID mode.</li>
+      <li><code>COPY</code>: copy from one profile to another, or to ALL profiles.</li>
+      <li><code>RESET</code>: reset all car profiles (with confirmation).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. SETTINGS and current draw</h2>
+    <h3>POWER submenu</h3>
+    <ul>
+      <li><code>SCRSV</code>: screensaver line1/line2 text, timeout, and show-now.</li>
+      <li><code>SLEEP</code>: auto sleep timeout + manual sleep now (wake with encoder button).</li>
+      <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2-30 min) + manual.</li>
+      <li><code>STARTUP</code>: welcome delay 0-990 ms in 10 ms steps.</li>
+    </ul>
+    <h3>Estimated current draw (controller electronics)</h3>
+    <table>
+      <thead>
+        <tr><th>State</th><th>Estimate</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Startup</td><td>120 mA</td><td>Short boot and initialization phase.</td></tr>
+        <tr><td>Normal operation</td><td>100 mA</td><td>Typical menu/race operation without WiFi.</td></tr>
+        <tr><td>WiFi module active</td><td>150 mA</td><td>AP mode and web server active.</td></tr>
+        <tr><td>Screensaver</td><td>80 mA</td><td>Display active, low interaction.</td></tr>
+        <tr><td>SLEEP (soft)</td><td>55 mA (estimated)</td><td>OLED off, CPU 80 MHz, motor task suspended.</td></tr>
+        <tr><td>DEEP SLEEP</td><td>10 mA (estimated)</td><td>Power-off-like state, wake by power cycle.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Values are estimates and depend on supply voltage, hardware variant, and measurement setup. Motor load for the car is additional.</p>
+  </section>
+
+  <section>
+    <h2>8. Driving tips</h2>
+    <ul>
+      <li>Change one parameter at a time, then run 5-10 laps before the next change.</li>
+      <li>Tune in this order: <code>SENSI</code>, then <code>BRAKE</code>, then <code>ANTIS</code>, <code>CURVE</code>, and finally <code>PWM_F</code>.</li>
+      <li>1/32 cars on low-grip tracks: try higher <code>ANTIS</code> (around 100-150 ms) and softer <code>CURVE</code> (&lt;50).</li>
+      <li>1/24 cars on high-grip tracks: often lower <code>ANTIS</code> (0-40 ms) and more direct <code>CURVE</code> (50-70).</li>
+      <li>Use <code>B_BTN</code> as a temporary cornering tool instead of changing BRAKE between heats.</li>
+      <li>Use <code>Q-BRAKE</code> with low threshold (5-12%) and medium strength (40-70%) for calmer technical sections.</li>
+      <li>If the car spins early in trigger travel: lower <code>SENSI</code> or increase <code>ANTIS</code>.</li>
+      <li>If the car feels lazy on exit: raise <code>SENSI</code> slightly or reduce <code>ANTIS</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>9. WiFi/USB backup, restore and OTA</h2>
+    <h3>WiFi</h3>
+    <ol>
+      <li>Open <code>SETTINGS -> WIFI</code> to enter the WiFi submenu.</li>
+      <li><code>INFO PAGE</code>: opens the WiFi page directly and starts WiFi/AP automatically. Leaving the info page stops WiFi again (unless background mode was started first).</li>
+      <li><code>AUTO OFF</code>: set timeout for background WiFi (1-120 min, default 5 min).</li>
+      <li><code>START WIFI</code>: starts WiFi without opening the info page, so you can return to the main menu.</li>
+      <li><code>STOP WIFI</code>: manually stops background WiFi before timeout.</li>
+      <li>While WiFi is active: connect to AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) and open OLED IP in browser (typically <code>192.168.4.1</code>).</li>
+      <li>On the info page you can use <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code>, and <code>/docs</code>.</li>
+    </ol>
+    <p class="small">If you have a blank status slot, <code>WIFI</code> is shown in the status bar while WiFi is active.</p>
+    <h3>USB</h3>
+    <ol>
+      <li>Open <code>SETTINGS -> USB</code>.</li>
+      <li>Use Chrome/Edge (WebSerial).</li>
+      <li>Backup/restore works over USB; OTA requires WiFi mode.</li>
+    </ol>
+    <p class="warn">Never remove power during OTA upload.</p>
+  </section>
+
+  <section>
+    <h2>10. Menu tree (complete UI map)</h2>
+<pre>ROOT (Main Menu)
+|- BRAKE
+|- SENSI
+|- ANTIS
+|- CURVE (graph view)
+|- PWM_F
+|- B_BTN
+|- Q-BRAKE
+|  |- Enable (ON/OFF)
+|  |- Threshold (%)
+|  |- Strength (%)
+|  `- Back
+|- LIMIT
+|- SETTINGS
+|  |- POWER
+|  |  |- SCRSV
+|  |  |  |- LINE1
+|  |  |  |- LINE2
+|  |  |  |- TIME (0-240 s, 0=OFF)
+|  |  |  |- NOW
+|  |  |  `- BACK
+|  |  |- SLEEP
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
+|  |  |  |- SLEEP NOW
+|  |  |  `- BACK
+|  |  |- DEEP SLEEP
+|  |  |  |- INTERVAL (0 or 2-30 min)
+|  |  |  |- SLEEP NOW (power-off)
+|  |  |  `- BACK
+|  |  |- STARTUP (0-99 x 10ms)
+|  |  `- BACK
+|  |- DISPLAY
+|  |  |- RACE MODE (OFF/FULL/SIMPLE)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD)
+|  |  |- CASE (UPPER/Pascal)
+|  |  |- FONT SIZE (LARGE/small)
+|  |  |- STATUS BAR
+|  |  |  |- SLOT 1
+|  |  |  |- SLOT 2
+|  |  |  |- SLOT 3
+|  |  |  |- SLOT 4
+|  |  |  `- BACK
+|  |  `- BACK
+|  |- SOUND
+|  |  |- BOOT (ON/OFF)
+|  |  |- RACE (ON/OFF)
+|  |  `- BACK
+|  |- WIFI
+|  |  |- INFO PAGE
+|  |  |- AUTO OFF (1-120 min, default 5)
+|  |  |- START/STOP WIFI
+|  |  `- BACK
+|  |- USB
+|  |- RESET
+|  |  |- CAR
+|  |  |- SETTINGS
+|  |  |- CALIBRATION
+|  |  |- EVERYTHING
+|  |  `- BACK
+|  |- TEST (Self-Test, 9 steps)
+|  |- ABOUT
+|  `- BACK
+|- STATS
+`- CAR
+   |- SELECT
+   |- RENAME
+   |- RACESWP (grid car select ON/OFF)
+   |- COPY
+   |- RESET
+   `- BACK</pre>
+    <p class="small">Displayed labels can be UPPER or Pascal based on <code>DISPLAY -> CASE</code>.</p>
+  </section>
+
+</main>
+<script>
+(function(){
+  var key = "espeed32-doc-theme";
+  var root = document.documentElement;
+  var select = document.getElementById("theme-select");
+  if (!select) return;
+
+  var saved = localStorage.getItem(key);
+  if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
+  select.value = saved;
+
+  function apply(mode){
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+  }
+
+  apply(saved);
+  select.addEventListener("change", function(){
+    localStorage.setItem(key, select.value);
+    apply(select.value);
+  });
+
+  var path = (window.location.pathname || "").toLowerCase();
+  var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
+  if (path.indexOf("/docs/no") !== -1) activeLang = "no";
+  else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
+  else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
+  else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+
+  var langLinks = document.querySelectorAll("a[data-doc-lang]");
+  for (var i = 0; i < langLinks.length; i++) {
+    var link = langLinks[i];
+    if (link.getAttribute("data-doc-lang") === activeLang) link.classList.add("lang-active");
+    else link.classList.remove("lang-active");
+  }
+})();
+</script>
+</body>
+</html>

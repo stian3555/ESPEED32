@@ -17,7 +17,7 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 4
-#define SW_MINOR_VERSION 6
+#define SW_MINOR_VERSION 7
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 19 /* Increment when StoredVar_type structure changes */
@@ -51,7 +51,8 @@
 /* Language Settings */
 #define LANG_NOR            0     /* Norwegian language */
 #define LANG_ENG            1     /* English language */
-#define LANG_ACD            2     /* ACD/CarSteen terminology (English-based) */
+#define LANG_CS             2     /* CarSteen terminology (English-based) */
+#define LANG_ACD            3     /* ACD terminology (English-based) */
 #define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */
@@ -92,9 +93,10 @@
 #define SCREENSAVER_TIMEOUT_MIN      1   /* [s] Minimum screensaver timeout (0 = OFF) */
 #define SCREENSAVER_TIMEOUT_MAX      240 /* [s] Maximum screensaver timeout */
 #define SCREENSAVER_WAKEUP_THRESHOLD 20  /* [%] Throttle threshold to wake from screensaver */
-#define STARTUP_DELAY_DEFAULT       15  /* [×10ms] Startup delay (15 = 150ms) */
-#define STARTUP_DELAY_MIN           0   /* [×10ms] Minimum (0 = skip welcome) */
-#define STARTUP_DELAY_MAX           99  /* [×10ms] Maximum (99 = 990ms) */
+#define STARTUP_DELAY_STEP_MS       10  /* [ms] Step size for startupDelay setting */
+#define STARTUP_DELAY_DEFAULT       0   /* [×STEP] Default startup delay (0 = immediate) */
+#define STARTUP_DELAY_MIN           0   /* [×STEP] Minimum (0 = skip welcome) */
+#define STARTUP_DELAY_MAX           99  /* [×STEP] Maximum (99 = 990ms with 10ms step) */
 
 /* Button Press Timing */
 #define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
@@ -235,10 +237,10 @@ typedef struct {
   uint16_t soundRace;                       /* Race mode sound: 0=OFF, 1=ON (toggle beep) */
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
-  uint16_t language;                        /* Language: NOR, ENG, or ACD */
+  uint16_t language;                        /* Language: NOR, ENG, CS, or ACD */
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
   uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
-  uint16_t startupDelay;                    /* [×10ms] Startup welcome screen delay */
+  uint16_t startupDelay;                    /* [×STEP] Startup welcome screen delay */
   char screensaverLine1[SCREENSAVER_TEXT_MAX];  /* Screensaver main text (FONT_16x32) */
   char screensaverLine2[SCREENSAVER_TEXT_MAX];  /* Screensaver subtitle (FONT_6x8) */
   /* Status line slot assignments (see STATUS_* defines) */

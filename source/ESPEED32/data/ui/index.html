@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
+h1{color:#e94560;text-align:center;margin-bottom:5px}
+p.sub{text-align:center;color:#888;margin-top:0}
+h2{color:#ccc;font-size:16px;margin-bottom:5px}
+.btn{display:block;width:100%;padding:15px;margin:10px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;box-sizing:border-box;text-decoration:none;text-align:center}
+.dl{background:#0f3460;color:#fff}.dl:hover{background:#1a4a80}
+.ul{background:#e94560;color:#fff}.ul:hover{background:#ff6b81}
+.ota{background:#ff8c00;color:#000}.ota:hover{background:#ffa500}
+.usb{background:#16c79a;color:#000}.usb:hover{background:#20e0ab}
+.doc{background:#2f8f2f;color:#fff}.doc:hover{background:#3aa83a}
+.aux{background:#3a4a6a;color:#fff}.aux:hover{background:#4d618a}
+hr{border-color:#333;margin:20px 0}
+input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
+.st{margin:15px 0;padding:12px;border-radius:5px;display:none;text-align:center}
+.ok{background:#16c79a;color:#000}.err{background:#e94560;color:#fff}
+.warn{color:#ff8c00;font-size:13px;text-align:center}
+#usbbar{display:none;margin-bottom:10px}
+.card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
+.editor-panel{display:none}
+.row{display:flex;flex-direction:column;margin-bottom:10px}
+.row label{font-size:13px;color:#bbb;margin-bottom:4px}
+.row input,.row select{padding:8px;border-radius:6px;border:1px solid #444;background:#0b0f18;color:#eee}
+.group-title{font-size:14px;color:#8fd3ff;margin:6px 0}
+.tiny{font-size:12px;color:#999}
+.seg{display:flex;gap:8px;margin:0 0 10px 0}
+.segbtn{flex:1;padding:9px 8px;border-radius:7px;border:1px solid #4a5877;background:#131d31;color:#b7c8ea;font-size:13px;cursor:pointer}
+.segbtn.active{background:#2c4e87;color:#fff;border-color:#76a9ff}
+.subsection{border:1px solid #2f3850;border-radius:8px;padding:8px 10px;margin:10px 0;background:#0c1322}
+.subsection summary{cursor:pointer;color:#9dd7ff;font-size:13px;font-weight:600}
+.subsection[open] summary{margin-bottom:8px}
+</style>
+</head>
+<body>
+<h1>ESPEED32</h1>
+<p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
+<div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
+<p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
+<h2>Config Backup &amp; Restore (.json)</h2>
+<button id="btn-backup" class="btn dl" onclick="doBackup()">Download Config Backup</button>
+<form id="uf">
+<input type="file" id="fi" accept=".json">
+<button type="submit" class="btn ul">Restore Config</button>
+</form>
+<div id="st" class="st"></div>
+<hr>
+<h2>Advanced Config Editor</h2>
+<p class="tiny">Hidden by default for a cleaner page. Works over WiFi and USB (after Connect via USB).</p>
+<button class="btn aux" id="btn-editor-toggle" onclick="toggleEditor()">Open Advanced Config Editor</button>
+<div id="editor-panel" class="card editor-panel">
+<div id="editor">Editor not loaded</div>
+<button class="btn dl" id="btn-refresh" onclick="refreshEditor()">Refresh from device</button>
+<button class="btn ul" id="btn-apply" onclick="applyEditor(false)">Apply (RAM only)</button>
+<button class="btn ota" id="btn-save" onclick="applyEditor(true)">Apply + Save to flash</button>
+<div id="edst" class="st"></div>
+</div>
+<hr>
+<h2>User Guide</h2>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
+<p class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
+<hr>
+<div id="fw-section">
+<h2>Firmware Update (.bin)</h2>
+<div id="otadiv">
+<form id="of">
+<input type="file" id="fw" accept=".bin">
+<button type="submit" class="btn ota">Upload Firmware</button>
+</form>
+<p class="warn">Do not disconnect power during update.</p>
+</div>
+<p id="otausb" style="display:none" class="warn">Firmware update requires WiFi mode.</p>
+<div id="ost" class="st"></div>
+</div>
+<script>
+var port=null,usb=false,_b='',_r=null,_pump=null;
+var E=new TextEncoder(),D=new TextDecoder();
+var info={deviceId:'----',version:'-',docsPath:'docs/'};
+var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
+var hostedMode=false;
+
+function isLikelyDeviceHost(h){
+  return h==='192.168.4.1' || h==='localhost' || h==='127.0.0.1' || /\.local$/i.test(h||'');
+}
+
+function detectHostedMode(){
+  var qs=new URLSearchParams(location.search);
+  var mode=(qs.get('mode')||'').toLowerCase();
+  if(mode==='hosted') return true;
+  if(mode==='device') return false;
+  return !isLikelyDeviceHost(location.hostname||'');
+}
+
+function applyHostedMode(){
+  if(!hostedMode) return;
+  var note=document.getElementById('hosted-note');
+  if(note) note.style.display='block';
+  var fwSection=document.getElementById('fw-section');
+  if(fwSection) fwSection.style.display='none';
+  var b=document.getElementById('btn-backup');
+  if(b) b.textContent='Download Config Backup (USB)';
+  var restoreBtn=document.querySelector('#uf button[type="submit"]');
+  if(restoreBtn) restoreBtn.textContent='Restore Config (USB)';
+}
+
+function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
+
+function applyInfo(){
+  document.getElementById('devid').textContent=info.deviceId||'----';
+  document.getElementById('ver').textContent=info.version||'-';
+  document.getElementById('docs-link').href=info.docsPath||'/docs';
+}
+
+async function loadInfo(){
+  try{
+    var r=await fetch('/api/info',{cache:'no-store'});
+    if(r.ok){
+      var j=await r.json();
+      if(j.deviceId)info.deviceId=j.deviceId;
+      if(j.version)info.version=j.version;
+      if(j.docsPath)info.docsPath=j.docsPath;
+    }
+  }catch(_){ }
+  applyInfo();
+}
+
+async function pump(){while(usb){try{var o=await _r.read();if(o.done)break;_b+=D.decode(o.value);}catch(_){break;}}}
+
+async function rl(ms){
+  ms=ms||5000;
+  var t=Date.now()+ms;
+  while(_b.indexOf('\n')<0){if(Date.now()>t)throw new Error('Device not responding');await new Promise(function(r){setTimeout(r,50);});}
+  var i=_b.indexOf('\n');
+  var r=_b.slice(0,i).replace(/\r$/,'');
+  _b=_b.slice(i+1);
+  return r;
+}
+
+async function rb(n,ms){
+  ms=ms||15000;
+  var t=Date.now()+ms;
+  while(_b.length<n){if(Date.now()>t)throw new Error('Device not responding');await new Promise(function(r){setTimeout(r,50);});}
+  var r=_b.slice(0,n);
+  _b=_b.slice(n);
+  return r;
+}
+
+async function ws(s){
+  var w=port.writable.getWriter();
+  try{await w.write(E.encode(s));}
+  finally{w.releaseLock();}
+}
+
+async function usbToggle(){
+  if(!usb){
+    try{
+      port=await navigator.serial.requestPort();
+      await port.open({baudRate:115200});
+      _b='';
+      _r=port.readable.getReader();
+      usb=true;
+      _pump=pump();
+      var b=document.getElementById('ucb');
+      b.textContent='Disconnect USB';
+      b.className='btn ul';
+      document.getElementById('otadiv').style.display='none';
+      document.getElementById('otausb').style.display='block';
+      try{
+        await ws('VERSION\n');
+        var vr=await rl(3000);
+        var vp=vr.split(',');
+        if(vp.length===2){
+          info.deviceId=vp[0]||info.deviceId;
+          info.version=(vp[1]||'').replace('v','')||info.version;
+          applyInfo();
+        }
+      }catch(_){ }
+    }catch(e){ss('st','err','USB: '+e.message);}
+  }else{
+    usb=false;
+    if(_r){try{await _r.cancel();}catch(_){}}
+    _r=null;
+    if(_pump){try{await _pump;}catch(_){}}
+    _pump=null;
+    _b='';
+    try{await port.close();}catch(_){ }
+    port=null;
+    var b2=document.getElementById('ucb');
+    b2.textContent='Connect via USB (WebSerial)';
+    b2.className='btn usb';
+    document.getElementById('otadiv').style.display='block';
+    document.getElementById('otausb').style.display='none';
+  }
+}
+
+async function doBackup(){
+  var d=new Date().toISOString().slice(0,10);
+  var fn=d+'-espeed32_v'+info.version+'_'+info.deviceId+'_backup.json';
+  if(hostedMode && !usb){
+    ss('st','err','Hosted page: connect via USB first.');
+    return;
+  }
+  if(!usb){
+    var a=document.createElement('a');
+    a.href='/backup';
+    a.download=fn;
+    a.click();
+    return;
+  }
+  ss('st','','Reading backup...');
+  try{
+    _b='';
+    await ws('BACKUP\n');
+    var j=await rb(parseInt(await rl(),10));
+    var a2=document.createElement('a');
+    a2.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));
+    a2.download=fn;
+    a2.click();
+    ss('st','ok','Backup downloaded');
+  }catch(e){ss('st','err',e.message+' - re-enter USB mode on device');}
+}
+
+async function usbReadJsonResponse(cmd,waitMs){
+  _b='';
+  await ws(cmd+'\n');
+  var len=parseInt(await rl(waitMs||5000),10);
+  if(isNaN(len) || len<0 || len>20000) throw new Error('Invalid response length');
+  var data=await rb(len,Math.max(waitMs||5000,15000));
+  return JSON.parse(data);
+}
+
+function fieldId(prefix,id){return prefix+'_'+id;}
+
+function coerceFieldValue(field,val){
+  if(field.type==='string') return String(val||'');
+  var n=parseInt(val,10);
+  if(isNaN(n)) throw new Error('Invalid value for '+field.label);
+  if(field.min!=null && n<field.min) throw new Error(field.label+' below minimum');
+  if(field.max!=null && n>field.max) throw new Error(field.label+' above maximum');
+  return n;
+}
+
+function renderField(prefix,field,val){
+  var id=fieldId(prefix,field.id);
+  var unit=field.unit?(' <span class="tiny">('+esc(field.unit)+')</span>'):'';
+  if(field.type==='enum'){
+    var opts=(field.options||[]).map(function(o){
+      var sel=(Number(val)===Number(o.value))?' selected':'';
+      return '<option value="'+o.value+'"'+sel+'>'+esc(o.label)+'</option>';
+    }).join('');
+    return '<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><select id="'+id+'">'+opts+'</select></div>';
+  }
+  if(field.type==='string'){
+    var ml=(field.maxLen!=null)?(' maxlength="'+field.maxLen+'"'):'';
+    return '<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><input id="'+id+'" type="text"'+ml+' value="'+esc(val||'')+'"></div>';
+  }
+  var attrs='';
+  if(field.min!=null) attrs+=' min="'+field.min+'"';
+  if(field.max!=null) attrs+=' max="'+field.max+'"';
+  if(field.step!=null) attrs+=' step="'+field.step+'"';
+  return '<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><input id="'+id+'" type="number"'+attrs+' value="'+esc(val||0)+'"></div>';
+}
+
+function categorizeGlobalField(id){
+  if(id==='selectedCarNumber' || id==='viewMode' || id==='gridCarSelectEnabled' || id==='raceViewMode') return 'Race & Driving';
+  if(id==='screensaverTimeout' || id==='powerSaveTimeout' || id==='deepSleepTimeout' || id==='startupDelay') return 'Power & Startup';
+  if(id==='language' || id==='textCase' || id==='listFontSize') return 'Display & Language';
+  if(id==='statusSlot0' || id==='statusSlot1' || id==='statusSlot2' || id==='statusSlot3') return 'Status Slots';
+  if(id==='soundBoot' || id==='soundRace') return 'Sound';
+  if(id==='screensaverLine1' || id==='screensaverLine2') return 'Screensaver Text';
+  return 'Other';
+}
+
+function categorizeCarField(id){
+  if(id==='carName') return 'Profile';
+  if(id==='minSpeed' || id==='maxSpeed' || id==='curveDiff' || id==='antiSpin' || id==='freqPWM') return 'Throttle & Power';
+  if(id==='brake' || id==='brakeButton' || id==='quickBrakeEnabled' || id==='quickBrakeThreshold' || id==='quickBrakeStrength') return 'Braking';
+  return 'Other';
+}
+
+function renderGroupedFields(prefix,fields,values,categorize,groupOrder){
+  var buckets={};
+  (fields||[]).forEach(function(f){
+    var group=categorize(f.id);
+    if(!buckets[group]) buckets[group]=[];
+    buckets[group].push(f);
+  });
+
+  var html='';
+  (groupOrder||[]).forEach(function(group,idx){
+    var items=buckets[group];
+    if(!items || !items.length) return;
+    html+='<details class="subsection"'+(idx===0?' open':'')+'><summary>'+esc(group)+'</summary>';
+    items.forEach(function(f){
+      html+=renderField(prefix,f,(values||{})[f.id]);
+    });
+    html+='</details>';
+  });
+  return html;
+}
+
+function tabBtn(tab,label){
+  var cls='segbtn'+(editorTab===tab?' active':'');
+  return '<button type="button" class="'+cls+'" onclick="showEditorTab(\''+tab+'\')">'+label+'</button>';
+}
+
+function renderEditor(){
+  var box=document.getElementById('editor');
+  if(!schema || !state){box.innerHTML='Editor unavailable';return;}
+  var editCar=(typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?editorCarIndex:((state.carIndex!=null)?state.carIndex:state.selectedCarNumber);
+  if(isNaN(editCar)) editCar=0;
+  editorCarIndex=editCar;
+
+  var carOpts='';
+  for(var i=0;i<(schema.carCount||20);i++){
+    carOpts+='<option value="'+i+'"'+(i===editCar?' selected':'')+'>CAR'+i+'</option>';
+  }
+
+  var gHtml='<div class="group-title">Global Config</div>'+
+    renderGroupedFields(
+      'g',
+      schema.global,
+      state.global,
+      categorizeGlobalField,
+      ['Race & Driving','Power & Startup','Display & Language','Status Slots','Sound','Screensaver Text','Other']
+    );
+
+  var cHtml='<div class="group-title">Car Params (editing profile '+editCar+')</div>'+
+    '<div class="row"><label for="edit-car">Edit Car Profile</label><select id="edit-car" onchange="onEditorCarChange(this.value)">'+carOpts+'</select></div>'+
+    '<div class="tiny">Active car in controller: '+state.selectedCarNumber+'</div>'+
+    renderGroupedFields(
+      'c',
+      schema.car,
+      state.car,
+      categorizeCarField,
+      ['Profile','Throttle & Power','Braking','Other']
+    );
+
+  box.innerHTML=
+    '<div class="seg">'+
+      tabBtn('global','Global Config')+
+      tabBtn('car','Car Params')+
+    '</div>'+
+    (editorTab==='car'?cHtml:gHtml);
+}
+
+function showEditorTab(tab){
+  editorTab=(tab==='car')?'car':'global';
+  renderEditor();
+}
+
+async function onEditorCarChange(val){
+  var car=parseInt(val,10);
+  if(isNaN(car)) return;
+  try{
+    await loadEditorState(car);
+    ss('edst','ok','Loaded CAR'+car);
+  }catch(e){
+    ss('edst','err','Car load failed: '+e.message);
+  }
+}
+
+async function toggleEditor(){
+  var panel=document.getElementById('editor-panel');
+  var btn=document.getElementById('btn-editor-toggle');
+  var opening=(panel.style.display==='none' || panel.style.display==='');
+
+  panel.style.display=opening?'block':'none';
+  btn.textContent=opening?'Hide Advanced Config Editor':'Open Advanced Config Editor';
+
+  if(opening && !editorLoaded){
+    document.getElementById('editor').textContent='Loading editor...';
+    await refreshEditor(true);
+  }
+}
+
+async function loadEditorSchema(){
+  if(hostedMode && !usb) throw new Error('Hosted page requires USB connection');
+  if(usb){
+    schema=await usbReadJsonResponse('SCHEMA',7000);
+    return;
+  }
+  var r=await fetch('/api/schema',{cache:'no-store'});
+  if(!r.ok) throw new Error('schema fetch failed');
+  schema=await r.json();
+}
+
+async function loadEditorState(car){
+  if(typeof car==='number' && !isNaN(car)){
+    editorCarIndex=car;
+  }
+  if(hostedMode && !usb) throw new Error('Hosted page requires USB connection');
+  if(usb){
+    var usbCmd='STATE'+((typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?(' '+editorCarIndex):'');
+    state=await usbReadJsonResponse(usbCmd,7000);
+  }else{
+    var url='/api/state';
+    if(typeof editorCarIndex==='number' && !isNaN(editorCarIndex)) url+='?car='+editorCarIndex;
+    var r=await fetch(url,{cache:'no-store'});
+    if(!r.ok) throw new Error('state fetch failed');
+    state=await r.json();
+  }
+  if(state){
+    if(state.carIndex!=null) editorCarIndex=state.carIndex;
+    else if(editorCarIndex==null && state.selectedCarNumber!=null) editorCarIndex=state.selectedCarNumber;
+  }
+  renderEditor();
+}
+
+async function refreshEditor(silent){
+  try{
+    if(!schema) await loadEditorSchema();
+    var car=(typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?editorCarIndex:undefined;
+    await loadEditorState(car);
+    editorLoaded=true;
+    if(!silent) ss('edst','ok','Editor refreshed from device');
+  }catch(e){
+    ss('edst','err','Editor refresh failed: '+e.message);
+  }
+}
+
+async function applyEditor(saveAfter){
+  if(!schema || !state){ss('edst','err','Editor not ready');return;}
+  if(hostedMode && !usb){ss('edst','err','Hosted page: connect via USB first.');return;}
+  try{
+    var payload={};
+    var carSel=document.getElementById('edit-car');
+    payload.carIndex=(carSel && carSel.value!=='')?parseInt(carSel.value,10):((typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?editorCarIndex:state.selectedCarNumber);
+
+    (schema.global||[]).forEach(function(f){
+      var el=document.getElementById(fieldId('g',f.id));
+      if(!el) return;
+      payload[f.id]=coerceFieldValue(f,el.value);
+    });
+    (schema.car||[]).forEach(function(f){
+      var el=document.getElementById(fieldId('c',f.id));
+      if(!el) return;
+      payload[f.id]=coerceFieldValue(f,el.value);
+    });
+
+    /* If Global tab changed active car, keep editor context on that car after Apply/Save. */
+    if((!carSel || carSel.value==='') && typeof payload.selectedCarNumber==='number' && !isNaN(payload.selectedCarNumber)){
+      payload.carIndex=payload.selectedCarNumber;
+    }
+
+    if(usb){
+      var patch=JSON.stringify(payload);
+      var pb=E.encode(patch);
+      _b='';
+      await ws('APPLY\n'+pb.length+'\n');
+      var w=port.writable.getWriter();
+      try{await w.write(pb);}finally{w.releaseLock();}
+
+      var ack=await rl(10000);
+      if(ack!=='OK'){
+        if(ack.indexOf('ERR:')===0) throw new Error(ack.slice(4));
+        throw new Error('apply failed');
+      }
+      var outLen=parseInt(await rl(10000),10);
+      if(isNaN(outLen) || outLen<0 || outLen>20000) throw new Error('Invalid APPLY response');
+      var outState=await rb(outLen,15000);
+      state=JSON.parse(outState);
+      if(state && state.selectedCarNumber!=null && typeof payload.selectedCarNumber==='number'){
+        editorCarIndex=parseInt(state.selectedCarNumber,10);
+      }else{
+        editorCarIndex=payload.carIndex;
+      }
+
+      if(saveAfter){
+        await ws('SAVE\n');
+        var saveResp=await rl(8000);
+        if(saveResp.indexOf('OK')!==0){
+          if(saveResp.indexOf('ERR:')===0) throw new Error(saveResp.slice(4));
+          throw new Error('save failed');
+        }
+      }
+    }else{
+      var r=await fetch('/api/apply',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      var j=await r.json();
+      if(!r.ok || !j.ok) throw new Error((j&&j.error)?j.error:'apply failed');
+      state=j.state||state;
+      if(state && state.selectedCarNumber!=null && typeof payload.selectedCarNumber==='number'){
+        editorCarIndex=parseInt(state.selectedCarNumber,10);
+      }else{
+        editorCarIndex=payload.carIndex;
+      }
+
+      if(saveAfter){
+        var rs=await fetch('/api/save',{method:'POST'});
+        var js=await rs.json();
+        if(!rs.ok || !js.ok) throw new Error((js&&js.error)?js.error:'save failed');
+      }
+    }
+    renderEditor();
+    ss('edst','ok',saveAfter?'Applied and saved to flash':'Applied live (RAM only)');
+  }catch(e){
+    ss('edst','err','Apply failed: '+e.message);
+  }
+}
+
+document.getElementById('uf').onsubmit=async function(e){
+  e.preventDefault();
+  var f=document.getElementById('fi').files[0];
+  if(!f){alert('Select a JSON file');return;}
+  if(!f.name.toLowerCase().endsWith('.json')){alert('Only .json files allowed');return;}
+  if(hostedMode && !usb){
+    ss('st','err','Hosted page: connect via USB first.');
+    return;
+  }
+  ss('st','','Uploading...');
+  if(!usb){
+    var fd=new FormData();
+    fd.append('file',f);
+    try{var r=await fetch('/restore',{method:'POST',body:fd});var t=await r.text();ss('st',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('st','err',''+x);}    
+    return;
+  }
+  try{
+    var j=await f.text(),b=E.encode(j);
+    _b='';
+    await ws('RESTORE\n'+b.length+'\n');
+    var w=port.writable.getWriter();
+    try{await w.write(b);}finally{w.releaseLock();}
+    var resp=await rl(20000);
+    ss('st',resp.indexOf('OK')===0?'ok':'err',resp);
+  }catch(x){ss('st','err',x.message+' - re-enter USB mode on device');}
+};
+
+document.getElementById('of').onsubmit=async function(e){
+  e.preventDefault();
+  var f=document.getElementById('fw').files[0];
+  if(!f){alert('Select a .bin file');return;}
+  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
+  ss('ost','','Uploading firmware...');
+  var fd=new FormData();
+  fd.append('file',f);
+  try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('ost','err',''+x);}
+};
+
+hostedMode=detectHostedMode();
+applyHostedMode();
+if('serial' in navigator){document.getElementById('usbbar').style.display='block';}
+loadInfo();
+</script>
+</body>
+</html>

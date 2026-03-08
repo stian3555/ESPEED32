@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 Brukermanual (NO)</title>
+<style>
+:root{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#151a1f;
+    --paper:#1f262e;
+    --ink:#eef2f7;
+    --muted:#b8c7d8;
+    --line:#39495a;
+    --accent:#ff6b5d;
+    --accent-2:#59b9dd;
+    --chip:#283340;
+    --chip-border:#405061;
+    --code-bg:#242f3b;
+    --code-border:#3b4b5b;
+    --pre-bg:#1a232c;
+    --pre-border:#324254;
+    --th-bg:#2a3441;
+    --ghost:#283340;
+    --shadow:0 10px 24px rgba(0,0,0,.35);
+  }
+}
+html[data-theme="light"]{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+html[data-theme="dark"]{
+  --bg:#151a1f;
+  --paper:#1f262e;
+  --ink:#eef2f7;
+  --muted:#b8c7d8;
+  --line:#39495a;
+  --accent:#ff6b5d;
+  --accent-2:#59b9dd;
+  --chip:#283340;
+  --chip-border:#405061;
+  --code-bg:#242f3b;
+  --code-border:#3b4b5b;
+  --pre-bg:#1a232c;
+  --pre-border:#324254;
+  --th-bg:#2a3441;
+  --ghost:#283340;
+  --shadow:0 10px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Segoe UI",Tahoma,Verdana,sans-serif;
+  background:
+    linear-gradient(120deg,rgba(180,35,24,.08),rgba(31,106,138,.08)),
+    repeating-linear-gradient(0deg,transparent 0 30px,rgba(25,25,25,.02) 30px 31px),
+    var(--bg);
+}
+main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+header{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:30px;line-height:1.1}
+p.lead{margin:0;color:var(--muted)}
+nav.top{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
+a.primary{background:var(--accent);color:#fff}
+a.secondary{background:var(--accent-2);color:#fff}
+a.btn.lang-active{background:var(--accent-2);color:#fff}
+a.ghost{background:var(--ghost);color:var(--ink)}
+section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{margin:0 0 10px;font-size:20px}
+h3{margin:14px 0 8px;font-size:16px}
+p{margin:8px 0;line-height:1.45}
+ul,ol{margin:8px 0 0 20px;padding:0}
+li{margin:4px 0;line-height:1.4}
+code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1px 5px}
+pre{margin:8px 0 0;padding:12px;border-radius:10px;border:1px solid var(--pre-border);background:var(--pre-bg);overflow:auto;line-height:1.3}
+.small{font-size:13px;color:var(--muted)}
+.sources{margin:8px 0 0 18px;padding:0}
+.sources li{font-size:13px;color:var(--muted);line-height:1.35}
+.warn{color:var(--accent);font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--th-bg)}
+.badge{display:inline-block;background:var(--chip);border:1px solid var(--chip-border);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--ink)}
+.theme-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.theme-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.theme-tools select{padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+figure.doc-media{margin:10px 0 0}
+figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+@media (max-width:760px){
+  h1{font-size:24px}
+  table{font-size:13px}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ESPEED32 Brukermanual</h1>
+    <p class="lead">Brukerfokusert guide for bilbanekjøring: oppstart, viktige kjøreinnstillinger, menyer og backup/restore.</p>
+    <nav class="top">
+      <a class="btn primary" href="../../">Åpne Backup-side</a>
+      <a class="btn ghost" href="../no/" data-doc-lang="no">Norsk</a>
+      <a class="btn ghost" href="../en/" data-doc-lang="en">English</a>
+      <a class="btn ghost" href="../es/" data-doc-lang="es">Espanol</a>
+      <a class="btn ghost" href="../de/" data-doc-lang="de">Deutsch</a>
+    </nav>
+    <div class="theme-tools">
+      <label for="theme-select">Tema</label>
+      <select id="theme-select">
+        <option value="system">System</option>
+        <option value="light">Lys</option>
+        <option value="dark">Mørk</option>
+      </select>
+    </div>
+    <ul class="sources">
+      <li>Firmware-kilde: ESPEED32 v4.7 (<code>source/ESPEED32/</code>).</li>
+      <li>Lokale manualer i repo: Quick Start + Extended Guide (DOC-mappen, DOCX/PDF).</li>
+      <li>ACD-referanse: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
+      <li>CarSteen-referanse: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
+    </ul>
+  </header>
+
+  <section>
+    <h2>1. Hurtigstart</h2>
+    <ol>
+      <li>Start kontrolleren normalt.</li>
+      <li>Roter encoder for å bla i meny.</li>
+      <li>Kort trykk encoder: gå inn/ut av redigering eller åpne undermeny.</li>
+      <li>Kort trykk bremseknapp i redigering: avbryt (restore opprinnelig verdi).</li>
+      <li>Langt trykk encoder (~1s): veksle LIST og race-grid (når race view ikke er OFF).</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. Oppstart, kalibrering og test</h2>
+    <ul>
+      <li>Kalibrer trigger etter firmware-oppdatering eller hvis trigger-mekanikk er endret.</li>
+      <li><code>Power ON</code>: normal oppstart, deretter RUNNING.</li>
+      <li>Hold <code>encoder-knapp</code> ved power on: trigger-kalibrering.</li>
+      <li>Hold <code>bremseknapp</code> ved power on: Self-Test (9 steg).</li>
+    </ul>
+    <h3>Kalibrering</h3>
+    <ol>
+      <li>Hold encoder inne under oppstart til kalibreringsskjerm vises.</li>
+      <li>Trykk/slipp trigger helt flere ganger.</li>
+      <li>Trykk encoder for å lagre.</li>
+      <li>Verifiser 0% gass ved sluppet trigger og 100% ved full trigger.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="../assets/trig_cal.png" alt="Trigger-kalibrering">
+      <figcaption>Kalibrering: beveg trigger helt gjennom vandringen flere ganger for korrekt 0-100% mapping.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>3. Viktig under kjøring: BRAKE, B_BTN og Q-BRAKE</h2>
+    <h3>BRAKE</h3>
+    <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
+    <h3>B_BTN (Brake Button)</h3>
+    <ul>
+      <li><code>B_BTN</code> er en alternativ bremseverdi (0-100%), ikke en relativ reduksjon.</li>
+      <li>Den brukes kun når trigger = 0 og du holder bremseknappen inne.</li>
+      <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
+      <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
+    </ul>
+    <h3>Q-BRAKE (Quick Brake)</h3>
+    <ul>
+      <li>Aktiveres bare hvis <code>Q-BRAKE</code> er ON.</li>
+      <li>Gir en pre-release bremsesone: brems starter mens triggeren er på vei ut, før den er helt sluppet.</li>
+      <li>Når trigger er over 0 men under terskelen, brukes <code>Strength</code> som bremsekraft.</li>
+      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
+      <li>Praktisk bruk: få tidligere innbremsing ved trigger-slipp uten å måtte gå helt til null.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Hovedparametere i Main Menu</h2>
+    <h3>Terminologi-profiler</h3>
+    <ul>
+      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
+      <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
+    </ul>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
+        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
+        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + terskel/styrke</td><td>OFF</td><td>Egen bremsesone nær trigger-slipp.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
+      </tbody>
+    </table>
+    <figure class="doc-media">
+      <img src="../assets/curve_examples.png" alt="Linear, Soft og Hard curve eksempler">
+      <figcaption>CURVE-eksempler fra manual: Linear (50%), Soft (lavere verdi), Hard (høyere verdi).</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>5. Race view (LIST vs GRID)</h2>
+    <ul>
+      <li><span class="badge">LIST</span> klassisk menyvisning med alle hoveditems.</li>
+      <li><span class="badge">GRID</span> race-skjerm for rask justering under kjøring.</li>
+      <li><code>DISPLAY -> RACE MODE</code>: OFF / FULL / SIMPLE.</li>
+      <li>FULL grid: BRAKE, SENSI, ANTIS, CURVE (+ CAR hvis <code>RACESWP</code> er ON).</li>
+      <li>SIMPLE grid: BRAKE, SENSI (+ CAR hvis <code>RACESWP</code> er ON).</li>
+      <li>Langt trykk encoder veksler LIST/GRID.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. CAR-meny i praksis</h2>
+    <ul>
+      <li><code>SELECT</code>: velg aktiv bilprofil (0-19).</li>
+      <li><code>RENAME</code>: 4-tegns navn (ASCII 32-122), redigert tegn for tegn.</li>
+      <li><code>RACESWP</code>: ON gir mulighet for car-select direkte i GRID-view.</li>
+      <li><code>COPY</code>: kopier fra en profil til en annen eller til ALL.</li>
+      <li><code>RESET</code>: nullstill alle bilprofiler (krever bekreftelse).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. SETTINGS og strømforbruk</h2>
+    <h3>POWER-undermeny</h3>
+    <ul>
+      <li><code>SCRSV</code>: screensaver-tekst (linje1/linje2), timeout og vis nå.</li>
+      <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
+      <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
+      <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
+    </ul>
+    <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
+    <table>
+      <thead>
+        <tr><th>Tilstand</th><th>Anslag</th><th>Kommentar</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Oppstart</td><td>120 mA</td><td>Kort fase ved boot og init.</td></tr>
+        <tr><td>Normal drift</td><td>100 mA</td><td>Typisk meny/kjøring uten WiFi.</td></tr>
+        <tr><td>WiFi-modul aktiv</td><td>150 mA</td><td>AP-modus og webserver aktiv.</td></tr>
+        <tr><td>Screensaver</td><td>80 mA</td><td>Display aktiv, lav aktivitet.</td></tr>
+        <tr><td>SLEEP (soft)</td><td>55 mA (estimert)</td><td>OLED av, CPU 80 MHz, motor-task suspendert.</td></tr>
+        <tr><td>DEEP SLEEP</td><td>10 mA (estimert)</td><td>Power-off lignende modus, vekkes med power-cycle.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg.</p>
+  </section>
+
+  <section>
+    <h2>8. Kjøretips</h2>
+    <ul>
+      <li>Juster en parameter av gangen, og kjør 5-10 runder mellom hver endring.</li>
+      <li>Start med <code>SENSI</code>, deretter <code>BRAKE</code>, så <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
+      <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
+      <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
+      <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
+      <li>Bruk <code>Q-BRAKE</code> lav terskel (5-12%) og moderat styrke (40-70%) for mer rolig inngang i tekniske partier.</li>
+      <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
+      <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>9. WiFi/USB backup, restore og OTA</h2>
+    <h3>WiFi</h3>
+    <ol>
+      <li>Gå til <code>SETTINGS -> WIFI</code> for undermenyen.</li>
+      <li><code>INFO SIDE</code>: åpner WiFi-siden direkte, og WiFi/AP startes automatisk. Når du går ut av infosiden stoppes WiFi igjen (med mindre du hadde aktivert bakgrunnsmodus først).</li>
+      <li><code>AUTO AV</code>: velg timeout for bakgrunns-WiFi (1-120 min, default 5 min).</li>
+      <li><code>START WIFI</code>: starter WiFi uten å åpne infosiden, slik at du kan gå tilbake til hovedmeny.</li>
+      <li><code>STOPP WIFI</code>: stopper bakgrunns-WiFi manuelt før timeout.</li>
+      <li>Mens WiFi er aktiv: koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>) og åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
+      <li>På infosiden kan du bruke <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
+    </ol>
+    <p class="small">Hvis du har en ledig (blank) status-slot, vises <code>WIFI</code> i statuslinja når WiFi er aktiv.</p>
+    <h3>USB</h3>
+    <ol>
+      <li>Gå til <code>SETTINGS -> USB</code>.</li>
+      <li>Bruk Chrome/Edge (WebSerial).</li>
+      <li>Backup/restore fungerer over USB; OTA krever WiFi-modus.</li>
+    </ol>
+    <p class="warn">Koble aldri fra strøm under OTA-opplasting.</p>
+  </section>
+
+  <section>
+    <h2>10. Meny-tre (full oversikt)</h2>
+<pre>ROOT (Main Menu)
+|- BRAKE
+|- SENSI
+|- ANTIS
+|- CURVE (grafvisning)
+|- PWM_F
+|- B_BTN
+|- Q-BRAKE
+|  |- Enable (ON/OFF)
+|  |- Threshold (%)
+|  |- Strength (%)
+|  `- Back
+|- LIMIT
+|- SETTINGS
+|  |- POWER
+|  |  |- SCRSV
+|  |  |  |- LINE1
+|  |  |  |- LINE2
+|  |  |  |- TIME (0-240 s, 0=OFF)
+|  |  |  |- NOW
+|  |  |  `- BACK
+|  |  |- SLEEP
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
+|  |  |  |- SLEEP NOW
+|  |  |  `- BACK
+|  |  |- DEEP SLEEP
+|  |  |  |- INTERVAL (0 eller 2-30 min)
+|  |  |  |- SLEEP NOW (strup/av)
+|  |  |  `- BACK
+|  |  |- STARTUP (0-99 x 10ms)
+|  |  `- BACK
+|  |- DISPLAY
+|  |  |- RACE MODE (OFF/FULL/SIMPLE)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD)
+|  |  |- CASE (UPPER/Pascal)
+|  |  |- FONT SIZE (LARGE/small)
+|  |  |- STATUS BAR
+|  |  |  |- SLOT 1
+|  |  |  |- SLOT 2
+|  |  |  |- SLOT 3
+|  |  |  |- SLOT 4
+|  |  |  `- BACK
+|  |  `- BACK
+|  |- SOUND
+|  |  |- BOOT (ON/OFF)
+|  |  |- RACE (ON/OFF)
+|  |  `- BACK
+|  |- WIFI
+|  |  |- INFO SIDE
+|  |  |- AUTO AV (1-120 min, default 5)
+|  |  |- START/STOP WIFI
+|  |  `- BACK
+|  |- USB
+|  |- RESET
+|  |  |- CAR
+|  |  |- SETTINGS
+|  |  |- CALIBRATION
+|  |  |- EVERYTHING
+|  |  `- BACK
+|  |- TEST (Self-Test, 9 steg)
+|  |- ABOUT
+|  `- BACK
+|- STATS
+`- CAR
+   |- SELECT
+   |- RENAME
+   |- RACESWP (grid car select ON/OFF)
+   |- COPY
+   |- RESET
+   `- BACK</pre>
+    <p class="small">Merk: visningstekst kan vises i UPPER eller Pascal avhengig av <code>DISPLAY -> CASE</code>.</p>
+  </section>
+
+</main>
+<script>
+(function(){
+  var key = "espeed32-doc-theme";
+  var root = document.documentElement;
+  var select = document.getElementById("theme-select");
+  if (!select) return;
+
+  var saved = localStorage.getItem(key);
+  if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
+  select.value = saved;
+
+  function apply(mode){
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+  }
+
+  apply(saved);
+  select.addEventListener("change", function(){
+    localStorage.setItem(key, select.value);
+    apply(select.value);
+  });
+
+  var path = (window.location.pathname || "").toLowerCase();
+  var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
+  if (path.indexOf("/docs/no") !== -1) activeLang = "no";
+  else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
+  else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
+  else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+
+  var langLinks = document.querySelectorAll("a[data-doc-lang]");
+  for (var i = 0; i < langLinks.length; i++) {
+    var link = langLinks[i];
+    if (link.getAttribute("data-doc-lang") === activeLang) link.classList.add("lang-active");
+    else link.classList.remove("lang-active");
+  }
+})();
+</script>
+</body>
+</html>

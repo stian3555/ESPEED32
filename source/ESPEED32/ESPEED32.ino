@@ -21,10 +21,10 @@ const char* MENU_NAMES[][11] = {
 
 /* Settings menu item names: [language][item] */
 const char* SETTINGS_MENU_NAMES[][9] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "USB", "NULLSTILL", "TEST", "INFO", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "TEST", "ABOUT", "BACK"},
-  /* CS  */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "TEST", "ABOUT", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB", "RESET", "TEST", "ABOUT", "BACK"}
+  /* NOR */ {"STROM", "SKJERM", "LYD", "WIFI", "USB INFO", "NULLSTILL", "TEST", "INFO", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
+  /* CS  */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -116,10 +116,10 @@ const char* MENU_NAMES_PASCAL[][11] = {
 
 /* Settings menu item names - Pascal Case: [language][item] */
 const char* SETTINGS_MENU_NAMES_PASCAL[][9] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Usb", "Nullstill", "Test", "Info", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Test", "About", "Back"},
-  /* CS  */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Test", "About", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Usb", "Reset", "Test", "About", "Back"}
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Wifi", "Usb info", "Nullstill", "Test", "Info", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
+  /* CS  */ {"Power", "Display", "Sound", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Wifi", "Usb info", "Reset", "Test", "About", "Back"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */
@@ -442,9 +442,7 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
 }
 
 static void serviceTimedWiFiPortal() {
-  if (isWiFiPortalActive()) {
-    serviceWiFiPortal();
-  }
+  serviceConnectivityPortal();
 
   if (!g_wifiTimedActive) {
     return;

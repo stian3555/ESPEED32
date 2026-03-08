@@ -346,6 +346,9 @@ static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop
 static uint32_t g_lpRaceStart = 0;
 static bool g_lpRaceActive = false;
 static void serviceTimedWiFiPortal();
+static void showPowerSave();
+static void showPowerSave(uint32_t inactivityStartMs);
+static void showDeepSleep();
 
 /**
  * @brief Detect long press on encoder button (shared across all submenus).
@@ -363,6 +366,38 @@ static bool checkRaceModeEscape() {
   } else {
     g_lpRaceActive = false;
   }
+  return false;
+}
+
+/**
+ * @brief Service inactivity-based power transitions for UI loops.
+ * @details Applies auto power save/deep sleep in all menus except race mode.
+ * @param lastInteraction Pointer to loop-local last interaction timestamp.
+ * @param screensaverActive Pointer to loop-local screensaver flag (optional).
+ * @return true if power-save was entered and returned (caller should redraw), false otherwise.
+ */
+static bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive) {
+  if (lastInteraction == NULL) return false;
+
+  if (g_storedVar.screensaverTimeout == 0) return false;
+
+  uint32_t now = millis();
+  uint32_t idleMs = now - *lastInteraction;
+  uint32_t screensaverMs = (uint32_t)g_storedVar.screensaverTimeout * 1000UL;
+
+  if (g_storedVar.deepSleepTimeout > 0 &&
+      idleMs > screensaverMs + ((uint32_t)g_storedVar.deepSleepTimeout * 60000UL)) {
+    showDeepSleep();  /* Never returns */
+  }
+
+  if (g_storedVar.powerSaveTimeout > 0 &&
+      idleMs > screensaverMs + ((uint32_t)g_storedVar.powerSaveTimeout * 60000UL)) {
+    showPowerSave(*lastInteraction);
+    *lastInteraction = millis();
+    if (screensaverActive != NULL) *screensaverActive = false;
+    return true;
+  }
+
   return false;
 }
 
@@ -441,6 +476,7 @@ void IRAM_ATTR readEncoderISR();
 static bool resetConfirm(const char* label);
 static void doResetCar();
 static void showPowerSave();
+static void showPowerSave(uint32_t inactivityStartMs);
 static void showDeepSleep();
 static void showSleepSettings();
 static void showDeepSleepSettings();
@@ -1785,7 +1821,7 @@ void printMainMenu(MenuState_enum currMenuState)
      * Uses g_lastEncoderInteraction so encoder noise cannot reset the timer. */
     if (g_storedVar.powerSaveTimeout > 0 &&
         millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL) + ((uint32_t)g_storedVar.powerSaveTimeout * 60000UL)) {
-      showPowerSave();
+      showPowerSave(g_lastEncoderInteraction);
       g_lastEncoderInteraction = millis();  /* Restart timers after waking from soft sleep */
       screensaverActive = false;
     }
@@ -2248,6 +2284,9 @@ void showCarSelection() {
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
         }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+        }
         delay(10);  /* Small delay to prevent watchdog timeout */
         continue;  /* Don't draw menu while screensaver is active */
       }
@@ -2362,6 +2401,9 @@ void showCopyCarSettings() {
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
         }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+        }
         delay(10);  /* Small delay to prevent watchdog timeout */
         continue;  /* Don't draw menu while screensaver is active */
       }
@@ -2468,6 +2510,9 @@ void showCopyCarSettings() {
           screensaverActive = true;
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
         }
         delay(10);  /* Small delay to prevent watchdog timeout */
         continue;  /* Don't draw menu while screensaver is active */
@@ -2642,6 +2687,9 @@ void showSelectRenameCar() {
           screensaverActive = true;
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
         }
         delay(10);  /* Small delay to prevent watchdog timeout */
         continue;  /* Don't draw menu while screensaver is active */
@@ -2937,6 +2985,9 @@ void showRenameCar() {
           screensaverActive = true;
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
         }
         delay(10);  /* Small delay to prevent watchdog timeout */
         continue;  /* Don't draw menu while screensaver is active */
@@ -3234,6 +3285,10 @@ void showLapStats() {
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
         }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needFullRedraw = true;
+        }
         delay(10);
         continue;
       }
@@ -3413,6 +3468,11 @@ static void editScreensaverText(char* text, const char* title) {
         screensaverActive = true;
         screensaverEncoderPos = g_rotaryEncoder.readEncoder();
         showScreensaver();
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          obdWriteString(&g_obd, 0, (OLED_WIDTH - titleW) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK", FONT_12x16, OBD_BLACK, 1);
+        }
         delay(10);
         continue;
       }
@@ -3555,12 +3615,20 @@ void showScreensaverSettings() {
           screensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
         }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel = 0xFF;  /* Force redraw after waking from power-save */
+        }
         delay(10);
         continue;
       }
     }
     /* Also skip draw code if screensaver is active (e.g. activated via NOW button) */
     if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        prevSel = 0xFF;
+      }
       delay(10);
       continue;
     }
@@ -3777,6 +3845,11 @@ void showStatusSettings() {
           screensaverEncPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
         }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel     = 0xFF;
+          forceRedraw = true;
+        }
         delay(10);
         continue;
       }
@@ -3910,39 +3983,137 @@ static bool resetConfirm(const char* label) {
     obdFill(&g_obd, OBD_WHITE, 1);
   };
 
-  /* First confirmation */
-  obdFill(&g_obd, OBD_WHITE, 1);
-  obdWriteString(&g_obd, 0, 10, 5,  (char *)label, FONT_8x8, OBD_BLACK, 1);
   const char* pressT = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
-  obdWriteString(&g_obd, 0, 10, 25, (char *)pressT,  FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
+  auto drawFirstConfirm = [&]() {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 10, 5,  (char *)label, FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 25, (char *)pressT,  FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
+  };
+
+  auto drawSecondConfirm = [&]() {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    if (lang == LANG_NOR) {
+      obdWriteString(&g_obd, 0, 10, 5,  (char *)"TRYKK IGJEN",     FONT_8x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 10, 16, (char *)"FOR A NULLSTILLE", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
+    } else {
+      obdWriteString(&g_obd, 0, 10, 5,  (char *)"PRESS AGAIN",      FONT_8x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 10, 16, (char *)"TO RESET",         FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
+    }
+    obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
+  };
+
+  /* First confirmation */
+  drawFirstConfirm();
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
 
   while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        drawFirstConfirm();
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          drawFirstConfirm();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        drawFirstConfirm();
+      }
+      delay(10);
+      continue;
+    }
+
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       showCancelled();
       return false;
+    }
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
     }
     delay(10);
   }
   delay(200);
 
   /* Second confirmation - specific label */
-  obdFill(&g_obd, OBD_WHITE, 1);
-  if (lang == LANG_NOR) {
-    obdWriteString(&g_obd, 0, 10, 5,  (char *)"TRYKK IGJEN",     FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 16, (char *)"FOR A NULLSTILLE", FONT_6x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
-  } else {
-    obdWriteString(&g_obd, 0, 10, 5,  (char *)"PRESS AGAIN",      FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 16, (char *)"TO RESET",         FONT_6x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
-  }
-  obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
+  drawSecondConfirm();
+  lastInteraction = millis();
+  screensaverActive = false;
+  screensaverEncoderPos = 0;
 
   while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        drawSecondConfirm();
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          drawSecondConfirm();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        drawSecondConfirm();
+      }
+      delay(10);
+      continue;
+    }
+
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
       showCancelled();
       return false;
+    }
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
     }
     delay(10);
   }
@@ -4003,6 +4174,10 @@ static void doResetCalibration() {
  * suspends motor task. Wakes on encoder button press.
  */
 static void showPowerSave() {
+  showPowerSave(millis());
+}
+
+static void showPowerSave(uint32_t inactivityStartMs) {
   uint16_t lang = g_storedVar.language;
 
   /* Brief sleep message */
@@ -4021,8 +4196,14 @@ static void showPowerSave() {
   /* Suspend motor control task */
   vTaskSuspend(Task2);
 
-  /* Wait for encoder button press to wake */
+  /* Wait for encoder button press to wake.
+   * While waiting, allow deep sleep timeout to take over. */
+  uint32_t screensaverMs = (uint32_t)g_storedVar.screensaverTimeout * 1000UL;
   while (digitalRead(ENCODER_BUTTON_PIN) != BUTTON_PRESSED) {
+    if (g_storedVar.screensaverTimeout > 0 && g_storedVar.deepSleepTimeout > 0 &&
+        millis() - inactivityStartMs > screensaverMs + ((uint32_t)g_storedVar.deepSleepTimeout * 60000UL)) {
+      showDeepSleep();  /* Never returns */
+    }
     vTaskDelay(50);
   }
 
@@ -4078,9 +4259,56 @@ static void showSleepSettings() {
   g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
   g_rotaryEncoder.reset(0);
 
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
   while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
     /* Encoder movement */
     if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
       if (editing) {
         tmpTimeout = (uint16_t)g_rotaryEncoder.readEncoder();
       } else {
@@ -4091,6 +4319,7 @@ static void showSleepSettings() {
 
     /* Encoder button */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
       if (editing) {
         /* Confirm new interval */
         g_storedVar.powerSaveTimeout = tmpTimeout;
@@ -4109,6 +4338,8 @@ static void showSleepSettings() {
       } else if (sel == 1) {
         /* Sleep NOW */
         showPowerSave();
+        lastInteraction = millis();
+        screensaverActive = false;
         needRedraw = true;
       } else {
         /* BACK */
@@ -4119,6 +4350,7 @@ static void showSleepSettings() {
 
     /* Brake button = cancel/back */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
       if (editing) {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -4187,8 +4419,55 @@ static void showDeepSleepSettings() {
   g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
   g_rotaryEncoder.reset(0);
 
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
   while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
     if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
       if (editing) {
         tmpTimeout = (uint16_t)g_rotaryEncoder.readEncoder();
       } else {
@@ -4198,6 +4477,7 @@ static void showDeepSleepSettings() {
     }
 
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
       if (editing) {
         g_storedVar.deepSleepTimeout = tmpTimeout;
         saveEEPROM(g_storedVar);
@@ -4223,6 +4503,7 @@ static void showDeepSleepSettings() {
     }
 
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
       if (editing) {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -4315,6 +4596,10 @@ static void showSoundSettings() {
           ssActive = true;
           ssEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
         }
         delay(10);
         continue;
@@ -4413,10 +4698,57 @@ static void showWiFiSettings() {
   g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
   g_rotaryEncoder.reset(0);
 
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
   while (true) {
     serviceTimedWiFiPortal();
 
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
     if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
       if (editing) {
         tmpMinutes = (uint16_t)g_rotaryEncoder.readEncoder();
       } else {
@@ -4426,6 +4758,7 @@ static void showWiFiSettings() {
     }
 
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
       if (editing) {
         g_wifiTimedMinutes = constrain(tmpMinutes, 1, 120);
         editing = false;
@@ -4434,6 +4767,8 @@ static void showWiFiSettings() {
         g_rotaryEncoder.reset(sel);
       } else if (sel == 0) {
         showWiFiPortalScreen();
+        lastInteraction = millis();
+        screensaverActive = false;
       } else if (sel == 1) {
         editing = true;
         tmpMinutes = constrain(g_wifiTimedMinutes, 1, 120);
@@ -4456,6 +4791,7 @@ static void showWiFiSettings() {
     static bool brakeBtnInWifi = false;
     static uint32_t lastBrakeBtnWifiTime = 0;
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
       if (!brakeBtnInWifi && millis() - lastBrakeBtnWifiTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
         brakeBtnInWifi = true;
         lastBrakeBtnWifiTime = millis();
@@ -4544,14 +4880,18 @@ static void showPowerSettings() {
       }
     }
 
-    /* Screensaver timeout (not while editing) */
-    if (!ssActive && !editing && g_storedVar.screensaverTimeout > 0 &&
+    /* Screensaver timeout */
+    if (!ssActive && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!ssActive) {
           ssActive = true;
           ssEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
         }
         delay(10);
         continue;
@@ -4730,6 +5070,9 @@ static void showDisplaySettings() {
           ssActive = true;
           ssEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
         }
         delay(10);
         continue;
@@ -4950,13 +5293,59 @@ void showResetSubmenu() {
   uint8_t sel      = 1;
   uint8_t prevSel  = 0xFF;
   bool forceRedraw = true;
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
 
   static bool brakeInReset = false;
   static uint32_t lastBrakeReset = 0;
 
   while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        forceRedraw = true;
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          forceRedraw = true;
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        forceRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
     /* Brake exits */
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
       if (!brakeInReset && millis() - lastBrakeReset > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
         brakeInReset = true;
         lastBrakeReset = millis();
@@ -4969,15 +5358,19 @@ void showResetSubmenu() {
 
     /* Encoder scroll */
     if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
       sel = (uint8_t)g_rotaryEncoder.readEncoder();
       forceRedraw = true;
     }
 
     /* Encoder click */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
       if (sel == RS_ITEMS) break;  /* BACK */
 
       bool confirmed = resetConfirm(rowNames[sel - 1]);
+      lastInteraction = millis();
+      screensaverActive = false;
       if (confirmed) {
         obdFill(&g_obd, OBD_WHITE, 1);
         const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
@@ -5105,6 +5498,11 @@ void showQuickBrakeMenu() {
           screensaverActive = true;
           screensaverEncPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel     = 0xFF;
+          forceRedraw = true;
         }
         delay(10);
         continue;
@@ -5465,24 +5863,27 @@ static void showSelfTest() {
  * Show device information screen (firmware version, stored var version, device ID, build date, free heap).
  */
 static void showAboutScreen() {
-  obdFill(&g_obd, OBD_WHITE, 1);
-
   uint64_t mac = ESP.getEfuseMac();
   char line[24];
 
-  obdWriteString(&g_obd, 0, centerX8x8("About"), 0 * HEIGHT8x8, (char*)"About", FONT_8x8, OBD_BLACK, 1);
+  auto drawAbout = [&]() {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, centerX8x8("About"), 0 * HEIGHT8x8, (char*)"About", FONT_8x8, OBD_BLACK, 1);
 
-  sprintf(line, "FW:   v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
-  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    sprintf(line, "FW:   v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
 
-  sprintf(line, "Data: v%d", STORED_VAR_VERSION);
-  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    sprintf(line, "Data: v%d", STORED_VAR_VERSION);
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
 
-  sprintf(line, "ID:   %02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
-  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    sprintf(line, "ID:   %02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+    obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
 
-  sprintf(line, "Built:%s", __DATE__);
-  obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    sprintf(line, "Built:%s", __DATE__);
+    obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+  };
+
+  drawAbout();
 
   /* Easter egg */
   delay(400);
@@ -5493,11 +5894,58 @@ static void showAboutScreen() {
   /* Wait for encoder button or brake button */
   static bool aboutBtnHeld = false;
   aboutBtnHeld = false;
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
   while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        drawAbout();
+      }
+    }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          drawAbout();
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        drawAbout();
+      }
+      delay(10);
+      continue;
+    }
+
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+    }
+
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       break;
     }
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
       if (!aboutBtnHeld) {
         aboutBtnHeld = true;
       }
@@ -5562,6 +6010,9 @@ void showSettingsMenu() {
           settingsScreensaverActive = true;
           settingsScreensaverEncoderPos = g_rotaryEncoder.readEncoder();
           showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastSettingsInteraction, &settingsScreensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
         }
         delay(10);
         continue;

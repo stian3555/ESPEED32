@@ -1192,7 +1192,7 @@ void showWiFiPortalScreen() {
 
   /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* wifiTitle = "WiFi mode";
+  const char* wifiTitle = "WiFi info";
   obdWriteString(&g_obd, 0, centerX8x8(wifiTitle), 0, (char*)wifiTitle, FONT_8x8, OBD_BLACK, 1);
 
   sprintf(msgStr, "SSID: %s", ssid);

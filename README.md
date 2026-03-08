@@ -64,8 +64,11 @@ The docs include:
 
 1. Edit docs HTML files in `source/ESPEED32/data/docs/`.
 2. Commit to Git.
-3. Upload filesystem image (SPIFFS):
+3. Flash firmware + SPIFFS in one go (recommended after firmware/docs changes):
+   - VS Code task: `ESPEED32: Flash firmware + SPIFFS`
+   - or terminal: `./scripts/flash_all.sh`
+4. Upload filesystem image (SPIFFS) only (when firmware is unchanged):
    - VS Code task: `ESPEED32: Upload SPIFFS docs`
    - or terminal: `./scripts/upload_spiffs.sh`
    - optional: purge SPIFFS region first: `./scripts/upload_spiffs.sh --purge` (asks for confirmation)
-4. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.
+5. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.

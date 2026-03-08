@@ -96,6 +96,22 @@ json_value() {
   sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" "$ARDUINO_JSON" | head -n 1
 }
 
+run_filtered_cmd() {
+  local rc
+  set +e
+  "$@" 2>&1 | awk '
+    /esp_bt\.h:16,/ { next }
+    /esp32-hal-(bt|misc)\.c:(29|30):/ { next }
+    /esp_bredr_cfg\.h:18:9: note:.*BT: forcing BR\/EDR max sync conn eff to 1/ { skip_caret=1; next }
+    /#pragma message \("BT: forcing BR\/EDR max sync conn eff to 1 \(Bluedroid HFP requires SCO\/eSCO\)"\)/ { skip_caret=1; next }
+    skip_caret && /^[[:space:]]*\|[[:space:]]+\^~~~~~~$/ { skip_caret=0; next }
+    { print }
+  '
+  rc=${PIPESTATUS[0]}
+  set -e
+  return "$rc"
+}
+
 BOARD="$(json_value board)"
 BOARD_OPTIONS="$(json_value configuration)"
 SKETCH_REL="$(json_value sketch)"
@@ -161,7 +177,7 @@ if [[ "$SPIFFS_ONLY" -eq 0 ]]; then
     compile_cmd+=(--board-options "$BOARD_OPTIONS")
   fi
   compile_cmd+=("$SKETCH_DIR")
-  "${compile_cmd[@]}"
+  run_filtered_cmd "${compile_cmd[@]}"
 
   if [[ "$COMPILE_ONLY" -eq 1 ]]; then
     echo "[FLASH] Compile complete"

@@ -4,6 +4,7 @@
 #include <FS.h>
 #include <SPIFFS.h>
 #include <Update.h>
+#include <esp_mac.h>
 
 /* External references from main .ino */
 extern StoredVar_type g_storedVar;
@@ -17,6 +18,11 @@ static String g_uploadBuffer;
 static char g_wifiSuffix[5] = "";  /* MAC-based suffix, e.g. "A3B4" */
 static bool g_spiffsMounted = false;
 static String g_serialCmdLine;
+
+static bool readMacAddress(esp_mac_type_t type, uint8_t out[6]) {
+  if (out == nullptr) return false;
+  return esp_read_mac(out, type) == ESP_OK;
+}
 
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
 static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
@@ -765,9 +771,19 @@ static void serviceUsbSerialCommands() {
  */
 static void handleSerialCommand(const String& cmd) {
   if (cmd == "VERSION") {
-    uint64_t mac = ESP.getEfuseMac();
+    uint8_t idHi = 0;
+    uint8_t idLo = 0;
+    uint8_t wifiMac[6] = {0};
+    if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+      idHi = wifiMac[4];
+      idLo = wifiMac[5];
+    } else {
+      uint64_t mac = ESP.getEfuseMac();
+      idHi = (uint8_t)(mac >> 8);
+      idLo = (uint8_t)(mac);
+    }
     char resp[16];
-    sprintf(resp, "%02X%02X,v%d.%d", (uint8_t)(mac >> 8), (uint8_t)(mac),
+    sprintf(resp, "%02X%02X,v%d.%d", idHi, idLo,
             SW_MAJOR_VERSION, SW_MINOR_VERSION);
     Serial.println(resp);
     Serial.flush();
@@ -1080,8 +1096,13 @@ static void buildWifiSuffixIfNeeded() {
   if (g_wifiSuffix[0] != '\0') {
     return;
   }
-  uint64_t mac = ESP.getEfuseMac();
-  sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  uint8_t wifiMac[6] = {0};
+  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+    sprintf(g_wifiSuffix, "%02X%02X", wifiMac[4], wifiMac[5]);
+  } else {
+    uint64_t mac = ESP.getEfuseMac();
+    sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  }
 }
 
 void getWiFiPortalSsid(char* out, size_t outLen) {

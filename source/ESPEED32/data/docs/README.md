@@ -29,10 +29,13 @@ Related SPIFFS content (outside this folder):
 
 1. Edit HTML files in this folder.
 2. Commit to Git.
-3. Upload SPIFFS image:
+3. If firmware and docs changed, run a full flash:
+   - VS Code task: `ESPEED32: Flash firmware + SPIFFS`
+   - or terminal: `./scripts/flash_all.sh`
+4. Upload SPIFFS image only (when firmware is unchanged):
    - VS Code task: `ESPEED32: Upload SPIFFS docs`
    - or terminal: `./scripts/upload_spiffs.sh`
-4. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.
+5. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.
 
 ## Runtime routes
 

@@ -304,6 +304,359 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
   return true;
 }
 
+static void appendJsonEscaped(String& out, const char* in) {
+  if (in == nullptr) return;
+  while (*in) {
+    char c = *in++;
+    if (c == '\"' || c == '\\') {
+      out += '\\';
+      out += c;
+    } else if (c == '\n') {
+      out += "\\n";
+    } else if (c == '\r') {
+      out += "\\r";
+    } else if (c == '\t') {
+      out += "\\t";
+    } else {
+      out += c;
+    }
+  }
+}
+
+static void appendSchemaIntField(
+  String& out, bool& first, const char* id, const char* label,
+  int32_t minVal, int32_t maxVal, int32_t step, const char* unit = nullptr) {
+  if (!first) out += ",";
+  first = false;
+  char buf[256];
+  snprintf(buf, sizeof(buf),
+           "{\"id\":\"%s\",\"label\":\"%s\",\"type\":\"int\",\"min\":%ld,\"max\":%ld,\"step\":%ld",
+           id, label, (long)minVal, (long)maxVal, (long)step);
+  out += buf;
+  if (unit != nullptr && unit[0] != '\0') {
+    out += ",\"unit\":\"";
+    out += unit;
+    out += "\"";
+  }
+  out += "}";
+}
+
+static void appendSchemaStringField(
+  String& out, bool& first, const char* id, const char* label, int32_t maxLen) {
+  if (!first) out += ",";
+  first = false;
+  char buf[200];
+  snprintf(buf, sizeof(buf),
+           "{\"id\":\"%s\",\"label\":\"%s\",\"type\":\"string\",\"maxLen\":%ld}",
+           id, label, (long)maxLen);
+  out += buf;
+}
+
+static void appendSchemaEnumField(
+  String& out, bool& first, const char* id, const char* label, const char* optionsJson) {
+  if (!first) out += ",";
+  first = false;
+  out += "{\"id\":\"";
+  out += id;
+  out += "\",\"label\":\"";
+  out += label;
+  out += "\",\"type\":\"enum\",\"options\":";
+  out += optionsJson;
+  out += "}";
+}
+
+static String buildSchemaJson() {
+  String json;
+  json.reserve(5000);
+
+  char buf[64];
+  json += "{";
+  snprintf(buf, sizeof(buf), "\"fwVersion\":\"%d.%d\",", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  json += buf;
+  snprintf(buf, sizeof(buf), "\"carCount\":%d,", CAR_MAX_COUNT);
+  json += buf;
+
+  json += "\"global\":[";
+  bool first = true;
+  appendSchemaIntField(json, first, "selectedCarNumber", "Active Car", 0, CAR_MAX_COUNT - 1, 1);
+  appendSchemaEnumField(json, first, "viewMode", "View Mode",
+                        "[{\"value\":0,\"label\":\"LIST\"},{\"value\":1,\"label\":\"GRID\"}]");
+  appendSchemaIntField(json, first, "screensaverTimeout", "Screensaver Timeout", 0, SCREENSAVER_TIMEOUT_MAX, 1, "s");
+  appendSchemaIntField(json, first, "powerSaveTimeout", "Sleep Timeout", 0, POWER_SAVE_TIMEOUT_MAX, 1, "min");
+  appendSchemaIntField(json, first, "deepSleepTimeout", "Deep Sleep Timeout", 0, DEEP_SLEEP_TIMEOUT_MAX, 1, "min");
+  appendSchemaEnumField(json, first, "soundBoot", "Boot Sound",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
+  appendSchemaEnumField(json, first, "soundRace", "Race Sound",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
+  appendSchemaEnumField(json, first, "gridCarSelectEnabled", "Grid Car Select",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
+  appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"FULL\"},{\"value\":2,\"label\":\"SIMPLE\"}]");
+  appendSchemaEnumField(json, first, "language", "Language",
+                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"}]");
+  appendSchemaEnumField(json, first, "textCase", "Text Case",
+                        "[{\"value\":0,\"label\":\"UPPER\"},{\"value\":1,\"label\":\"Pascal\"}]");
+  appendSchemaEnumField(json, first, "listFontSize", "Font Size",
+                        "[{\"value\":0,\"label\":\"LARGE\"},{\"value\":1,\"label\":\"small\"}]");
+  appendSchemaIntField(json, first, "startupDelay", "Startup Delay", STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, 1, "x10ms");
+  appendSchemaEnumField(json, first, "statusSlot0", "Status Slot 1",
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+  appendSchemaEnumField(json, first, "statusSlot1", "Status Slot 2",
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+  appendSchemaEnumField(json, first, "statusSlot2", "Status Slot 3",
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+  appendSchemaEnumField(json, first, "statusSlot3", "Status Slot 4",
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+  appendSchemaStringField(json, first, "screensaverLine1", "Screensaver Line 1", SCREENSAVER_TEXT_MAX - 1);
+  appendSchemaStringField(json, first, "screensaverLine2", "Screensaver Line 2", SCREENSAVER_TEXT_MAX - 1);
+  json += "],";
+
+  json += "\"car\":[";
+  first = true;
+  appendSchemaStringField(json, first, "carName", "Profile Name", CAR_NAME_MAX_SIZE - 1);
+  appendSchemaIntField(json, first, "minSpeed", "SENSI", 0, MIN_SPEED_MAX_VALUE, 1, "%");
+  appendSchemaIntField(json, first, "brake", "BRAKE", 0, BRAKE_MAX_VALUE, 1, "%");
+  appendSchemaIntField(json, first, "maxSpeed", "LIMIT", 5, 100, 1, "%");
+  appendSchemaIntField(json, first, "curveDiff", "CURVE", THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, 1, "%");
+  appendSchemaIntField(json, first, "antiSpin", "ANTIS", 0, ANTISPIN_MAX_VALUE, 1, "ms");
+  appendSchemaIntField(json, first, "freqPWM", "PWM_F", FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100, 1, "x0.1kHz");
+  appendSchemaIntField(json, first, "brakeButton", "B_BTN", 0, 100, 1, "%");
+  appendSchemaEnumField(json, first, "quickBrakeEnabled", "Q-BRAKE",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
+  appendSchemaIntField(json, first, "quickBrakeThreshold", "Q-BRAKE Threshold", 0, QUICK_BRAKE_THRESHOLD_MAX, 1, "%");
+  appendSchemaIntField(json, first, "quickBrakeStrength", "Q-BRAKE Strength", 0, QUICK_BRAKE_STRENGTH_MAX, 1, "%");
+  json += "]";
+  json += "}";
+  return json;
+}
+
+static uint8_t getRequestedCarIndex() {
+  if (g_wifiServer != nullptr && g_wifiServer->hasArg("car")) {
+    int32_t v = g_wifiServer->arg("car").toInt();
+    if (v >= 0 && v < CAR_MAX_COUNT) return (uint8_t)v;
+  }
+  return (uint8_t)g_storedVar.selectedCarNumber;
+}
+
+static String buildStateJson(uint8_t carIndex) {
+  if (carIndex >= CAR_MAX_COUNT) carIndex = (uint8_t)g_storedVar.selectedCarNumber;
+  const CarParam_type& c = g_storedVar.carParam[carIndex];
+
+  String json;
+  json.reserve(2500);
+  char buf[160];
+
+  json += "{";
+  snprintf(buf, sizeof(buf), "\"selectedCarNumber\":%u,", g_storedVar.selectedCarNumber);
+  json += buf;
+  snprintf(buf, sizeof(buf), "\"carIndex\":%u,", carIndex);
+  json += buf;
+
+  json += "\"global\":{";
+  snprintf(buf, sizeof(buf), "\"viewMode\":%u,", g_storedVar.viewMode); json += buf;
+  snprintf(buf, sizeof(buf), "\"screensaverTimeout\":%u,", g_storedVar.screensaverTimeout); json += buf;
+  snprintf(buf, sizeof(buf), "\"powerSaveTimeout\":%u,", g_storedVar.powerSaveTimeout); json += buf;
+  snprintf(buf, sizeof(buf), "\"deepSleepTimeout\":%u,", g_storedVar.deepSleepTimeout); json += buf;
+  snprintf(buf, sizeof(buf), "\"soundBoot\":%u,", g_storedVar.soundBoot); json += buf;
+  snprintf(buf, sizeof(buf), "\"soundRace\":%u,", g_storedVar.soundRace); json += buf;
+  snprintf(buf, sizeof(buf), "\"gridCarSelectEnabled\":%u,", g_storedVar.gridCarSelectEnabled); json += buf;
+  snprintf(buf, sizeof(buf), "\"raceViewMode\":%u,", g_storedVar.raceViewMode); json += buf;
+  snprintf(buf, sizeof(buf), "\"language\":%u,", g_storedVar.language); json += buf;
+  snprintf(buf, sizeof(buf), "\"textCase\":%u,", g_storedVar.textCase); json += buf;
+  snprintf(buf, sizeof(buf), "\"listFontSize\":%u,", g_storedVar.listFontSize); json += buf;
+  snprintf(buf, sizeof(buf), "\"startupDelay\":%u,", g_storedVar.startupDelay); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot0\":%u,", g_storedVar.statusSlot[0]); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot1\":%u,", g_storedVar.statusSlot[1]); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot2\":%u,", g_storedVar.statusSlot[2]); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot3\":%u,", g_storedVar.statusSlot[3]); json += buf;
+  json += "\"screensaverLine1\":\"";
+  appendJsonEscaped(json, g_storedVar.screensaverLine1);
+  json += "\",\"screensaverLine2\":\"";
+  appendJsonEscaped(json, g_storedVar.screensaverLine2);
+  json += "\"},";
+
+  json += "\"car\":{";
+  json += "\"carName\":\"";
+  appendJsonEscaped(json, c.carName);
+  json += "\",";
+  snprintf(buf, sizeof(buf), "\"minSpeed\":%u,", c.minSpeed); json += buf;
+  snprintf(buf, sizeof(buf), "\"brake\":%u,", c.brake); json += buf;
+  snprintf(buf, sizeof(buf), "\"maxSpeed\":%u,", c.maxSpeed); json += buf;
+  snprintf(buf, sizeof(buf), "\"curveDiff\":%u,", c.throttleCurveVertex.curveSpeedDiff); json += buf;
+  snprintf(buf, sizeof(buf), "\"antiSpin\":%u,", c.antiSpin); json += buf;
+  snprintf(buf, sizeof(buf), "\"freqPWM\":%u,", c.freqPWM); json += buf;
+  snprintf(buf, sizeof(buf), "\"brakeButton\":%u,", c.brakeButtonReduction); json += buf;
+  snprintf(buf, sizeof(buf), "\"quickBrakeEnabled\":%u,", c.quickBrakeEnabled); json += buf;
+  snprintf(buf, sizeof(buf), "\"quickBrakeThreshold\":%u,", c.quickBrakeThreshold); json += buf;
+  snprintf(buf, sizeof(buf), "\"quickBrakeStrength\":%u", c.quickBrakeStrength); json += buf;
+  json += "}";
+  json += "}";
+  return json;
+}
+
+static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t* appliedCarIndex) {
+  StoredVar_type updated = g_storedVar;
+  int32_t v;
+  uint8_t carIndex = updated.selectedCarNumber;
+
+  if (parseJsonInt(json, "carIndex", v)) {
+    if (!inRange(v, 0, CAR_MAX_COUNT - 1)) {
+      *errorMsg = "Error: invalid carIndex";
+      return false;
+    }
+    carIndex = (uint8_t)v;
+  }
+
+  if (parseJsonInt(json, "selectedCarNumber", v)) {
+    if (!inRange(v, 0, CAR_MAX_COUNT - 1)) { *errorMsg = "Error: invalid selectedCarNumber"; return false; }
+    updated.selectedCarNumber = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "viewMode", v)) {
+    if (!inRange(v, VIEW_MODE_LIST, VIEW_MODE_GRID)) { *errorMsg = "Error: invalid viewMode"; return false; }
+    updated.viewMode = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "screensaverTimeout", v)) {
+    if (!inRange(v, 0, SCREENSAVER_TIMEOUT_MAX)) { *errorMsg = "Error: invalid screensaverTimeout"; return false; }
+    updated.screensaverTimeout = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "powerSaveTimeout", v)) {
+    if (!inRange(v, 0, POWER_SAVE_TIMEOUT_MAX)) { *errorMsg = "Error: invalid powerSaveTimeout"; return false; }
+    updated.powerSaveTimeout = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "deepSleepTimeout", v)) {
+    if (!(v == 0 || inRange(v, DEEP_SLEEP_TIMEOUT_MIN, DEEP_SLEEP_TIMEOUT_MAX))) {
+      *errorMsg = "Error: invalid deepSleepTimeout";
+      return false;
+    }
+    updated.deepSleepTimeout = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "soundBoot", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid soundBoot"; return false; }
+    updated.soundBoot = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "soundRace", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid soundRace"; return false; }
+    updated.soundRace = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "gridCarSelectEnabled", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid gridCarSelectEnabled"; return false; }
+    updated.gridCarSelectEnabled = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "raceViewMode", v)) {
+    if (!inRange(v, RACE_VIEW_OFF, RACE_VIEW_SIMPLE)) { *errorMsg = "Error: invalid raceViewMode"; return false; }
+    updated.raceViewMode = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "language", v)) {
+    if (!inRange(v, LANG_NOR, LANG_ACD)) { *errorMsg = "Error: invalid language"; return false; }
+    updated.language = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "textCase", v)) {
+    if (!inRange(v, TEXT_CASE_UPPER, TEXT_CASE_PASCAL)) { *errorMsg = "Error: invalid textCase"; return false; }
+    updated.textCase = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "listFontSize", v)) {
+    if (!inRange(v, FONT_SIZE_LARGE, FONT_SIZE_SMALL)) { *errorMsg = "Error: invalid listFontSize"; return false; }
+    updated.listFontSize = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "startupDelay", v)) {
+    if (!inRange(v, STARTUP_DELAY_MIN, STARTUP_DELAY_MAX)) { *errorMsg = "Error: invalid startupDelay"; return false; }
+    updated.startupDelay = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "statusSlot0", v)) {
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot0"; return false; }
+    updated.statusSlot[0] = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "statusSlot1", v)) {
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot1"; return false; }
+    updated.statusSlot[1] = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "statusSlot2", v)) {
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot2"; return false; }
+    updated.statusSlot[2] = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "statusSlot3", v)) {
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot3"; return false; }
+    updated.statusSlot[3] = (uint16_t)v;
+  }
+
+  char tempStr[SCREENSAVER_TEXT_MAX];
+  if (parseJsonStr(json, "screensaverLine1", tempStr, SCREENSAVER_TEXT_MAX)) {
+    strncpy(updated.screensaverLine1, tempStr, SCREENSAVER_TEXT_MAX);
+    updated.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  }
+  if (parseJsonStr(json, "screensaverLine2", tempStr, SCREENSAVER_TEXT_MAX)) {
+    strncpy(updated.screensaverLine2, tempStr, SCREENSAVER_TEXT_MAX);
+    updated.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  }
+
+  CarParam_type car = updated.carParam[carIndex];
+  uint16_t minSpeed = car.minSpeed;
+  uint16_t maxSpeed = car.maxSpeed;
+
+  if (parseJsonInt(json, "minSpeed", v)) {
+    if (!inRange(v, 0, MIN_SPEED_MAX_VALUE)) { *errorMsg = "Error: invalid minSpeed"; return false; }
+    minSpeed = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "maxSpeed", v)) {
+    if (!inRange(v, 5, 100)) { *errorMsg = "Error: invalid maxSpeed"; return false; }
+    maxSpeed = (uint16_t)v;
+  }
+  if (maxSpeed < (uint16_t)(minSpeed + 5)) {
+    *errorMsg = "Error: maxSpeed must be at least minSpeed+5";
+    return false;
+  }
+  car.minSpeed = minSpeed;
+  car.maxSpeed = maxSpeed;
+
+  if (parseJsonInt(json, "brake", v)) {
+    if (!inRange(v, 0, BRAKE_MAX_VALUE)) { *errorMsg = "Error: invalid brake"; return false; }
+    car.brake = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "curveDiff", v)) {
+    if (!inRange(v, THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE)) {
+      *errorMsg = "Error: invalid curveDiff"; return false;
+    }
+    car.throttleCurveVertex.curveSpeedDiff = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "antiSpin", v)) {
+    if (!inRange(v, 0, ANTISPIN_MAX_VALUE)) { *errorMsg = "Error: invalid antiSpin"; return false; }
+    car.antiSpin = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "freqPWM", v)) {
+    if (!inRange(v, FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100)) { *errorMsg = "Error: invalid freqPWM"; return false; }
+    car.freqPWM = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "brakeButton", v)) {
+    if (!inRange(v, 0, 100)) { *errorMsg = "Error: invalid brakeButton"; return false; }
+    car.brakeButtonReduction = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "quickBrakeEnabled", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid quickBrakeEnabled"; return false; }
+    car.quickBrakeEnabled = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "quickBrakeThreshold", v)) {
+    if (!inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) { *errorMsg = "Error: invalid quickBrakeThreshold"; return false; }
+    car.quickBrakeThreshold = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "quickBrakeStrength", v)) {
+    if (!inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) { *errorMsg = "Error: invalid quickBrakeStrength"; return false; }
+    car.quickBrakeStrength = (uint16_t)v;
+  }
+
+  char tempName[CAR_NAME_MAX_SIZE];
+  if (parseJsonStr(json, "carName", tempName, CAR_NAME_MAX_SIZE)) {
+    memset(car.carName, 0, CAR_NAME_MAX_SIZE);
+    strncpy(car.carName, tempName, CAR_NAME_MAX_SIZE - 1);
+    car.carName[CAR_NAME_MAX_SIZE - 1] = '\0';
+  }
+
+  updated.carParam[carIndex] = car;
+  g_storedVar = updated;
+
+  if (appliedCarIndex != nullptr) *appliedCarIndex = carIndex;
+  return true;
+}
+
 
 /* OTA progress tracking */
 static size_t g_otaTotal = 0;
@@ -365,6 +718,10 @@ static void sendDocsMissing(const char* requestedPath) {
  *   "VERSION"        → "<id>,v<major>.<minor>\n"  e.g. "F0A4,v4.4"
  *   "BACKUP"         → "<bytecount>\n<json>"
  *   "RESTORE\n<len>" → read len bytes, parse, save; reply "OK..." or "ERR:..."
+ *   "SCHEMA"         → "<bytecount>\n<json>"
+ *   "STATE [car]"    → "<bytecount>\n<json>"
+ *   "APPLY\n<len>"   → read len bytes patch JSON; reply "OK\n<bytecount>\n<stateJson>" or "ERR:..."
+ *   "SAVE"           → "OK - Saved to flash"
  * Shared by showUSBPortalScreen(); called when Serial.available() triggers.
  */
 static void handleSerialCommand(const String& cmd) {
@@ -381,6 +738,65 @@ static void handleSerialCommand(const String& cmd) {
     Serial.print(json.length());
     Serial.print('\n');
     Serial.print(json);
+    Serial.flush();
+
+  } else if (cmd == "SCHEMA") {
+    String json = buildSchemaJson();
+    Serial.print(json.length());
+    Serial.print('\n');
+    Serial.print(json);
+    Serial.flush();
+
+  } else if (cmd.startsWith("STATE")) {
+    uint8_t carIndex = (uint8_t)g_storedVar.selectedCarNumber;
+    int32_t sp = cmd.indexOf(' ');
+    if (sp > 0 && sp < (int32_t)cmd.length() - 1) {
+      int32_t v = cmd.substring(sp + 1).toInt();
+      if (v < 0 || v >= CAR_MAX_COUNT) {
+        Serial.println("ERR:invalid carIndex");
+        return;
+      }
+      carIndex = (uint8_t)v;
+    }
+    String json = buildStateJson(carIndex);
+    Serial.print(json.length());
+    Serial.print('\n');
+    Serial.print(json);
+    Serial.flush();
+
+  } else if (cmd == "APPLY") {
+    String lenStr = Serial.readStringUntil('\n');
+    int32_t len = lenStr.toInt();
+    if (len <= 0 || len > 8192) {
+      Serial.println("ERR:invalid length");
+      return;
+    }
+    /* Static buffer avoids heap fragmentation for large payloads */
+    static char jsonBuf[8193];
+    Serial.setTimeout(15000);
+    int32_t got = (int32_t)Serial.readBytes(jsonBuf, (size_t)len);
+    Serial.setTimeout(1000);
+    if (got != len) { Serial.println("ERR:timeout"); return; }
+    jsonBuf[len] = '\0';
+    String json(jsonBuf);
+
+    String errorMsg;
+    uint8_t carIndex = (uint8_t)g_storedVar.selectedCarNumber;
+    if (!parseAndApplyWebPatch(json, &errorMsg, &carIndex)) {
+      Serial.println("ERR:" + errorMsg);
+      return;
+    }
+
+    String outState = buildStateJson(carIndex);
+    Serial.println("OK");
+    Serial.print(outState.length());
+    Serial.print('\n');
+    Serial.print(outState);
+    Serial.flush();
+
+  } else if (cmd == "SAVE") {
+    saveEEPROM(g_storedVar);
+    Serial.println("OK - Saved to flash");
     Serial.flush();
 
   } else if (cmd == "RESTORE") {
@@ -430,6 +846,43 @@ static void handleInfo() {
   json += "\"}";
 
   g_wifiServer->send(200, "application/json", json);
+}
+
+static void handleSchema() {
+  g_wifiServer->send(200, "application/json", buildSchemaJson());
+}
+
+static void handleState() {
+  uint8_t carIndex = getRequestedCarIndex();
+  g_wifiServer->send(200, "application/json", buildStateJson(carIndex));
+}
+
+static void handleApply() {
+  String payload = g_wifiServer->arg("plain");
+  if (payload.length() == 0) {
+    g_wifiServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Missing JSON body\"}");
+    return;
+  }
+
+  String errorMsg;
+  uint8_t carIndex = g_storedVar.selectedCarNumber;
+  if (!parseAndApplyWebPatch(payload, &errorMsg, &carIndex)) {
+    String out = "{\"ok\":false,\"error\":\"";
+    appendJsonEscaped(out, errorMsg.c_str());
+    out += "\"}";
+    g_wifiServer->send(400, "application/json", out);
+    return;
+  }
+
+  String out = "{\"ok\":true,\"state\":";
+  out += buildStateJson(carIndex);
+  out += "}";
+  g_wifiServer->send(200, "application/json", out);
+}
+
+static void handleSave() {
+  saveEEPROM(g_storedVar);
+  g_wifiServer->send(200, "application/json", "{\"ok\":true,\"message\":\"Saved to flash\"}");
 }
 
 static void handleRoot() {
@@ -616,6 +1069,10 @@ void showWiFiPortalScreen() {
   g_wifiServer->on("/ui/", HTTP_GET, handleUi);
   g_wifiServer->on("/ui/index.html", HTTP_GET, handleUi);
   g_wifiServer->on("/api/info", HTTP_GET, handleInfo);
+  g_wifiServer->on("/api/schema", HTTP_GET, handleSchema);
+  g_wifiServer->on("/api/state", HTTP_GET, handleState);
+  g_wifiServer->on("/api/apply", HTTP_POST, handleApply);
+  g_wifiServer->on("/api/save", HTTP_POST, handleSave);
   g_wifiServer->on("/backup", HTTP_GET, handleBackup);
   g_wifiServer->on("/docs", HTTP_GET, handleDocsDefault);
   g_wifiServer->on("/docs/", HTTP_GET, handleDocsDefault);

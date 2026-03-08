@@ -35,6 +35,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 .subsection{border:1px solid #2f3850;border-radius:8px;padding:8px 10px;margin:10px 0;background:#0c1322}
 .subsection summary{cursor:pointer;color:#9dd7ff;font-size:13px;font-weight:600}
 .subsection[open] summary{margin-bottom:8px}
+.btn.disabled{opacity:.55;pointer-events:none}
 </style>
 </head>
 <body>
@@ -63,7 +64,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <hr>
 <h2>User Guide</h2>
 <a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
-<p class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
+<p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
 <hr>
 <div id="fw-section">
 <h2>Firmware Update (.bin)</h2>
@@ -114,7 +115,53 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){retu
 function applyInfo(){
   document.getElementById('devid').textContent=info.deviceId||'----';
   document.getElementById('ver').textContent=info.version||'-';
-  document.getElementById('docs-link').href=info.docsPath||'/docs';
+  updateDocsLinkState();
+}
+
+function setBtnDisabled(id,disabled){
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.disabled=!!disabled;
+}
+
+function setEditorUiReady(ready){
+  setBtnDisabled('btn-refresh',false);
+  setBtnDisabled('btn-apply',!ready);
+  setBtnDisabled('btn-save',!ready);
+}
+
+function updateDocsLinkState(){
+  var link=document.getElementById('docs-link');
+  var note=document.getElementById('docs-note');
+  if(!link || !note) return;
+
+  link.classList.remove('disabled');
+  link.removeAttribute('aria-disabled');
+  link.setAttribute('target','_blank');
+  link.setAttribute('rel','noopener');
+
+  if(hostedMode && usb){
+    link.href='#';
+    link.classList.add('disabled');
+    link.setAttribute('aria-disabled','true');
+    note.textContent='Docs are not available over USB commands. Use WiFi mode on the controller for onboard docs.';
+    return;
+  }
+
+  if(hostedMode && location.protocol==='file:'){
+    link.href='#';
+    link.classList.add('disabled');
+    link.setAttribute('aria-disabled','true');
+    note.textContent='Local file mode cannot resolve docs path. Open hosted page or use controller WiFi docs.';
+    return;
+  }
+
+  link.href=info.docsPath||'/docs';
+  if(hostedMode){
+    note.textContent='Hosted mode: docs open from this site. Controller docs still require WiFi mode.';
+  }else{
+    note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
+  }
 }
 
 function setUsbReadyState(ready,msg){
@@ -123,6 +170,7 @@ function setUsbReadyState(ready,msg){
   if(b && usb){
     b.textContent=usbReady?'Disconnect USB':'Disconnect USB (not ready)';
   }
+  updateDocsLinkState();
   if(msg){ss('st',usbReady?'ok':'err',msg);}
 }
 
@@ -218,6 +266,7 @@ async function usbToggle(){
   }else{
     usb=false;
     usbReady=false;
+    updateDocsLinkState();
     if(_r){try{await _r.cancel();}catch(_){}}
     _r=null;
     if(_pump){try{await _pump;}catch(_){}}
@@ -418,6 +467,7 @@ async function toggleEditor(){
   btn.textContent=opening?'Hide Advanced Config Editor':'Open Advanced Config Editor';
 
   if(opening && !editorLoaded){
+    setEditorUiReady(false);
     document.getElementById('editor').textContent='Loading editor...';
     await refreshEditor(true);
   }
@@ -458,18 +508,21 @@ async function loadEditorState(car){
 
 async function refreshEditor(silent){
   try{
+    setEditorUiReady(false);
     if(!schema) await loadEditorSchema();
     var car=(typeof editorCarIndex==='number' && !isNaN(editorCarIndex))?editorCarIndex:undefined;
     await loadEditorState(car);
     editorLoaded=true;
+    setEditorUiReady(true);
     if(!silent) ss('edst','ok','Editor refreshed from device');
   }catch(e){
+    setEditorUiReady(false);
     ss('edst','err','Editor refresh failed: '+e.message);
   }
 }
 
 async function applyEditor(saveAfter){
-  if(!schema || !state){ss('edst','err','Editor not ready');return;}
+  if(!schema || !state || !editorLoaded){ss('edst','err','Editor not ready. Press Refresh first.');return;}
   if(hostedMode && !usb){ss('edst','err','Hosted page: connect via USB first.');return;}
   try{
     var payload={};
@@ -598,6 +651,7 @@ document.getElementById('of').onsubmit=async function(e){
 hostedMode=detectHostedMode();
 applyHostedMode();
 if('serial' in navigator){document.getElementById('usbbar').style.display='block';}
+setEditorUiReady(false);
 loadInfo();
 </script>
 </body>

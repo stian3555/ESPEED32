@@ -1037,32 +1037,31 @@ static void handleOta() {
   }
 }
 
-
-/**
- * @brief Main WiFi backup/restore screen - called from settings menu
- * @details Starts WiFi AP, runs HTTP server, shows info on OLED.
- *          Returns when user presses encoder button or brake button.
- */
-void showWiFiPortalScreen() {
-  char msgStr[32];
-
-  /* Build unique SSID from chip MAC address (last 2 bytes) */
-  char ssid[20];
+static void buildWifiSuffixIfNeeded() {
+  if (g_wifiSuffix[0] != '\0') {
+    return;
+  }
   uint64_t mac = ESP.getEfuseMac();
   sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
-  sprintf(ssid, "%s_%s", WIFI_SSID, g_wifiSuffix);
+}
 
-  /* Start WiFi AP with WPA2 */
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, WIFI_PASS, WIFI_AP_CHANNEL, 0, WIFI_MAX_CONNECTIONS);
-  delay(100);
-  IPAddress ip = WiFi.softAPIP();
+void getWiFiPortalSsid(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  buildWifiSuffixIfNeeded();
+  snprintf(out, outLen, "%s_%s", WIFI_SSID, g_wifiSuffix);
+}
 
-  /* Mount SPIFFS for static documentation pages (optional) */
-  g_spiffsMounted = SPIFFS.begin(false);
+IPAddress getWiFiPortalIP() {
+  return WiFi.softAPIP();
+}
 
-  /* Start web server */
-  g_wifiServer = new WebServer(80);
+static void registerWebRoutes() {
+  if (g_wifiServer == nullptr) {
+    return;
+  }
+
   g_wifiServer->on("/", handleRoot);
   g_wifiServer->on("/index.html", HTTP_GET, handleRoot);
   g_wifiServer->on("/ui", HTTP_GET, handleUi);
@@ -1093,7 +1092,95 @@ void showWiFiPortalScreen() {
   g_wifiServer->on("/docs/assets/trig_cal.png", HTTP_GET, handleDocsTriggerAsset);
   g_wifiServer->on("/restore", HTTP_POST, handleRestore, handleRestoreUpload);
   g_wifiServer->on("/ota", HTTP_POST, handleOta, handleOtaUpload);
+}
+
+bool isWiFiPortalActive() {
+  return g_wifiServer != nullptr;
+}
+
+bool startWiFiPortal() {
+  if (g_wifiServer != nullptr) {
+    return true;
+  }
+
+  char ssid[20];
+  getWiFiPortalSsid(ssid, sizeof(ssid));
+
+  WiFi.mode(WIFI_AP);
+  if (!WiFi.softAP(ssid, WIFI_PASS, WIFI_AP_CHANNEL, 0, WIFI_MAX_CONNECTIONS)) {
+    WiFi.mode(WIFI_OFF);
+    return false;
+  }
+  delay(100);
+
+  g_spiffsMounted = SPIFFS.begin(false);
+
+  g_wifiServer = new WebServer(80);
+  if (g_wifiServer == nullptr) {
+    WiFi.softAPdisconnect(true);
+    WiFi.mode(WIFI_OFF);
+    if (g_spiffsMounted) {
+      SPIFFS.end();
+      g_spiffsMounted = false;
+    }
+    return false;
+  }
+
+  registerWebRoutes();
   g_wifiServer->begin();
+  return true;
+}
+
+void serviceWiFiPortal() {
+  if (g_wifiServer != nullptr) {
+    g_wifiServer->handleClient();
+  }
+}
+
+void stopWiFiPortal() {
+  if (g_wifiServer != nullptr) {
+    g_wifiServer->stop();
+    delete g_wifiServer;
+    g_wifiServer = nullptr;
+  }
+
+  WiFi.softAPdisconnect(true);
+  WiFi.mode(WIFI_OFF);
+
+  if (g_spiffsMounted) {
+    SPIFFS.end();
+    g_spiffsMounted = false;
+  }
+}
+
+
+/**
+ * @brief Main WiFi backup/restore screen - called from settings menu
+ * @details Starts WiFi AP, runs HTTP server, shows info on OLED.
+ *          Returns when user presses encoder button or brake button.
+ */
+void showWiFiPortalScreen() {
+  char msgStr[32];
+  bool wasAlreadyActive = isWiFiPortalActive();
+
+  if (!startWiFiPortal()) {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)"WiFi start failed", FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Press to exit", FONT_8x8, OBD_BLACK, 1);
+    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+        break;
+      }
+      vTaskDelay(1);
+    }
+    obdFill(&g_obd, OBD_WHITE, 1);
+    return;
+  }
+
+  char ssid[20];
+  getWiFiPortalSsid(ssid, sizeof(ssid));
+  IPAddress ip = getWiFiPortalIP();
 
   /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
   obdFill(&g_obd, OBD_WHITE, 1);
@@ -1112,7 +1199,7 @@ void showWiFiPortalScreen() {
 
   /* Service loop - handle HTTP requests until user exits */
   while (true) {
-    g_wifiServer->handleClient();
+    serviceWiFiPortal();
 
     /* Block exit during OTA to prevent bricking */
     if (!g_otaInProgress) {
@@ -1129,15 +1216,8 @@ void showWiFiPortalScreen() {
     vTaskDelay(1);
   }
 
-  /* Cleanup */
-  g_wifiServer->stop();
-  delete g_wifiServer;
-  g_wifiServer = nullptr;
-  WiFi.softAPdisconnect(true);
-  WiFi.mode(WIFI_OFF);
-  if (g_spiffsMounted) {
-    SPIFFS.end();
-    g_spiffsMounted = false;
+  if (!wasAlreadyActive) {
+    stopWiFiPortal();
   }
 
   obdFill(&g_obd, OBD_WHITE, 1);
@@ -1162,6 +1242,8 @@ void showUSBPortalScreen() {
   static uint32_t lastBrakeBtnUsbTime = 0;
 
   while (true) {
+    serviceWiFiPortal();
+
     if (g_rotaryEncoder.isEncoderButtonClicked()) break;
 
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {

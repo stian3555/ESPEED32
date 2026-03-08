@@ -306,11 +306,15 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>9. WiFi/USB backup, restore and OTA</h2>
     <h3>WiFi</h3>
     <ol>
-      <li>Open <code>SETTINGS -> WIFI</code>.</li>
-      <li>Connect to AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>).</li>
-      <li>Open OLED IP in browser (typically <code>192.168.4.1</code>).</li>
-      <li>Use page for <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code>, and <code>/docs</code>.</li>
+      <li>Open <code>SETTINGS -> WIFI</code> to enter the WiFi submenu.</li>
+      <li><code>INFO PAGE</code>: opens the WiFi page directly and starts WiFi/AP automatically. Leaving the info page stops WiFi again (unless background mode was started first).</li>
+      <li><code>AUTO OFF</code>: set timeout for background WiFi (1-120 min, default 5 min).</li>
+      <li><code>START BG</code>: starts WiFi without opening the info page, so you can return to the main menu.</li>
+      <li><code>STOP BG</code>: manually stops background WiFi before timeout.</li>
+      <li>While WiFi is active: connect to AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) and open OLED IP in browser (typically <code>192.168.4.1</code>).</li>
+      <li>On the info page you can use <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code>, and <code>/docs</code>.</li>
     </ol>
+    <p class="small">If you have a blank status slot, <code>WIFI</code> is shown in the status bar while WiFi is active.</p>
     <h3>USB</h3>
     <ol>
       <li>Open <code>SETTINGS -> USB</code>.</li>
@@ -370,6 +374,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- WIFI
+|  |  |- INFO PAGE
+|  |  |- AUTO OFF (1-120 min, default 5)
+|  |  |- START/STOP BG
+|  |  `- BACK
 |  |- USB
 |  |- RESET
 |  |  |- CAR

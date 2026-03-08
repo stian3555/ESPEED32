@@ -306,11 +306,15 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>9. WiFi/USB backup, restore og OTA</h2>
     <h3>WiFi</h3>
     <ol>
-      <li>Gå til <code>SETTINGS -> WIFI</code>.</li>
-      <li>Koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>).</li>
-      <li>Åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
-      <li>Bruk siden til <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
+      <li>Gå til <code>SETTINGS -> WIFI</code> for undermenyen.</li>
+      <li><code>INFO SIDE</code>: åpner WiFi-siden direkte, og WiFi/AP startes automatisk. Når du går ut av infosiden stoppes WiFi igjen (med mindre du hadde aktivert bakgrunnsmodus først).</li>
+      <li><code>AUTO AV</code>: velg timeout for bakgrunns-WiFi (1-120 min, default 5 min).</li>
+      <li><code>START BAKGR</code>: starter WiFi uten å åpne infosiden, slik at du kan gå tilbake til hovedmeny.</li>
+      <li><code>STOPP BAKGR</code>: stopper bakgrunns-WiFi manuelt før timeout.</li>
+      <li>Mens WiFi er aktiv: koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>) og åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
+      <li>På infosiden kan du bruke <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
     </ol>
+    <p class="small">Hvis du har en ledig (blank) status-slot, vises <code>WIFI</code> i statuslinja når WiFi er aktiv.</p>
     <h3>USB</h3>
     <ol>
       <li>Gå til <code>SETTINGS -> USB</code>.</li>
@@ -370,6 +374,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- WIFI
+|  |  |- INFO SIDE
+|  |  |- AUTO AV (1-120 min, default 5)
+|  |  |- START/STOP BAKGR
+|  |  `- BACK
 |  |- USB
 |  |- RESET
 |  |  |- CAR

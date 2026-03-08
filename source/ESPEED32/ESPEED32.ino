@@ -338,16 +338,22 @@ static uint32_t g_lastEncoderInteraction = 0;  /* Timestamp of last encoder inte
 static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
 static bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 static bool g_escapeToMain = false;    /* Set by any submenu long press → cascade-breaks to RUNNING for race mode toggle */
+static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
+static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
+static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
 
 /* Long press tracking shared across all submenus (only one active at a time) */
 static uint32_t g_lpRaceStart = 0;
 static bool g_lpRaceActive = false;
+static void serviceTimedWiFiPortal();
 
 /**
  * @brief Detect long press on encoder button (shared across all submenus).
  * @return true once per long press when threshold is exceeded.
  */
 static bool checkRaceModeEscape() {
+  serviceTimedWiFiPortal();
+
   if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
     if (!g_lpRaceActive) { g_lpRaceStart = millis(); g_lpRaceActive = true; }
     if (millis() - g_lpRaceStart > BUTTON_LONG_PRESS_MS) {
@@ -392,6 +398,42 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
   g_rotaryEncoder.isEncoderButtonClicked();  /* consume any pending click */
 }
 
+static void serviceTimedWiFiPortal() {
+  if (isWiFiPortalActive()) {
+    serviceWiFiPortal();
+  }
+
+  if (!g_wifiTimedActive) {
+    return;
+  }
+
+  if (!isWiFiPortalActive()) {
+    g_wifiTimedActive = false;
+    return;
+  }
+
+  if ((int32_t)(millis() - g_wifiTimedStopAtMs) >= 0) {
+    stopWiFiPortal();
+    g_wifiTimedActive = false;
+  }
+}
+
+static void startTimedWiFiPortal(uint16_t minutes) {
+  minutes = constrain(minutes, 1, 120);
+  if (startWiFiPortal()) {
+    g_wifiTimedMinutes = minutes;
+    g_wifiTimedActive = true;
+    g_wifiTimedStopAtMs = millis() + ((uint32_t)minutes * 60000UL);
+  }
+}
+
+static void stopTimedWiFiPortal() {
+  g_wifiTimedActive = false;
+  if (isWiFiPortalActive()) {
+    stopWiFiPortal();
+  }
+}
+
 /*********************************************************************************************************************/
 /*                                                Function Prototypes                                                */
 /*********************************************************************************************************************/
@@ -403,10 +445,14 @@ static void showDeepSleep();
 static void showSleepSettings();
 static void showDeepSleepSettings();
 static void showSoundSettings();
+static void showWiFiSettings();
 static void showPowerSettings();
 static void showDisplaySettings();
 static void showAboutScreen();
 static void showSelfTest();
+static void serviceTimedWiFiPortal();
+static void startTimedWiFiPortal(uint16_t minutes);
+static void stopTimedWiFiPortal();
 void initDisplayMenuItems();
 
 /*********************************************************************************************************************/
@@ -464,6 +510,7 @@ void Task1code(void *pvParameters) {
 
     /* Read motor current (voltage is read exclusively in Task2 to avoid ADC contention) */
     g_escVar.motorCurrent_mA = HAL_ReadMotorCurrent();
+    serviceTimedWiFiPortal();
 
     /* Update selected car if initialization complete */
     if (g_currState != INIT) {
@@ -1394,6 +1441,16 @@ void displayStatusLine() {
     }
 
     obdWriteString(&g_obd, 0, SLOT_X[s], Y, buf, FONT_6x8, color, 1);
+  }
+
+  /* Optional WiFi marker: use first blank status slot if available */
+  if (isWiFiPortalActive()) {
+    for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
+      if (g_storedVar.statusSlot[s] == STATUS_BLANK) {
+        obdWriteString(&g_obd, 0, SLOT_X[s], Y, (char*)"WIFI ", FONT_6x8, OBD_BLACK, 1);
+        break;
+      }
+    }
   }
 }
 
@@ -4327,6 +4384,124 @@ static void showSoundSettings() {
 }
 
 /**
+ * WiFi submenu.
+ * Items: INFO PAGE, AUTO OFF (minutes), START/STOP BG, BACK.
+ * MINUTES is a runtime-only value used for timed background activation.
+ */
+static void showWiFiSettings() {
+  uint16_t lang = g_storedVar.language;
+
+  const char* lblOpen[4]    = {"INFO SIDE",   "INFO PAGE", "INFO PAGE", "INFO PAGE"};
+  const char* lblTimer[4]   = {"AUTO AV",     "AUTO OFF",  "AUTO OFF",  "AUTO OFF"};
+  const char* lblStartBg[4] = {"START BAKGR", "START BG",  "START BG",  "START BG"};
+  const char* lblStopBg[4]  = {"STOPP BAKGR", "STOP BG",   "STOP BG",   "STOP BG"};
+
+  const uint8_t NUM_ITEMS = 4;  /* 0=NOW, 1=MINUTES, 2=ACTIVE, 3=BACK */
+  const uint8_t menuFont = FONT_8x8;
+  const uint8_t lineH = HEIGHT8x8;
+
+  int8_t sel = 0;
+  bool editing = false;
+  uint16_t tmpMinutes = constrain(g_wifiTimedMinutes, 1, 120);
+  bool needRedraw = true;
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
+  g_rotaryEncoder.reset(0);
+
+  while (true) {
+    serviceTimedWiFiPortal();
+
+    if (g_rotaryEncoder.encoderChanged()) {
+      if (editing) {
+        tmpMinutes = (uint16_t)g_rotaryEncoder.readEncoder();
+      } else {
+        sel = (int8_t)g_rotaryEncoder.readEncoder();
+      }
+      needRedraw = true;
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (editing) {
+        g_wifiTimedMinutes = constrain(tmpMinutes, 1, 120);
+        editing = false;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
+        g_rotaryEncoder.reset(sel);
+      } else if (sel == 0) {
+        showWiFiPortalScreen();
+      } else if (sel == 1) {
+        editing = true;
+        tmpMinutes = constrain(g_wifiTimedMinutes, 1, 120);
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, 120, false);
+        g_rotaryEncoder.reset(tmpMinutes);
+      } else if (sel == 2) {
+        if (isWiFiPortalActive()) {
+          stopTimedWiFiPortal();
+        } else {
+          startTimedWiFiPortal(g_wifiTimedMinutes);
+        }
+      } else {
+        break;
+      }
+      needRedraw = true;
+      delay(120);
+    }
+
+    static bool brakeBtnInWifi = false;
+    static uint32_t lastBrakeBtnWifiTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInWifi && millis() - lastBrakeBtnWifiTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInWifi = true;
+        lastBrakeBtnWifiTime = millis();
+        if (editing) {
+          editing = false;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
+          g_rotaryEncoder.reset(sel);
+          needRedraw = true;
+        } else {
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+      }
+    } else {
+      brakeBtnInWifi = false;
+    }
+
+    if (needRedraw) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+
+      bool s0 = (!editing && sel == 0);
+      obdWriteString(&g_obd, 0, 0, 0 * lineH, (char*)lblOpen[lang], menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s1 = (!editing && sel == 1);
+      obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblTimer[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      char minutesStr[10];
+      uint16_t shownMinutes = editing ? tmpMinutes : constrain(g_wifiTimedMinutes, 1, 120);
+      snprintf(minutesStr, sizeof(minutesStr), "%3dm", shownMinutes);
+      uint8_t mx = OLED_WIDTH - (uint8_t)(strlen(minutesStr) * WIDTH8x8);
+      obdWriteString(&g_obd, 0, mx, 1 * lineH, minutesStr, menuFont, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s2 = (!editing && sel == 2);
+      const char* actionStr = isWiFiPortalActive() ? lblStopBg[lang] : lblStartBg[lang];
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)actionStr, menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s3 = (!editing && sel == 3);
+      obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)getBackLabel(lang), menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
+
+      needRedraw = false;
+    }
+
+    if (checkRaceModeEscape()) { g_escapeToMain = true; break; }
+    vTaskDelay(10);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+/**
  * Power settings submenu: SCRSV, SLEEP, DEEP SLEEP, STARTUP DELAY, BACK.
  * SCRSV/SLEEP/DEEP SLEEP open submenus; STARTUP DELAY is edited inline.
  */
@@ -5431,9 +5606,9 @@ void showSettingsMenu() {
           prevSettingsSelector = 0;
           continue;
         }
-        /* WIFI */
+        /* WIFI submenu */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
-          showWiFiPortalScreen();
+          showWiFiSettings();
           if (g_escapeToMain) break;
           initSettingsMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);

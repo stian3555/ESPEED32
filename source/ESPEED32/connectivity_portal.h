@@ -14,4 +14,12 @@
 void showWiFiPortalScreen();
 void showUSBPortalScreen();
 
+/* Non-blocking WiFi portal controls (used by timed/background mode) */
+bool startWiFiPortal();
+void stopWiFiPortal();
+void serviceWiFiPortal();
+bool isWiFiPortalActive();
+IPAddress getWiFiPortalIP();
+void getWiFiPortalSsid(char* out, size_t outLen);
+
 #endif

@@ -122,6 +122,8 @@
 #define CAR_MAX_COUNT       20  /* Maximum number of car profiles */
 #define CAR_NAME_MAX_SIZE   5   /* Car name length (4 chars + null terminator) */
 #define SCREENSAVER_TEXT_MAX 22  /* Screensaver text max length (21 chars + null, fits FONT_6x8 line) */
+#define SCREENSAVER_LINE1_DEFAULT "ESPEED32"   /* Default screensaver line 1 */
+#define SCREENSAVER_LINE2_DEFAULT "Controller" /* Default screensaver line 2 */
 
 /* Menu Options */
 #define CAR_OPTION_SELECT   0

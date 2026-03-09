@@ -2,7 +2,6 @@
 /*                                                   Includes                                                        */
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
-#include "screensaver_config.h"  /* Personal screensaver configuration (git-ignored) */
 #include "connectivity_portal.h"
 #include <esp_mac.h>
 
@@ -1123,9 +1122,9 @@ void initStoredVariables() {
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
   g_storedVar.listFontSize = FONT_SIZE_DEFAULT;  /* Default list view font size */
   g_storedVar.startupDelay = STARTUP_DELAY_DEFAULT;  /* Default startup delay (0 = immediate) */
-  strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1, SCREENSAVER_TEXT_MAX - 1);
+  strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
-  strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
+  strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
   g_storedVar.statusSlot[0] = STATUS_SLOT0_DEFAULT;
   g_storedVar.statusSlot[1] = STATUS_SLOT1_DEFAULT;
@@ -1689,7 +1688,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 /**
  * @brief Show screensaver with branding
  * @details Displays personalized branding and optional LIMITER warning (full screen, no status line).
- *          Text is configured in screensaver_config.h (git-ignored)
+ *          Text is configurable on-device and via web UI.
  */
 void showScreensaver() {
   /* Clear screen */
@@ -4249,9 +4248,9 @@ static void doResetSettings() {
   g_storedVar.textCase             = TEXT_CASE_DEFAULT;
   g_storedVar.listFontSize         = FONT_SIZE_DEFAULT;
   g_storedVar.startupDelay         = STARTUP_DELAY_DEFAULT;
-  strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1, SCREENSAVER_TEXT_MAX - 1);
+  strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
-  strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2, SCREENSAVER_TEXT_MAX - 1);
+  strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
 }
 

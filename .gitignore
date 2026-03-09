@@ -1,7 +1,3 @@
-# Screensaver personal configurations (not tracked in git)
-source/ESPEED32/screensaver_config.h
-source/ESPEED32/screensaver_config_*.h
-
 # IDE and system files
 .DS_Store
 .vscode/

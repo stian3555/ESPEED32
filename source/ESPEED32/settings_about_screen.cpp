@@ -19,7 +19,7 @@ extern void showScreensaver();
  */
 void showAboutScreen() {
   static const uint8_t ABOUT_MAX_LINES = 40;
-  static const uint8_t ABOUT_VISIBLE_LINES = 7;  /* rows below title */
+  static const uint8_t ABOUT_VISIBLE_LINES = 6;  /* rows below title */
   char lines[ABOUT_MAX_LINES][22];
   uint8_t lineCount = 0;
   char line[40];
@@ -33,13 +33,17 @@ void showAboutScreen() {
 
   auto addField = [&](const char* label, const char* value) {
     if (label == nullptr) return;
+    char valueCopy[22];
+    if (value == nullptr || value[0] == '\0') {
+      strncpy(valueCopy, "-", sizeof(valueCopy) - 1);
+    } else {
+      strncpy(valueCopy, value, sizeof(valueCopy) - 1);
+    }
+    valueCopy[sizeof(valueCopy) - 1] = '\0';
+
     snprintf(line, sizeof(line), "%s:", label);
     addLine(line);
-    if (value == nullptr || value[0] == '\0') {
-      addLine("-");
-    } else {
-      addLine(value);
-    }
+    addLine(valueCopy);
     addLine("");
   };
 
@@ -63,14 +67,12 @@ void showAboutScreen() {
   addField("Device ID", line);
 
   String chipModel = String(ESP.getChipModel());
-  snprintf(line, sizeof(line), "%s", chipModel.c_str());
+  snprintf(line, sizeof(line), "%s r%d c%d %uMB",
+           chipModel.c_str(),
+           ESP.getChipRevision(),
+           ESP.getChipCores(),
+           (unsigned int)(ESP.getFlashChipSize() / (1024UL * 1024UL)));
   addField("Chip", line);
-  snprintf(line, sizeof(line), "rev %d, %d cores", ESP.getChipRevision(), ESP.getChipCores());
-  addField("Revision", line);
-  snprintf(line, sizeof(line), "%uMB", (unsigned int)(ESP.getFlashChipSize() / (1024UL * 1024UL)));
-  addField("Flash", line);
-  snprintf(line, sizeof(line), "%uKB free", (unsigned int)(ESP.getFreeHeap() / 1024UL));
-  addField("Heap", line);
 
   if (wifiOk) {
     snprintf(line, sizeof(line), "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -88,31 +90,31 @@ void showAboutScreen() {
     addField("BT MAC", "unavailable");
   }
 
-  snprintf(line, sizeof(line), "%s", __DATE__);
-  addField("Built", line);
-  snprintf(line, sizeof(line), "%s", __TIME__);
-  addField("Build time", line);
+  snprintf(line, sizeof(line), "%s %s", __DATE__, __TIME__);
+  addField("Build", line);
 
-  uint16_t maxScroll = (lineCount > ABOUT_VISIBLE_LINES) ? (lineCount - ABOUT_VISIBLE_LINES) : 0;
-  uint16_t scroll = 0;
+  uint16_t pageCount = (lineCount == 0) ? 1 : ((lineCount + ABOUT_VISIBLE_LINES - 1) / ABOUT_VISIBLE_LINES);
+  uint16_t maxPage = (pageCount > 0) ? (pageCount - 1) : 0;
+  uint16_t page = 0;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, maxScroll, false);
+  g_rotaryEncoder.setBoundaries(0, maxPage, false);
   g_rotaryEncoder.reset(0);
 
   auto drawAbout = [&]() {
     obdFill(&g_obd, OBD_WHITE, 1);
     obdWriteString(&g_obd, 0, centerX8x8("About"), 0, (char*)"About", FONT_8x8, OBD_BLACK, 1);
 
-    if (maxScroll > 0) {
-      snprintf(line, sizeof(line), "%u/%u", (unsigned int)(scroll + 1), (unsigned int)(maxScroll + 1));
+    if (maxPage > 0) {
+      snprintf(line, sizeof(line), "%u/%u", (unsigned int)(page + 1), (unsigned int)(maxPage + 1));
       int sx = OLED_WIDTH - ((int)strlen(line) * 6);
       if (sx < 0) sx = 0;
       obdWriteString(&g_obd, 0, sx, 0, line, FONT_6x8, OBD_BLACK, 1);
     }
 
+    uint16_t pageStart = page * ABOUT_VISIBLE_LINES;
     for (uint8_t i = 0; i < ABOUT_VISIBLE_LINES; i++) {
-      uint16_t idx = scroll + i;
+      uint16_t idx = pageStart + i;
       if (idx >= lineCount) break;
       obdWriteString(&g_obd, 0, 0, (i + 1) * HEIGHT8x8, lines[idx], FONT_6x8, OBD_BLACK, 1);
     }
@@ -175,9 +177,9 @@ void showAboutScreen() {
 
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      uint16_t newScroll = g_rotaryEncoder.readEncoder();
-      if (newScroll != scroll) {
-        scroll = newScroll;
+      uint16_t newPage = g_rotaryEncoder.readEncoder();
+      if (newPage != page) {
+        page = newPage;
         drawAbout();
       }
     }

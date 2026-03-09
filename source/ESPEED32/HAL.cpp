@@ -341,6 +341,33 @@ int16_t HAL_ReadTriggerRaw() {
   return retVal;
 }
 
+/**
+ * @brief Get human-readable trigger sensor info for About screen.
+ */
+void HAL_GetTriggerSensorInfo(char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+
+#if defined(TLE493D_MAG)
+  if (g_tleVariant == TLE493DVariant::W2B6) {
+    snprintf(buffer, bufferSize, "TLE493D W2B6 0x%02X", g_tleAddress);
+  } else if (g_tleVariant == TLE493DVariant::P3B6) {
+    snprintf(buffer, bufferSize, "TLE493D P3B6 0x%02X", g_tleAddress);
+  } else {
+    snprintf(buffer, bufferSize, "TLE493D not detected");
+  }
+#elif defined(AS5600L_MAG)
+  snprintf(buffer, bufferSize, "AS5600L");
+#elif defined(AS5600_MAG)
+  snprintf(buffer, bufferSize, "AS5600");
+#elif defined(MT6701_MAG)
+  snprintf(buffer, bufferSize, "MT6701");
+#elif defined(ANALOG_TRIG)
+  snprintf(buffer, bufferSize, "ANALOG");
+#else
+  snprintf(buffer, bufferSize, "UNKNOWN");
+#endif
+}
+
 
 /**
  * @brief Setup GPIO pins

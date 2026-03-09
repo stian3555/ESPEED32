@@ -6008,6 +6008,9 @@ static void showAboutScreen() {
   addLine(line);
   snprintf(line, sizeof(line), "Data: v%d", STORED_VAR_VERSION);
   addLine(line);
+  addLine("Sensor:");
+  HAL_GetTriggerSensorInfo(line, sizeof(line));
+  addLine(line);
   if (wifiOk) {
     snprintf(line, sizeof(line), "ID: %02X%02X", wifiMac[4], wifiMac[5]);
   } else {

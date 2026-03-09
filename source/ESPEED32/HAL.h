@@ -110,6 +110,7 @@
 void     HAL_InitHW();
 uint16_t HAL_ReadVoltageDivider(int analogInput, uint32_t rvfbl, uint32_t rvfbh);
 int16_t  HAL_ReadTriggerRaw();
+void     HAL_GetTriggerSensorInfo(char* buffer, size_t bufferSize);
 void     HALanalogWrite(int pwmChan, int value);
 void     HAL_PinSetup();
 

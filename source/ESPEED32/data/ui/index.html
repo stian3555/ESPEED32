@@ -138,7 +138,7 @@ var latestReleaseUrl='';
 var latestFirmwareBinUrl='';
 var latestSpiffsBinUrl='';
 var releaseFetchTried=false;
-var RELEASE_CACHE_KEY='espeed32_latest_release_v1';
+var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
 
@@ -235,6 +235,13 @@ function updateHeaderFirmwareNote(){
   if(!el) return;
   var show=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
   el.textContent=show?' (new firmware available)':'';
+}
+
+function buildDirectAssetUrl(tag,fileName){
+  var t=String(tag||'').trim();
+  var f=String(fileName||'').trim();
+  if(!t || !f) return '';
+  return 'https://github.com/nerdweeg/ESPEED32/releases/download/'+encodeURIComponent(t)+'/'+encodeURIComponent(f);
 }
 
 function readReleaseCache(){
@@ -334,8 +341,8 @@ async function loadLatestReleaseInfo(){
   if(cached){
     latestReleaseTag=String(cached.tag||'').trim();
     latestReleaseUrl=String(cached.url||'').trim();
-    latestFirmwareBinUrl=String(cached.fwUrl||'').trim();
-    latestSpiffsBinUrl=String(cached.spiffsUrl||'').trim();
+    latestFirmwareBinUrl=String(cached.fwUrl||'').trim()||buildDirectAssetUrl(latestReleaseTag,'ESPEED32.ino.bin');
+    latestSpiffsBinUrl=String(cached.spiffsUrl||'').trim()||buildDirectAssetUrl(latestReleaseTag,'espeed32_spiffs.bin');
     releaseFetchTried=true;
     updateReleaseInfoUi();
   }else{
@@ -357,17 +364,37 @@ async function loadLatestReleaseInfo(){
     var j=await r.json();
     var tag=String(j.tag_name||j.name||'').trim();
     var url=String(j.html_url||'').trim();
-    var fwUrl='';
-    var spiffsUrl='';
+    var fwUrl=buildDirectAssetUrl(tag,'ESPEED32.ino.bin');
+    var spiffsUrl=buildDirectAssetUrl(tag,'espeed32_spiffs.bin');
+    var fwExact=false;
+    var spiffsExact=false;
+    var fwGeneric=false;
+    var spiffsGeneric=false;
     if(Array.isArray(j.assets)){
       for(var i=0;i<j.assets.length;i++){
         var a=j.assets[i];
         var n=String((a&&a.name)||'').trim().toLowerCase();
         var u=String((a&&a.browser_download_url)||'').trim();
-        if(n==='espeed32.ino.bin' && u){
+        if(!u) continue;
+        if(n==='espeed32.ino.bin'){
           fwUrl=u;
-        }else if(n==='espeed32_spiffs.bin' && u){
+          fwExact=true;
+          continue;
+        }
+        if(n==='espeed32_spiffs.bin'){
           spiffsUrl=u;
+          spiffsExact=true;
+          continue;
+        }
+
+        if(!fwExact && !fwGeneric && n.indexOf('spiffs')===-1 && /\.bin$/i.test(n) && n.indexOf('bootloader')===-1 && n.indexOf('partitions')===-1 && n.indexOf('merged')===-1){
+          fwUrl=u;
+          fwGeneric=true;
+          continue;
+        }
+        if(!spiffsExact && !spiffsGeneric && n.indexOf('spiffs')!==-1 && /\.bin$/i.test(n)){
+          spiffsUrl=u;
+          spiffsGeneric=true;
         }
       }
     }

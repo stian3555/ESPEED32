@@ -51,12 +51,6 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <body>
 <h1>ESPEED32</h1>
 <p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
-<div id="usbbar">
-<button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button>
-<p id="usb-note" class="warn" style="display:none"></p>
-<div id="ust" class="st"></div>
-</div>
-<p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
 <h2>About ESPEED32</h2>
 <div class="card about-card">
 <p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
@@ -70,6 +64,13 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <h2>User Guide</h2>
 <a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
 <p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
+<hr>
+<div id="usbbar">
+<button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button>
+<p id="usb-note" class="warn" style="display:none"></p>
+<div id="ust" class="st"></div>
+</div>
+<p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
 <hr>
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">

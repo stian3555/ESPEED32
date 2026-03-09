@@ -59,8 +59,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
 <li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
 </ul>
+<p id="release-info" class="tiny">Latest firmware release (nerdweeg/ESPEED32): checking...</p>
 <p class="tiny">Forked from <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a>.</p>
-<p id="release-info" class="tiny">Latest GitHub release: checking...</p>
 </div>
 <hr>
 <h2>User Guide</h2>
@@ -209,21 +209,21 @@ function updateReleaseInfoUi(){
   if(!el) return;
 
   if(!hostedMode){
-    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest release check is available on espeed.com.';
+    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest firmware release - check is available on espeed.com.';
     return;
   }
 
   if(!latestReleaseTag || !latestReleaseUrl){
     if(!releaseFetchTried){
-      el.textContent='Latest GitHub release: checking...';
+      el.textContent='Latest firmware release (nerdweeg/ESPEED32): checking...';
     }else{
-      el.textContent='Latest GitHub release: unavailable (offline or rate-limited).';
+      el.textContent='Latest firmware release (nerdweeg/ESPEED32): unavailable (offline or rate-limited).';
     }
     return;
   }
 
   el.textContent='';
-  el.appendChild(document.createTextNode('Latest GitHub release: '));
+  el.appendChild(document.createTextNode('Latest firmware release (nerdweeg/ESPEED32): '));
   var a=document.createElement('a');
   a.href=latestReleaseUrl;
   a.target='_blank';

@@ -70,7 +70,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <p id="usb-note" class="warn" style="display:none"></p>
 <div id="ust" class="st"></div>
 </div>
-<p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
+<p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor.</p>
 <hr>
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">
@@ -91,7 +91,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <div id="st" class="st"></div>
 <hr>
 <h2>Advanced Config Editor</h2>
-<p class="tiny">Hidden by default for a cleaner page. Works over WiFi and USB (after Connect via USB).</p>
+<p class="tiny">Works over WiFi and USB (after Connect via USB).</p>
 <button class="btn aux" id="btn-editor-toggle" onclick="toggleEditor()">Open Advanced Config Editor</button>
 <div id="editor-panel" class="card editor-panel">
 <div id="editor">Editor not loaded</div>
@@ -217,7 +217,7 @@ function updateDocsLinkState(){
 
   if(hostedMode){
     link.href=hostedDocsPath();
-    note.textContent='Hosted mode: docs open from this site (language selected from browser locale).';
+    note.textContent='Hosted mode: docs open from this site.';
   }else{
     link.href=info.docsPath||'/docs';
     note.textContent='Docs and UI are served from the controller file system (SPIFFS).';

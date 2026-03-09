@@ -1,0 +1,122 @@
+name: Build and Publish Firmware Release
+
+on:
+  push:
+    tags:
+      - "espeed_fw_v*"
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and publish (example: espeed_fw_v5.0 or v5.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve release tag
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ -z "$tag" ]]; then
+            echo "Release tag is empty." >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.meta.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 core and libraries
+        shell: bash
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          arduino-cli lib update-index
+          arduino-cli lib install "OneBitDisplay" "Ai Esp32 Rotary Encoder"
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          BOARD="esp32:esp32:esp32"
+          BOARD_OPTIONS="JTAGAdapter=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none,ZigbeeMode=default"
+
+          arduino-cli compile \
+            --fqbn "$BOARD" \
+            --board-options "$BOARD_OPTIONS" \
+            --build-path build \
+            source/ESPEED32
+
+      - name: Build SPIFFS image
+        shell: bash
+        run: |
+          PARTITIONS_FILE="build/partitions.csv"
+          DATA_DIR="source/ESPEED32/data"
+          SPIFFS_IMAGE="build/espeed32_spiffs.bin"
+
+          if [[ ! -f "$PARTITIONS_FILE" ]]; then
+            echo "Missing partitions file: $PARTITIONS_FILE" >&2
+            exit 1
+          fi
+
+          mkspiffs_dir="$(ls -d "$HOME/.arduino15/packages/esp32/tools/mkspiffs/"* 2>/dev/null | sort -V | tail -n 1 || true)"
+          mkspiffs_bin="$mkspiffs_dir/mkspiffs"
+          if [[ ! -x "$mkspiffs_bin" ]]; then
+            echo "mkspiffs not found in ESP32 core toolchain." >&2
+            exit 1
+          fi
+
+          spiffs_size="$(awk -F',' '$1 ~ /^[[:space:]]*spiffs[[:space:]]*$/ {gsub(/[[:space:]]/,"",$5); print $5}' "$PARTITIONS_FILE")"
+          if [[ -z "$spiffs_size" ]]; then
+            echo "Could not resolve SPIFFS size from $PARTITIONS_FILE" >&2
+            exit 1
+          fi
+
+          "$mkspiffs_bin" -c "$DATA_DIR" -b 4096 -p 256 -s "$spiffs_size" "$SPIFFS_IMAGE"
+
+      - name: Prepare release files
+        id: files
+        shell: bash
+        run: |
+          OUT_DIR="${RUNNER_TEMP}/release"
+          mkdir -p "$OUT_DIR"
+
+          cp build/ESPEED32.ino.bin "$OUT_DIR/ESPEED32.ino.bin"
+          cp build/espeed32_spiffs.bin "$OUT_DIR/espeed32_spiffs.bin"
+
+          echo "out_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: espeed32-release-${{ steps.meta.outputs.tag }}
+          path: ${{ steps.files.outputs.out_dir }}
+
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ESPEED32 ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.files.outputs.out_dir }}/*
+          fail_on_unmatched_files: true

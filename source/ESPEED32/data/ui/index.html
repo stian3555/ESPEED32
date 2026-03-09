@@ -50,7 +50,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </head>
 <body>
 <h1>ESPEED32</h1>
-<p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
+<p class="sub"><span id="devid">----</span> &middot; v<span id="ver">-</span></p>
 <h2>About ESPEED32</h2>
 <div class="card about-card">
 <p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
@@ -271,24 +271,29 @@ function updateReleaseInfoUi(){
   a.rel='noopener';
   a.textContent=latestReleaseTag;
   el.appendChild(a);
-  if(info.version && info.version!=='-'){
-    el.appendChild(document.createTextNode(' \u00b7 Device firmware: '+normalizeVersionTag(info.version)));
+  var hasDeviceVersion=!!(info.version && info.version!=='-');
+  var updateAvailable=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
+
+  if(hasDeviceVersion){
+    var deviceText=' \u00b7 Device firmware: '+normalizeVersionTag(info.version);
+    if(updateAvailable) deviceText+=' (new firmware available)';
+    el.appendChild(document.createTextNode(deviceText));
   }
 
-  if(canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version)){
-    el.appendChild(document.createTextNode(' \u00b7 '));
+  if(updateAvailable){
+    el.appendChild(document.createElement('br'));
     var dl=document.createElement('a');
     dl.href=latestFirmwareBinUrl||latestReleaseUrl;
     dl.target='_blank';
     dl.rel='noopener';
-    dl.textContent='Download new firmware here';
+    dl.textContent='Download firmware (.bin)';
     el.appendChild(dl);
     el.appendChild(document.createTextNode(' \u00b7 '));
     var dlFs=document.createElement('a');
     dlFs.href=latestSpiffsBinUrl||latestReleaseUrl;
     dlFs.target='_blank';
     dlFs.rel='noopener';
-    dlFs.textContent='Download new SPIFFS here';
+    dlFs.textContent='Download SPIFFS (.bin)';
     el.appendChild(dlFs);
   }
 }

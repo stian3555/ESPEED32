@@ -24,11 +24,15 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 .warn{color:#ff8c00;font-size:13px;text-align:center}
 #usbbar{display:block;margin-bottom:10px}
 #usb-note{margin-top:4px;margin-bottom:0}
+#ver-note{color:#ffb36b}
 .card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
 .about-card p{margin:6px 0;color:#d7deef;line-height:1.45}
 .about-list{margin:8px 0 8px 18px;padding:0}
 .about-list li{margin:6px 0;color:#c8d2ea}
 .about-card a{color:#7ed6ff}
+.release-line{margin:3px 0}
+.release-list{margin:6px 0 6px 18px;padding:0}
+.release-list li{margin:4px 0;color:#d7deef}
 .editor-panel{display:none}
 .section-stack{display:flex;flex-direction:column;gap:12px;margin-top:10px}
 .action-card{border:1px solid #2b3448;border-radius:10px;padding:12px;background:#0f1728}
@@ -50,7 +54,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </head>
 <body>
 <h1>ESPEED32</h1>
-<p class="sub"><span id="devid">----</span> &middot; v<span id="ver">-</span></p>
+<p class="sub"><span id="devid">----</span> &middot; v<span id="ver">-</span><span id="ver-note"></span></p>
 <h2>About ESPEED32</h2>
 <div class="card about-card">
 <p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
@@ -59,7 +63,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
 <li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
 </ul>
-<p id="release-info" class="tiny">Latest firmware release (nerdweeg/ESPEED32): checking...</p>
+<div id="release-info" class="tiny">Latest firmware release (nerdweeg/ESPEED32): checking...</div>
 <p class="tiny">Forked from <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a>.</p>
 </div>
 <hr>
@@ -226,6 +230,13 @@ function canRunValidFirmwareCheck(){
   return !!(info.version && info.version!=='-');
 }
 
+function updateHeaderFirmwareNote(){
+  var el=document.getElementById('ver-note');
+  if(!el) return;
+  var show=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
+  el.textContent=show?' (new firmware available)':'';
+}
+
 function readReleaseCache(){
   try{
     var raw=localStorage.getItem(RELEASE_CACHE_KEY);
@@ -248,9 +259,10 @@ function writeReleaseCache(tag,url,fwUrl,spiffsUrl){
 function updateReleaseInfoUi(){
   var el=document.getElementById('release-info');
   if(!el) return;
+  updateHeaderFirmwareNote();
 
   if(!hostedMode){
-    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest firmware release - check is available on espeed32.com.';
+    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest release is available on espeed32.com.';
     return;
   }
 
@@ -264,37 +276,51 @@ function updateReleaseInfoUi(){
   }
 
   el.textContent='';
-  el.appendChild(document.createTextNode('Latest firmware release (nerdweeg/ESPEED32): '));
+  var latestLine=document.createElement('div');
+  latestLine.className='release-line';
+  latestLine.appendChild(document.createTextNode('Latest firmware release: '));
   var a=document.createElement('a');
   a.href=latestReleaseUrl;
   a.target='_blank';
   a.rel='noopener';
   a.textContent=latestReleaseTag;
-  el.appendChild(a);
+  latestLine.appendChild(a);
+  el.appendChild(latestLine);
   var hasDeviceVersion=!!(info.version && info.version!=='-');
   var updateAvailable=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
 
   if(hasDeviceVersion){
-    var deviceText=' \u00b7 Device firmware: '+normalizeVersionTag(info.version);
+    var deviceLine=document.createElement('div');
+    deviceLine.className='release-line';
+    var deviceText='Device firmware: '+normalizeVersionTag(info.version);
     if(updateAvailable) deviceText+=' (new firmware available)';
-    el.appendChild(document.createTextNode(deviceText));
+    deviceLine.appendChild(document.createTextNode(deviceText));
+    el.appendChild(deviceLine);
   }
 
   if(updateAvailable){
-    el.appendChild(document.createElement('br'));
+    var list=document.createElement('ul');
+    list.className='release-list';
+
+    var itemFw=document.createElement('li');
     var dl=document.createElement('a');
     dl.href=latestFirmwareBinUrl||latestReleaseUrl;
     dl.target='_blank';
     dl.rel='noopener';
     dl.textContent='Download firmware (.bin)';
-    el.appendChild(dl);
-    el.appendChild(document.createTextNode(' \u00b7 '));
+    itemFw.appendChild(dl);
+    list.appendChild(itemFw);
+
+    var itemFs=document.createElement('li');
     var dlFs=document.createElement('a');
     dlFs.href=latestSpiffsBinUrl||latestReleaseUrl;
     dlFs.target='_blank';
     dlFs.rel='noopener';
     dlFs.textContent='Download SPIFFS (.bin)';
-    el.appendChild(dlFs);
+    itemFs.appendChild(dlFs);
+    list.appendChild(itemFs);
+
+    el.appendChild(list);
   }
 }
 

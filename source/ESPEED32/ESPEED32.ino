@@ -5,6 +5,7 @@
 #include "ui_strings.h"
 #include "ui_text_access.h"
 #include "connectivity_portal.h"
+#include "power_ui.h"
 #include "app_init.h"
 #include "settings_display_submenus.h"
 #include "settings_display_menu.h"
@@ -130,66 +131,6 @@ bool checkRaceModeEscape() {
     g_lpRaceActive = false;
   }
   return false;
-}
-
-/**
- * @brief Service inactivity-based power transitions for UI loops.
- * @details Applies auto power save/deep sleep in all menus except race mode.
- * @param lastInteraction Pointer to loop-local last interaction timestamp.
- * @param screensaverActive Pointer to loop-local screensaver flag (optional).
- * @return true if power-save was entered and returned (caller should redraw), false otherwise.
- */
-bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive) {
-  if (lastInteraction == NULL) return false;
-
-  if (g_storedVar.screensaverTimeout == 0) return false;
-
-  uint32_t now = millis();
-
-  /* OTA safety lock: do not enter sleep/deep sleep while upload is active. */
-  if (isOtaInProgress()) {
-    *lastInteraction = now;
-    if (screensaverActive != NULL) *screensaverActive = false;
-    return false;
-  }
-
-  uint32_t idleMs = now - *lastInteraction;
-  uint32_t screensaverMs = (uint32_t)g_storedVar.screensaverTimeout * 1000UL;
-
-  if (g_storedVar.deepSleepTimeout > 0 &&
-      idleMs > screensaverMs + ((uint32_t)g_storedVar.deepSleepTimeout * 60000UL)) {
-    showDeepSleep();  /* Never returns */
-  }
-
-  if (g_storedVar.powerSaveTimeout > 0 &&
-      idleMs > screensaverMs + ((uint32_t)g_storedVar.powerSaveTimeout * 60000UL)) {
-    showPowerSave(*lastInteraction);
-    *lastInteraction = millis();
-    if (screensaverActive != NULL) *screensaverActive = false;
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * @brief Consume wake-up input so it doesn't also trigger menu actions.
- * @details Prevents one wake press from being interpreted as BACK/OK in nested menus.
- * @param wakeTriggered True when current loop woke from screensaver.
- * @return true if caller should skip the rest of this iteration.
- */
-bool consumeScreensaverWakeInput(bool wakeTriggered) {
-  if (!wakeTriggered) return false;
-
-  g_lastEncoderInteraction = millis();
-  g_rotaryEncoder.isEncoderButtonClicked();  /* consume pending click edge */
-
-  uint32_t guardStart = millis();
-  while (digitalRead(BUTT_PIN) == BUTTON_PRESSED &&
-         (uint32_t)(millis() - guardStart) < BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
-    vTaskDelay(1);
-  }
-  return true;
 }
 
 /**
@@ -1218,80 +1159,6 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
   }
 }
 
-/**
- * Soft sleep mode. Shows brief message, reduces CPU to 80 MHz, turns display off,
- * suspends motor task. Wakes on encoder button press.
- */
-void showPowerSave() {
-  showPowerSave(millis());
-}
-
-void showPowerSave(uint32_t inactivityStartMs) {
-  if (isOtaInProgress()) {
-    return;
-  }
-
-  uint16_t lang = g_storedVar.language;
-
-  /* Brief sleep message */
-  obdFill(&g_obd, OBD_WHITE, 1);
-  const char* msg = (lang == LANG_NOR) ? "SOVER..." : "SLEEPING...";
-  int tw = strlen(msg) * WIDTH8x8;
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
-  delay(1200);
-
-  /* Sleep mode policy: always disable WiFi/AP while sleeping. */
-  stopTimedWiFiPortal();
-
-  /* Safe: motor off */
-  HalfBridge_SetPwmDrag(0, 0);
-  /* Display off */
-  obdPower(&g_obd, 0);
-  /* Reduce CPU frequency to save power */
-  setCpuFrequencyMhz(80);
-  /* Suspend motor control task */
-  vTaskSuspend(Task2);
-
-  /* Wait for encoder button press to wake.
-   * While waiting, allow deep sleep timeout to take over. */
-  uint32_t screensaverMs = (uint32_t)g_storedVar.screensaverTimeout * 1000UL;
-  while (digitalRead(ENCODER_BUTTON_PIN) != BUTTON_PRESSED) {
-    if (g_storedVar.screensaverTimeout > 0 && g_storedVar.deepSleepTimeout > 0 &&
-        millis() - inactivityStartMs > screensaverMs + ((uint32_t)g_storedVar.deepSleepTimeout * 60000UL)) {
-      showDeepSleep();  /* Never returns */
-    }
-    vTaskDelay(50);
-  }
-
-  /* Wake up: restore CPU, resume motor task, display on */
-  setCpuFrequencyMhz(240);
-  vTaskResume(Task2);
-  obdPower(&g_obd, 1);
-  obdFill(&g_obd, OBD_WHITE, 1);
-  delay(200);  /* Debounce */
-}
-
-void showDeepSleep() {
-  if (isOtaInProgress()) {
-    return;
-  }
-
-  uint16_t lang = g_storedVar.language;
-
-  /* Brief power-off message */
-  obdFill(&g_obd, OBD_WHITE, 1);
-  const char* msg = (lang == LANG_NOR) ? "SLUKKER..." : "POWERING OFF...";
-  int tw = strlen(msg) * WIDTH8x8;
-  obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
-  delay(1200);
-
-  /* Safe shutdown: motor off, display off */
-  HalfBridge_SetPwmDrag(0, 0);
-  obdPower(&g_obd, 0);
-
-  /* Enter deep sleep - wakes only on power cycle */
-  esp_deep_sleep_start();
-}
 /**
  * Take an ADC raw value where the max and min has been recorded and returns the value scaled
  * 

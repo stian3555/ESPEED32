@@ -20,6 +20,7 @@
 #include "settings_about_screen.h"
 #include "menu_car.h"
 #include "ui_render.h"
+#include "task_control_loop.h"
 
 /* Version defined in slot_ESC.h */
 
@@ -40,7 +41,7 @@ TaskHandle_t Task1;
 TaskHandle_t Task2;
 
 /* State Machine */
-static StateMachine_enum g_currState = INIT;
+StateMachine_enum g_currState = INIT;
 
 /* Display Components */
 #ifdef USE_BACKBUFFER
@@ -648,131 +649,6 @@ void Task1code(void *pvParameters) {
 
     if (g_currState != prevState) /* Every time FSM machine change state */
       obdFill(&g_obd, OBD_WHITE, 1);
-  }
-}
-
-/**
- * @brief Task 2: Trigger Reading and Motor Control
- * @details Reads trigger input, applies throttle curve and anti-spin, controls motor PWM
- * @note Runs on Core 1 with higher priority for real-time motor control
- */
-void Task2code(void *pvParameters) {
-  static unsigned long prevCallTime_uS = 0;
-  static unsigned long currTrigger_raw = 0, prevTrigger_raw = 0;
-
-  HalfBridge_Enable();
-
-  for (;;) {
-    unsigned long currCallTime_uS = micros();
-    unsigned long deltaTime_uS = currCallTime_uS - prevCallTime_uS;
-    
-    /* Execute every ESC_PERIOD_US microseconds */
-    if (deltaTime_uS > ESC_PERIOD_US) {
-      prevCallTime_uS = currCallTime_uS;
-
-      /* Read and filter trigger input */
-      prevTrigger_raw = currTrigger_raw;
-      currTrigger_raw = HAL_ReadTriggerRaw();
-      g_escVar.trigger_raw = (prevTrigger_raw + currTrigger_raw) / 2;  /* Simple moving average filter */
-      
-      /* Normalize and apply deadband */
-      g_escVar.trigger_norm = normalizeAndClamp(g_escVar.trigger_raw, g_storedVar.minTrigger_raw, 
-                                                g_storedVar.maxTrigger_raw, THROTTLE_NORMALIZED, THROTTLE_REV);
-      g_escVar.trigger_norm = addDeadBand(g_escVar.trigger_norm, 0, THROTTLE_NORMALIZED, THROTTLE_DEADBAND_NORM);
-      
-      /* Lap detection via track voltage dead spot */
-      {
-        static uint8_t lapState = 0;  /* 0=TRACKING, 1=GAP, 2=COOLDOWN */
-        static uint32_t gapStartMs = 0;
-        static uint32_t lapRegisteredMs = 0;
-        uint32_t vinRaw = analogRead(AN_VIN_DIV);
-        uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
-                         * (RVIFBL + RVIFBH) / RVIFBL;
-
-        /* Update display voltage with 8-sample moving average to filter ADC noise */
-        static uint32_t vinFilter[8] = {0};
-        static uint8_t vinFilterIdx = 0;
-        vinFilter[vinFilterIdx] = vinMv;
-        vinFilterIdx = (vinFilterIdx + 1) % 8;
-        uint32_t vinSum = 0;
-        for (uint8_t f = 0; f < 8; f++) vinSum += vinFilter[f];
-        g_escVar.Vin_mV = (uint16_t)(vinSum / 8);
-        uint32_t nowMs = millis();
-
-        switch (lapState) {
-          case 0: /* TRACKING */
-            if (vinMv < LAP_VIN_THRESHOLD_MV) {
-              gapStartMs = nowMs;
-              lapState = 1;
-            }
-            break;
-          case 1: /* GAP */
-            if (vinMv >= LAP_VIN_THRESHOLD_MV) {
-              if ((nowMs - gapStartMs) <= LAP_GAP_MAX_MS) {
-                /* Valid dead spot crossing */
-                if (g_escVar.lapStartTime_ms > 0) {
-                  uint32_t lapTime = nowMs - g_escVar.lapStartTime_ms;
-                  uint8_t idx = g_escVar.lapCount % LAP_MAX_COUNT;
-                  g_escVar.lapTimes[idx] = lapTime;
-                  if (g_escVar.lapCount == 0 || lapTime < g_escVar.bestLapTime_ms)
-                    g_escVar.bestLapTime_ms = lapTime;
-                  g_escVar.lapCount++;
-                }
-                g_escVar.lapStartTime_ms = nowMs;
-                lapRegisteredMs = nowMs;
-                lapState = 2;
-              } else {
-                lapState = 0; /* Too long = crash/stop */
-              }
-            } else if ((nowMs - gapStartMs) > LAP_GAP_MAX_MS) {
-              lapState = 0; /* Still in gap and too long - abort */
-            }
-            break;
-          case 2: /* COOLDOWN */
-            if ((nowMs - lapRegisteredMs) >= LAP_MIN_TIME_MS) {
-              lapState = 0;
-            }
-            break;
-        }
-      }
-
-      /* Apply motor control (skip if in calibration or init state) */
-      if (!(g_currState == CALIBRATION || g_currState == INIT)) {
-        if (g_escVar.trigger_norm == 0) {
-          /* Apply brake when trigger is released */
-          /* Check if brake button is pressed - use alternate brake value */
-          uint16_t effectiveBrake = g_storedVar.carParam[g_carSel].brake;
-          if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-            /* Use brakeButtonReduction as alternate brake value (not a reduction) */
-            effectiveBrake = g_storedVar.carParam[g_carSel].brakeButtonReduction;
-          }
-          HalfBridge_SetPwmDrag(0, effectiveBrake);
-          g_escVar.outputSpeed_pct = 0;
-          throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
-        } else {
-          /* Check if quick brake zone is active */
-          bool inQuickBrakeZone = false;
-          if (g_storedVar.carParam[g_carSel].quickBrakeEnabled) {
-            uint16_t qbThreshold_norm = (uint32_t)g_storedVar.carParam[g_carSel].quickBrakeThreshold
-                                        * THROTTLE_NORMALIZED / 100;
-            inQuickBrakeZone = (g_escVar.trigger_norm < qbThreshold_norm);
-          }
-          if (inQuickBrakeZone) {
-            /* Quick brake zone: apply configured brake strength */
-            HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].quickBrakeStrength);
-            g_escVar.outputSpeed_pct = 0;
-            throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
-          } else {
-            /* Apply throttle curve and anti-spin */
-            g_escVar.outputSpeed_pct = throttleCurve2(g_escVar.trigger_norm);
-            g_escVar.outputSpeed_pct = throttleAntiSpin3(g_escVar.outputSpeed_pct);
-            HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, 0);
-          }
-          /* Update last interaction time to prevent screensaver while driving */
-          g_lastEncoderInteraction = millis();
-        }
-      }
-    }
   }
 }
 

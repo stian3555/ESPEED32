@@ -56,7 +56,8 @@
 #define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */
-#define MIN_SPEED_DEFAULT         20    /* [%] Minimum motor speed (sensitivity) */
+#define SENSI_SCALE               2     /* 0.5% resolution: stored value = percent * 2 */
+#define MIN_SPEED_DEFAULT         40    /* [0.5%] 20.0% default sensitivity */
 #define BRAKE_DEFAULT             95    /* [%] Brake strength */
 #define ANTISPIN_DEFAULT          30    /* [ms] Anti-spin ramp time */
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
@@ -69,7 +70,7 @@
 #define QUICK_BRAKE_STRENGTH_DEFAULT    60   /* [%] Brake force in quick brake zone */
 
 /* Parameter Limits */
-#define MIN_SPEED_MAX_VALUE       90    /* [%] Maximum allowed minimum speed */
+#define MIN_SPEED_MAX_VALUE       180   /* [0.5%] 90.0% max sensitivity */
 #define DRAG_MAX_VALUE            100   /* [%] Maximum drag brake */
 #define FREQ_MAX_VALUE            5000  /* [Hz] Maximum PWM frequency */
 #define BRAKE_MAX_VALUE           100   /* [%] Maximum brake strength */
@@ -210,7 +211,7 @@ typedef struct {
  * @details Contains all ESC behavior settings for a specific car/track configuration
  */
 typedef struct {
-  uint16_t minSpeed;                        /* [%] Minimum motor speed (0-90%) */
+  uint16_t minSpeed;                        /* [0.5%] Minimum motor speed (0.0-90.0%) */
   uint16_t brake;                           /* [%] Brake strength (0-100%) */
   uint16_t maxSpeed;                        /* [%] Maximum motor speed (5-100%) */
   ThrottleCurveVertex_type throttleCurveVertex;  /* Throttle response curve */
@@ -296,5 +297,26 @@ typedef struct {
   MenuItem_type item[MAX_ITEMS];  /* Array of menu items */
   uint16_t lines;                 /* Number of visible lines */
 } Menu_type;
+
+/* SENSI conversion helpers (stored in 0.5% units) */
+static inline uint16_t sensiToWholePctFloor(uint16_t sensiRaw) {
+  return sensiRaw / SENSI_SCALE;
+}
+
+static inline uint16_t sensiToWholePctCeil(uint16_t sensiRaw) {
+  return (sensiRaw + (SENSI_SCALE - 1)) / SENSI_SCALE;
+}
+
+static inline uint16_t sensiToPctX10(uint16_t sensiRaw) {
+  return sensiRaw * 5U;  /* 0.5% steps -> 5 tenths */
+}
+
+static inline uint8_t sensiFracDigit(uint16_t sensiRaw) {
+  return (sensiRaw & 1U) ? 5U : 0U;
+}
+
+static inline uint16_t sensiFromWholePct(uint16_t pct) {
+  return pct * SENSI_SCALE;
+}
 
 #endif  /* SLOT_ESC_H_ */

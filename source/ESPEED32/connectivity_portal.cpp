@@ -123,7 +123,7 @@ static String buildJsonBackup() {
     const CarParam_type& c = g_storedVar.carParam[i];
     json += "    {\n";
     sprintf(buf, "      \"name\": \"%s\",\n", c.carName);                json += buf;
-    sprintf(buf, "      \"minSpeed\": %u,\n", c.minSpeed);               json += buf;
+    sprintf(buf, "      \"minSpeed\": %u.%u,\n", c.minSpeed / SENSI_SCALE, sensiFracDigit(c.minSpeed)); json += buf;
     sprintf(buf, "      \"brake\": %u,\n", c.brake);                     json += buf;
     sprintf(buf, "      \"maxSpeed\": %u,\n", c.maxSpeed);               json += buf;
     sprintf(buf, "      \"curveInput\": %u,\n", c.throttleCurveVertex.inputThrottle); json += buf;
@@ -158,6 +158,56 @@ static bool parseJsonInt(const String& json, const char* key, int32_t& outVal) {
   while (end < (int)json.length() && (isDigit(json[end]) || json[end] == '-')) end++;
   if (end == start) return false;
   outVal = json.substring(start, end).toInt();
+  return true;
+}
+
+static bool parseJsonNumberToken(const String& json, const char* key, String& outToken) {
+  String search = String("\"") + key + "\"";
+  int idx = json.indexOf(search);
+  if (idx < 0) return false;
+  int colon = json.indexOf(':', idx);
+  if (colon < 0) return false;
+  int start = colon + 1;
+  while (start < (int)json.length() && (json[start] == ' ' || json[start] == '\n' || json[start] == '\r')) start++;
+  int end = start;
+  while (end < (int)json.length() && (isDigit(json[end]) || json[end] == '-' || json[end] == '.')) end++;
+  if (end == start) return false;
+  outToken = json.substring(start, end);
+  outToken.trim();
+  return outToken.length() > 0;
+}
+
+static bool parseJsonHalfPercent(const String& json, const char* key, uint16_t* outRaw) {
+  if (outRaw == nullptr) return false;
+  String token;
+  if (!parseJsonNumberToken(json, key, token)) return false;
+
+  int dot = token.indexOf('.');
+  int32_t whole = 0;
+  int32_t frac = 0;
+
+  if (dot < 0) {
+    whole = token.toInt();
+  } else {
+    String left = token.substring(0, dot);
+    String right = token.substring(dot + 1);
+    if (right.length() == 0) return false;
+    for (int i = 0; i < (int)right.length(); i++) {
+      if (!isDigit(right[i])) return false;
+    }
+    whole = left.toInt();
+    frac = right[0] - '0';
+    for (int i = 1; i < (int)right.length(); i++) {
+      if (right[i] != '0') return false;  /* allow only one non-zero decimal digit */
+    }
+  }
+
+  if (whole < 0) return false;
+  if (frac != 0 && frac != 5) return false;  /* only 0.0 or 0.5 */
+
+  uint16_t raw = (uint16_t)(whole * SENSI_SCALE + (frac == 5 ? 1 : 0));
+  if (raw > MIN_SPEED_MAX_VALUE) return false;
+  *outRaw = raw;
   return true;
 }
 
@@ -269,10 +319,11 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
     c.carNumber = i;
 
     /* Numeric fields */
-    if (!parseJsonInt(carJson, "minSpeed", v) || !inRange(v, 0, MIN_SPEED_MAX_VALUE)) {
+    uint16_t minSpeedRaw = 0;
+    if (!parseJsonHalfPercent(carJson, "minSpeed", &minSpeedRaw)) {
       *errorMsg = "Error: invalid minSpeed in car " + String(i); return false;
     }
-    c.minSpeed = v;
+    c.minSpeed = minSpeedRaw;
 
     if (!parseJsonInt(carJson, "brake", v) || !inRange(v, 0, BRAKE_MAX_VALUE)) {
       *errorMsg = "Error: invalid brake in car " + String(i); return false;
@@ -340,6 +391,16 @@ static void appendJsonEscaped(String& out, const char* in) {
   }
 }
 
+static void appendHalfPercentField(String& out, const char* key, uint16_t sensiRaw, bool withTrailingComma) {
+  char buf[48];
+  snprintf(buf, sizeof(buf), "\"%s\":%u.%u%s",
+           key,
+           sensiRaw / SENSI_SCALE,
+           sensiFracDigit(sensiRaw),
+           withTrailingComma ? "," : "");
+  out += buf;
+}
+
 static void appendSchemaIntField(
   String& out, bool& first, const char* id, const char* label,
   int32_t minVal, int32_t maxVal, int32_t step, const char* unit = nullptr) {
@@ -350,6 +411,29 @@ static void appendSchemaIntField(
            "{\"id\":\"%s\",\"label\":\"%s\",\"type\":\"int\",\"min\":%ld,\"max\":%ld,\"step\":%ld",
            id, label, (long)minVal, (long)maxVal, (long)step);
   out += buf;
+  if (unit != nullptr && unit[0] != '\0') {
+    out += ",\"unit\":\"";
+    out += unit;
+    out += "\"";
+  }
+  out += "}";
+}
+
+static void appendSchemaNumberField(
+  String& out, bool& first, const char* id, const char* label,
+  const char* minVal, const char* maxVal, const char* step, const char* unit = nullptr) {
+  if (!first) out += ",";
+  first = false;
+  out += "{\"id\":\"";
+  out += id;
+  out += "\",\"label\":\"";
+  out += label;
+  out += "\",\"type\":\"int\",\"min\":";
+  out += minVal;
+  out += ",\"max\":";
+  out += maxVal;
+  out += ",\"step\":";
+  out += step;
   if (unit != nullptr && unit[0] != '\0') {
     out += ",\"unit\":\"";
     out += unit;
@@ -431,7 +515,7 @@ static String buildSchemaJson() {
   json += "\"car\":[";
   first = true;
   appendSchemaStringField(json, first, "carName", "Profile Name", CAR_NAME_MAX_SIZE - 1);
-  appendSchemaIntField(json, first, "minSpeed", "SENSI", 0, MIN_SPEED_MAX_VALUE, 1, "%");
+  appendSchemaNumberField(json, first, "minSpeed", "SENSI", "0.0", "90.0", "0.5", "%");
   appendSchemaIntField(json, first, "brake", "BRAKE", 0, BRAKE_MAX_VALUE, 1, "%");
   appendSchemaIntField(json, first, "maxSpeed", "LIMIT", 5, 100, 1, "%");
   appendSchemaIntField(json, first, "curveDiff", "CURVE", THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, 1, "%");
@@ -497,7 +581,7 @@ static String buildStateJson(uint8_t carIndex) {
   json += "\"carName\":\"";
   appendJsonEscaped(json, c.carName);
   json += "\",";
-  snprintf(buf, sizeof(buf), "\"minSpeed\":%u,", c.minSpeed); json += buf;
+  appendHalfPercentField(json, "minSpeed", c.minSpeed, true);
   snprintf(buf, sizeof(buf), "\"brake\":%u,", c.brake); json += buf;
   snprintf(buf, sizeof(buf), "\"maxSpeed\":%u,", c.maxSpeed); json += buf;
   snprintf(buf, sizeof(buf), "\"curveDiff\":%u,", c.throttleCurveVertex.curveSpeedDiff); json += buf;
@@ -608,22 +692,21 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
   }
 
   CarParam_type car = updated.carParam[carIndex];
-  uint16_t minSpeed = car.minSpeed;
+  uint16_t minSpeedRaw = car.minSpeed;
   uint16_t maxSpeed = car.maxSpeed;
 
-  if (parseJsonInt(json, "minSpeed", v)) {
-    if (!inRange(v, 0, MIN_SPEED_MAX_VALUE)) { *errorMsg = "Error: invalid minSpeed"; return false; }
-    minSpeed = (uint16_t)v;
+  if (json.indexOf("\"minSpeed\"") >= 0) {
+    if (!parseJsonHalfPercent(json, "minSpeed", &minSpeedRaw)) { *errorMsg = "Error: invalid minSpeed"; return false; }
   }
   if (parseJsonInt(json, "maxSpeed", v)) {
     if (!inRange(v, 5, 100)) { *errorMsg = "Error: invalid maxSpeed"; return false; }
     maxSpeed = (uint16_t)v;
   }
-  if (maxSpeed < (uint16_t)(minSpeed + 5)) {
+  if (maxSpeed < (uint16_t)(sensiToWholePctCeil(minSpeedRaw) + 5)) {
     *errorMsg = "Error: maxSpeed must be at least minSpeed+5";
     return false;
   }
-  car.minSpeed = minSpeed;
+  car.minSpeed = minSpeedRaw;
   car.maxSpeed = maxSpeed;
 
   if (parseJsonInt(json, "brake", v)) {

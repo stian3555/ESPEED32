@@ -133,7 +133,7 @@ void initMenuItems() {
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].minSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
-  g_mainMenu.item[i].maxValue = min(MIN_SPEED_MAX_VALUE, (int)g_storedVar.carParam[g_carSel].maxSpeed);
+  g_mainMenu.item[i].maxValue = min(MIN_SPEED_MAX_VALUE, (int)g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE);
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
@@ -183,7 +183,7 @@ void initMenuItems() {
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
   g_mainMenu.item[i].maxValue = MAX_SPEED_DEFAULT;
-  g_mainMenu.item[i].minValue = max(5, (int)g_storedVar.carParam[g_carSel].minSpeed + 5);
+  g_mainMenu.item[i].minValue = max(5, (int)sensiToWholePctCeil(g_storedVar.carParam[g_carSel].minSpeed) + 5);
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
   sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 8));  /* SETTINGS */

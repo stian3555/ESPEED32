@@ -155,9 +155,10 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
     const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
     uint8_t labelWidth = strlen(sensiLabel) * 12;
     obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2), 0, (char *)sensiLabel, FONT_12x16, colorSensi, 1);
-    /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide */
-    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
-    obdWriteString(&g_obd, 0, col2_center - 24, 16, msgStr, FONT_12x16, colorSensi, 1);
+    /* Value in 0.5% resolution, e.g. 20.5% */
+    uint16_t sensiRaw = g_storedVar.carParam[g_carSel].minSpeed;
+    sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
+    obdWriteString(&g_obd, 0, col2_center - 30, 16, msgStr, FONT_12x16, colorSensi, 1);
     lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
   }
 
@@ -223,9 +224,10 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
     const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
     uint8_t labelWidth = strlen(sensiLabel) * 6;
     obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)sensiLabel, FONT_6x8, colorSensi, 1);
-    /* Value */
-    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].minSpeed);
-    obdWriteString(&g_obd, 0, col2_center - 16, 12, msgStr, FONT_8x8, colorSensi, 1);
+    /* Value in 0.5% resolution, e.g. 20.5% */
+    uint16_t sensiRaw = g_storedVar.carParam[g_carSel].minSpeed;
+    sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
+    obdWriteString(&g_obd, 0, col2_center - 20, 12, msgStr, FONT_8x8, colorSensi, 1);
     lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
   }
 
@@ -468,8 +470,13 @@ void printMainMenu(MenuState_enum currMenuState)
         /* if the value is a number, cast to *(unit16_t *), then print number and unit */
         if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_INTEGER)
         {
+          /* SENSI is stored in 0.5% steps and shown with one decimal */
+          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, getMenuName(g_storedVar.language, 1)) == 0) {
+            uint16_t sensiRaw = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+            sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
+          }
           /* Special handling for QB item: display ON/OFF instead of 0/1 */
-          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, getMenuName(g_storedVar.language, 6)) == 0) {
+          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, getMenuName(g_storedVar.language, 6)) == 0) {
             uint16_t enabled = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
             sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, enabled ? 1 : 0));
           } else {

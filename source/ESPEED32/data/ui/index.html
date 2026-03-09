@@ -426,8 +426,14 @@ function fieldId(prefix,id){return prefix+'_'+id;}
 
 function coerceFieldValue(field,val){
   if(field.type==='string') return String(val||'');
-  var n=parseInt(val,10);
+  var stepNum=Number(field.step||1);
+  var hasFractionStep=String(field.step||'').indexOf('.')>=0;
+  var n=hasFractionStep?parseFloat(val):parseInt(val,10);
   if(isNaN(n)) throw new Error('Invalid value for '+field.label);
+  if(hasFractionStep && isFinite(stepNum) && stepNum>0){
+    n=Math.round(n/stepNum)*stepNum;
+    n=Math.round(n*10)/10;
+  }
   if(field.min!=null && n<field.min) throw new Error(field.label+' below minimum');
   if(field.max!=null && n>field.max) throw new Error(field.label+' above maximum');
   return n;

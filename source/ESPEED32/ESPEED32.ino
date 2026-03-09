@@ -106,6 +106,7 @@ static bool g_escapeToMain = false;    /* Set by any submenu long press → casc
 static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
+static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
 
 /* Long press tracking shared across all submenus (only one active at a time) */
 static uint32_t g_lpRaceStart = 0;
@@ -338,6 +339,16 @@ void Task1code(void *pvParameters) {
           if ((storedVarVersion == STORED_VAR_VERSION) ) /* If the storedVariable version keys is equal to the STORED_VAR MACRO, then the stored param are already initialized woh the proper format*/
           {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
+
+            /* One-time migration: old firmware stored SENSI in whole-percent units. */
+            if (!g_pref.getBool(PREF_KEY_SENSI_HALF, false)) {
+              for (uint8_t i = 0; i < CAR_MAX_COUNT; i++) {
+                uint32_t migrated = (uint32_t)g_storedVar.carParam[i].minSpeed * SENSI_SCALE;
+                g_storedVar.carParam[i].minSpeed = (uint16_t)min((uint32_t)MIN_SPEED_MAX_VALUE, migrated);
+              }
+              g_pref.putBytes("user_param", &g_storedVar, sizeof(g_storedVar));
+              g_pref.putBool(PREF_KEY_SENSI_HALF, true);
+            }
             initMenuItems();                                                  /* init menu items with EEPROM stored variables */
 
             /* If calibration reset was requested from settings, go straight to calibration */
@@ -411,6 +422,7 @@ void Task1code(void *pvParameters) {
         g_pref.putUChar("sw_min_ver", SW_MINOR_VERSION);
         
         g_pref.putUChar("stored_var_ver", STORED_VAR_VERSION);
+        g_pref.putBool(PREF_KEY_SENSI_HALF, true);
 
         initStoredVariables();  /* Initialize stored variables with default values */
 
@@ -758,10 +770,11 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
   /* Calculate dynamic anti-spin start threshold based on anti-spin setting */
   uint16_t antispinPercStart = map((long)g_storedVar.carParam[g_carSel].antiSpin, 0, (long)ANTISPIN_MAX_VALUE, 
                                     (long)ANTIS_SPEED_START_MAX, (long)ANTIS_SPEED_START_MIN);
+  uint16_t antispinPercStartRaw = antispinPercStart * SENSI_SCALE;
 
   /* Bypass anti-spin if disabled */
   if (g_storedVar.carParam[g_carSel].antiSpin == 0) {
-    lastOutputSpeedx1000 = g_storedVar.carParam[g_carSel].minSpeed * 1000;
+    lastOutputSpeedx1000 = g_storedVar.carParam[g_carSel].minSpeed * 500;
     return requestedSpeed;
   }
 
@@ -778,10 +791,11 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
   }
 
   /* Apply anti-spin ramp for acceleration */
-  uint16_t minSpeedTmp = max((uint16_t)g_storedVar.carParam[g_carSel].minSpeed, antispinPercStart);
+  uint16_t minSpeedTmpRaw = max((uint16_t)g_storedVar.carParam[g_carSel].minSpeed, antispinPercStartRaw);
+  uint16_t maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
   
   /* Calculate maximum allowed speed change: deltaSpeed = ((minSpeed-maxSpeed) * deltaTime) / antiSpin */
-  uint32_t maxDeltaSpeedx1000 = ((g_storedVar.carParam[g_carSel].maxSpeed - minSpeedTmp) * deltaTime_uS) / 
+  uint32_t maxDeltaSpeedx1000 = (((uint32_t)(maxSpeedRaw - minSpeedTmpRaw) * 500UL) * deltaTime_uS) /
                                  g_storedVar.carParam[g_carSel].antiSpin;
 
   uint32_t outputSpeedX1000;
@@ -794,8 +808,8 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
   }
 
   /* Ensure ramp starts from minSpeed, not zero */
-  if (outputSpeedX1000 < g_storedVar.carParam[g_carSel].minSpeed * 1000) {
-    outputSpeedX1000 = g_storedVar.carParam[g_carSel].minSpeed * 1000;
+  if (outputSpeedX1000 < g_storedVar.carParam[g_carSel].minSpeed * 500) {
+    outputSpeedX1000 = g_storedVar.carParam[g_carSel].minSpeed * 500;
   }
 
   lastOutputSpeedx1000 = outputSpeedX1000;
@@ -847,29 +861,33 @@ uint16_t addDeadBand(uint16_t inputVal, uint16_t minVal, uint16_t maxVal, uint16
 uint16_t throttleCurve2(uint16_t inputThrottleNorm )
 {
   uint16_t outputSpeed = 0;           /* The requested output speed (duty cycle) from 0% to 100% */
-  uint32_t throttleCurveVertexSpeed;  /* The output speed when the throttle is at 50% (that is, the value of throttleCurveVertex.inputThrottle) */
-  uint16_t tmpMinSpeed;               /* Minimum speed may change when decelerating due to drag brake, so create a temporary min speed */
+  uint32_t throttleCurveVertexSpeedRaw;  /* Output speed in 0.5% units at the curve vertex */
+  uint16_t outputSpeedRaw = 0;           /* Output speed in 0.5% units */
+  uint16_t tmpMinSpeedRaw;               /* Minimum speed in 0.5% units */
+  uint16_t maxSpeedRaw;                  /* Maximum speed in 0.5% units */
 
   /* dual throttle curve: When decelerating , if dragB is higher than 100%-minSpeed, then set a lower minSpeed on the curve to allow the desired drag brake to be applied*/
-  tmpMinSpeed = g_storedVar.carParam[g_carSel].minSpeed;
+  tmpMinSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed;
+  maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
 
   /* Calculate the output speed of the throttle curve vertex
      This is calculated as the curveSpeedDiff (from 10% to 90%) percentage of the difference between minSpeed and maxSpeed */
-  throttleCurveVertexSpeed = tmpMinSpeed + (((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed - (uint32_t)tmpMinSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
+  throttleCurveVertexSpeedRaw = tmpMinSpeedRaw + (((uint32_t)maxSpeedRaw - (uint32_t)tmpMinSpeedRaw) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
 
   if (inputThrottleNorm == 0)   /* If input throttle is 0 --> output speed is 0% */
   {
-    outputSpeed = 0;
+    outputSpeedRaw = 0;
   } 
   else if (inputThrottleNorm <= g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle) /* If the input throttle is less than the vertex point (fixed at 50%), than map the output speed from 0 to the throttleCurveVertexSpeed */
   {
-    outputSpeed = map(inputThrottleNorm, 0, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, tmpMinSpeed, throttleCurveVertexSpeed);
+    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, 0, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, tmpMinSpeedRaw, throttleCurveVertexSpeedRaw);
   } 
   else  /* If the input throttle is more than the vertex point (fixed at 50%), than map the output speed from throttleCurveVertexSpeed to the maxSpeed*/
   {
-    outputSpeed = map(inputThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, THROTTLE_NORMALIZED, throttleCurveVertexSpeed, g_storedVar.carParam[g_carSel].maxSpeed);
+    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, THROTTLE_NORMALIZED, throttleCurveVertexSpeedRaw, maxSpeedRaw);
   }
 
+  outputSpeed = (outputSpeedRaw + 1U) / SENSI_SCALE;  /* round to nearest whole percent */
   return outputSpeed;
 }
 

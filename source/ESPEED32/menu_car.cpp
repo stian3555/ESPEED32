@@ -921,9 +921,12 @@ void showRenameCar() {
  */
 void showCurveSelection()
 {
-  uint16_t throttleCurveVertexSpeed;
+  uint16_t throttleCurveVertexSpeedRaw;
   uint16_t prevTrigger = g_escVar.outputSpeed_pct;
   uint16_t inputThrottle = (g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle * 100) / THROTTLE_NORMALIZED;  //Take inputThrottle (from 0 to THROTTLE NORMALIZED) and convert it in a 0% to 100% value
+  uint16_t minSpeedPctX10 = sensiToPctX10(g_storedVar.carParam[g_carSel].minSpeed);
+  uint16_t minSpeedY = map(minSpeedPctX10, 0, 1000, 50, 0);
+  uint16_t maxSpeedY = map((uint16_t)g_storedVar.carParam[g_carSel].maxSpeed * 10, 0, 1000, 50, 0);
   
   /*The inputThrottle (X axis) (that ranges from 0 to THROTTLE_NORMALIZED) is converted to the 0-100 range, to simplify calculations.
     The output speed (Y axis) is already expressed in the 0-100 range.
@@ -940,17 +943,17 @@ void showCurveSelection()
   obdWriteString(&g_obd, 0, 0, 0, (char *)"100%", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0, 58, (char *)"  0%", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 104, 58, (char *)"100%", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0, map(g_storedVar.carParam[g_carSel].minSpeed, 0, 100, 50, 8), (char *)"MIN", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 28, 50 - (g_storedVar.carParam[g_carSel].maxSpeed / 2), (char *)"MAX", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, (minSpeedY > 42 ? 42 : minSpeedY), (char *)"MIN", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 28, maxSpeedY, (char *)"MAX", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 64, 58, (char *)"50%", FONT_6x8, OBD_BLACK, 1);
 
   /* Draw axis ticks at 50%, MIN SPEED and MAX speed points*/
-  obdSetPixel(&g_obd, 24, 50 - (g_storedVar.carParam[g_carSel].minSpeed / 2), OBD_BLACK, 1);
-  obdSetPixel(&g_obd, 23, 50 - (g_storedVar.carParam[g_carSel].minSpeed / 2), OBD_BLACK, 1);
+  obdSetPixel(&g_obd, 24, minSpeedY, OBD_BLACK, 1);
+  obdSetPixel(&g_obd, 23, minSpeedY, OBD_BLACK, 1);
   obdSetPixel(&g_obd, 25 + inputThrottle, 51, OBD_BLACK, 1);
   obdSetPixel(&g_obd, 25 + inputThrottle, 52, OBD_BLACK, 1);
-  obdSetPixel(&g_obd, 26, 50 - (g_storedVar.carParam[g_carSel].maxSpeed / 2), OBD_BLACK, 1);
-  obdSetPixel(&g_obd, 27, 50 - (g_storedVar.carParam[g_carSel].maxSpeed / 2), OBD_BLACK, 1);
+  obdSetPixel(&g_obd, 26, maxSpeedY, OBD_BLACK, 1);
+  obdSetPixel(&g_obd, 27, maxSpeedY, OBD_BLACK, 1);
 
   /* Set encoder to curve parameters */
   g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
@@ -963,12 +966,12 @@ void showCurveSelection()
 
   /* Calculate the output speed of the throttle curve vertex (as in throttleCurve() function)
      This is calculated as the curveSpeedDiff (from 10% to 90%) percentage of the difference between minSpeed and maxSpeed */
-  throttleCurveVertexSpeed = g_storedVar.carParam[g_carSel].minSpeed + (((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
+  throttleCurveVertexSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed + ((((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE) - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
 
   /* Draw Line from MIN SPEED, to middle point */
-  obdDrawLine(&g_obd, 25, 50 - (g_storedVar.carParam[g_carSel].minSpeed / 2), 25 + inputThrottle, map(throttleCurveVertexSpeed, 0, 100, 50, 0), OBD_BLACK, 1);
+  obdDrawLine(&g_obd, 25, minSpeedY, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), OBD_BLACK, 1);
   /* Draw Line from middle point to 100% */
-  obdDrawLine(&g_obd, 25 + inputThrottle, map(throttleCurveVertexSpeed, 0, 100, 50, 0), 125, map(g_storedVar.carParam[g_carSel].maxSpeed, 0, 100, 50, 0), OBD_BLACK, 1);
+  obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_BLACK, 1);
 
   /* Write the CURVE value */
   sprintf(msgStr, "%3d%c", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff, '%');
@@ -1011,18 +1014,18 @@ void showCurveSelection()
     if (g_rotaryEncoder.encoderChanged())
     {
       /* Cancel the old lines (draw them in black) */
-      obdDrawLine(&g_obd, 25, 50 - (g_storedVar.carParam[g_carSel].minSpeed / 2), 25 + inputThrottle, map(throttleCurveVertexSpeed, 0, 100, 50, 0), OBD_WHITE, 1);
-      obdDrawLine(&g_obd, 25 + inputThrottle, map(throttleCurveVertexSpeed, 0, 100, 50, 0), 125, map(g_storedVar.carParam[g_carSel].maxSpeed, 0, 100, 50, 0), OBD_WHITE, 1);
+      obdDrawLine(&g_obd, 25, minSpeedY, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), OBD_WHITE, 1);
+      obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_WHITE, 1);
       
       /* Update the speed coordinate of the vertex */
       g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff = g_rotaryEncoder.readEncoder();
       sprintf(msgStr, "%3d%c", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff, '%');
-      throttleCurveVertexSpeed = g_storedVar.carParam[g_carSel].minSpeed + ((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100;
+      throttleCurveVertexSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed + ((((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE) - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
       obdWriteString(&g_obd, 0, OLED_WIDTH - 48, 34, msgStr, FONT_12x16, OBD_BLACK, 1);
       
       /* Draw the new lines */
-      obdDrawLine(&g_obd, 25, 50 - (g_storedVar.carParam[g_carSel].minSpeed / 2), 25 + inputThrottle, map(throttleCurveVertexSpeed, 0, 100, 50, 0), OBD_BLACK, 1);
-      obdDrawLine(&g_obd, 25 + inputThrottle, map(throttleCurveVertexSpeed, 0, 100, 50, 0), 125, map(g_storedVar.carParam[g_carSel].maxSpeed, 0, 100, 50, 0), OBD_BLACK, 1);
+      obdDrawLine(&g_obd, 25, minSpeedY, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), OBD_BLACK, 1);
+      obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_BLACK, 1);
     }
     else
     {

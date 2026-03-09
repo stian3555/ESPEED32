@@ -340,6 +340,26 @@ async function ws(s){
   finally{w.releaseLock();}
 }
 
+async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
+  usb=false;
+  usbReady=false;
+  updateDocsLinkState();
+  if(_r){try{await _r.cancel();}catch(_){}}
+  _r=null;
+  if(_pump){try{await _pump;}catch(_){}}
+  _pump=null;
+  _b='';
+  if(port){try{await port.close();}catch(_){}}
+  port=null;
+  var b=document.getElementById('ucb');
+  if(b){
+    b.textContent='Connect via USB (WebSerial)';
+    b.className='btn usb';
+  }
+  updateFirmwareUiState();
+  if(showStatus && statusMsg){ss('ust',statusType||'ok',statusMsg);}
+}
+
 async function usbToggle(){
   if(!browserSupportsSerial()){
     ss('ust','err','USB WebSerial is not supported in this browser.');
@@ -353,33 +373,23 @@ async function usbToggle(){
       _r=port.readable.getReader();
       usb=true;
       _pump=pump();
-      var b=document.getElementById('ucb');
-      b.textContent='Disconnect USB';
-      b.className='btn ul';
-      updateFirmwareUiState();
       var ready=await ensureUsbReady(true);
       if(!ready){
-        ss('ust','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
+        await resetUsbToDisconnected(false);
+        ss('ust','err','USB connect failed: no command response. Open USB mode on controller (older FW) or update FW.');
       }else{
+        var b=document.getElementById('ucb');
+        b.textContent='Disconnect USB';
+        b.className='btn ul';
+        updateFirmwareUiState();
         ss('ust','ok','USB connected');
       }
-    }catch(e){ss('ust','err','USB: '+e.message);}
+    }catch(e){
+      await resetUsbToDisconnected(false);
+      ss('ust','err','USB: '+e.message);
+    }
   }else{
-    usb=false;
-    usbReady=false;
-    updateDocsLinkState();
-    if(_r){try{await _r.cancel();}catch(_){}}
-    _r=null;
-    if(_pump){try{await _pump;}catch(_){}}
-    _pump=null;
-    _b='';
-    try{await port.close();}catch(_){ }
-    port=null;
-    var b2=document.getElementById('ucb');
-    b2.textContent='Connect via USB (WebSerial)';
-    b2.className='btn usb';
-    updateFirmwareUiState();
-    ss('ust','ok','USB disconnected');
+    await resetUsbToDisconnected(true,'ok','USB disconnected');
   }
 }
 

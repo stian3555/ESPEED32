@@ -123,7 +123,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
-var info={deviceId:'----',version:'-',docsPath:'docs/'};
+var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
 
@@ -176,6 +176,14 @@ function applyInfo(){
   updateFirmwareUiState();
 }
 
+function hostedDocsPath(){
+  var lang=((navigator && navigator.language) ? navigator.language : 'en').toLowerCase();
+  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/';
+  if(lang.indexOf('es')===0) return 'docs/es/';
+  if(lang.indexOf('de')===0) return 'docs/de/';
+  return 'docs/en/';
+}
+
 function setBtnDisabled(id,disabled){
   var el=document.getElementById(id);
   if(!el) return;
@@ -198,14 +206,6 @@ function updateDocsLinkState(){
   link.setAttribute('target','_blank');
   link.setAttribute('rel','noopener');
 
-  if(hostedMode && usb){
-    link.href='#';
-    link.classList.add('disabled');
-    link.setAttribute('aria-disabled','true');
-    note.textContent='Docs are not available over USB commands. Use WiFi mode on the controller for onboard docs.';
-    return;
-  }
-
   if(hostedMode && location.protocol==='file:'){
     link.href='#';
     link.classList.add('disabled');
@@ -214,10 +214,11 @@ function updateDocsLinkState(){
     return;
   }
 
-  link.href=info.docsPath||'/docs';
   if(hostedMode){
-    note.textContent='Hosted mode: docs open from this site. Controller docs still require WiFi mode.';
+    link.href=hostedDocsPath();
+    note.textContent='Hosted mode: docs open from this site (language selected from browser locale).';
   }else{
+    link.href=info.docsPath||'/docs';
     note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
   }
 }

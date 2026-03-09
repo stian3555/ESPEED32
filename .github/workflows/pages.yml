@@ -36,6 +36,20 @@ jobs:
 
           # Publish docs at /docs/
           cp -R source/ESPEED32/data/docs/. site/docs/
+          # Keep /docs/ valid on GitHub Pages (docs folder has no own index by default)
+          cat > site/docs/index.html << 'EOF'
+          <!doctype html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0;url=./en/">
+            <title>ESPEED32 Docs</title>
+          </head>
+          <body>
+            <p>Redirecting to <a href="./en/">documentation</a>...</p>
+          </body>
+          </html>
+          EOF
 
           # Publish hosted UI at /ui/ and make it the landing page (/)
           cp -R source/ESPEED32/data/ui/. site/ui/

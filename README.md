@@ -1,6 +1,7 @@
 # SlotEsp32
 Cutting edge slot car controller with an ESP32 at its heart.
 How to build it — video: https://www.youtube.com/watch?v=JtMKeiguHKI
+Hosted Web UI/docs: https://espeed.com (best in Chrome/Edge or another WebSerial-capable browser)
 ![ThumbV2](https://github.com/user-attachments/assets/9b7e1479-4882-4ed7-93d0-4a9a81be73fc)
 
 ## Magnetic Trigger Sensor

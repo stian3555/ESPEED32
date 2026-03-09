@@ -42,10 +42,15 @@ static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
   <input type="file" name="file" accept=".bin" required>
   <button type="submit">Upload Firmware</button>
 </form>
+<form method="POST" action="/ota-spiffs" enctype="multipart/form-data">
+  <p><b>Filesystem Recovery (SPIFFS .bin)</b></p>
+  <input type="file" name="file" accept=".bin" required>
+  <button type="submit">Upload Filesystem</button>
+</form>
 <p><b>Restore full web UI:</b></p>
 <ol>
   <li>Ensure <code>source/ESPEED32/data/ui/index.html</code> exists.</li>
-  <li>Upload SPIFFS image to the controller.</li>
+  <li>Upload SPIFFS image on this page or from IDE.</li>
   <li>Reload <code>/</code>.</li>
 </ol>
 </body>
@@ -73,9 +78,14 @@ a{color:#7ed6ff}
 <p>To update docs on the controller:</p>
 <ol>
 <li>Edit files in <code>source/ESPEED32/data/docs/</code> (Git source of truth).</li>
-<li>Upload the filesystem image from your IDE (SPIFFS upload).</li>
+<li>Upload the filesystem image from Web UI or IDE (SPIFFS upload).</li>
 <li>Refresh this page.</li>
 </ol>
+<form method="POST" action="/ota-spiffs" enctype="multipart/form-data">
+  <p><b>Upload Filesystem (SPIFFS .bin)</b></p>
+  <input type="file" name="file" accept=".bin" required>
+  <button type="submit">Upload SPIFFS</button>
+</form>
 <p><a href="/">Back to backup/restore page</a></p>
 </body>
 </html>
@@ -670,6 +680,8 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
 static size_t g_otaTotal = 0;
 static size_t g_otaWritten = 0;
 static bool g_otaInProgress = false;
+static bool g_otaTargetSpiffs = false;
+static bool g_otaSessionOk = false;
 
 /* Documentation helpers (served from SPIFFS) */
 static const char* getUiPath() {
@@ -1038,42 +1050,80 @@ static void handleRestore() {
 
 
 /**
- * @brief Handle OTA firmware upload - streams .bin directly to flash
+ * @brief Handle OTA upload - streams firmware (.bin) or SPIFFS image (.bin) directly to flash
  */
 static void handleOtaUpload() {
   HTTPUpload& upload = g_wifiServer->upload();
   char msgStr[32];
 
   if (upload.status == UPLOAD_FILE_START) {
+    String uri = g_wifiServer->uri();
+    g_otaTargetSpiffs = (uri == "/ota-spiffs");
     g_otaTotal = upload.totalSize;  /* May be 0 if browser doesn't send content-length */
     g_otaWritten = 0;
     g_otaInProgress = true;
+    g_otaSessionOk = true;
 
     /* Show update in progress on OLED */
     obdFill(&g_obd, OBD_WHITE, 1);
-    obdWriteString(&g_obd, 0, 16, 0, (char*)"OTA Update", FONT_8x8, OBD_BLACK, 1);
+    if (g_otaTargetSpiffs) {
+      obdWriteString(&g_obd, 0, 8, 0, (char*)"SPIFFS Update", FONT_8x8, OBD_BLACK, 1);
+    } else {
+      obdWriteString(&g_obd, 0, 16, 0, (char*)"OTA Update", FONT_8x8, OBD_BLACK, 1);
+    }
     obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"Updating...", FONT_8x8, OBD_BLACK, 1);
     obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Do not power off!", FONT_6x8, OBD_BLACK, 1);
 
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+    if (g_otaTargetSpiffs && g_spiffsMounted) {
+      SPIFFS.end();
+      g_spiffsMounted = false;
+    }
+
+#if defined(U_SPIFFS)
+    int updateCommand = g_otaTargetSpiffs ? U_SPIFFS : U_FLASH;
+#else
+    int updateCommand = U_FLASH;
+    if (g_otaTargetSpiffs) {
+      g_otaSessionOk = false;
+      g_otaInProgress = false;
+      return;
+    }
+#endif
+
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateCommand)) {
+      g_otaSessionOk = false;
       g_otaInProgress = false;
     }
 
   } else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (!g_otaSessionOk) {
+      return;
+    }
     if (Update.write(upload.buf, upload.currentSize) == upload.currentSize) {
       g_otaWritten += upload.currentSize;
       /* Update progress on OLED */
       sprintf(msgStr, "%u KB", (unsigned int)(g_otaWritten / 1024));
       obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_8x8, OBD_BLACK, 1);
+    } else {
+      g_otaSessionOk = false;
     }
 
   } else if (upload.status == UPLOAD_FILE_END) {
-    if (Update.end(true)) {
+    bool otaOk = g_otaSessionOk && Update.end(true);
+    if (otaOk) {
       obdFill(&g_obd, OBD_WHITE, 1);
-      obdWriteString(&g_obd, 0, 8, 24, (char*)"OTA OK!", FONT_12x16, OBD_BLACK, 1);
+      if (g_otaTargetSpiffs) {
+        obdWriteString(&g_obd, 0, 0, 24, (char*)"SPIFFS OK!", FONT_12x16, OBD_BLACK, 1);
+      } else {
+        obdWriteString(&g_obd, 0, 8, 24, (char*)"OTA OK!", FONT_12x16, OBD_BLACK, 1);
+      }
     } else {
       obdFill(&g_obd, OBD_WHITE, 1);
-      obdWriteString(&g_obd, 0, 0, 24, (char*)"OTA FAIL!", FONT_12x16, OBD_BLACK, 1);
+      if (g_otaTargetSpiffs) {
+        obdWriteString(&g_obd, 0, 0, 24, (char*)"SPIFFS FAIL!", FONT_12x16, OBD_BLACK, 1);
+      } else {
+        obdWriteString(&g_obd, 0, 0, 24, (char*)"OTA FAIL!", FONT_12x16, OBD_BLACK, 1);
+      }
     }
     g_otaInProgress = false;
   }
@@ -1083,10 +1133,22 @@ static void handleOtaUpload() {
  * @brief Handle OTA completion response - called after upload finishes
  */
 static void handleOta() {
-  if (Update.hasError()) {
-    g_wifiServer->send(400, "text/plain", "Error: firmware update failed");
+  bool otaOk = g_otaSessionOk && !Update.hasError();
+  if (!otaOk) {
+    if (g_otaTargetSpiffs && !g_spiffsMounted) {
+      g_spiffsMounted = SPIFFS.begin(false);
+    }
+    if (g_otaTargetSpiffs) {
+      g_wifiServer->send(400, "text/plain", "Error: SPIFFS update failed");
+    } else {
+      g_wifiServer->send(400, "text/plain", "Error: firmware update failed");
+    }
   } else {
-    g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+    if (g_otaTargetSpiffs) {
+      g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restarting...");
+    } else {
+      g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+    }
     delay(1000);
     ESP.restart();
   }
@@ -1152,6 +1214,7 @@ static void registerWebRoutes() {
   g_wifiServer->on("/docs/assets/trig_cal.png", HTTP_GET, handleDocsTriggerAsset);
   g_wifiServer->on("/restore", HTTP_POST, handleRestore, handleRestoreUpload);
   g_wifiServer->on("/ota", HTTP_POST, handleOta, handleOtaUpload);
+  g_wifiServer->on("/ota-spiffs", HTTP_POST, handleOta, handleOtaUpload);
 }
 
 bool isWiFiPortalActive() {

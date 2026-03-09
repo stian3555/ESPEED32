@@ -58,7 +58,7 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <ul class="about-list">
 <li>PWM motor control with adjustable frequency, throttle curve, anti-spin, and brake behavior.</li>
 <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
-<li>Built-in backup/restore, firmware update (OTA), and onboard user guide.</li>
+<li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
 </ul>
 </div>
 <hr>
@@ -104,6 +104,16 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <p class="warn">Do not disconnect power during update.</p>
 <p id="ota-note" style="display:none" class="warn"></p>
 <div id="ost" class="st"></div>
+</div>
+<div id="spiffs-section">
+<h2>Filesystem Update (SPIFFS .bin)</h2>
+<form id="sf">
+<input type="file" id="spiffs" accept=".bin">
+<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
+</form>
+<p class="warn">Use this when UI/docs changed in <code>data/</code>. Device restarts after upload.</p>
+<p id="spiffs-note" style="display:none" class="warn"></p>
+<div id="sst" class="st"></div>
 </div>
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
@@ -191,12 +201,12 @@ function updateDocsLinkState(){
   }
 }
 
-function firmwareUpdateUnavailableReason(){
+function otaUpdateUnavailableReason(label){
   if(hostedMode){
-    return 'Firmware update unavailable in hosted mode. Open controller WiFi page to upload firmware.';
+    return label+' unavailable in hosted mode. Open controller WiFi page to upload.';
   }
   if(usb){
-    return 'Firmware update unavailable while USB WebSerial is connected. Disconnect USB to use WiFi OTA.';
+    return label+' unavailable while USB WebSerial is connected. Disconnect USB to use WiFi OTA.';
   }
   return '';
 }
@@ -205,16 +215,27 @@ function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
   var note=document.getElementById('ota-note');
-  if(!input || !btn || !note) return;
+  var fsInput=document.getElementById('spiffs');
+  var fsBtn=document.getElementById('btn-spiffs-upload');
+  var fsNote=document.getElementById('spiffs-note');
+  if(!input || !btn || !note || !fsInput || !fsBtn || !fsNote) return;
 
-  var reason=firmwareUpdateUnavailableReason();
+  var reason=otaUpdateUnavailableReason('Firmware update');
+  var fsReason=otaUpdateUnavailableReason('Filesystem update');
   var disabled=(reason!=='');
+  var fsDisabled=(fsReason!=='');
 
   input.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
   note.style.display=disabled?'block':'none';
   note.textContent=reason;
+
+  fsInput.disabled=fsDisabled;
+  fsBtn.disabled=fsDisabled;
+  fsBtn.classList.toggle('disabled',fsDisabled);
+  fsNote.style.display=fsDisabled?'block':'none';
+  fsNote.textContent=fsReason;
 }
 
 function setUsbReadyState(ready,msg){
@@ -691,7 +712,7 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
-  var fwDisabledReason=firmwareUpdateUnavailableReason();
+  var fwDisabledReason=otaUpdateUnavailableReason('Firmware update');
   if(fwDisabledReason){
     ss('ost','err',fwDisabledReason);
     return;
@@ -703,6 +724,22 @@ document.getElementById('of').onsubmit=async function(e){
   var fd=new FormData();
   fd.append('file',f);
   try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('ost','err',''+x);}
+};
+
+document.getElementById('sf').onsubmit=async function(e){
+  e.preventDefault();
+  var fsDisabledReason=otaUpdateUnavailableReason('Filesystem update');
+  if(fsDisabledReason){
+    ss('sst','err',fsDisabledReason);
+    return;
+  }
+  var f=document.getElementById('spiffs').files[0];
+  if(!f){alert('Select a SPIFFS .bin file');return;}
+  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
+  ss('sst','','Uploading filesystem image...');
+  var fd=new FormData();
+  fd.append('file',f);
+  try{var r=await fetch('/ota-spiffs',{method:'POST',body:fd});var t=await r.text();ss('sst',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('sst','err',''+x);}
 };
 
 hostedMode=detectHostedMode();

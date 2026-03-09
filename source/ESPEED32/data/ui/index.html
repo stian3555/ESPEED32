@@ -22,7 +22,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 .ok{background:#0f2a22;color:#9bf7da;border-color:#1e8e6e}
 .err{background:#311a22;color:#ffd2da;border-color:#b44b68}
 .warn{color:#ff8c00;font-size:13px;text-align:center}
-#usbbar{display:none;margin-bottom:10px}
+#usbbar{display:block;margin-bottom:10px}
+#usb-note{margin-top:4px;margin-bottom:0}
 .card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
 .about-card p{margin:6px 0;color:#d7deef;line-height:1.45}
 .about-list{margin:8px 0 8px 18px;padding:0}
@@ -50,7 +51,11 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <body>
 <h1>ESPEED32</h1>
 <p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
-<div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
+<div id="usbbar">
+<button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button>
+<p id="usb-note" class="warn" style="display:none"></p>
+<div id="ust" class="st"></div>
+</div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
 <h2>About ESPEED32</h2>
 <div class="card about-card">
@@ -132,6 +137,22 @@ function detectHostedMode(){
   if(mode==='hosted') return true;
   if(mode==='device') return false;
   return !isLikelyDeviceHost(location.hostname||'');
+}
+
+function browserSupportsSerial(){
+  return !!(navigator && ('serial' in navigator));
+}
+
+function updateUsbUiState(){
+  var btn=document.getElementById('ucb');
+  var note=document.getElementById('usb-note');
+  if(!btn || !note) return;
+
+  var unsupported=!browserSupportsSerial();
+  btn.disabled=unsupported;
+  btn.classList.toggle('disabled',unsupported);
+  note.style.display=unsupported?'block':'none';
+  note.textContent=unsupported?'USB WebSerial is not supported in this browser. Use Chrome or Edge on desktop.':'';
 }
 
 function applyHostedMode(){
@@ -246,7 +267,7 @@ function setUsbReadyState(ready,msg){
   }
   updateDocsLinkState();
   updateFirmwareUiState();
-  if(msg){ss('st',usbReady?'ok':'err',msg);}
+  if(msg){ss('ust',usbReady?'ok':'err',msg);}
 }
 
 async function probeUsbVersion(){
@@ -318,6 +339,10 @@ async function ws(s){
 }
 
 async function usbToggle(){
+  if(!browserSupportsSerial()){
+    ss('ust','err','USB WebSerial is not supported in this browser.');
+    return;
+  }
   if(!usb){
     try{
       port=await navigator.serial.requestPort();
@@ -332,11 +357,11 @@ async function usbToggle(){
       updateFirmwareUiState();
       var ready=await ensureUsbReady(true);
       if(!ready){
-        ss('st','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
+        ss('ust','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
       }else{
-        ss('st','ok','USB connected');
+        ss('ust','ok','USB connected');
       }
-    }catch(e){ss('st','err','USB: '+e.message);}
+    }catch(e){ss('ust','err','USB: '+e.message);}
   }else{
     usb=false;
     usbReady=false;
@@ -352,6 +377,7 @@ async function usbToggle(){
     b2.textContent='Connect via USB (WebSerial)';
     b2.className='btn usb';
     updateFirmwareUiState();
+    ss('ust','ok','USB disconnected');
   }
 }
 
@@ -744,7 +770,7 @@ document.getElementById('sf').onsubmit=async function(e){
 
 hostedMode=detectHostedMode();
 applyHostedMode();
-if('serial' in navigator){document.getElementById('usbbar').style.display='block';}
+updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
 loadInfo();

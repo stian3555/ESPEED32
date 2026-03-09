@@ -131,6 +131,8 @@ var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=
 var hostedMode=false;
 var latestReleaseTag='';
 var latestReleaseUrl='';
+var latestFirmwareBinUrl='';
+var latestSpiffsBinUrl='';
 var releaseFetchTried=false;
 var RELEASE_CACHE_KEY='espeed32_latest_release_v1';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
@@ -185,6 +187,45 @@ function normalizeVersionTag(v){
   return 'v'+s;
 }
 
+function parseVersionParts(v){
+  var s=String(v==null?'':v).trim().toLowerCase();
+  if(!s || s==='-') return null;
+  var m=s.match(/(\d+(?:\.\d+)*)/);
+  if(!m) return null;
+  var parts=m[1].split('.');
+  var out=[];
+  for(var i=0;i<parts.length;i++){
+    var n=parseInt(parts[i],10);
+    if(isNaN(n)) return null;
+    out.push(n);
+  }
+  return out.length?out:null;
+}
+
+function compareVersionParts(a,b){
+  var len=Math.max(a.length,b.length);
+  for(var i=0;i<len;i++){
+    var av=(i<a.length)?a[i]:0;
+    var bv=(i<b.length)?b[i]:0;
+    if(av>bv) return 1;
+    if(av<bv) return -1;
+  }
+  return 0;
+}
+
+function isReleaseNewerThanDevice(releaseTag,deviceVersion){
+  var rv=parseVersionParts(releaseTag);
+  var dv=parseVersionParts(deviceVersion);
+  if(!rv || !dv) return false;
+  return compareVersionParts(rv,dv)>0;
+}
+
+function canRunValidFirmwareCheck(){
+  if(!hostedMode) return false;
+  if(!usb || !usbReady) return false;
+  return !!(info.version && info.version!=='-');
+}
+
 function readReleaseCache(){
   try{
     var raw=localStorage.getItem(RELEASE_CACHE_KEY);
@@ -198,9 +239,9 @@ function readReleaseCache(){
   }
 }
 
-function writeReleaseCache(tag,url){
+function writeReleaseCache(tag,url,fwUrl,spiffsUrl){
   try{
-    localStorage.setItem(RELEASE_CACHE_KEY,JSON.stringify({tag:tag,url:url,ts:Date.now()}));
+    localStorage.setItem(RELEASE_CACHE_KEY,JSON.stringify({tag:tag,url:url,fwUrl:fwUrl||'',spiffsUrl:spiffsUrl||'',ts:Date.now()}));
   }catch(_){ }
 }
 
@@ -209,7 +250,7 @@ function updateReleaseInfoUi(){
   if(!el) return;
 
   if(!hostedMode){
-    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest firmware release - check is available on espeed.com.';
+    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest firmware release - check is available on espeed32.com.';
     return;
   }
 
@@ -233,6 +274,23 @@ function updateReleaseInfoUi(){
   if(info.version && info.version!=='-'){
     el.appendChild(document.createTextNode(' \u00b7 Device firmware: '+normalizeVersionTag(info.version)));
   }
+
+  if(canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version)){
+    el.appendChild(document.createTextNode(' \u00b7 '));
+    var dl=document.createElement('a');
+    dl.href=latestFirmwareBinUrl||latestReleaseUrl;
+    dl.target='_blank';
+    dl.rel='noopener';
+    dl.textContent='Download new firmware here';
+    el.appendChild(dl);
+    el.appendChild(document.createTextNode(' \u00b7 '));
+    var dlFs=document.createElement('a');
+    dlFs.href=latestSpiffsBinUrl||latestReleaseUrl;
+    dlFs.target='_blank';
+    dlFs.rel='noopener';
+    dlFs.textContent='Download new SPIFFS here';
+    el.appendChild(dlFs);
+  }
 }
 
 async function loadLatestReleaseInfo(){
@@ -245,6 +303,8 @@ async function loadLatestReleaseInfo(){
   if(cached){
     latestReleaseTag=String(cached.tag||'').trim();
     latestReleaseUrl=String(cached.url||'').trim();
+    latestFirmwareBinUrl=String(cached.fwUrl||'').trim();
+    latestSpiffsBinUrl=String(cached.spiffsUrl||'').trim();
     releaseFetchTried=true;
     updateReleaseInfoUi();
   }else{
@@ -266,11 +326,27 @@ async function loadLatestReleaseInfo(){
     var j=await r.json();
     var tag=String(j.tag_name||j.name||'').trim();
     var url=String(j.html_url||'').trim();
+    var fwUrl='';
+    var spiffsUrl='';
+    if(Array.isArray(j.assets)){
+      for(var i=0;i<j.assets.length;i++){
+        var a=j.assets[i];
+        var n=String((a&&a.name)||'').trim().toLowerCase();
+        var u=String((a&&a.browser_download_url)||'').trim();
+        if(n==='espeed32.ino.bin' && u){
+          fwUrl=u;
+        }else if(n==='espeed32_spiffs.bin' && u){
+          spiffsUrl=u;
+        }
+      }
+    }
     if(!tag || !url) throw new Error('invalid payload');
     latestReleaseTag=tag;
     latestReleaseUrl=url;
+    latestFirmwareBinUrl=fwUrl;
+    latestSpiffsBinUrl=spiffsUrl;
     releaseFetchTried=true;
-    writeReleaseCache(tag,url);
+    writeReleaseCache(tag,url,fwUrl,spiffsUrl);
     updateReleaseInfoUi();
   }catch(_){
     releaseFetchTried=true;
@@ -378,6 +454,7 @@ function setUsbReadyState(ready,msg){
   }
   updateDocsLinkState();
   updateFirmwareUiState();
+  updateReleaseInfoUi();
   if(msg){ss('ust',usbReady?'ok':'err',msg);}
 }
 
@@ -466,6 +543,7 @@ async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
     b.className='btn usb';
   }
   updateFirmwareUiState();
+  updateReleaseInfoUi();
   if(showStatus && statusMsg){ss('ust',statusType||'ok',statusMsg);}
 }
 

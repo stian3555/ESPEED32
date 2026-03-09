@@ -192,7 +192,14 @@ void showAboutScreen() {
     }
 
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
-      break;
+      lastInteraction = millis();
+      if (maxPage > 0 && page < maxPage) {
+        page++;
+        g_rotaryEncoder.reset(page);
+        drawAbout();
+      } else {
+        break;
+      }
     }
 
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {

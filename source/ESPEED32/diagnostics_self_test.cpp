@@ -202,27 +202,59 @@ void showSelfTest() {
   uint8_t passCount = 0;
   for (uint8_t i = 0; i < TOTAL; i++) if (results[i]) passCount++;
 
-  /* Page 1: tests 0-4 */
-  obdFill(&g_obd, OBD_WHITE, 1);
-  sprintf(line, "Summary %d/%d  (1/2)", passCount, TOTAL);
-  obdWriteString(&g_obd, 0, 0, 0, line, FONT_6x8, OBD_BLACK, 1);
-  for (uint8_t i = 0; i < 5; i++) {
-    sprintf(line, "%-7s  %s", testNames[i], results[i] ? "PASS" : "FAIL");
-    obdWriteString(&g_obd, 0, 0, (i + 1) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
-  }
-  obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, (char*)"enc >   (next)", FONT_6x8, OBD_BLACK, 1);
-  selfTestWaitEnc();
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  g_rotaryEncoder.setBoundaries(0, 1, false);
+  g_rotaryEncoder.reset(0);
 
-  /* Page 2: tests 5-8 */
-  obdFill(&g_obd, OBD_WHITE, 1);
-  sprintf(line, "Summary %d/%d  (2/2)", passCount, TOTAL);
-  obdWriteString(&g_obd, 0, 0, 0, line, FONT_6x8, OBD_BLACK, 1);
-  for (uint8_t i = 5; i < TOTAL; i++) {
-    sprintf(line, "%-7s  %s", testNames[i], results[i] ? "PASS" : "FAIL");
-    obdWriteString(&g_obd, 0, 0, (i - 4) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+  uint8_t summaryPage = 0;
+  auto drawSummary = [&](uint8_t page) {
+    obdFill(&g_obd, OBD_WHITE, 1);
+    sprintf(line, "Summary %d/%d  (%d/2)", passCount, TOTAL, (int)(page + 1));
+    obdWriteString(&g_obd, 0, 0, 0, line, FONT_6x8, OBD_BLACK, 1);
+
+    if (page == 0) {
+      for (uint8_t i = 0; i < 5; i++) {
+        sprintf(line, "%-7s  %s", testNames[i], results[i] ? "PASS" : "FAIL");
+        obdWriteString(&g_obd, 0, 0, (i + 1) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+      }
+      obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, (char*)"turn=page enc>=next", FONT_6x8, OBD_BLACK, 1);
+    } else {
+      for (uint8_t i = 5; i < TOTAL; i++) {
+        sprintf(line, "%-7s  %s", testNames[i], results[i] ? "PASS" : "FAIL");
+        obdWriteString(&g_obd, 0, 0, (i - 4) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+      }
+      obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, (char*)"turn=page enc>=exit", FONT_6x8, OBD_BLACK, 1);
+    }
+  };
+
+  drawSummary(summaryPage);
+  bool summaryExit = false;
+  while (!summaryExit) {
+    if (g_rotaryEncoder.encoderChanged()) {
+      uint8_t newPage = (uint8_t)g_rotaryEncoder.readEncoder();
+      if (newPage != summaryPage) {
+        summaryPage = newPage;
+        drawSummary(summaryPage);
+      }
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      if (summaryPage < 1) {
+        summaryPage++;
+        g_rotaryEncoder.reset(summaryPage);
+        drawSummary(summaryPage);
+      } else {
+        summaryExit = true;
+      }
+    }
+
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) vTaskDelay(1);
+      summaryExit = true;
+    }
+
+    vTaskDelay(1);
   }
-  obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, (char*)"enc >   (exit)", FONT_6x8, OBD_BLACK, 1);
-  selfTestWaitEnc();
 
   /* Restore encoder for main menu */
   resetEncoderForMainMenu();

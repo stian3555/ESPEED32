@@ -18,7 +18,7 @@ extern void showScreensaver();
  * Includes firmware/data versions, chip details, WiFi/BT MAC addresses and build info.
  */
 void showAboutScreen() {
-  static const uint8_t ABOUT_MAX_LINES = 18;
+  static const uint8_t ABOUT_MAX_LINES = 40;
   static const uint8_t ABOUT_VISIBLE_LINES = 7;  /* rows below title */
   char lines[ABOUT_MAX_LINES][22];
   uint8_t lineCount = 0;
@@ -31,58 +31,67 @@ void showAboutScreen() {
     lineCount++;
   };
 
+  auto addField = [&](const char* label, const char* value) {
+    if (label == nullptr) return;
+    snprintf(line, sizeof(line), "%s:", label);
+    addLine(line);
+    if (value == nullptr || value[0] == '\0') {
+      addLine("-");
+    } else {
+      addLine(value);
+    }
+    addLine("");
+  };
+
   uint8_t wifiMac[6] = {0};
   uint8_t btMac[6] = {0};
   bool wifiOk = (esp_read_mac(wifiMac, ESP_MAC_WIFI_STA) == ESP_OK);
   bool btOk = (esp_read_mac(btMac, ESP_MAC_BT) == ESP_OK);
 
-  snprintf(line, sizeof(line), "FW: v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
-  addLine(line);
-  snprintf(line, sizeof(line), "Data: v%d", STORED_VAR_VERSION);
-  addLine(line);
-  addLine("Sensor:");
+  snprintf(line, sizeof(line), "v%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  addField("Firmware", line);
+  snprintf(line, sizeof(line), "v%d", STORED_VAR_VERSION);
+  addField("Data", line);
   HAL_GetTriggerSensorInfo(line, sizeof(line));
-  addLine(line);
+  addField("HAL sensor", line);
   if (wifiOk) {
-    snprintf(line, sizeof(line), "ID: %02X%02X", wifiMac[4], wifiMac[5]);
+    snprintf(line, sizeof(line), "%02X%02X", wifiMac[4], wifiMac[5]);
   } else {
     uint64_t mac = ESP.getEfuseMac();
-    snprintf(line, sizeof(line), "ID: %02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+    snprintf(line, sizeof(line), "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
   }
-  addLine(line);
+  addField("Device ID", line);
 
   String chipModel = String(ESP.getChipModel());
-  snprintf(line, sizeof(line), "Chip: %s", chipModel.c_str());
-  addLine(line);
-  snprintf(line, sizeof(line), "Rev:%d Cores:%d", ESP.getChipRevision(), ESP.getChipCores());
-  addLine(line);
-  snprintf(line, sizeof(line), "Flash: %uMB", (unsigned int)(ESP.getFlashChipSize() / (1024UL * 1024UL)));
-  addLine(line);
-  snprintf(line, sizeof(line), "Heap free: %uKB", (unsigned int)(ESP.getFreeHeap() / 1024UL));
-  addLine(line);
+  snprintf(line, sizeof(line), "%s", chipModel.c_str());
+  addField("Chip", line);
+  snprintf(line, sizeof(line), "rev %d, %d cores", ESP.getChipRevision(), ESP.getChipCores());
+  addField("Revision", line);
+  snprintf(line, sizeof(line), "%uMB", (unsigned int)(ESP.getFlashChipSize() / (1024UL * 1024UL)));
+  addField("Flash", line);
+  snprintf(line, sizeof(line), "%uKB free", (unsigned int)(ESP.getFreeHeap() / 1024UL));
+  addField("Heap", line);
 
-  addLine("WiFi MAC:");
   if (wifiOk) {
     snprintf(line, sizeof(line), "%02X:%02X:%02X:%02X:%02X:%02X",
              wifiMac[0], wifiMac[1], wifiMac[2], wifiMac[3], wifiMac[4], wifiMac[5]);
-    addLine(line);
+    addField("WiFi MAC", line);
   } else {
-    addLine("unavailable");
+    addField("WiFi MAC", "unavailable");
   }
 
-  addLine("BT MAC:");
   if (btOk) {
     snprintf(line, sizeof(line), "%02X:%02X:%02X:%02X:%02X:%02X",
              btMac[0], btMac[1], btMac[2], btMac[3], btMac[4], btMac[5]);
-    addLine(line);
+    addField("BT MAC", line);
   } else {
-    addLine("unavailable");
+    addField("BT MAC", "unavailable");
   }
 
-  snprintf(line, sizeof(line), "Built: %s", __DATE__);
-  addLine(line);
-  snprintf(line, sizeof(line), "Time: %s", __TIME__);
-  addLine(line);
+  snprintf(line, sizeof(line), "%s", __DATE__);
+  addField("Built", line);
+  snprintf(line, sizeof(line), "%s", __TIME__);
+  addField("Build time", line);
 
   uint16_t maxScroll = (lineCount > ABOUT_VISIBLE_LINES) ? (lineCount - ABOUT_VISIBLE_LINES) : 0;
   uint16_t scroll = 0;

@@ -148,7 +148,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </select>
     </div>
     <ul class="sources">
-      <li>Firmware-kilde: ESPEED32 v4.7 (<code>source/ESPEED32/</code>).</li>
+      <li>Firmware-kilde: ESPEED32 v4.8 (<code>source/ESPEED32/</code>).</li>
       <li>Lokale manualer i repo: Quick Start + Extended Guide (DOC-mappen, DOCX/PDF).</li>
       <li>ACD-referanse: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
       <li>CarSteen-referanse: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
@@ -171,6 +171,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li>Kalibrer trigger etter firmware-oppdatering eller hvis trigger-mekanikk er endret.</li>
       <li><code>Power ON</code>: normal oppstart, deretter RUNNING.</li>
+      <li>For <code>TLE493D</code>-bygg auto-detekteres sensor-variant og adresse ved oppstart (ingen manuell adresseendring nødvendig).</li>
       <li>Hold <code>encoder-knapp</code> ved power on: trigger-kalibrering.</li>
       <li>Hold <code>bremseknapp</code> ved power on: Self-Test (9 steg).</li>
     </ul>
@@ -216,6 +217,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
     </ul>
+    <h3>Fra CarSteen/ACD-begreper til ESPEED32</h3>
+    <table>
+      <thead>
+        <tr><th>Gammelt begrep</th><th>ESPEED32-ekvivalent</th><th>Praktisk effekt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Attack</td><td><code>SENSI</code></td><td>Hvor hardt bilen svarer ved første triggerbevegelse.</td></tr>
+        <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Begrenser toppnivå og styrer hvor mykt effekten bygges opp.</td></tr>
+        <tr><td>Profile</td><td><code>CURVE</code></td><td>Formen på gassresponsen (tidlig vs sen aggressivitet).</td></tr>
+        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>Q-BRAKE</code></td><td>Bremseeffekt ved slipp, midlertidig brems og tidlig bremsesone.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Typisk "myk og kontrollert" startoppsett (fra eldre guide): prøv rundt <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, og juster derfra.</p>
     <table>
       <thead>
         <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
@@ -271,6 +285,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
     </ul>
+    <h3>DISPLAY + ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt.</li>
+      <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
+      <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
+    </ul>
     <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
     <table>
       <thead>
@@ -314,7 +334,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Mens WiFi er aktiv: koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>) og åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
       <li>På infosiden kan du bruke <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
     </ol>
-    <p class="small">Hvis du har en ledig (blank) status-slot, vises <code>WIFI</code> i statuslinja når WiFi er aktiv.</p>
+    <p class="small">Statuslinje ved aktiv WiFi: <code>WIFI</code> bruker første ledige felt. Hvis ingen felt er ledige, vises <code>WIFI</code> i felt 4 til WiFi stoppes.</p>
     <h3>USB</h3>
     <ol>
       <li>Gå til <code>SETTINGS -> USB</code>.</li>

@@ -25,26 +25,34 @@ I2C pins for the sensor: **SDA = GPIO21, SCL = GPIO22**
 
 ### TLE493D — address variants
 
-The last part of the TLE493D part number indicates the I2C address. Check your exact part number before ordering or building.
+Current HAL behavior (`source/ESPEED32/HAL.cpp`):
+
+- auto-detects supported TLE493D variants/addresses at boot
+- caches detected variant + address in NVS (`sensor_cfg`) for faster next boot
+- no manual `ADDRESS` edit is normally required
+
+The part-number suffix still determines the I2C address:
 
 | Part number suffix | 7-bit I2C address |
 |---|---|
+| A3 (TLE493D-W2B6 **A3**) | 0x44 |
 | A0 (e.g. TLE493D-P3B6 **A0**) | 0x5D |
 | A1 | 0x13 |
-| A3 (tested, W2B6 A3) | 0x44 |
+| A2 | 0x29 |
+| A3 (TLE493D-P3B6 **A3**) | 0x46 |
 
-For other variants, check the datasheet for the correct address.
-
-If your variant is not A3, update `ADDRESS` at the top of the `TLE493D_MAG` block in `source/ESPEED32/HAL.cpp`.
+If detection fails, firmware continues and prints a warning on serial output.
 
 > **Silicon revision note:** The TLE493D-P3B6 A0 is version 3 silicon and is available on Digikey/Mouser. The older P2 revision has known issues — some users have managed to get it working, but it is not guaranteed.
 
-## On-Device Documentation (NO/EN)
+## On-Device Documentation (NO/EN/ES/DE)
 
 User documentation served by the controller lives in:
 
 - `source/ESPEED32/data/docs/en/index.html`
 - `source/ESPEED32/data/docs/no/index.html`
+- `source/ESPEED32/data/docs/es/index.html`
+- `source/ESPEED32/data/docs/de/index.html`
 - `source/ESPEED32/data/ui/index.html` (backup/restore web UI)
 
 Recommended location is exactly this path under `source/ESPEED32/data/docs/` (do not move to repo root),
@@ -58,17 +66,15 @@ The docs include:
 - full controller usage guide
 - full UI overview
 - full menu tree (main menu and all submenus)
-- Norwegian and English versions
+- Norwegian, English, Spanish, and German versions
 
 ### Update workflow
 
-1. Edit docs HTML files in `source/ESPEED32/data/docs/`.
-2. Commit to Git.
-3. Flash firmware + SPIFFS in one go (recommended after firmware/docs changes):
+1. Flash firmware + SPIFFS in one go (recommended after firmware/docs changes):
    - VS Code task: `ESPEED32: Flash firmware + SPIFFS`
    - or terminal: `./scripts/flash_all.sh`
-4. Upload filesystem image (SPIFFS) only (when firmware is unchanged):
+2. Upload filesystem image (SPIFFS) only (when firmware is unchanged):
    - VS Code task: `ESPEED32: Upload SPIFFS docs`
    - or terminal: `./scripts/upload_spiffs.sh`
    - optional: purge SPIFFS region first: `./scripts/upload_spiffs.sh --purge` (asks for confirmation)
-5. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.
+3. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.

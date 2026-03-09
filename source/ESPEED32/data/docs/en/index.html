@@ -148,7 +148,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </select>
     </div>
     <ul class="sources">
-      <li>Firmware source: ESPEED32 v4.7 (<code>source/ESPEED32/</code>).</li>
+      <li>Firmware source: ESPEED32 v4.8 (<code>source/ESPEED32/</code>).</li>
       <li>Local manuals in repo: Quick Start + Extended Guide (DOC folder, DOCX/PDF).</li>
       <li>ACD reference: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
       <li>CarSteen reference: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
@@ -171,6 +171,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li>Recalibrate trigger after firmware update, or if trigger mechanics have changed.</li>
       <li><code>Power ON</code>: normal startup, then RUNNING mode.</li>
+      <li>For <code>TLE493D</code> builds, sensor variant/address is auto-detected on boot (no manual address edit needed).</li>
       <li>Hold <code>encoder button</code> during power on: trigger calibration.</li>
       <li>Hold <code>brake button</code> during power on: Self-Test (9 steps).</li>
     </ul>
@@ -216,6 +217,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>CS</code>: CarSteen-style terms (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
       <li><code>ACD</code>: ACD-style terms where directly applicable (<code>SENSI</code> and <code>CHOKE</code> for limit). <code>ANTIS</code> remains anti-spin because the ACD manual does not define a separate Choke2 term.</li>
     </ul>
+    <h3>From CarSteen/ACD terms to ESPEED32</h3>
+    <table>
+      <thead>
+        <tr><th>Legacy term</th><th>ESPEED32 equivalent</th><th>Practical effect</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Attack</td><td><code>SENSI</code></td><td>How hard the car launches at first trigger movement.</td></tr>
+        <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Top-end limitation and ramp smoothness.</td></tr>
+        <tr><td>Profile</td><td><code>CURVE</code></td><td>Trigger response shape (early vs late aggression).</td></tr>
+        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>Q-BRAKE</code></td><td>Release braking and temporary/early braking behavior.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Legacy setup example (from older guides): for a soft and controlled feel, start around <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, and adjust from there.</p>
     <table>
       <thead>
         <tr><th>Item</th><th>Range</th><th>Default</th><th>Description</th></tr>
@@ -271,6 +285,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: welcome delay 0-990 ms in 10 ms steps.</li>
     </ul>
+    <h3>DISPLAY + ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 fixed slots. Each slot can show <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, or blank.</li>
+      <li>While WiFi is active, the status bar shows <code>WIFI</code>. It uses the first blank slot if available; otherwise slot 4 is temporarily overridden.</li>
+      <li><code>ABOUT</code> shows firmware/data version, detected trigger sensor, chip details, flash/heap, MAC addresses, and build date/time.</li>
+    </ul>
     <h3>Estimated current draw (controller electronics)</h3>
     <table>
       <thead>
@@ -314,7 +334,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>While WiFi is active: connect to AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) and open OLED IP in browser (typically <code>192.168.4.1</code>).</li>
       <li>On the info page you can use <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code>, and <code>/docs</code>.</li>
     </ol>
-    <p class="small">If you have a blank status slot, <code>WIFI</code> is shown in the status bar while WiFi is active.</p>
+    <p class="small">Status bar behavior while WiFi is active: <code>WIFI</code> uses the first blank slot; if no blank slot exists, slot 4 is shown as <code>WIFI</code> until WiFi stops.</p>
     <h3>USB</h3>
     <ol>
       <li>Open <code>SETTINGS -> USB</code>.</li>

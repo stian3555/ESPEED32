@@ -22,8 +22,13 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 .ok{background:#0f2a22;color:#9bf7da;border-color:#1e8e6e}
 .err{background:#311a22;color:#ffd2da;border-color:#b44b68}
 .warn{color:#ff8c00;font-size:13px;text-align:center}
-#usbbar{display:none;margin-bottom:10px}
+#usbbar{display:block;margin-bottom:10px}
+#usb-note{margin-top:4px;margin-bottom:0}
 .card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
+.about-card p{margin:6px 0;color:#d7deef;line-height:1.45}
+.about-list{margin:8px 0 8px 18px;padding:0}
+.about-list li{margin:6px 0;color:#c8d2ea}
+.about-card a{color:#7ed6ff}
 .editor-panel{display:none}
 .section-stack{display:flex;flex-direction:column;gap:12px;margin-top:10px}
 .action-card{border:1px solid #2b3448;border-radius:10px;padding:12px;background:#0f1728}
@@ -46,8 +51,26 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <body>
 <h1>ESPEED32</h1>
 <p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
-<div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
+<div id="usbbar">
+<button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button>
+<p id="usb-note" class="warn" style="display:none"></p>
+<div id="ust" class="st"></div>
+</div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
+<h2>About ESPEED32</h2>
+<div class="card about-card">
+<p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
+<ul class="about-list">
+<li>PWM motor control with adjustable frequency, throttle curve, anti-spin, and brake behavior.</li>
+<li>Magnetic trigger support, calibration, and per-car profile storage.</li>
+<li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
+</ul>
+</div>
+<hr>
+<h2>User Guide</h2>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
+<p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
+<hr>
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">
 <section class="action-card" aria-labelledby="backup-title">
@@ -77,10 +100,6 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <div id="edst" class="st"></div>
 </div>
 <hr>
-<h2>User Guide</h2>
-<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
-<p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
-<hr>
 <div id="fw-section">
 <h2>Firmware Update (.bin)</h2>
 <form id="of">
@@ -91,10 +110,20 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <p id="ota-note" style="display:none" class="warn"></p>
 <div id="ost" class="st"></div>
 </div>
+<div id="spiffs-section">
+<h2>Filesystem Update (SPIFFS .bin)</h2>
+<form id="sf">
+<input type="file" id="spiffs" accept=".bin">
+<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
+</form>
+<p class="warn">Use this when UI/docs changed in <code>data/</code>. Device restarts after upload.</p>
+<p id="spiffs-note" style="display:none" class="warn"></p>
+<div id="sst" class="st"></div>
+</div>
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
-var info={deviceId:'----',version:'-',docsPath:'docs/'};
+var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
 
@@ -108,6 +137,22 @@ function detectHostedMode(){
   if(mode==='hosted') return true;
   if(mode==='device') return false;
   return !isLikelyDeviceHost(location.hostname||'');
+}
+
+function browserSupportsSerial(){
+  return !!(navigator && ('serial' in navigator));
+}
+
+function updateUsbUiState(){
+  var btn=document.getElementById('ucb');
+  var note=document.getElementById('usb-note');
+  if(!btn || !note) return;
+
+  var unsupported=!browserSupportsSerial();
+  btn.disabled=unsupported;
+  btn.classList.toggle('disabled',unsupported);
+  note.style.display=unsupported?'block':'none';
+  note.textContent=unsupported?'USB WebSerial is not supported in this browser. Use Chrome or Edge on desktop.':'';
 }
 
 function applyHostedMode(){
@@ -129,6 +174,14 @@ function applyInfo(){
   document.getElementById('ver').textContent=info.version||'-';
   updateDocsLinkState();
   updateFirmwareUiState();
+}
+
+function hostedDocsPath(){
+  var lang=((navigator && navigator.language) ? navigator.language : 'en').toLowerCase();
+  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/';
+  if(lang.indexOf('es')===0) return 'docs/es/';
+  if(lang.indexOf('de')===0) return 'docs/de/';
+  return 'docs/en/';
 }
 
 function setBtnDisabled(id,disabled){
@@ -153,14 +206,6 @@ function updateDocsLinkState(){
   link.setAttribute('target','_blank');
   link.setAttribute('rel','noopener');
 
-  if(hostedMode && usb){
-    link.href='#';
-    link.classList.add('disabled');
-    link.setAttribute('aria-disabled','true');
-    note.textContent='Docs are not available over USB commands. Use WiFi mode on the controller for onboard docs.';
-    return;
-  }
-
   if(hostedMode && location.protocol==='file:'){
     link.href='#';
     link.classList.add('disabled');
@@ -169,20 +214,21 @@ function updateDocsLinkState(){
     return;
   }
 
-  link.href=info.docsPath||'/docs';
   if(hostedMode){
-    note.textContent='Hosted mode: docs open from this site. Controller docs still require WiFi mode.';
+    link.href=hostedDocsPath();
+    note.textContent='Hosted mode: docs open from this site (language selected from browser locale).';
   }else{
+    link.href=info.docsPath||'/docs';
     note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
   }
 }
 
-function firmwareUpdateUnavailableReason(){
+function otaUpdateUnavailableReason(label){
   if(hostedMode){
-    return 'Firmware update unavailable in hosted mode. Open controller WiFi page to upload firmware.';
+    return label+' unavailable in hosted mode. Open controller WiFi page to upload.';
   }
   if(usb){
-    return 'Firmware update unavailable while USB WebSerial is connected. Disconnect USB to use WiFi OTA.';
+    return label+' unavailable while USB WebSerial is connected. Disconnect USB to use WiFi OTA.';
   }
   return '';
 }
@@ -191,16 +237,27 @@ function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
   var note=document.getElementById('ota-note');
-  if(!input || !btn || !note) return;
+  var fsInput=document.getElementById('spiffs');
+  var fsBtn=document.getElementById('btn-spiffs-upload');
+  var fsNote=document.getElementById('spiffs-note');
+  if(!input || !btn || !note || !fsInput || !fsBtn || !fsNote) return;
 
-  var reason=firmwareUpdateUnavailableReason();
+  var reason=otaUpdateUnavailableReason('Firmware update');
+  var fsReason=otaUpdateUnavailableReason('Filesystem update');
   var disabled=(reason!=='');
+  var fsDisabled=(fsReason!=='');
 
   input.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
   note.style.display=disabled?'block':'none';
   note.textContent=reason;
+
+  fsInput.disabled=fsDisabled;
+  fsBtn.disabled=fsDisabled;
+  fsBtn.classList.toggle('disabled',fsDisabled);
+  fsNote.style.display=fsDisabled?'block':'none';
+  fsNote.textContent=fsReason;
 }
 
 function setUsbReadyState(ready,msg){
@@ -211,7 +268,7 @@ function setUsbReadyState(ready,msg){
   }
   updateDocsLinkState();
   updateFirmwareUiState();
-  if(msg){ss('st',usbReady?'ok':'err',msg);}
+  if(msg){ss('ust',usbReady?'ok':'err',msg);}
 }
 
 async function probeUsbVersion(){
@@ -283,6 +340,10 @@ async function ws(s){
 }
 
 async function usbToggle(){
+  if(!browserSupportsSerial()){
+    ss('ust','err','USB WebSerial is not supported in this browser.');
+    return;
+  }
   if(!usb){
     try{
       port=await navigator.serial.requestPort();
@@ -297,11 +358,11 @@ async function usbToggle(){
       updateFirmwareUiState();
       var ready=await ensureUsbReady(true);
       if(!ready){
-        ss('st','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
+        ss('ust','err','USB connected, but no command response. Open USB mode on controller (older FW) or update FW.');
       }else{
-        ss('st','ok','USB connected');
+        ss('ust','ok','USB connected');
       }
-    }catch(e){ss('st','err','USB: '+e.message);}
+    }catch(e){ss('ust','err','USB: '+e.message);}
   }else{
     usb=false;
     usbReady=false;
@@ -317,6 +378,7 @@ async function usbToggle(){
     b2.textContent='Connect via USB (WebSerial)';
     b2.className='btn usb';
     updateFirmwareUiState();
+    ss('ust','ok','USB disconnected');
   }
 }
 
@@ -365,8 +427,14 @@ function fieldId(prefix,id){return prefix+'_'+id;}
 
 function coerceFieldValue(field,val){
   if(field.type==='string') return String(val||'');
-  var n=parseInt(val,10);
+  var stepNum=Number(field.step||1);
+  var hasFractionStep=String(field.step||'').indexOf('.')>=0;
+  var n=hasFractionStep?parseFloat(val):parseInt(val,10);
   if(isNaN(n)) throw new Error('Invalid value for '+field.label);
+  if(hasFractionStep && isFinite(stepNum) && stepNum>0){
+    n=Math.round(n/stepNum)*stepNum;
+    n=Math.round(n*10)/10;
+  }
   if(field.min!=null && n<field.min) throw new Error(field.label+' below minimum');
   if(field.max!=null && n>field.max) throw new Error(field.label+' above maximum');
   return n;
@@ -677,7 +745,7 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
-  var fwDisabledReason=firmwareUpdateUnavailableReason();
+  var fwDisabledReason=otaUpdateUnavailableReason('Firmware update');
   if(fwDisabledReason){
     ss('ost','err',fwDisabledReason);
     return;
@@ -691,9 +759,25 @@ document.getElementById('of').onsubmit=async function(e){
   try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('ost','err',''+x);}
 };
 
+document.getElementById('sf').onsubmit=async function(e){
+  e.preventDefault();
+  var fsDisabledReason=otaUpdateUnavailableReason('Filesystem update');
+  if(fsDisabledReason){
+    ss('sst','err',fsDisabledReason);
+    return;
+  }
+  var f=document.getElementById('spiffs').files[0];
+  if(!f){alert('Select a SPIFFS .bin file');return;}
+  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
+  ss('sst','','Uploading filesystem image...');
+  var fd=new FormData();
+  fd.append('file',f);
+  try{var r=await fetch('/ota-spiffs',{method:'POST',body:fd});var t=await r.text();ss('sst',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('sst','err',''+x);}
+};
+
 hostedMode=detectHostedMode();
 applyHostedMode();
-if('serial' in navigator){document.getElementById('usbbar').style.display='block';}
+updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
 loadInfo();

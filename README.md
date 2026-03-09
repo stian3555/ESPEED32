@@ -45,12 +45,14 @@ If detection fails, firmware continues and prints a warning on serial output.
 
 > **Silicon revision note:** The TLE493D-P3B6 A0 is version 3 silicon and is available on Digikey/Mouser. The older P2 revision has known issues — some users have managed to get it working, but it is not guaranteed.
 
-## On-Device Documentation (NO/EN)
+## On-Device Documentation (NO/EN/ES/DE)
 
 User documentation served by the controller lives in:
 
 - `source/ESPEED32/data/docs/en/index.html`
 - `source/ESPEED32/data/docs/no/index.html`
+- `source/ESPEED32/data/docs/es/index.html`
+- `source/ESPEED32/data/docs/de/index.html`
 - `source/ESPEED32/data/ui/index.html` (backup/restore web UI)
 
 Recommended location is exactly this path under `source/ESPEED32/data/docs/` (do not move to repo root),
@@ -64,7 +66,7 @@ The docs include:
 - full controller usage guide
 - full UI overview
 - full menu tree (main menu and all submenus)
-- Norwegian and English versions
+- Norwegian, English, Spanish, and German versions
 
 ### Update workflow
 

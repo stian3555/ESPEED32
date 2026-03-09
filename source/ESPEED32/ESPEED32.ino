@@ -1482,11 +1482,22 @@ void displayStatusLine() {
         break;
       }
     }
+
+    /* If all slots are occupied, temporarily override slot 4 with WIFI status. */
+    if (wifiSlot < 0) {
+      wifiSlot = STATUS_SLOTS - 1;
+    }
   }
 
   for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
     uint16_t slot = g_storedVar.statusSlot[s];
     uint8_t color = OBD_BLACK;
+
+    if (wifiSlot == (int8_t)s) {
+      strcpy(buf, "WIFI ");
+      obdWriteString(&g_obd, 0, SLOT_X[s], Y, buf, FONT_6x8, color, 1);
+      continue;
+    }
 
     switch (slot) {
       case STATUS_OUTPUT:
@@ -1517,11 +1528,7 @@ void displayStatusLine() {
         break;
       }
       default:  /* STATUS_BLANK */
-        if (wifiSlot == (int8_t)s) {
-          strcpy(buf, "WIFI ");
-        } else {
-          strcpy(buf, "     ");
-        }
+        strcpy(buf, "     ");
         break;
     }
 

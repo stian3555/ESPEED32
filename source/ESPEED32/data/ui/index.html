@@ -59,6 +59,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
 <li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
 </ul>
+<p class="tiny">Forked from <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a>.</p>
+<p id="release-info" class="tiny">Latest GitHub release: checking...</p>
 </div>
 <hr>
 <h2>User Guide</h2>
@@ -127,6 +129,12 @@ var E=new TextEncoder(),D=new TextDecoder();
 var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
+var latestReleaseTag='';
+var latestReleaseUrl='';
+var releaseFetchTried=false;
+var RELEASE_CACHE_KEY='espeed32_latest_release_v1';
+var RELEASE_CACHE_TTL_MS=6*60*60*1000;
+var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
 
 function isLikelyDeviceHost(h){
   return h==='192.168.4.1' || h==='localhost' || h==='127.0.0.1' || /\.local$/i.test(h||'');
@@ -170,11 +178,112 @@ function applyHostedMode(){
 function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
 
+function normalizeVersionTag(v){
+  var s=String(v==null?'':v).trim();
+  if(!s || s==='-') return '-';
+  if(s.charAt(0).toLowerCase()==='v') return s;
+  return 'v'+s;
+}
+
+function readReleaseCache(){
+  try{
+    var raw=localStorage.getItem(RELEASE_CACHE_KEY);
+    if(!raw) return null;
+    var c=JSON.parse(raw);
+    if(!c || !c.tag || !c.url || !c.ts) return null;
+    if((Date.now()-Number(c.ts))>RELEASE_CACHE_TTL_MS) return null;
+    return c;
+  }catch(_){
+    return null;
+  }
+}
+
+function writeReleaseCache(tag,url){
+  try{
+    localStorage.setItem(RELEASE_CACHE_KEY,JSON.stringify({tag:tag,url:url,ts:Date.now()}));
+  }catch(_){ }
+}
+
+function updateReleaseInfoUi(){
+  var el=document.getElementById('release-info');
+  if(!el) return;
+
+  if(!hostedMode){
+    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest release check is available on espeed.com.';
+    return;
+  }
+
+  if(!latestReleaseTag || !latestReleaseUrl){
+    if(!releaseFetchTried){
+      el.textContent='Latest GitHub release: checking...';
+    }else{
+      el.textContent='Latest GitHub release: unavailable (offline or rate-limited).';
+    }
+    return;
+  }
+
+  el.textContent='';
+  el.appendChild(document.createTextNode('Latest GitHub release: '));
+  var a=document.createElement('a');
+  a.href=latestReleaseUrl;
+  a.target='_blank';
+  a.rel='noopener';
+  a.textContent=latestReleaseTag;
+  el.appendChild(a);
+  if(info.version && info.version!=='-'){
+    el.appendChild(document.createTextNode(' \u00b7 Device firmware: '+normalizeVersionTag(info.version)));
+  }
+}
+
+async function loadLatestReleaseInfo(){
+  if(!hostedMode){
+    updateReleaseInfoUi();
+    return;
+  }
+
+  var cached=readReleaseCache();
+  if(cached){
+    latestReleaseTag=String(cached.tag||'').trim();
+    latestReleaseUrl=String(cached.url||'').trim();
+    releaseFetchTried=true;
+    updateReleaseInfoUi();
+  }else{
+    updateReleaseInfoUi();
+  }
+
+  if(typeof navigator!=='undefined' && navigator.onLine===false){
+    releaseFetchTried=true;
+    updateReleaseInfoUi();
+    return;
+  }
+
+  try{
+    var r=await fetch(RELEASE_API_URL,{
+      headers:{'Accept':'application/vnd.github+json'},
+      cache:'no-store'
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var j=await r.json();
+    var tag=String(j.tag_name||j.name||'').trim();
+    var url=String(j.html_url||'').trim();
+    if(!tag || !url) throw new Error('invalid payload');
+    latestReleaseTag=tag;
+    latestReleaseUrl=url;
+    releaseFetchTried=true;
+    writeReleaseCache(tag,url);
+    updateReleaseInfoUi();
+  }catch(_){
+    releaseFetchTried=true;
+    updateReleaseInfoUi();
+  }
+}
+
 function applyInfo(){
   document.getElementById('devid').textContent=info.deviceId||'----';
   document.getElementById('ver').textContent=info.version||'-';
   updateDocsLinkState();
   updateFirmwareUiState();
+  updateReleaseInfoUi();
 }
 
 function hostedDocsPath(){
@@ -792,6 +901,7 @@ updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
 loadInfo();
+loadLatestReleaseInfo();
 </script>
 </body>
 </html>

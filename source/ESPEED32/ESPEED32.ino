@@ -11,6 +11,7 @@
 #include "settings_sound_wifi_submenus.h"
 #include "settings_power_menu.h"
 #include "settings_quick_brake_menu.h"
+#include "settings_reset_menu.h"
 #include <esp_mac.h>
 
 /* Version defined in slot_ESC.h */
@@ -289,8 +290,6 @@ void setWiFiTimedMinutes(uint16_t minutes) {
 /*                                                Function Prototypes                                                */
 /*********************************************************************************************************************/
 void IRAM_ATTR readEncoderISR();
-static bool resetConfirm(const char* label);
-static void doResetCar();
 void showPowerSave();
 void showPowerSave(uint32_t inactivityStartMs);
 void showDeepSleep();

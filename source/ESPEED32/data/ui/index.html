@@ -24,6 +24,10 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 .warn{color:#ff8c00;font-size:13px;text-align:center}
 #usbbar{display:none;margin-bottom:10px}
 .card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
+.about-card p{margin:6px 0;color:#d7deef;line-height:1.45}
+.about-list{margin:8px 0 8px 18px;padding:0}
+.about-list li{margin:6px 0;color:#c8d2ea}
+.about-card a{color:#7ed6ff}
 .editor-panel{display:none}
 .section-stack{display:flex;flex-direction:column;gap:12px;margin-top:10px}
 .action-card{border:1px solid #2b3448;border-radius:10px;padding:12px;background:#0f1728}
@@ -48,6 +52,20 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <p class="sub">v<span id="ver">-</span> &middot; <span id="devid">----</span></p>
 <div id="usbbar"><button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button></div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor. WiFi and OTA are disabled here.</p>
+<h2>About ESPEED32</h2>
+<div class="card about-card">
+<p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
+<ul class="about-list">
+<li>PWM motor control with adjustable frequency, throttle curve, anti-spin, and brake behavior.</li>
+<li>Magnetic trigger support, calibration, and per-car profile storage.</li>
+<li>Built-in backup/restore, firmware update (OTA), and onboard user guide.</li>
+</ul>
+</div>
+<hr>
+<h2>User Guide</h2>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
+<p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
+<hr>
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">
 <section class="action-card" aria-labelledby="backup-title">
@@ -76,10 +94,6 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <button class="btn ota" id="btn-save" onclick="applyEditor(true)">Apply + Save to flash</button>
 <div id="edst" class="st"></div>
 </div>
-<hr>
-<h2>User Guide</h2>
-<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
-<p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
 <hr>
 <div id="fw-section">
 <h2>Firmware Update (.bin)</h2>

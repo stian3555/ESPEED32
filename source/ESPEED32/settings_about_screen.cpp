@@ -19,7 +19,7 @@ extern void showScreensaver();
  */
 void showAboutScreen() {
   static const uint8_t ABOUT_MAX_LINES = 40;
-  static const uint8_t ABOUT_VISIBLE_LINES = 6;  /* rows below title */
+  static const uint8_t ABOUT_VISIBLE_LINES = 7;  /* rows below title */
   char lines[ABOUT_MAX_LINES][22];
   uint8_t lineCount = 0;
   char line[40];
@@ -33,18 +33,25 @@ void showAboutScreen() {
 
   auto addField = [&](const char* label, const char* value) {
     if (label == nullptr) return;
-    char valueCopy[22];
+    char valueCopy[40];
+    char inlineLine[40];
     if (value == nullptr || value[0] == '\0') {
       strncpy(valueCopy, "-", sizeof(valueCopy) - 1);
     } else {
       strncpy(valueCopy, value, sizeof(valueCopy) - 1);
     }
     valueCopy[sizeof(valueCopy) - 1] = '\0';
+    snprintf(inlineLine, sizeof(inlineLine), "%s: %s", label, valueCopy);
 
-    snprintf(line, sizeof(line), "%s:", label);
-    addLine(line);
-    addLine(valueCopy);
-    addLine("");
+    /* Compact layout for short values; 2-line layout for long values. */
+    if (strlen(inlineLine) <= 21) {
+      addLine(inlineLine);
+    } else {
+      snprintf(line, sizeof(line), "%s:", label);
+      addLine(line);
+      snprintf(line, sizeof(line), "  %s", valueCopy);  /* keep visual spacing from label */
+      addLine(line);
+    }
   };
 
   uint8_t wifiMac[6] = {0};

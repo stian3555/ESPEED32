@@ -154,7 +154,7 @@ void showSoundSettings() {
 
 /**
  * WiFi submenu.
- * Items: INFO PAGE, AUTO OFF (minutes), START/STOP WIFI, BACK.
+ * Items: START/STOP WIFI, INFO PAGE, AUTO OFF (minutes), BACK.
  * MINUTES is a runtime-only value used for timed background activation.
  */
 void showWiFiSettings() {
@@ -165,7 +165,11 @@ void showWiFiSettings() {
   const char* lblStartBg[4] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI"};
   const char* lblStopBg[4]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI"};
 
-  const uint8_t NUM_ITEMS = 4;  /* 0=NOW, 1=MINUTES, 2=ACTIVE, 3=BACK */
+  const uint8_t ITEM_ACTIVE = 0;
+  const uint8_t ITEM_INFO = 1;
+  const uint8_t ITEM_TIMER = 2;
+  const uint8_t ITEM_BACK = 3;
+  const uint8_t NUM_ITEMS = 4;  /* 0=ACTIVE, 1=INFO, 2=MINUTES, 3=BACK */
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
 
@@ -246,24 +250,24 @@ void showWiFiSettings() {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(sel);
-      } else if (sel == 0) {
-        showWiFiPortalScreen();
-        lastInteraction = millis();
-        screensaverActive = false;
-      } else if (sel == 1) {
-        editing = true;
-        tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
-        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, 120, false);
-        g_rotaryEncoder.reset(tmpMinutes);
-      } else if (sel == 2) {
+        g_rotaryEncoder.reset(ITEM_TIMER);
+      } else if (sel == ITEM_ACTIVE) {
         if (isWiFiPortalActive()) {
           stopTimedWiFiPortal();
         } else {
           startTimedWiFiPortal(getWiFiTimedMinutes());
         }
-      } else {
+      } else if (sel == ITEM_INFO) {
+        showWiFiPortalScreen();
+        lastInteraction = millis();
+        screensaverActive = false;
+      } else if (sel == ITEM_TIMER) {
+        editing = true;
+        tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        g_rotaryEncoder.setBoundaries(1, 120, false);
+        g_rotaryEncoder.reset(tmpMinutes);
+      } else if (sel == ITEM_BACK) {
         break;
       }
       needRedraw = true;
@@ -281,7 +285,7 @@ void showWiFiSettings() {
           editing = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-          g_rotaryEncoder.reset(sel);
+          g_rotaryEncoder.reset(ITEM_TIMER);
           needRedraw = true;
         } else {
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
@@ -295,22 +299,22 @@ void showWiFiSettings() {
     if (needRedraw) {
       obdFill(&g_obd, OBD_WHITE, 1);
 
-      bool s0 = (!editing && sel == 0);
-      obdWriteString(&g_obd, 0, 0, 0 * lineH, (char*)lblOpen[lang], menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s0 = (!editing && sel == ITEM_ACTIVE);
+      const char* actionStr = isWiFiPortalActive() ? lblStopBg[lang] : lblStartBg[lang];
+      obdWriteString(&g_obd, 0, 0, 0 * lineH, (char*)actionStr, menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s1 = (!editing && sel == 1);
-      obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblTimer[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s1 = (!editing && sel == ITEM_INFO);
+      obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblOpen[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s2 = (!editing && sel == ITEM_TIMER);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblTimer[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
       char minutesStr[10];
       uint16_t shownMinutes = editing ? tmpMinutes : constrain(getWiFiTimedMinutes(), 1, 120);
       snprintf(minutesStr, sizeof(minutesStr), "%3dm", shownMinutes);
       uint8_t mx = OLED_WIDTH - (uint8_t)(strlen(minutesStr) * WIDTH8x8);
-      obdWriteString(&g_obd, 0, mx, 1 * lineH, minutesStr, menuFont, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, mx, 2 * lineH, minutesStr, menuFont, (s2 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s2 = (!editing && sel == 2);
-      const char* actionStr = isWiFiPortalActive() ? lblStopBg[lang] : lblStartBg[lang];
-      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)actionStr, menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
-
-      bool s3 = (!editing && sel == 3);
+      bool s3 = (!editing && sel == ITEM_BACK);
       obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)getBackLabel(lang), menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;

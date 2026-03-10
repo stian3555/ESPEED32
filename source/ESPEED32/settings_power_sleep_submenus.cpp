@@ -18,7 +18,7 @@ extern void showDeepSleep();
 extern void saveEEPROM(StoredVar_type toSave);
 
 /**
- * Sleep settings submenu: INTERVAL (auto-sleep timeout) and NOW (manual sleep).
+ * Sleep settings submenu: NOW (manual sleep) and INTERVAL (auto-sleep timeout).
  */
 void showSleepSettings() {
   uint16_t lang = g_storedVar.language;
@@ -29,7 +29,10 @@ void showSleepSettings() {
   const char* lblBack[4]     = {"TILBAKE",  "BACK",      "BACK",      "BACK"};
   const char* lblOff[4]      = {"AV",       "OFF",       "OFF",       "OFF"};
 
-  const uint8_t NUM_ITEMS = 3;  /* 0=INTERVAL, 1=NOW, 2=BACK */
+  const uint8_t ITEM_NOW = 0;
+  const uint8_t ITEM_INTERVAL = 1;
+  const uint8_t ITEM_BACK = 2;
+  const uint8_t NUM_ITEMS = 3;  /* 0=NOW, 1=INTERVAL, 2=BACK */
   const uint8_t menuFont  = FONT_8x8;
   const uint8_t charWidth = WIDTH8x8;
   const uint8_t lineH     = HEIGHT8x8;
@@ -113,21 +116,21 @@ void showSleepSettings() {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(0);
-      } else if (sel == 0) {
+        g_rotaryEncoder.reset(ITEM_INTERVAL);
+      } else if (sel == ITEM_INTERVAL) {
         /* Enter interval editing */
         editing = true;
         tmpTimeout = g_storedVar.powerSaveTimeout;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, POWER_SAVE_TIMEOUT_MAX, false);
         g_rotaryEncoder.reset(tmpTimeout);
-      } else if (sel == 1) {
+      } else if (sel == ITEM_NOW) {
         /* Sleep NOW */
         showPowerSave();
         lastInteraction = millis();
         screensaverActive = false;
         needRedraw = true;
-      } else {
+      } else if (sel == ITEM_BACK) {
         /* BACK */
         break;
       }
@@ -141,7 +144,7 @@ void showSleepSettings() {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(0);
+        g_rotaryEncoder.reset(ITEM_INTERVAL);
         needRedraw = true;
         delay(200);
       } else {
@@ -154,22 +157,22 @@ void showSleepSettings() {
     if (needRedraw) {
       obdFill(&g_obd, OBD_WHITE, 1);
 
-      /* Row 0: INTERVAL + value */
-      bool s0 = (!editing && sel == 0);
-      obdWriteString(&g_obd, 0, 0, 0, (char*)lblInterval[lang], menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      /* Row 0: NOW */
+      bool s0 = (!editing && sel == ITEM_NOW);
+      obdWriteString(&g_obd, 0, 0, 0, (char*)lblNow[lang], menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+
+      /* Row 1: INTERVAL + value */
+      bool s1 = (!editing && sel == ITEM_INTERVAL);
+      obdWriteString(&g_obd, 0, 0, lineH, (char*)lblInterval[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
       char valStr[8];
       uint16_t disp = editing ? tmpTimeout : g_storedVar.powerSaveTimeout;
       if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", lblOff[lang]);
       else           snprintf(valStr, sizeof(valStr), "%2dmin", disp);
       uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * charWidth);
-      obdWriteString(&g_obd, 0, vx, 0, valStr, menuFont, (s0 || editing) ? OBD_WHITE : OBD_BLACK, 1);
-
-      /* Row 1: NOW */
-      bool s1 = (!editing && sel == 1);
-      obdWriteString(&g_obd, 0, 0, lineH, (char*)lblNow[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, vx, lineH, valStr, menuFont, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Row 2: BACK */
-      bool s2 = (!editing && sel == 2);
+      bool s2 = (!editing && sel == ITEM_BACK);
       obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblBack[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;
@@ -183,7 +186,7 @@ void showSleepSettings() {
 }
 
 /**
- * Deep sleep settings submenu: INTERVAL (auto deep-sleep timeout) and NOW (manual deep sleep).
+ * Deep sleep settings submenu: NOW (manual deep sleep) and INTERVAL (auto deep-sleep timeout).
  * Uses hardcoded FONT_8x8 regardless of listFontSize.
  */
 void showDeepSleepSettings() {
@@ -194,7 +197,10 @@ void showDeepSleepSettings() {
   const char* lblBack[4]     = {"TILBAKE",    "BACK",       "BACK",       "BACK"};
   const char* lblOff[4]      = {"AV",         "OFF",        "OFF",        "OFF"};
 
-  const uint8_t NUM_ITEMS = 3;  /* 0=INTERVAL, 1=NOW, 2=BACK */
+  const uint8_t ITEM_NOW = 0;
+  const uint8_t ITEM_INTERVAL = 1;
+  const uint8_t ITEM_BACK = 2;
+  const uint8_t NUM_ITEMS = 3;  /* 0=NOW, 1=INTERVAL, 2=BACK */
 
   int8_t sel = 0;
   bool editing = false;
@@ -272,19 +278,19 @@ void showDeepSleepSettings() {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(0);
-      } else if (sel == 0) {
+        g_rotaryEncoder.reset(ITEM_INTERVAL);
+      } else if (sel == ITEM_INTERVAL) {
         editing = true;
         tmpTimeout = g_storedVar.deepSleepTimeout;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
         /* 0=OFF, DEEP_SLEEP_TIMEOUT_MIN-DEEP_SLEEP_TIMEOUT_MAX; encode 0 as OFF */
         g_rotaryEncoder.setBoundaries(0, DEEP_SLEEP_TIMEOUT_MAX, false);
         g_rotaryEncoder.reset(tmpTimeout);
-      } else if (sel == 1) {
+      } else if (sel == ITEM_NOW) {
         /* Deep sleep NOW - never returns */
         showDeepSleep();
         needRedraw = true;
-      } else {
+      } else if (sel == ITEM_BACK) {
         break;
       }
       needRedraw = true;
@@ -296,7 +302,7 @@ void showDeepSleepSettings() {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(0);
+        g_rotaryEncoder.reset(ITEM_INTERVAL);
         needRedraw = true;
         delay(200);
       } else {
@@ -308,22 +314,22 @@ void showDeepSleepSettings() {
     if (needRedraw) {
       obdFill(&g_obd, OBD_WHITE, 1);
 
-      /* Row 0: INTERVAL + value */
-      bool s0 = (!editing && sel == 0);
-      obdWriteString(&g_obd, 0, 0, 0, (char*)lblInterval[lang], FONT_8x8, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      /* Row 0: NOW */
+      bool s0 = (!editing && sel == ITEM_NOW);
+      obdWriteString(&g_obd, 0, 0, 0, (char*)lblNow[lang], FONT_8x8, s0 ? OBD_WHITE : OBD_BLACK, 1);
+
+      /* Row 1: INTERVAL + value */
+      bool s1 = (!editing && sel == ITEM_INTERVAL);
+      obdWriteString(&g_obd, 0, 0, HEIGHT8x8, (char*)lblInterval[lang], FONT_8x8, s1 ? OBD_WHITE : OBD_BLACK, 1);
       char valStr[8];
       uint16_t disp = editing ? tmpTimeout : g_storedVar.deepSleepTimeout;
       if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", lblOff[lang]);
       else           snprintf(valStr, sizeof(valStr), "%2dmin", disp);
       uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * WIDTH8x8);
-      obdWriteString(&g_obd, 0, vx, 0, valStr, FONT_8x8, (s0 || editing) ? OBD_WHITE : OBD_BLACK, 1);
-
-      /* Row 1: NOW */
-      bool s1 = (!editing && sel == 1);
-      obdWriteString(&g_obd, 0, 0, HEIGHT8x8, (char*)lblNow[lang], FONT_8x8, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, vx, HEIGHT8x8, valStr, FONT_8x8, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Row 2: BACK */
-      bool s2 = (!editing && sel == 2);
+      bool s2 = (!editing && sel == ITEM_BACK);
       obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)lblBack[lang], FONT_8x8, s2 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;

@@ -174,12 +174,12 @@ void showScreensaverSettings() {
 
   const char* ssNames[SS_ITEMS];
   if (lang == LANG_NOR) {
-    ssNames[0] = "LINJE1";  ssNames[1] = "LINJE2";
-    ssNames[2] = "TID";     ssNames[3] = "NA";
+    ssNames[0] = "NA";      ssNames[1] = "LINJE1";
+    ssNames[2] = "LINJE2";  ssNames[3] = "TID";
     ssNames[4] = "TILBAKE";
   } else {
-    ssNames[0] = "LINE1";   ssNames[1] = "LINE2";
-    ssNames[2] = "TIME";    ssNames[3] = "NOW";
+    ssNames[0] = "NOW";     ssNames[1] = "LINE1";
+    ssNames[2] = "LINE2";   ssNames[3] = "TIME";
     ssNames[4] = "BACK";
   }
   const char* editorTitleL1 = (lang == LANG_NOR) ? "Linje 1" : "Line 1";
@@ -256,7 +256,7 @@ void showScreensaverSettings() {
           inTimeEdit = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
           g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-          g_rotaryEncoder.reset(3);  /* Return to TIME item */
+          g_rotaryEncoder.reset(4);  /* Return to TIME item */
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSel = 0xFF;
         } else {
@@ -284,22 +284,22 @@ void showScreensaverSettings() {
       for (uint8_t idx = 0; idx < SS_ITEMS; idx++) {
         uint8_t yPx = (idx + 1) * HEIGHT8x8;  /* y=8,16,24,32,40 */
         bool isSelected = (sel == idx + 1);
-        bool isEditingThis = (inTimeEdit && idx == 2);  /* TIME row */
+        bool isEditingThis = (inTimeEdit && idx == 3);  /* TIME row */
 
         /* Item name */
         obdWriteString(&g_obd, 0, 0, yPx, (char *)ssNames[idx], FONT_8x8,
                        (isSelected || isEditingThis) ? OBD_WHITE : OBD_BLACK, 1);
 
         /* Value on right side in FONT_6x8 */
-        if (idx == 0) {
+        if (idx == 1) {
           /* LINE1: show first 10 chars, right-justified */
           snprintf(msgStr, 11, "%10s", g_storedVar.screensaverLine1);
           obdWriteString(&g_obd, 0, OLED_WIDTH - 60, yPx, msgStr, FONT_6x8, OBD_BLACK, 1);
-        } else if (idx == 1) {
+        } else if (idx == 2) {
           /* LINE2: show first 10 chars, right-justified */
           snprintf(msgStr, 11, "%10s", g_storedVar.screensaverLine2);
           obdWriteString(&g_obd, 0, OLED_WIDTH - 60, yPx, msgStr, FONT_6x8, OBD_BLACK, 1);
-        } else if (idx == 2) {
+        } else if (idx == 3) {
           /* TIME: show current timeout, right-justified (4 chars × 6px = 24px from right) */
           if (g_storedVar.screensaverTimeout == 0) {
             sprintf(msgStr, "%4s", (lang == LANG_NOR) ? "AV" : "OFF");
@@ -309,7 +309,7 @@ void showScreensaverSettings() {
           obdWriteString(&g_obd, 0, OLED_WIDTH - 24, yPx, msgStr, FONT_6x8,
                          isEditingThis ? OBD_WHITE : OBD_BLACK, 1);
         }
-        /* idx==3 (NOW) and idx==4 (BACK) have no value - name only */
+        /* idx==0 (NOW) and idx==4 (BACK) have no value - name only */
       }
       prevSel = sel;
     }
@@ -326,7 +326,7 @@ void showScreensaverSettings() {
         g_rotaryEncoder.reset(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel = 0xFF;
-      } else if (sel == 1) {
+      } else if (sel == 2) {
         editScreensaverText(g_storedVar.screensaverLine1, editorTitleL1);
         saveEEPROM(g_storedVar);
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -334,7 +334,7 @@ void showScreensaverSettings() {
         g_rotaryEncoder.reset(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel = 0xFF;
-      } else if (sel == 2) {
+      } else if (sel == 3) {
         editScreensaverText(g_storedVar.screensaverLine2, editorTitleL2);
         saveEEPROM(g_storedVar);
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -342,14 +342,14 @@ void showScreensaverSettings() {
         g_rotaryEncoder.reset(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel = 0xFF;
-      } else if (sel == 3) {
+      } else if (sel == 4) {
         /* Enter TIME edit mode */
         inTimeEdit = true;
         origTimeout = g_storedVar.screensaverTimeout;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
         g_rotaryEncoder.setBoundaries(0, SCREENSAVER_TIMEOUT_MAX, false);
         g_rotaryEncoder.reset(g_storedVar.screensaverTimeout);
-      } else if (sel == 4) {
+      } else if (sel == 1) {
         /* NOW: activate screensaver immediately */
         screensaverActive = true;
         screensaverEncoderPos = g_rotaryEncoder.readEncoder();

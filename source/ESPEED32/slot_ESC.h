@@ -17,7 +17,7 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 5
-#define SW_MINOR_VERSION 0
+#define SW_MINOR_VERSION 1
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 19 /* Increment when StoredVar_type structure changes */
@@ -108,6 +108,7 @@
 #define SOUND_BOOT_DEFAULT  1  /* Boot sounds on by default (startup, calib, on, off) */
 #define SOUND_RACE_DEFAULT  1  /* Race mode toggle sound on by default */
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
+#define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
 
 /* Text Case Style */
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */

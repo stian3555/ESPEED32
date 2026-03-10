@@ -90,7 +90,7 @@ void initStoredVariables() {
   g_storedVar.deepSleepTimeout   = DEEP_SLEEP_TIMEOUT_DEFAULT;
   g_storedVar.soundBoot = SOUND_BOOT_DEFAULT;
   g_storedVar.soundRace = SOUND_RACE_DEFAULT;
-  g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
+  g_storedVar.gridCarSelectEnabled = GRID_CAR_SELECT_DEFAULT;  /* Car select in grid view default */
   g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */

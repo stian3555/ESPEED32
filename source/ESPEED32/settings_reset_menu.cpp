@@ -212,7 +212,7 @@ static void doResetSettings() {
   g_storedVar.deepSleepTimeout     = DEEP_SLEEP_TIMEOUT_DEFAULT;
   g_storedVar.soundBoot            = SOUND_BOOT_DEFAULT;
   g_storedVar.soundRace            = SOUND_RACE_DEFAULT;
-  g_storedVar.gridCarSelectEnabled = 0;
+  g_storedVar.gridCarSelectEnabled = GRID_CAR_SELECT_DEFAULT;
   g_storedVar.raceViewMode         = RACE_VIEW_DEFAULT;
   g_storedVar.language             = LANG_DEFAULT;
   g_storedVar.textCase             = TEXT_CASE_DEFAULT;

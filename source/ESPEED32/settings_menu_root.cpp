@@ -12,6 +12,7 @@
 #include "ui_render.h"
 
 extern StoredVar_type g_storedVar;
+extern uint16_t g_statsEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -20,6 +21,7 @@ extern char msgStr[50];
 extern uint32_t g_lastEncoderInteraction;
 
 extern void initSettingsMenuItems();
+extern void initMenuItems();
 extern void saveEEPROM(StoredVar_type toSave);
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
@@ -28,6 +30,7 @@ extern void setInSettingsMenu(bool active);
 extern void requestEscapeToMain();
 extern bool isEscapeToMainRequested();
 extern uint8_t getMainMenuSelector();
+extern uint8_t getMainMenuItemsCount();
 
 void showSettingsMenu() {
   initSettingsMenuItems();
@@ -179,6 +182,9 @@ void showSettingsMenu() {
         g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
         g_rotaryEncoder.reset(settingsSelector);
         saveEEPROM(g_storedVar);
+        if (settingsValuePtr == &g_statsEnabled) {
+          initMenuItems();
+        }
       }
       delay(200);
     }
@@ -246,9 +252,12 @@ void showSettingsMenu() {
 
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
         bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
-        uint16_t lang = g_storedVar.language;
         uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
-        sprintf(msgStr, "%3d", value);
+        if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_statsEnabled) {
+          sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, value ? 1 : 0));
+        } else {
+          sprintf(msgStr, "%3d", value);
+        }
         int textWidth = strlen(msgStr) * charWidth;
         obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,
                        menuFont, isValueSelected ? OBD_WHITE : OBD_BLACK, 1);
@@ -260,7 +269,7 @@ void showSettingsMenu() {
 
   setInSettingsMenu(false);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
   g_rotaryEncoder.reset(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
   saveEEPROM(g_storedVar);

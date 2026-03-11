@@ -19,6 +19,7 @@ extern void showScreensaver();
 extern void showPowerSave(uint32_t inactivityStartMs);
 extern void showDeepSleep();
 extern void initMenuItems();
+extern uint8_t getMainMenuItemsCount();
 
 /**
  * @brief Display bottom status line with throttle, car name and voltage
@@ -300,6 +301,7 @@ void printMainMenu(MenuState_enum currMenuState)
 {
   static uint16_t tmp = 0;
   static bool screensaverActive = false;
+  uint8_t mainMenuItems = getMainMenuItemsCount();
 
   /* "Frame" indicates which items are currently displayed.
      It consist of a lower and upper bound: only the items within this boundaries are displayed.
@@ -308,7 +310,11 @@ void printMainMenu(MenuState_enum currMenuState)
   static uint16_t frameUpper = 1;
   static uint16_t frameLower = 3;
   static uint8_t lastVisibleLines = 3;
-  uint8_t visibleLines = getMenuLines();
+  uint8_t visibleLines = min(getMenuLines(), mainMenuItems);
+
+  if (visibleLines < 1) visibleLines = 1;
+  if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
+  if (g_encoderMainSelector > mainMenuItems) g_encoderMainSelector = mainMenuItems;
 
   /* If font size changed, reset frame */
   if (visibleLines != lastVisibleLines) {
@@ -332,6 +338,11 @@ void printMainMenu(MenuState_enum currMenuState)
     frameLower = frameUpper + visibleLines - 1;
     obdFill(&g_obd, OBD_WHITE, 1);
     screensaverActive = false;
+  }
+
+  if (frameLower > mainMenuItems) {
+    frameLower = mainMenuItems;
+    frameUpper = (frameLower >= visibleLines) ? (frameLower - visibleLines + 1) : 1;
   }
 
   /* Check what to display based on view mode */
@@ -459,62 +470,64 @@ void printMainMenu(MenuState_enum currMenuState)
 
     for (uint8_t i = 0; i < visibleLines; i++)
     {
+      uint16_t menuIndex = frameUpper - 1 + i;
+      if (menuIndex >= mainMenuItems) break;
       /* Print item name */
       /* Item color: WHITE if item is selected, black otherwise */
-      obdWriteString(&g_obd, 0, 0, i * lineHeight, g_mainMenu.item[frameUpper - 1 + i].name, menuFont, (g_encoderMainSelector - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, i * lineHeight, g_mainMenu.item[menuIndex].name, menuFont, (g_encoderMainSelector - frameUpper == i) ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Only print value if value != ITEM_NO_VALUE */
       /* Value color: WHITE if corresponding item is selected AND menu state is VALUE_SELECTION, black otherwise */
-      if (g_mainMenu.item[frameUpper - 1 + i].value != ITEM_NO_VALUE) 
+      if (g_mainMenu.item[menuIndex].value != ITEM_NO_VALUE) 
       {
         /* if the value is a number, cast to *(unit16_t *), then print number and unit */
-        if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_INTEGER)
+        if (g_mainMenu.item[menuIndex].type == VALUE_TYPE_INTEGER)
         {
           /* SENSI is stored in 0.5% steps and shown with one decimal */
-          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, getMenuName(g_storedVar.language, 1)) == 0) {
-            uint16_t sensiRaw = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+          if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 1)) == 0) {
+            uint16_t sensiRaw = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
             sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
           }
           /* Special handling for QB item: display ON/OFF instead of 0/1 */
-          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, getMenuName(g_storedVar.language, 6)) == 0) {
-            uint16_t enabled = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+          else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 6)) == 0) {
+            uint16_t enabled = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
             sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, enabled ? 1 : 0));
           } else {
             /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
-            sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value), g_mainMenu.item[frameUpper - 1 + i].unit);
+            sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[menuIndex].value), g_mainMenu.item[menuIndex].unit);
           }
           /* Right-align: calculate text width and position from right edge */
           int textWidth = strlen(msgStr) * charWidth;
           obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr, menuFont, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
         /* If the value is a decimal, cast to *(unit16_t *), divide by 10^decimalPoint then print number and unit */
-        else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_DECIMAL)
+        else if (g_mainMenu.item[menuIndex].type == VALUE_TYPE_DECIMAL)
         {
           /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
-          tmp = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
-          sprintf(msgStr, " %d.%01d%s", tmp / 10, (tmp % 10), g_mainMenu.item[frameUpper - 1 + i].unit);
+          tmp = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
+          sprintf(msgStr, " %d.%01d%s", tmp / 10, (tmp % 10), g_mainMenu.item[menuIndex].unit);
           /* Right-align: calculate text width and position from right edge */
           int textWidth = strlen(msgStr) * charWidth;
           obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr, menuFont, (((g_encoderMainSelector - frameUpper == i) && (currMenuState == VALUE_SELECTION)) ? OBD_WHITE : OBD_BLACK), 1);
         }
         /* If the value is a string, cast to (char *) then print the string */
-        else if (g_mainMenu.item[frameUpper - 1 + i].type == VALUE_TYPE_STRING)
+        else if (g_mainMenu.item[menuIndex].type == VALUE_TYPE_STRING)
         {
           /* Special handling for VIEW menu item - display language-specific labels */
-          if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "VIEW") == 0) {
-            uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+          if (strcmp(g_mainMenu.item[menuIndex].name, "VIEW") == 0) {
+            uint16_t raceViewMode = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
             uint16_t lang = g_storedVar.language;
             sprintf(msgStr, "%6s", VIEW_MODE_LABELS[lang][raceViewMode]);
           }
           /* Special handling for LANG menu item */
-          else if (strcmp(g_mainMenu.item[frameUpper - 1 + i].name, "LANG") == 0) {
-            uint16_t language = *(uint16_t *)(g_mainMenu.item[frameUpper - 1 + i].value);
+          else if (strcmp(g_mainMenu.item[menuIndex].name, "LANG") == 0) {
+            uint16_t language = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
             const char* langLabel = (language <= LANG_ACD) ? LANG_LABELS[language] : LANG_LABELS[LANG_ENG];
             sprintf(msgStr, "%3s", langLabel);
           }
           else {
             /* value is a generic pointer to void, so cast to string pointer */
-            sprintf(msgStr, "%s", (char *)(g_mainMenu.item[frameUpper - 1 + i].value));
+            sprintf(msgStr, "%s", (char *)(g_mainMenu.item[menuIndex].value));
           }
           /* Right-align: calculate text width and position from right edge */
           int textWidth = strlen(msgStr) * charWidth;

@@ -3,6 +3,7 @@
 #include "slot_ESC.h"
 
 extern StoredVar_type g_storedVar;
+extern uint16_t g_statsEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -222,6 +223,7 @@ static void doResetSettings() {
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  g_statsEnabled              = STATS_ENABLED_DEFAULT;
 }
 
 /** Reset trigger calibration to factory defaults. */

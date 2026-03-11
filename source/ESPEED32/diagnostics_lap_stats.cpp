@@ -20,7 +20,7 @@ extern uint8_t getMainMenuSelector();
  * Displays lap count, best time, current lap time, motor current,
  * and a scrollable list of the last 20 lap times.
  * Encoder scrolls through lap list, button click returns to main menu.
- * Brake button resets lap counter.
+ * Brake button returns to main menu.
  */
 void showLapStats() {
   obdFill(&g_obd, OBD_WHITE, 1);

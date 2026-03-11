@@ -162,7 +162,11 @@
 #define LAP_MAX_COUNT        20    /* Max stored lap times */
 #define LAP_MIN_TIME_MS      3000  /* Minimum lap time [ms] */
 #define LAP_GAP_MAX_MS       200   /* Max dead spot duration [ms] */
-#define LAP_VIN_THRESHOLD_MV 2000  /* Voltage threshold for dead spot [mV] */
+#define LAP_VIN_THRESHOLD_MV 2000  /* Legacy VIN threshold [mV] (lap detect now uses motor load) */
+#define LAP_TRIGGER_ACTIVE_PCT      8    /* Current-based lap detect is active above this throttle [%] */
+#define LAP_CURRENT_BASE_MIN_MA   150    /* Minimum rolling current baseline to arm current-based detect [mA] */
+#define LAP_CURRENT_GAP_MIN_MA     80    /* Absolute low-current floor considered as dead spot [mA] */
+#define LAP_CURRENT_RECOVER_MIN_MA 140   /* Absolute current needed to confirm recovery after dead spot [mA] */
 /*********************************************************************************************************************/
 /*                                                 Data Structures                                                   */
 /*********************************************************************************************************************/

@@ -1,4 +1,4 @@
-# SlotEsp32
+# ESPEED32
 Cutting edge slot car controller with an ESP32 at its heart.
 How to build it — video: https://www.youtube.com/watch?v=JtMKeiguHKI
 Hosted Web UI/docs: https://espeed32.com (best in Chrome/Edge or another WebSerial-capable browser)

@@ -5,56 +5,295 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32</title>
 <style>
-body{font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
-h1{color:#e94560;text-align:center;margin-bottom:5px}
-p.sub{text-align:center;color:#888;margin-top:0}
-h2{color:#ccc;font-size:16px;margin-bottom:5px}
-.btn{display:block;width:100%;padding:15px;margin:10px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;box-sizing:border-box;text-decoration:none;text-align:center}
-.dl{background:#0f3460;color:#fff}.dl:hover{background:#1a4a80}
-.ul{background:#e94560;color:#fff}.ul:hover{background:#ff6b81}
-.ota{background:#ff8c00;color:#000}.ota:hover{background:#ffa500}
-.usb{background:#16c79a;color:#000}.usb:hover{background:#20e0ab}
-.doc{background:#2f8f2f;color:#fff}.doc:hover{background:#3aa83a}
-.aux{background:#3a4a6a;color:#fff}.aux:hover{background:#4d618a}
-hr{border-color:#333;margin:20px 0}
-input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
-.st{margin:12px 0;padding:10px 12px;border-radius:8px;display:none;text-align:left;font-size:13px;line-height:1.35;border:1px solid transparent}
-.ok{background:#0f2a22;color:#9bf7da;border-color:#1e8e6e}
-.err{background:#311a22;color:#ffd2da;border-color:#b44b68}
-.warn{color:#ff8c00;font-size:13px;text-align:center}
-#usbbar{display:block;margin-bottom:10px}
+:root{
+  --bg-main:#0c1426;
+  --bg-accent:#1f345b;
+  --panel:#101b30;
+  --panel-soft:#0f1728;
+  --panel-border:#2f4468;
+  --text-main:#ebf2ff;
+  --text-muted:#b8c8e4;
+  --accent:#4fb3ff;
+  --warn:#ffae52;
+  --ok-bg:#0f2a22;
+  --ok-border:#1e8e6e;
+  --err-bg:#311a22;
+  --err-border:#b44b68;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  padding:16px 14px 28px;
+  min-height:100vh;
+  font-family:"Trebuchet MS","Avenir Next","Segoe UI",sans-serif;
+  color:var(--text-main);
+  background:
+    radial-gradient(980px 360px at 90% -10%,#1f345b 0,transparent 62%),
+    radial-gradient(760px 300px at -5% 0,#203a62 0,transparent 68%),
+    linear-gradient(155deg,#0b1222 0,#121f37 55%,#0a1220 100%);
+}
+.page-shell{max-width:1220px;margin:0 auto}
+.hero{
+  border:1px solid var(--panel-border);
+  border-radius:16px;
+  padding:16px 18px;
+  background:linear-gradient(160deg,#13203a 0,#0f1a2f 100%);
+  box-shadow:0 12px 28px rgba(0,0,0,.24);
+  margin-bottom:14px;
+}
+h1{color:#ff637f;text-align:center;margin:0 0 4px 0;font-size:34px;letter-spacing:.4px}
+p.sub{text-align:center;color:#9eb0d1;margin:0;font-size:15px}
+#ver-note{color:#ffca8a}
+.layout-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+.layout-grid>*{
+  animation:panelIn .34s ease both;
+}
+.layout-grid>*:nth-child(2){animation-delay:.04s}
+.layout-grid>*:nth-child(3){animation-delay:.08s}
+.layout-grid>*:nth-child(4){animation-delay:.12s}
+.layout-grid>*:nth-child(5){animation-delay:.16s}
+.layout-grid>*:nth-child(6){animation-delay:.2s}
+@keyframes panelIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.panel{
+  border:1px solid var(--panel-border);
+  border-radius:14px;
+  padding:12px;
+  background:var(--panel);
+  box-shadow:0 7px 20px rgba(0,0,0,.2);
+}
+h2{color:#d9e6ff;font-size:16px;margin:0 0 8px 0}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  padding:13px 14px;
+  margin:10px 0;
+  border:none;
+  border-radius:9px;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.15px;
+  cursor:pointer;
+  text-decoration:none;
+  text-align:center;
+  transition:transform .12s ease,filter .12s ease;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(1px)}
+.dl{background:#17518f;color:#fff}
+.ul{background:#da4761;color:#fff}
+.ota{background:#f39a24;color:#0f0f0f}
+.usb{background:#1acb9d;color:#072017}
+.doc{background:#2f8f2f;color:#fff}
+.aux{background:#3f5b88;color:#fff}
+input[type=file]{
+  display:block;
+  margin:8px 0 6px 0;
+  color:#dfe7f8;
+  width:100%;
+  border:1px dashed #465a82;
+  border-radius:8px;
+  padding:10px;
+  background:#0b1222;
+}
+form{margin:0}
+.st{
+  margin:12px 0 2px 0;
+  padding:10px 12px;
+  border-radius:8px;
+  display:none;
+  text-align:left;
+  font-size:13px;
+  line-height:1.35;
+  border:1px solid transparent;
+}
+.ok{background:var(--ok-bg);color:#9bf7da;border-color:var(--ok-border)}
+.err{background:var(--err-bg);color:#ffd2da;border-color:var(--err-border)}
+.warn{color:var(--warn);font-size:13px;line-height:1.35}
+#usbbar{display:block}
 #usb-note{margin-top:4px;margin-bottom:0}
-#ver-note{color:#ffb36b}
-.card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
-.about-card p{margin:6px 0;color:#d7deef;line-height:1.45}
+.card{
+  border:1px solid #2f4161;
+  border-radius:10px;
+  padding:10px;
+  background:var(--panel-soft);
+}
+.about-card p{margin:6px 0;color:#d7e1f4;line-height:1.45}
 .about-list{margin:8px 0 8px 18px;padding:0}
-.about-list li{margin:6px 0;color:#c8d2ea}
+.about-list li{margin:6px 0;color:#c8d6ef}
 .about-card a{color:#7ed6ff}
 .release-line{margin:3px 0}
 .release-list{margin:6px 0 6px 18px;padding:0}
 .release-list li{margin:4px 0;color:#d7deef}
-.editor-panel{display:none}
-.section-stack{display:flex;flex-direction:column;gap:12px;margin-top:10px}
-.action-card{border:1px solid #2b3448;border-radius:10px;padding:12px;background:#0f1728}
-.action-title{font-size:12px;letter-spacing:.3px;color:#9dd7ff;text-transform:uppercase;margin:0 0 6px 0}
+.tiny{font-size:12px;color:#9eb0ce}
+.section-stack{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin-top:10px;
+}
+.action-card{
+  border:1px solid #2f4161;
+  border-radius:10px;
+  padding:12px;
+  background:#0f1728;
+  display:flex;
+  flex-direction:column;
+}
+.action-title{
+  font-size:12px;
+  letter-spacing:.4px;
+  color:#9dd7ff;
+  text-transform:uppercase;
+  margin:0 0 6px 0;
+}
 .action-note{font-size:12px;color:#9aa7c7;margin:0 0 8px 0}
+.action-card .btn{margin-top:auto}
+.editor-shell>.btn{max-width:430px}
+#editor-panel .btn{max-width:none}
+.editor-panel{display:none;margin-top:8px}
 .row{display:flex;flex-direction:column;margin-bottom:10px}
-.row label{font-size:13px;color:#bbb;margin-bottom:4px}
-.row input,.row select{padding:8px;border-radius:6px;border:1px solid #444;background:#0b0f18;color:#eee}
+.row label{font-size:13px;color:#b9c7de;margin-bottom:4px}
+.row input,.row select{
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #445778;
+  background:#0b0f18;
+  color:#ebf2ff;
+}
 .group-title{font-size:14px;color:#8fd3ff;margin:6px 0}
-.tiny{font-size:12px;color:#999}
 .seg{display:flex;gap:8px;margin:0 0 10px 0}
-.segbtn{flex:1;padding:9px 8px;border-radius:7px;border:1px solid #4a5877;background:#131d31;color:#b7c8ea;font-size:13px;cursor:pointer}
-.segbtn.active{background:#2c4e87;color:#fff;border-color:#76a9ff}
-.subsection{border:1px solid #2f3850;border-radius:8px;padding:8px 10px;margin:10px 0;background:#0c1322}
+.segbtn{
+  flex:1;
+  padding:9px 8px;
+  border-radius:7px;
+  border:1px solid #516185;
+  background:#131d31;
+  color:#c2d3ef;
+  font-size:13px;
+  cursor:pointer;
+}
+.segbtn.active{background:#2c4e87;color:#fff;border-color:#7aabff}
+.subsection{
+  border:1px solid #31435f;
+  border-radius:8px;
+  padding:8px 10px;
+  margin:10px 0;
+  background:#0c1322;
+}
 .subsection summary{cursor:pointer;color:#9dd7ff;font-size:13px;font-weight:600}
 .subsection[open] summary{margin-bottom:8px}
 .btn.disabled{opacity:.55;pointer-events:none}
+.update-stack{display:grid;gap:12px}
+.guide-panel .warn,.usb-panel .warn{margin:4px 0 0 0}
+
+@media (min-width:760px){
+  body{padding:18px 18px 32px}
+  .panel{padding:14px}
+  .layout-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    align-items:start;
+  }
+  .about-panel,
+  .backup-panel,
+  .guide-panel,
+  .usb-panel,
+  .editor-shell,
+  .update-stack{
+    grid-column:1 / -1;
+  }
+  .section-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .update-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (min-width:1024px){
+  .layout-grid{
+    grid-template-columns:repeat(12,minmax(0,1fr));
+    grid-template-areas:
+      "about about about about about about about about about about about about"
+      "guide guide guide guide guide guide usb usb usb usb usb usb"
+      "backup backup backup backup backup backup backup backup backup backup backup backup"
+      "updates updates updates updates updates updates updates updates updates updates updates updates"
+      "editor editor editor editor editor editor editor editor editor editor editor editor";
+    gap:14px;
+    align-items:start;
+  }
+  .about-panel{grid-area:about}
+  .guide-panel{grid-area:guide}
+  .usb-panel{grid-area:usb}
+  .backup-panel{grid-area:backup}
+  .editor-shell{grid-area:editor}
+  .update-stack{
+    grid-area:updates;
+    align-content:start;
+    gap:14px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .hero{padding:18px 22px}
+  h1{font-size:36px}
+  p.sub{font-size:15px}
+  .btn{
+    width:auto;
+    min-width:220px;
+    padding:11px 16px;
+    font-size:14px;
+  }
+  .guide-panel .btn,
+  .usb-panel .btn{
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+  .editor-shell>.btn{
+    max-width:360px;
+  }
+  .action-card .btn,
+  .update-panel .btn{
+    width:100%;
+    min-width:0;
+  }
+  #editor-panel .btn{
+    width:auto;
+    min-width:200px;
+    margin-right:8px;
+    margin-bottom:6px;
+  }
+}
+
+@media (min-width:1280px){
+  .layout-grid{gap:16px}
+  .panel{padding:16px}
+}
+
+@media (max-width:639px){
+  h1{font-size:30px}
+  .seg{flex-direction:column}
+  .editor-shell>.btn{max-width:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .layout-grid>*{animation:none}
+  .btn{transition:none}
+}
 </style>
 </head>
 <body>
+<div class="page-shell">
+<header class="hero">
 <h1>ESPEED32</h1>
 <p class="sub"><span id="devid">----</span> &middot; v<span id="ver">-</span><span id="ver-note"></span></p>
+</header>
+<main class="layout-grid">
+<section class="panel about-panel">
 <h2>About ESPEED32</h2>
 <div class="card about-card">
 <p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
@@ -66,18 +305,22 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <div id="release-info" class="tiny">Latest firmware release (nerdweeg/ESPEED32): checking...</div>
 <p class="tiny">Forked from <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a>.</p>
 </div>
-<hr>
+</section>
+<section class="panel guide-panel">
 <h2>User Guide</h2>
 <a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
 <p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
-<hr>
+</section>
+<section class="panel usb-panel">
+<h2>USB Connection</h2>
 <div id="usbbar">
 <button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button>
 <p id="usb-note" class="warn" style="display:none"></p>
 <div id="ust" class="st"></div>
 </div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor.</p>
-<hr>
+</section>
+<section class="panel backup-panel">
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">
 <section class="action-card" aria-labelledby="backup-title">
@@ -95,7 +338,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </section>
 </div>
 <div id="st" class="st"></div>
-<hr>
+</section>
+<section class="panel editor-shell">
 <h2>Advanced Config Editor</h2>
 <p class="tiny">Works over WiFi and USB (after Connect via USB).</p>
 <button class="btn aux" id="btn-editor-toggle" onclick="toggleEditor()">Open Advanced Config Editor</button>
@@ -106,8 +350,9 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <button class="btn ota" id="btn-save" onclick="applyEditor(true)">Apply + Save to flash</button>
 <div id="edst" class="st"></div>
 </div>
-<hr>
-<div id="fw-section">
+</section>
+<div class="update-stack">
+<section id="fw-section" class="panel update-panel">
 <h2>Firmware Update (.bin)</h2>
 <form id="of">
 <input type="file" id="fw" accept=".bin">
@@ -116,8 +361,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <p class="warn">Do not disconnect power during update.</p>
 <p id="ota-note" style="display:none" class="warn"></p>
 <div id="ost" class="st"></div>
-</div>
-<div id="spiffs-section">
+</section>
+<section id="spiffs-section" class="panel update-panel">
 <h2>Filesystem Update (SPIFFS .bin)</h2>
 <form id="sf">
 <input type="file" id="spiffs" accept=".bin">
@@ -126,6 +371,9 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <p class="warn">Use this when UI/docs changed in <code>data/</code>. Device restarts after upload.</p>
 <p id="spiffs-note" style="display:none" class="warn"></p>
 <div id="sst" class="st"></div>
+</section>
+</div>
+</main>
 </div>
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;

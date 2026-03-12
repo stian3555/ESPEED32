@@ -193,7 +193,48 @@ form{margin:0}
 .subsection[open] summary{margin-bottom:8px}
 .btn.disabled{opacity:.55;pointer-events:none}
 .update-stack{display:grid;gap:12px}
+.update-actions{display:grid;gap:8px}
+.update-actions .btn{width:100%;min-width:0;margin:0}
+.update-actions form{margin:0}
 .guide-panel .warn,.usb-panel .warn{margin:4px 0 0 0}
+.progress-wrap{
+  display:none;
+  margin-top:10px;
+  padding:10px;
+  border:1px solid #344a71;
+  border-radius:8px;
+  background:#0b1426;
+}
+.progress-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:12px;
+  color:#b7c8e8;
+  margin-bottom:6px;
+}
+.progress-track{
+  width:100%;
+  height:8px;
+  border-radius:99px;
+  overflow:hidden;
+  background:#1a2a46;
+}
+.progress-fill{
+  width:0;
+  height:100%;
+  border-radius:99px;
+  background:linear-gradient(90deg,#f39a24,#ffd48c);
+  transition:width .2s ease;
+}
+.progress-wrap.indeterminate .progress-fill{
+  width:45%;
+  animation:progressSlide 1.2s linear infinite;
+}
+@keyframes progressSlide{
+  0%{transform:translateX(-120%)}
+  100%{transform:translateX(240%)}
+}
 
 @media (min-width:760px){
   body{padding:18px 18px 32px}
@@ -354,20 +395,36 @@ form{margin:0}
 <div class="update-stack">
 <section id="fw-section" class="panel update-panel">
 <h2>Firmware Update (.bin)</h2>
+<div class="update-actions">
 <form id="of">
 <input type="file" id="fw" accept=".bin">
-<button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware</button>
+<button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
 </form>
+<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Latest Release)</button>
+<p class="tiny">Auto update downloads the latest firmware in your browser, then uploads it to the controller.</p>
+</div>
+<div id="fw-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
+<div class="progress-track"><div id="fw-progress-fill" class="progress-fill"></div></div>
+</div>
 <p class="warn">Do not disconnect power during update.</p>
 <p id="ota-note" style="display:none" class="warn"></p>
 <div id="ost" class="st"></div>
 </section>
 <section id="spiffs-section" class="panel update-panel">
 <h2>Filesystem Update (SPIFFS .bin)</h2>
+<div class="update-actions">
 <form id="sf">
 <input type="file" id="spiffs" accept=".bin">
 <button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
 </form>
+<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release)</button>
+<p class="tiny">Auto update downloads the latest SPIFFS image in your browser, then uploads it to the controller.</p>
+</div>
+<div id="spiffs-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
+<div class="progress-track"><div id="spiffs-progress-fill" class="progress-fill"></div></div>
+</div>
 <p class="warn">Use this when UI/docs changed in <code>data/</code>. Device restarts after upload.</p>
 <p id="spiffs-note" style="display:none" class="warn"></p>
 <div id="sst" class="st"></div>
@@ -386,6 +443,7 @@ var latestReleaseUrl='';
 var latestFirmwareBinUrl='';
 var latestSpiffsBinUrl='';
 var releaseFetchTried=false;
+var otaBusy=false;
 var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
@@ -432,6 +490,47 @@ function applyHostedMode(){
 function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
 
+function formatBytes(n){
+  var v=Number(n||0);
+  if(!isFinite(v) || v<=0) return '0 B';
+  if(v<1024) return Math.round(v)+' B';
+  if(v<1024*1024) return (v/1024).toFixed(1)+' KB';
+  return (v/(1024*1024)).toFixed(2)+' MB';
+}
+
+function setProgress(prefix,label,pct){
+  var wrap=document.getElementById(prefix+'-progress');
+  var labelEl=document.getElementById(prefix+'-progress-label');
+  var pctEl=document.getElementById(prefix+'-progress-pct');
+  var fillEl=document.getElementById(prefix+'-progress-fill');
+  if(!wrap || !labelEl || !pctEl || !fillEl) return;
+  wrap.style.display='block';
+  labelEl.textContent=String(label||'Working...');
+  if(typeof pct==='number' && isFinite(pct)){
+    var clamped=Math.max(0,Math.min(100,Math.round(pct)));
+    pctEl.textContent=clamped+'%';
+    fillEl.style.width=clamped+'%';
+    wrap.classList.remove('indeterminate');
+  }else{
+    pctEl.textContent='...';
+    fillEl.style.width='45%';
+    wrap.classList.add('indeterminate');
+  }
+}
+
+function clearProgress(prefix){
+  var wrap=document.getElementById(prefix+'-progress');
+  var labelEl=document.getElementById(prefix+'-progress-label');
+  var pctEl=document.getElementById(prefix+'-progress-pct');
+  var fillEl=document.getElementById(prefix+'-progress-fill');
+  if(!wrap || !labelEl || !pctEl || !fillEl) return;
+  wrap.style.display='none';
+  wrap.classList.remove('indeterminate');
+  labelEl.textContent='Idle';
+  pctEl.textContent='0%';
+  fillEl.style.width='0%';
+}
+
 function normalizeVersionTag(v){
   var s=String(v==null?'':v).trim();
   if(!s || s==='-') return '-';
@@ -473,9 +572,9 @@ function isReleaseNewerThanDevice(releaseTag,deviceVersion){
 }
 
 function canRunValidFirmwareCheck(){
-  if(!hostedMode) return false;
-  if(!usb || !usbReady) return false;
-  return !!(info.version && info.version!=='-');
+  if(!(info.version && info.version!=='-')) return false;
+  if(!hostedMode) return true;
+  return !!(usb && usbReady);
 }
 
 function updateHeaderFirmwareNote(){
@@ -516,17 +615,13 @@ function updateReleaseInfoUi(){
   if(!el) return;
   updateHeaderFirmwareNote();
 
-  if(!hostedMode){
-    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest release is available on espeed32.com.';
-    return;
-  }
-
   if(!latestReleaseTag || !latestReleaseUrl){
     if(!releaseFetchTried){
       el.textContent='Latest firmware release (nerdweeg/ESPEED32): checking...';
     }else{
       el.textContent='Latest firmware release (nerdweeg/ESPEED32): unavailable (offline or rate-limited).';
     }
+    updateFirmwareUiState();
     return;
   }
 
@@ -542,7 +637,7 @@ function updateReleaseInfoUi(){
   latestLine.appendChild(a);
   el.appendChild(latestLine);
   var hasDeviceVersion=!!(info.version && info.version!=='-');
-  var updateAvailable=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
+  var updateAvailable=hasDeviceVersion && canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
 
   if(hasDeviceVersion){
     var deviceLine=document.createElement('div');
@@ -577,14 +672,11 @@ function updateReleaseInfoUi(){
 
     el.appendChild(list);
   }
+
+  updateFirmwareUiState();
 }
 
 async function loadLatestReleaseInfo(){
-  if(!hostedMode){
-    updateReleaseInfoUi();
-    return;
-  }
-
   var cached=readReleaseCache();
   if(cached){
     latestReleaseTag=String(cached.tag||'').trim();
@@ -728,28 +820,47 @@ function otaUpdateUnavailableReason(label){
 function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
+  var autoBtn=document.getElementById('btn-fw-auto');
   var note=document.getElementById('ota-note');
   var fsInput=document.getElementById('spiffs');
   var fsBtn=document.getElementById('btn-spiffs-upload');
+  var fsAutoBtn=document.getElementById('btn-spiffs-auto');
   var fsNote=document.getElementById('spiffs-note');
-  if(!input || !btn || !note || !fsInput || !fsBtn || !fsNote) return;
+  if(!input || !btn || !autoBtn || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsNote) return;
 
-  var reason=otaUpdateUnavailableReason('Firmware update');
-  var fsReason=otaUpdateUnavailableReason('Filesystem update');
+  var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
+  var reason=busyReason || otaUpdateUnavailableReason('Firmware update');
+  var fsReason=busyReason || otaUpdateUnavailableReason('Filesystem update');
+  var autoReason=reason;
+  var fsAutoReason=fsReason;
+
+  if(!autoReason && !latestFirmwareBinUrl){
+    autoReason=releaseFetchTried?'Latest firmware .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+  }
+  if(!fsAutoReason && !latestSpiffsBinUrl){
+    fsAutoReason=releaseFetchTried?'Latest SPIFFS .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+  }
+
   var disabled=(reason!=='');
   var fsDisabled=(fsReason!=='');
+  var autoDisabled=(autoReason!=='');
+  var fsAutoDisabled=(fsAutoReason!=='');
 
   input.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
-  note.style.display=disabled?'block':'none';
-  note.textContent=reason;
+  autoBtn.disabled=autoDisabled;
+  autoBtn.classList.toggle('disabled',autoDisabled);
+  note.style.display=(reason!=='' || autoReason!==reason)?'block':'none';
+  note.textContent=(autoReason!==reason)?autoReason:reason;
 
   fsInput.disabled=fsDisabled;
   fsBtn.disabled=fsDisabled;
   fsBtn.classList.toggle('disabled',fsDisabled);
-  fsNote.style.display=fsDisabled?'block':'none';
-  fsNote.textContent=fsReason;
+  fsAutoBtn.disabled=fsAutoDisabled;
+  fsAutoBtn.classList.toggle('disabled',fsAutoDisabled);
+  fsNote.style.display=(fsReason!=='' || fsAutoReason!==fsReason)?'block':'none';
+  fsNote.textContent=(fsAutoReason!==fsReason)?fsAutoReason:fsReason;
 }
 
 function setUsbReadyState(ready,msg){
@@ -1216,6 +1327,181 @@ async function applyEditor(saveAfter){
   }
 }
 
+function setOtaBusy(busy){
+  otaBusy=!!busy;
+  updateFirmwareUiState();
+}
+
+function extractFileNameFromUrl(url,fallback){
+  var out=String(fallback||'update.bin');
+  try{
+    var parsed=new URL(String(url||''),location.href);
+    var seg=parsed.pathname.split('/');
+    var name=decodeURIComponent(seg[seg.length-1]||'').trim();
+    if(name) out=name;
+  }catch(_){ }
+  return out;
+}
+
+async function downloadBinaryWithProgress(url,progressPrefix,defaultName){
+  if(!url) throw new Error('Missing release URL');
+  setProgress(progressPrefix,'Starting download...',0);
+  var resp=await fetch(url,{cache:'no-store'});
+  if(!resp.ok) throw new Error('Download failed (HTTP '+resp.status+')');
+
+  var total=parseInt(resp.headers.get('content-length')||'0',10);
+  if(!isFinite(total) || total<0) total=0;
+  var fileName=extractFileNameFromUrl(resp.url||url,defaultName||'update.bin');
+  var reader=(resp.body && resp.body.getReader)?resp.body.getReader():null;
+
+  if(!reader){
+    var fallbackBlob=await resp.blob();
+    setProgress(progressPrefix,'Download complete',100);
+    return {blob:fallbackBlob,fileName:fileName};
+  }
+
+  var chunks=[];
+  var received=0;
+  while(true){
+    var part=await reader.read();
+    if(part.done) break;
+    if(part.value){
+      chunks.push(part.value);
+      received+=part.value.byteLength;
+      if(total>0){
+        var pct=(received*100)/total;
+        setProgress(progressPrefix,'Downloading '+formatBytes(received)+' / '+formatBytes(total),pct);
+      }else{
+        setProgress(progressPrefix,'Downloading '+formatBytes(received),null);
+      }
+    }
+  }
+
+  setProgress(progressPrefix,'Download complete',100);
+  return {blob:new Blob(chunks,{type:'application/octet-stream'}),fileName:fileName};
+}
+
+function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
+  return new Promise(function(resolve,reject){
+    var xhr=new XMLHttpRequest();
+    var lastPercent=0;
+    xhr.open('POST',endpoint,true);
+    xhr.timeout=240000;
+
+    xhr.upload.onprogress=function(ev){
+      if(ev.lengthComputable && ev.total>0){
+        var pct=(ev.loaded*100)/ev.total;
+        lastPercent=pct;
+        setProgress(progressPrefix,'Uploading '+formatBytes(ev.loaded)+' / '+formatBytes(ev.total),pct);
+      }else{
+        setProgress(progressPrefix,'Uploading '+formatBytes(ev.loaded),null);
+      }
+    };
+
+    xhr.onload=function(){
+      resolve({
+        status:xhr.status,
+        text:String(xhr.responseText||'')
+      });
+    };
+
+    xhr.onerror=function(){
+      if(lastPercent>=99){
+        reject(new Error('Upload reached 100%, but connection dropped during reboot response. Device may still be updating.'));
+      }else{
+        reject(new Error('Network error during upload'));
+      }
+    };
+
+    xhr.ontimeout=function(){
+      reject(new Error('Upload timed out'));
+    };
+
+    var fd=new FormData();
+    fd.append('file',blob,fileName||'update.bin');
+    xhr.send(fd);
+  });
+}
+
+async function runOtaUpload(opts){
+  var progressPrefix=opts.progressPrefix;
+  clearProgress(progressPrefix);
+  setOtaBusy(true);
+  try{
+    var blob=opts.fileBlob||null;
+    var fileName=String(opts.fileName||'update.bin');
+
+    if(opts.downloadUrl){
+      ss(opts.statusId,'',opts.downloadStatus||'Downloading latest release...');
+      var dl=await downloadBinaryWithProgress(opts.downloadUrl,progressPrefix,opts.fileName||'update.bin');
+      blob=dl.blob;
+      fileName=dl.fileName||fileName;
+      if(!/\.bin$/i.test(fileName)) fileName=String(opts.fileName||'update.bin');
+    }
+
+    if(!blob) throw new Error('Missing update file');
+    setProgress(progressPrefix,'Starting upload...',0);
+    ss(opts.statusId,'',opts.uploadStatus||'Uploading update...');
+    var res=await uploadBinaryWithProgress(opts.endpoint,blob,fileName,progressPrefix);
+    var ok=(res.status>=200 && res.status<300 && res.text.indexOf('OK')===0);
+
+    if(ok){
+      setProgress(progressPrefix,'Upload complete. Device restarting...',100);
+      ss(opts.statusId,'ok',res.text||'OK');
+    }else{
+      setProgress(progressPrefix,'Upload failed',null);
+      ss(opts.statusId,'err',res.text||('HTTP '+res.status));
+    }
+  }catch(e){
+    setProgress(progressPrefix,'Transfer failed',null);
+    ss(opts.statusId,'err',(e&&e.message)?e.message:String(e));
+  }finally{
+    setOtaBusy(false);
+  }
+}
+
+async function autoUpdateFirmware(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
+  if(blocked){
+    ss('ost','err',blocked);
+    return;
+  }
+  if(!latestFirmwareBinUrl){
+    ss('ost','err',releaseFetchTried?'Latest firmware URL is unavailable.':'Still checking latest release metadata...');
+    return;
+  }
+  await runOtaUpload({
+    endpoint:'/ota',
+    downloadUrl:latestFirmwareBinUrl,
+    fileName:'ESPEED32.ino.bin',
+    progressPrefix:'fw',
+    statusId:'ost',
+    downloadStatus:'Downloading latest firmware release...',
+    uploadStatus:'Uploading firmware...'
+  });
+}
+
+async function autoUpdateSpiffs(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
+  if(blocked){
+    ss('sst','err',blocked);
+    return;
+  }
+  if(!latestSpiffsBinUrl){
+    ss('sst','err',releaseFetchTried?'Latest SPIFFS URL is unavailable.':'Still checking latest release metadata...');
+    return;
+  }
+  await runOtaUpload({
+    endpoint:'/ota-spiffs',
+    downloadUrl:latestSpiffsBinUrl,
+    fileName:'espeed32_spiffs.bin',
+    progressPrefix:'spiffs',
+    statusId:'sst',
+    downloadStatus:'Downloading latest SPIFFS release...',
+    uploadStatus:'Uploading filesystem image...'
+  });
+}
+
 document.getElementById('uf').onsubmit=async function(e){
   e.preventDefault();
   var f=document.getElementById('fi').files[0];
@@ -1249,34 +1535,42 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
-  var fwDisabledReason=otaUpdateUnavailableReason('Firmware update');
-  if(fwDisabledReason){
-    ss('ost','err',fwDisabledReason);
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
+  if(blocked){
+    ss('ost','err',blocked);
     return;
   }
   var f=document.getElementById('fw').files[0];
   if(!f){alert('Select a .bin file');return;}
   if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  ss('ost','','Uploading firmware...');
-  var fd=new FormData();
-  fd.append('file',f);
-  try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('ost','err',''+x);}
+  await runOtaUpload({
+    endpoint:'/ota',
+    fileBlob:f,
+    fileName:f.name,
+    progressPrefix:'fw',
+    statusId:'ost',
+    uploadStatus:'Uploading firmware...'
+  });
 };
 
 document.getElementById('sf').onsubmit=async function(e){
   e.preventDefault();
-  var fsDisabledReason=otaUpdateUnavailableReason('Filesystem update');
-  if(fsDisabledReason){
-    ss('sst','err',fsDisabledReason);
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
+  if(blocked){
+    ss('sst','err',blocked);
     return;
   }
   var f=document.getElementById('spiffs').files[0];
   if(!f){alert('Select a SPIFFS .bin file');return;}
   if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  ss('sst','','Uploading filesystem image...');
-  var fd=new FormData();
-  fd.append('file',f);
-  try{var r=await fetch('/ota-spiffs',{method:'POST',body:fd});var t=await r.text();ss('sst',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('sst','err',''+x);}
+  await runOtaUpload({
+    endpoint:'/ota-spiffs',
+    fileBlob:f,
+    fileName:f.name,
+    progressPrefix:'spiffs',
+    statusId:'sst',
+    uploadStatus:'Uploading filesystem image...'
+  });
 };
 
 hostedMode=detectHostedMode();

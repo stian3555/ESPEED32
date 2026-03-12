@@ -5,56 +5,336 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32</title>
 <style>
-body{font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
-h1{color:#e94560;text-align:center;margin-bottom:5px}
-p.sub{text-align:center;color:#888;margin-top:0}
-h2{color:#ccc;font-size:16px;margin-bottom:5px}
-.btn{display:block;width:100%;padding:15px;margin:10px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;box-sizing:border-box;text-decoration:none;text-align:center}
-.dl{background:#0f3460;color:#fff}.dl:hover{background:#1a4a80}
-.ul{background:#e94560;color:#fff}.ul:hover{background:#ff6b81}
-.ota{background:#ff8c00;color:#000}.ota:hover{background:#ffa500}
-.usb{background:#16c79a;color:#000}.usb:hover{background:#20e0ab}
-.doc{background:#2f8f2f;color:#fff}.doc:hover{background:#3aa83a}
-.aux{background:#3a4a6a;color:#fff}.aux:hover{background:#4d618a}
-hr{border-color:#333;margin:20px 0}
-input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
-.st{margin:12px 0;padding:10px 12px;border-radius:8px;display:none;text-align:left;font-size:13px;line-height:1.35;border:1px solid transparent}
-.ok{background:#0f2a22;color:#9bf7da;border-color:#1e8e6e}
-.err{background:#311a22;color:#ffd2da;border-color:#b44b68}
-.warn{color:#ff8c00;font-size:13px;text-align:center}
-#usbbar{display:block;margin-bottom:10px}
+:root{
+  --bg-main:#0c1426;
+  --bg-accent:#1f345b;
+  --panel:#101b30;
+  --panel-soft:#0f1728;
+  --panel-border:#2f4468;
+  --text-main:#ebf2ff;
+  --text-muted:#b8c8e4;
+  --accent:#4fb3ff;
+  --warn:#ffae52;
+  --ok-bg:#0f2a22;
+  --ok-border:#1e8e6e;
+  --err-bg:#311a22;
+  --err-border:#b44b68;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  padding:16px 14px 28px;
+  min-height:100vh;
+  font-family:"Trebuchet MS","Avenir Next","Segoe UI",sans-serif;
+  color:var(--text-main);
+  background:
+    radial-gradient(980px 360px at 90% -10%,#1f345b 0,transparent 62%),
+    radial-gradient(760px 300px at -5% 0,#203a62 0,transparent 68%),
+    linear-gradient(155deg,#0b1222 0,#121f37 55%,#0a1220 100%);
+}
+.page-shell{max-width:1220px;margin:0 auto}
+.hero{
+  border:1px solid var(--panel-border);
+  border-radius:16px;
+  padding:16px 18px;
+  background:linear-gradient(160deg,#13203a 0,#0f1a2f 100%);
+  box-shadow:0 12px 28px rgba(0,0,0,.24);
+  margin-bottom:14px;
+}
+h1{color:#ff637f;text-align:center;margin:0 0 4px 0;font-size:34px;letter-spacing:.4px}
+p.sub{text-align:center;color:#9eb0d1;margin:0;font-size:15px}
+#ver-note{color:#ffca8a}
+.layout-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+.layout-grid>*{
+  animation:panelIn .34s ease both;
+}
+.layout-grid>*:nth-child(2){animation-delay:.04s}
+.layout-grid>*:nth-child(3){animation-delay:.08s}
+.layout-grid>*:nth-child(4){animation-delay:.12s}
+.layout-grid>*:nth-child(5){animation-delay:.16s}
+.layout-grid>*:nth-child(6){animation-delay:.2s}
+@keyframes panelIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.panel{
+  border:1px solid var(--panel-border);
+  border-radius:14px;
+  padding:12px;
+  background:var(--panel);
+  box-shadow:0 7px 20px rgba(0,0,0,.2);
+}
+h2{color:#d9e6ff;font-size:16px;margin:0 0 8px 0}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  padding:13px 14px;
+  margin:10px 0;
+  border:none;
+  border-radius:9px;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.15px;
+  cursor:pointer;
+  text-decoration:none;
+  text-align:center;
+  transition:transform .12s ease,filter .12s ease;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(1px)}
+.dl{background:#17518f;color:#fff}
+.ul{background:#da4761;color:#fff}
+.ota{background:#f39a24;color:#0f0f0f}
+.usb{background:#1acb9d;color:#072017}
+.doc{background:#2f8f2f;color:#fff}
+.aux{background:#3f5b88;color:#fff}
+input[type=file]{
+  display:block;
+  margin:8px 0 6px 0;
+  color:#dfe7f8;
+  width:100%;
+  border:1px dashed #465a82;
+  border-radius:8px;
+  padding:10px;
+  background:#0b1222;
+}
+form{margin:0}
+.st{
+  margin:12px 0 2px 0;
+  padding:10px 12px;
+  border-radius:8px;
+  display:none;
+  text-align:left;
+  font-size:13px;
+  line-height:1.35;
+  border:1px solid transparent;
+}
+.ok{background:var(--ok-bg);color:#9bf7da;border-color:var(--ok-border)}
+.err{background:var(--err-bg);color:#ffd2da;border-color:var(--err-border)}
+.warn{color:var(--warn);font-size:13px;line-height:1.35}
+#usbbar{display:block}
 #usb-note{margin-top:4px;margin-bottom:0}
-#ver-note{color:#ffb36b}
-.card{border:1px solid #333;border-radius:8px;padding:10px;background:#101624}
-.about-card p{margin:6px 0;color:#d7deef;line-height:1.45}
+.card{
+  border:1px solid #2f4161;
+  border-radius:10px;
+  padding:10px;
+  background:var(--panel-soft);
+}
+.about-card p{margin:6px 0;color:#d7e1f4;line-height:1.45}
 .about-list{margin:8px 0 8px 18px;padding:0}
-.about-list li{margin:6px 0;color:#c8d2ea}
+.about-list li{margin:6px 0;color:#c8d6ef}
 .about-card a{color:#7ed6ff}
 .release-line{margin:3px 0}
 .release-list{margin:6px 0 6px 18px;padding:0}
 .release-list li{margin:4px 0;color:#d7deef}
-.editor-panel{display:none}
-.section-stack{display:flex;flex-direction:column;gap:12px;margin-top:10px}
-.action-card{border:1px solid #2b3448;border-radius:10px;padding:12px;background:#0f1728}
-.action-title{font-size:12px;letter-spacing:.3px;color:#9dd7ff;text-transform:uppercase;margin:0 0 6px 0}
+.tiny{font-size:12px;color:#9eb0ce}
+.section-stack{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin-top:10px;
+}
+.action-card{
+  border:1px solid #2f4161;
+  border-radius:10px;
+  padding:12px;
+  background:#0f1728;
+  display:flex;
+  flex-direction:column;
+}
+.action-title{
+  font-size:12px;
+  letter-spacing:.4px;
+  color:#9dd7ff;
+  text-transform:uppercase;
+  margin:0 0 6px 0;
+}
 .action-note{font-size:12px;color:#9aa7c7;margin:0 0 8px 0}
+.action-card .btn{margin-top:auto}
+.editor-shell>.btn{max-width:430px}
+#editor-panel .btn{max-width:none}
+.editor-panel{display:none;margin-top:8px}
 .row{display:flex;flex-direction:column;margin-bottom:10px}
-.row label{font-size:13px;color:#bbb;margin-bottom:4px}
-.row input,.row select{padding:8px;border-radius:6px;border:1px solid #444;background:#0b0f18;color:#eee}
+.row label{font-size:13px;color:#b9c7de;margin-bottom:4px}
+.row input,.row select{
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #445778;
+  background:#0b0f18;
+  color:#ebf2ff;
+}
 .group-title{font-size:14px;color:#8fd3ff;margin:6px 0}
-.tiny{font-size:12px;color:#999}
 .seg{display:flex;gap:8px;margin:0 0 10px 0}
-.segbtn{flex:1;padding:9px 8px;border-radius:7px;border:1px solid #4a5877;background:#131d31;color:#b7c8ea;font-size:13px;cursor:pointer}
-.segbtn.active{background:#2c4e87;color:#fff;border-color:#76a9ff}
-.subsection{border:1px solid #2f3850;border-radius:8px;padding:8px 10px;margin:10px 0;background:#0c1322}
+.segbtn{
+  flex:1;
+  padding:9px 8px;
+  border-radius:7px;
+  border:1px solid #516185;
+  background:#131d31;
+  color:#c2d3ef;
+  font-size:13px;
+  cursor:pointer;
+}
+.segbtn.active{background:#2c4e87;color:#fff;border-color:#7aabff}
+.subsection{
+  border:1px solid #31435f;
+  border-radius:8px;
+  padding:8px 10px;
+  margin:10px 0;
+  background:#0c1322;
+}
 .subsection summary{cursor:pointer;color:#9dd7ff;font-size:13px;font-weight:600}
 .subsection[open] summary{margin-bottom:8px}
 .btn.disabled{opacity:.55;pointer-events:none}
+.update-stack{display:grid;gap:12px}
+.update-actions{display:grid;gap:8px}
+.update-actions .btn{width:100%;min-width:0;margin:0}
+.update-actions form{margin:0}
+.guide-panel .warn,.usb-panel .warn{margin:4px 0 0 0}
+.progress-wrap{
+  display:none;
+  margin-top:10px;
+  padding:10px;
+  border:1px solid #344a71;
+  border-radius:8px;
+  background:#0b1426;
+}
+.progress-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:12px;
+  color:#b7c8e8;
+  margin-bottom:6px;
+}
+.progress-track{
+  width:100%;
+  height:8px;
+  border-radius:99px;
+  overflow:hidden;
+  background:#1a2a46;
+}
+.progress-fill{
+  width:0;
+  height:100%;
+  border-radius:99px;
+  background:linear-gradient(90deg,#f39a24,#ffd48c);
+  transition:width .2s ease;
+}
+.progress-wrap.indeterminate .progress-fill{
+  width:45%;
+  animation:progressSlide 1.2s linear infinite;
+}
+@keyframes progressSlide{
+  0%{transform:translateX(-120%)}
+  100%{transform:translateX(240%)}
+}
+
+@media (min-width:760px){
+  body{padding:18px 18px 32px}
+  .panel{padding:14px}
+  .layout-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    align-items:start;
+  }
+  .about-panel,
+  .backup-panel,
+  .guide-panel,
+  .usb-panel,
+  .editor-shell,
+  .update-stack{
+    grid-column:1 / -1;
+  }
+  .section-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .update-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (min-width:1024px){
+  .layout-grid{
+    grid-template-columns:repeat(12,minmax(0,1fr));
+    grid-template-areas:
+      "about about about about about about about about about about about about"
+      "guide guide guide guide guide guide usb usb usb usb usb usb"
+      "backup backup backup backup backup backup backup backup backup backup backup backup"
+      "updates updates updates updates updates updates updates updates updates updates updates updates"
+      "editor editor editor editor editor editor editor editor editor editor editor editor";
+    gap:14px;
+    align-items:start;
+  }
+  .about-panel{grid-area:about}
+  .guide-panel{grid-area:guide}
+  .usb-panel{grid-area:usb}
+  .backup-panel{grid-area:backup}
+  .editor-shell{grid-area:editor}
+  .update-stack{
+    grid-area:updates;
+    align-content:start;
+    gap:14px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .hero{padding:18px 22px}
+  h1{font-size:36px}
+  p.sub{font-size:15px}
+  .btn{
+    width:auto;
+    min-width:220px;
+    padding:11px 16px;
+    font-size:14px;
+  }
+  .guide-panel .btn,
+  .usb-panel .btn{
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+  .editor-shell>.btn{
+    max-width:360px;
+  }
+  .action-card .btn,
+  .update-panel .btn{
+    width:100%;
+    min-width:0;
+  }
+  #editor-panel .btn{
+    width:auto;
+    min-width:200px;
+    margin-right:8px;
+    margin-bottom:6px;
+  }
+}
+
+@media (min-width:1280px){
+  .layout-grid{gap:16px}
+  .panel{padding:16px}
+}
+
+@media (max-width:639px){
+  h1{font-size:30px}
+  .seg{flex-direction:column}
+  .editor-shell>.btn{max-width:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .layout-grid>*{animation:none}
+  .btn{transition:none}
+}
 </style>
 </head>
 <body>
+<div class="page-shell">
+<header class="hero">
 <h1>ESPEED32</h1>
 <p class="sub"><span id="devid">----</span> &middot; v<span id="ver">-</span><span id="ver-note"></span></p>
+</header>
+<main class="layout-grid">
+<section class="panel about-panel">
 <h2>About ESPEED32</h2>
 <div class="card about-card">
 <p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
@@ -66,18 +346,22 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <div id="release-info" class="tiny">Latest firmware release (nerdweeg/ESPEED32): checking...</div>
 <p class="tiny">Forked from <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a>.</p>
 </div>
-<hr>
+</section>
+<section class="panel guide-panel">
 <h2>User Guide</h2>
 <a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
 <p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
-<hr>
+</section>
+<section class="panel usb-panel">
+<h2>USB Connection</h2>
 <div id="usbbar">
 <button id="ucb" class="btn usb" onclick="usbToggle()">Connect via USB (WebSerial)</button>
 <p id="usb-note" class="warn" style="display:none"></p>
 <div id="ust" class="st"></div>
 </div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor.</p>
-<hr>
+</section>
+<section class="panel backup-panel">
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">
 <section class="action-card" aria-labelledby="backup-title">
@@ -95,7 +379,8 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 </section>
 </div>
 <div id="st" class="st"></div>
-<hr>
+</section>
+<section class="panel editor-shell">
 <h2>Advanced Config Editor</h2>
 <p class="tiny">Works over WiFi and USB (after Connect via USB).</p>
 <button class="btn aux" id="btn-editor-toggle" onclick="toggleEditor()">Open Advanced Config Editor</button>
@@ -106,26 +391,46 @@ input[type=file]{display:block;margin:10px 0;color:#eee;width:100%}
 <button class="btn ota" id="btn-save" onclick="applyEditor(true)">Apply + Save to flash</button>
 <div id="edst" class="st"></div>
 </div>
-<hr>
-<div id="fw-section">
+</section>
+<div class="update-stack">
+<section id="fw-section" class="panel update-panel">
 <h2>Firmware Update (.bin)</h2>
+<div class="update-actions">
 <form id="of">
 <input type="file" id="fw" accept=".bin">
-<button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware</button>
+<button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
 </form>
+<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Latest Release)</button>
+<p class="tiny">Auto update downloads the latest firmware in your browser, then uploads it to the controller.</p>
+</div>
+<div id="fw-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
+<div class="progress-track"><div id="fw-progress-fill" class="progress-fill"></div></div>
+</div>
 <p class="warn">Do not disconnect power during update.</p>
 <p id="ota-note" style="display:none" class="warn"></p>
 <div id="ost" class="st"></div>
-</div>
-<div id="spiffs-section">
+</section>
+<section id="spiffs-section" class="panel update-panel">
 <h2>Filesystem Update (SPIFFS .bin)</h2>
+<div class="update-actions">
 <form id="sf">
 <input type="file" id="spiffs" accept=".bin">
 <button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
 </form>
+<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release)</button>
+<p class="tiny">Auto update downloads the latest SPIFFS image in your browser, then uploads it to the controller.</p>
+</div>
+<div id="spiffs-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
+<div class="progress-track"><div id="spiffs-progress-fill" class="progress-fill"></div></div>
+</div>
 <p class="warn">Use this when UI/docs changed in <code>data/</code>. Device restarts after upload.</p>
 <p id="spiffs-note" style="display:none" class="warn"></p>
 <div id="sst" class="st"></div>
+</section>
+</div>
+</main>
 </div>
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
@@ -138,6 +443,7 @@ var latestReleaseUrl='';
 var latestFirmwareBinUrl='';
 var latestSpiffsBinUrl='';
 var releaseFetchTried=false;
+var otaBusy=false;
 var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
@@ -184,6 +490,47 @@ function applyHostedMode(){
 function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
 
+function formatBytes(n){
+  var v=Number(n||0);
+  if(!isFinite(v) || v<=0) return '0 B';
+  if(v<1024) return Math.round(v)+' B';
+  if(v<1024*1024) return (v/1024).toFixed(1)+' KB';
+  return (v/(1024*1024)).toFixed(2)+' MB';
+}
+
+function setProgress(prefix,label,pct){
+  var wrap=document.getElementById(prefix+'-progress');
+  var labelEl=document.getElementById(prefix+'-progress-label');
+  var pctEl=document.getElementById(prefix+'-progress-pct');
+  var fillEl=document.getElementById(prefix+'-progress-fill');
+  if(!wrap || !labelEl || !pctEl || !fillEl) return;
+  wrap.style.display='block';
+  labelEl.textContent=String(label||'Working...');
+  if(typeof pct==='number' && isFinite(pct)){
+    var clamped=Math.max(0,Math.min(100,Math.round(pct)));
+    pctEl.textContent=clamped+'%';
+    fillEl.style.width=clamped+'%';
+    wrap.classList.remove('indeterminate');
+  }else{
+    pctEl.textContent='...';
+    fillEl.style.width='45%';
+    wrap.classList.add('indeterminate');
+  }
+}
+
+function clearProgress(prefix){
+  var wrap=document.getElementById(prefix+'-progress');
+  var labelEl=document.getElementById(prefix+'-progress-label');
+  var pctEl=document.getElementById(prefix+'-progress-pct');
+  var fillEl=document.getElementById(prefix+'-progress-fill');
+  if(!wrap || !labelEl || !pctEl || !fillEl) return;
+  wrap.style.display='none';
+  wrap.classList.remove('indeterminate');
+  labelEl.textContent='Idle';
+  pctEl.textContent='0%';
+  fillEl.style.width='0%';
+}
+
 function normalizeVersionTag(v){
   var s=String(v==null?'':v).trim();
   if(!s || s==='-') return '-';
@@ -225,9 +572,9 @@ function isReleaseNewerThanDevice(releaseTag,deviceVersion){
 }
 
 function canRunValidFirmwareCheck(){
-  if(!hostedMode) return false;
-  if(!usb || !usbReady) return false;
-  return !!(info.version && info.version!=='-');
+  if(!(info.version && info.version!=='-')) return false;
+  if(!hostedMode) return true;
+  return !!(usb && usbReady);
 }
 
 function updateHeaderFirmwareNote(){
@@ -268,17 +615,13 @@ function updateReleaseInfoUi(){
   if(!el) return;
   updateHeaderFirmwareNote();
 
-  if(!hostedMode){
-    el.textContent='Device firmware: '+normalizeVersionTag(info.version)+'. Latest release is available on espeed32.com.';
-    return;
-  }
-
   if(!latestReleaseTag || !latestReleaseUrl){
     if(!releaseFetchTried){
       el.textContent='Latest firmware release (nerdweeg/ESPEED32): checking...';
     }else{
       el.textContent='Latest firmware release (nerdweeg/ESPEED32): unavailable (offline or rate-limited).';
     }
+    updateFirmwareUiState();
     return;
   }
 
@@ -294,7 +637,7 @@ function updateReleaseInfoUi(){
   latestLine.appendChild(a);
   el.appendChild(latestLine);
   var hasDeviceVersion=!!(info.version && info.version!=='-');
-  var updateAvailable=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
+  var updateAvailable=hasDeviceVersion && canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
 
   if(hasDeviceVersion){
     var deviceLine=document.createElement('div');
@@ -329,14 +672,11 @@ function updateReleaseInfoUi(){
 
     el.appendChild(list);
   }
+
+  updateFirmwareUiState();
 }
 
 async function loadLatestReleaseInfo(){
-  if(!hostedMode){
-    updateReleaseInfoUi();
-    return;
-  }
-
   var cached=readReleaseCache();
   if(cached){
     latestReleaseTag=String(cached.tag||'').trim();
@@ -480,28 +820,47 @@ function otaUpdateUnavailableReason(label){
 function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
+  var autoBtn=document.getElementById('btn-fw-auto');
   var note=document.getElementById('ota-note');
   var fsInput=document.getElementById('spiffs');
   var fsBtn=document.getElementById('btn-spiffs-upload');
+  var fsAutoBtn=document.getElementById('btn-spiffs-auto');
   var fsNote=document.getElementById('spiffs-note');
-  if(!input || !btn || !note || !fsInput || !fsBtn || !fsNote) return;
+  if(!input || !btn || !autoBtn || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsNote) return;
 
-  var reason=otaUpdateUnavailableReason('Firmware update');
-  var fsReason=otaUpdateUnavailableReason('Filesystem update');
+  var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
+  var reason=busyReason || otaUpdateUnavailableReason('Firmware update');
+  var fsReason=busyReason || otaUpdateUnavailableReason('Filesystem update');
+  var autoReason=reason;
+  var fsAutoReason=fsReason;
+
+  if(!autoReason && !latestFirmwareBinUrl){
+    autoReason=releaseFetchTried?'Latest firmware .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+  }
+  if(!fsAutoReason && !latestSpiffsBinUrl){
+    fsAutoReason=releaseFetchTried?'Latest SPIFFS .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+  }
+
   var disabled=(reason!=='');
   var fsDisabled=(fsReason!=='');
+  var autoDisabled=(autoReason!=='');
+  var fsAutoDisabled=(fsAutoReason!=='');
 
   input.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
-  note.style.display=disabled?'block':'none';
-  note.textContent=reason;
+  autoBtn.disabled=autoDisabled;
+  autoBtn.classList.toggle('disabled',autoDisabled);
+  note.style.display=(reason!=='' || autoReason!==reason)?'block':'none';
+  note.textContent=(autoReason!==reason)?autoReason:reason;
 
   fsInput.disabled=fsDisabled;
   fsBtn.disabled=fsDisabled;
   fsBtn.classList.toggle('disabled',fsDisabled);
-  fsNote.style.display=fsDisabled?'block':'none';
-  fsNote.textContent=fsReason;
+  fsAutoBtn.disabled=fsAutoDisabled;
+  fsAutoBtn.classList.toggle('disabled',fsAutoDisabled);
+  fsNote.style.display=(fsReason!=='' || fsAutoReason!==fsReason)?'block':'none';
+  fsNote.textContent=(fsAutoReason!==fsReason)?fsAutoReason:fsReason;
 }
 
 function setUsbReadyState(ready,msg){
@@ -968,6 +1327,181 @@ async function applyEditor(saveAfter){
   }
 }
 
+function setOtaBusy(busy){
+  otaBusy=!!busy;
+  updateFirmwareUiState();
+}
+
+function extractFileNameFromUrl(url,fallback){
+  var out=String(fallback||'update.bin');
+  try{
+    var parsed=new URL(String(url||''),location.href);
+    var seg=parsed.pathname.split('/');
+    var name=decodeURIComponent(seg[seg.length-1]||'').trim();
+    if(name) out=name;
+  }catch(_){ }
+  return out;
+}
+
+async function downloadBinaryWithProgress(url,progressPrefix,defaultName){
+  if(!url) throw new Error('Missing release URL');
+  setProgress(progressPrefix,'Starting download...',0);
+  var resp=await fetch(url,{cache:'no-store'});
+  if(!resp.ok) throw new Error('Download failed (HTTP '+resp.status+')');
+
+  var total=parseInt(resp.headers.get('content-length')||'0',10);
+  if(!isFinite(total) || total<0) total=0;
+  var fileName=extractFileNameFromUrl(resp.url||url,defaultName||'update.bin');
+  var reader=(resp.body && resp.body.getReader)?resp.body.getReader():null;
+
+  if(!reader){
+    var fallbackBlob=await resp.blob();
+    setProgress(progressPrefix,'Download complete',100);
+    return {blob:fallbackBlob,fileName:fileName};
+  }
+
+  var chunks=[];
+  var received=0;
+  while(true){
+    var part=await reader.read();
+    if(part.done) break;
+    if(part.value){
+      chunks.push(part.value);
+      received+=part.value.byteLength;
+      if(total>0){
+        var pct=(received*100)/total;
+        setProgress(progressPrefix,'Downloading '+formatBytes(received)+' / '+formatBytes(total),pct);
+      }else{
+        setProgress(progressPrefix,'Downloading '+formatBytes(received),null);
+      }
+    }
+  }
+
+  setProgress(progressPrefix,'Download complete',100);
+  return {blob:new Blob(chunks,{type:'application/octet-stream'}),fileName:fileName};
+}
+
+function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
+  return new Promise(function(resolve,reject){
+    var xhr=new XMLHttpRequest();
+    var lastPercent=0;
+    xhr.open('POST',endpoint,true);
+    xhr.timeout=240000;
+
+    xhr.upload.onprogress=function(ev){
+      if(ev.lengthComputable && ev.total>0){
+        var pct=(ev.loaded*100)/ev.total;
+        lastPercent=pct;
+        setProgress(progressPrefix,'Uploading '+formatBytes(ev.loaded)+' / '+formatBytes(ev.total),pct);
+      }else{
+        setProgress(progressPrefix,'Uploading '+formatBytes(ev.loaded),null);
+      }
+    };
+
+    xhr.onload=function(){
+      resolve({
+        status:xhr.status,
+        text:String(xhr.responseText||'')
+      });
+    };
+
+    xhr.onerror=function(){
+      if(lastPercent>=99){
+        reject(new Error('Upload reached 100%, but connection dropped during reboot response. Device may still be updating.'));
+      }else{
+        reject(new Error('Network error during upload'));
+      }
+    };
+
+    xhr.ontimeout=function(){
+      reject(new Error('Upload timed out'));
+    };
+
+    var fd=new FormData();
+    fd.append('file',blob,fileName||'update.bin');
+    xhr.send(fd);
+  });
+}
+
+async function runOtaUpload(opts){
+  var progressPrefix=opts.progressPrefix;
+  clearProgress(progressPrefix);
+  setOtaBusy(true);
+  try{
+    var blob=opts.fileBlob||null;
+    var fileName=String(opts.fileName||'update.bin');
+
+    if(opts.downloadUrl){
+      ss(opts.statusId,'',opts.downloadStatus||'Downloading latest release...');
+      var dl=await downloadBinaryWithProgress(opts.downloadUrl,progressPrefix,opts.fileName||'update.bin');
+      blob=dl.blob;
+      fileName=dl.fileName||fileName;
+      if(!/\.bin$/i.test(fileName)) fileName=String(opts.fileName||'update.bin');
+    }
+
+    if(!blob) throw new Error('Missing update file');
+    setProgress(progressPrefix,'Starting upload...',0);
+    ss(opts.statusId,'',opts.uploadStatus||'Uploading update...');
+    var res=await uploadBinaryWithProgress(opts.endpoint,blob,fileName,progressPrefix);
+    var ok=(res.status>=200 && res.status<300 && res.text.indexOf('OK')===0);
+
+    if(ok){
+      setProgress(progressPrefix,'Upload complete. Device restarting...',100);
+      ss(opts.statusId,'ok',res.text||'OK');
+    }else{
+      setProgress(progressPrefix,'Upload failed',null);
+      ss(opts.statusId,'err',res.text||('HTTP '+res.status));
+    }
+  }catch(e){
+    setProgress(progressPrefix,'Transfer failed',null);
+    ss(opts.statusId,'err',(e&&e.message)?e.message:String(e));
+  }finally{
+    setOtaBusy(false);
+  }
+}
+
+async function autoUpdateFirmware(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
+  if(blocked){
+    ss('ost','err',blocked);
+    return;
+  }
+  if(!latestFirmwareBinUrl){
+    ss('ost','err',releaseFetchTried?'Latest firmware URL is unavailable.':'Still checking latest release metadata...');
+    return;
+  }
+  await runOtaUpload({
+    endpoint:'/ota',
+    downloadUrl:latestFirmwareBinUrl,
+    fileName:'ESPEED32.ino.bin',
+    progressPrefix:'fw',
+    statusId:'ost',
+    downloadStatus:'Downloading latest firmware release...',
+    uploadStatus:'Uploading firmware...'
+  });
+}
+
+async function autoUpdateSpiffs(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
+  if(blocked){
+    ss('sst','err',blocked);
+    return;
+  }
+  if(!latestSpiffsBinUrl){
+    ss('sst','err',releaseFetchTried?'Latest SPIFFS URL is unavailable.':'Still checking latest release metadata...');
+    return;
+  }
+  await runOtaUpload({
+    endpoint:'/ota-spiffs',
+    downloadUrl:latestSpiffsBinUrl,
+    fileName:'espeed32_spiffs.bin',
+    progressPrefix:'spiffs',
+    statusId:'sst',
+    downloadStatus:'Downloading latest SPIFFS release...',
+    uploadStatus:'Uploading filesystem image...'
+  });
+}
+
 document.getElementById('uf').onsubmit=async function(e){
   e.preventDefault();
   var f=document.getElementById('fi').files[0];
@@ -1001,34 +1535,42 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
-  var fwDisabledReason=otaUpdateUnavailableReason('Firmware update');
-  if(fwDisabledReason){
-    ss('ost','err',fwDisabledReason);
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
+  if(blocked){
+    ss('ost','err',blocked);
     return;
   }
   var f=document.getElementById('fw').files[0];
   if(!f){alert('Select a .bin file');return;}
   if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  ss('ost','','Uploading firmware...');
-  var fd=new FormData();
-  fd.append('file',f);
-  try{var r=await fetch('/ota',{method:'POST',body:fd});var t=await r.text();ss('ost',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('ost','err',''+x);}
+  await runOtaUpload({
+    endpoint:'/ota',
+    fileBlob:f,
+    fileName:f.name,
+    progressPrefix:'fw',
+    statusId:'ost',
+    uploadStatus:'Uploading firmware...'
+  });
 };
 
 document.getElementById('sf').onsubmit=async function(e){
   e.preventDefault();
-  var fsDisabledReason=otaUpdateUnavailableReason('Filesystem update');
-  if(fsDisabledReason){
-    ss('sst','err',fsDisabledReason);
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
+  if(blocked){
+    ss('sst','err',blocked);
     return;
   }
   var f=document.getElementById('spiffs').files[0];
   if(!f){alert('Select a SPIFFS .bin file');return;}
   if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  ss('sst','','Uploading filesystem image...');
-  var fd=new FormData();
-  fd.append('file',f);
-  try{var r=await fetch('/ota-spiffs',{method:'POST',body:fd});var t=await r.text();ss('sst',t.indexOf('OK')===0?'ok':'err',t);}catch(x){ss('sst','err',''+x);}
+  await runOtaUpload({
+    endpoint:'/ota-spiffs',
+    fileBlob:f,
+    fileName:f.name,
+    progressPrefix:'spiffs',
+    statusId:'sst',
+    uploadStatus:'Uploading filesystem image...'
+  });
 };
 
 hostedMode=detectHostedMode();

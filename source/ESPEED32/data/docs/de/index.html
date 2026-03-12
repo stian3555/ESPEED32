@@ -299,10 +299,9 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h3>WiFi</h3>
     <ol>
       <li><code>SETTINGS -> WIFI</code> oeffnen, um ins WiFi-Untermenue zu gehen.</li>
+      <li><code>START WIFI</code>/<code>STOP WIFI</code>: startet oder stoppt Hintergrund-WiFi sofort.</li>
       <li><code>INFO PAGE</code>: oeffnet die WiFi-Seite direkt und startet WiFi/AP automatisch. Beim Verlassen der Info-Seite wird WiFi wieder gestoppt (ausser wenn vorher Hintergrundmodus gestartet wurde).</li>
       <li><code>AUTO OFF</code>: Timeout fuer Hintergrund-WiFi einstellen (1-120 min, Standard 5 min).</li>
-      <li><code>START WIFI</code>: startet WiFi ohne die Info-Seite zu oeffnen, damit man ins Hauptmenue zurueck kann.</li>
-      <li><code>STOP WIFI</code>: stoppt Hintergrund-WiFi manuell vor dem Timeout.</li>
       <li>Solange WiFi aktiv ist: mit <code>ESPEED32_XXXX</code> verbinden (Passwort <code>espeed32</code>) und die OLED-IP im Browser oeffnen (typisch <code>192.168.4.1</code>).</li>
       <li>Auf der Info-Seite sind <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> und <code>/docs</code> verfuegbar.</li>
     </ol>
@@ -334,18 +333,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SETTINGS
 |  |- POWER
 |  |  |- SCRSV
+|  |  |  |- NOW
 |  |  |  |- LINE1
 |  |  |  |- LINE2
 |  |  |  |- TIME (0-240 s, 0=OFF)
-|  |  |  |- NOW
 |  |  |  `- BACK
 |  |  |- SLEEP
-|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  |- SLEEP NOW
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  `- BACK
 |  |  |- DEEP SLEEP
-|  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  |- SLEEP NOW (power-off)
+|  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
 |  |  `- BACK
@@ -366,9 +365,9 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- WIFI
+|  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
 |  |  |- AUTO OFF (1-120 min, default 5)
-|  |  |- START/STOP WIFI
 |  |  `- BACK
 |  |- USB
 |  |- RESET

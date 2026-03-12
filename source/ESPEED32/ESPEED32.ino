@@ -67,6 +67,7 @@ static bool g_isEditingCarSelection = false;          /* Flag to prevent g_carSe
 
 /* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
+uint16_t g_statsEnabled = STATS_ENABLED_DEFAULT;  /* Main menu STATS visibility: 0=hidden, 1=shown */
 
 /* ESC Runtime Variables */
 ESC_type g_escVar {
@@ -107,6 +108,7 @@ static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed 
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
 static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
+static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
 
 /* Long press tracking shared across all submenus (only one active at a time) */
 static uint32_t g_lpRaceStart = 0;
@@ -135,6 +137,8 @@ bool checkRaceModeEscape() {
   return false;
 }
 
+uint8_t getMainMenuItemsCount();
+
 /**
  * @brief Toggle race/list view mode and reset encoder for new mode.
  * Called from RUNNING when g_escapeToMain is set, or on direct long press.
@@ -155,7 +159,7 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
       : (g_storedVar.gridCarSelectEnabled ? 5 : 4);
     g_rotaryEncoder.setBoundaries(1, gridItems, false);
   } else {
-    g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+    g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
   }
   g_rotaryEncoder.reset(1);
   g_encoderMainSelector = 1;
@@ -184,12 +188,22 @@ void setInSettingsMenu(bool active) {
 }
 
 uint8_t getMainMenuSelector() {
+  uint8_t maxItems = getMainMenuItemsCount();
+  if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
+  if (g_encoderMainSelector > maxItems) g_encoderMainSelector = maxItems;
   return g_encoderMainSelector;
 }
 
+uint8_t getMainMenuItemsCount() {
+  return (g_statsEnabled ? MENU_ITEMS_COUNT : (MENU_ITEMS_COUNT - 1));
+}
+
 void resetEncoderForMainMenu() {
+  uint8_t menuItems = getMainMenuItemsCount();
+  if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
+  if (g_encoderMainSelector > menuItems) g_encoderMainSelector = menuItems;
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.setBoundaries(1, menuItems, false);
   g_rotaryEncoder.reset(g_encoderMainSelector);
 }
 
@@ -339,6 +353,7 @@ void Task1code(void *pvParameters) {
           if ((storedVarVersion == STORED_VAR_VERSION) ) /* If the storedVariable version keys is equal to the STORED_VAR MACRO, then the stored param are already initialized woh the proper format*/
           {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
+            g_statsEnabled = g_pref.getUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT) ? 1 : 0;
 
             /* One-time migration: old firmware stored SENSI in whole-percent units. */
             if (!g_pref.getBool(PREF_KEY_SENSI_HALF, false)) {
@@ -423,8 +438,10 @@ void Task1code(void *pvParameters) {
         
         g_pref.putUChar("stored_var_ver", STORED_VAR_VERSION);
         g_pref.putBool(PREF_KEY_SENSI_HALF, true);
+        g_pref.putUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT);
 
         initStoredVariables();  /* Initialize stored variables with default values */
+        g_statsEnabled = STATS_ENABLED_DEFAULT;
 
         /* Reset Min and Max to the opposite side, in order to have effective calibration */
         g_storedVar.minTrigger_raw = MAX_INT16;
@@ -496,7 +513,7 @@ void Task1code(void *pvParameters) {
             }
             g_rotaryEncoder.setBoundaries(1, gridItems, false);
           } else {
-            g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Normal menu items */
+            g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);  /* Normal menu items */
           }
           encoderBoundariesSet = true;
         }
@@ -574,7 +591,7 @@ void Task1code(void *pvParameters) {
 
               menuState = ITEM_SELECTION;
               g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-              g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+              g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
               g_rotaryEncoder.reset(g_encoderMainSelector);
               g_escVar.encoderPos = g_encoderMainSelector;
               /* Clear car editing flag */
@@ -1041,7 +1058,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       }
       g_rotaryEncoder.setBoundaries(1, gridItems, false);
     } else {
-      g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);  /* Set the encoder boundaries to the menu boundaries */
+      g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);  /* Set the encoder boundaries to the menu boundaries */
     }
 
     g_rotaryEncoder.reset(g_encoderMainSelector);               /* Reset the encoder value to g_encoderMainSelector, so that it doesn't change the selected item */
@@ -1117,5 +1134,6 @@ uint16_t saturateParamValue(uint16_t paramValue, uint16_t minValue, uint16_t max
 void saveEEPROM(StoredVar_type toSave) {
   g_pref.begin("stored_var", false);                      /* Open the "stored" namespace in read/write mode */
   g_pref.putBytes("user_param", &toSave, sizeof(toSave)); /* Put the value of the stored user_param */
+  g_pref.putUChar(PREF_KEY_STATS_ENABLED, g_statsEnabled ? 1 : 0);
   g_pref.end();                                           /* Close the namespace */
 }

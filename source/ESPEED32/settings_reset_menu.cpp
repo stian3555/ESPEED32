@@ -3,6 +3,7 @@
 #include "slot_ESC.h"
 
 extern StoredVar_type g_storedVar;
+extern uint16_t g_statsEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -212,7 +213,7 @@ static void doResetSettings() {
   g_storedVar.deepSleepTimeout     = DEEP_SLEEP_TIMEOUT_DEFAULT;
   g_storedVar.soundBoot            = SOUND_BOOT_DEFAULT;
   g_storedVar.soundRace            = SOUND_RACE_DEFAULT;
-  g_storedVar.gridCarSelectEnabled = 0;
+  g_storedVar.gridCarSelectEnabled = GRID_CAR_SELECT_DEFAULT;
   g_storedVar.raceViewMode         = RACE_VIEW_DEFAULT;
   g_storedVar.language             = LANG_DEFAULT;
   g_storedVar.textCase             = TEXT_CASE_DEFAULT;
@@ -222,6 +223,7 @@ static void doResetSettings() {
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  g_statsEnabled              = STATS_ENABLED_DEFAULT;
 }
 
 /** Reset trigger calibration to factory defaults. */

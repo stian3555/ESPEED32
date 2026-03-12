@@ -20,6 +20,7 @@ extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
 extern bool isEscapeToMainRequested();
 extern uint8_t getMainMenuSelector();
+extern uint8_t getMainMenuItemsCount();
 
 extern void showScreensaver();
 extern void initMenuItems();
@@ -720,7 +721,7 @@ void showSelectRenameCar() {
 exitCarMenu:
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
   g_rotaryEncoder.reset(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
   /* Clear screen */
@@ -1039,7 +1040,7 @@ void showCurveSelection()
 
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
   g_rotaryEncoder.reset(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
 

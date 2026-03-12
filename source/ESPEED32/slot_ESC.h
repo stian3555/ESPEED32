@@ -17,14 +17,14 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 5
-#define SW_MINOR_VERSION 0
+#define SW_MINOR_VERSION 1
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 19 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 9    /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 10   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
@@ -108,6 +108,8 @@
 #define SOUND_BOOT_DEFAULT  1  /* Boot sounds on by default (startup, calib, on, off) */
 #define SOUND_RACE_DEFAULT  1  /* Race mode toggle sound on by default */
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
+#define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
+#define STATS_ENABLED_DEFAULT    1  /* Show STATS menu item by default */
 
 /* Text Case Style */
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */
@@ -161,7 +163,11 @@
 #define LAP_MAX_COUNT        20    /* Max stored lap times */
 #define LAP_MIN_TIME_MS      3000  /* Minimum lap time [ms] */
 #define LAP_GAP_MAX_MS       200   /* Max dead spot duration [ms] */
-#define LAP_VIN_THRESHOLD_MV 2000  /* Voltage threshold for dead spot [mV] */
+#define LAP_VIN_THRESHOLD_MV 2000  /* Legacy VIN threshold [mV] (lap detect now uses motor load) */
+#define LAP_TRIGGER_ACTIVE_PCT      8    /* Current-based lap detect is active above this throttle [%] */
+#define LAP_CURRENT_BASE_MIN_MA   150    /* Minimum rolling current baseline to arm current-based detect [mA] */
+#define LAP_CURRENT_GAP_MIN_MA     80    /* Absolute low-current floor considered as dead spot [mA] */
+#define LAP_CURRENT_RECOVER_MIN_MA 140   /* Absolute current needed to confirm recovery after dead spot [mA] */
 /*********************************************************************************************************************/
 /*                                                 Data Structures                                                   */
 /*********************************************************************************************************************/

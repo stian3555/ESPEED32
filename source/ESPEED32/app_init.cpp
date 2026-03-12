@@ -9,11 +9,13 @@
 
 extern OBDISP g_obd;
 extern StoredVar_type g_storedVar;
+extern uint16_t g_statsEnabled;
 extern Menu_type g_mainMenu;
 extern Menu_type g_settingsMenu;
 extern Menu_type g_carMenu;
 extern uint16_t g_carSel;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
+extern uint8_t getMainMenuItemsCount();
 
 #ifdef USE_BACKBUFFER
 extern uint8_t ucBackBuffer[1024];
@@ -47,7 +49,7 @@ void initDisplayAndEncoder()
   /***** Encoder Setup *****/
   g_rotaryEncoder.begin();
   g_rotaryEncoder.setup(readEncoderISR);
-  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false); /* minValue, maxValue, circleValues true|false (when max go to min and vice versa) */
+  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false); /* minValue, maxValue, circleValues true|false (when max go to min and vice versa) */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);        /* Larger number = more accelearation; 0 or 1 means disabled acceleration */
 }
 
@@ -90,7 +92,7 @@ void initStoredVariables() {
   g_storedVar.deepSleepTimeout   = DEEP_SLEEP_TIMEOUT_DEFAULT;
   g_storedVar.soundBoot = SOUND_BOOT_DEFAULT;
   g_storedVar.soundRace = SOUND_RACE_DEFAULT;
-  g_storedVar.gridCarSelectEnabled = 0;  /* Car select in grid view disabled by default */
+  g_storedVar.gridCarSelectEnabled = GRID_CAR_SELECT_DEFAULT;  /* Car select in grid view default */
   g_storedVar.raceViewMode = RACE_VIEW_DEFAULT;  /* Default race view mode */
   g_storedVar.language = LANG_DEFAULT;  /* Default language */
   g_storedVar.textCase = TEXT_CASE_DEFAULT;  /* Default text case style */
@@ -104,6 +106,7 @@ void initStoredVariables() {
   g_storedVar.statusSlot[1] = STATUS_SLOT1_DEFAULT;
   g_storedVar.statusSlot[2] = STATUS_SLOT2_DEFAULT;
   g_storedVar.statusSlot[3] = STATUS_SLOT3_DEFAULT;
+  g_statsEnabled = STATS_ENABLED_DEFAULT;
 }
 
 
@@ -194,13 +197,15 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = &showSettingsMenu;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* STATS */
-  g_mainMenu.item[i].value = ITEM_NO_VALUE;
-  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_mainMenu.item[i].unit, "");
-  g_mainMenu.item[i].maxValue = 0;
-  g_mainMenu.item[i].minValue = 0;
-  g_mainMenu.item[i].callback = &showLapStats;
+  if (g_statsEnabled) {
+    sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* STATS */
+    g_mainMenu.item[i].value = ITEM_NO_VALUE;
+    g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
+    sprintf(g_mainMenu.item[i].unit, "");
+    g_mainMenu.item[i].maxValue = 0;
+    g_mainMenu.item[i].minValue = 0;
+    g_mainMenu.item[i].callback = &showLapStats;
+  }
 
   sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 10));  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
@@ -249,7 +254,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 3));  /* WIFI */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 3));  /* STATS */
+  g_settingsMenu.item[i].value = (void *)&g_statsEnabled;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 1;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* WIFI */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -257,7 +270,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* USB */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* USB */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -265,7 +278,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* RESET */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* RESET */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -273,7 +286,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* TEST */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* TEST */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -281,7 +294,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* ABOUT/INFO */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* ABOUT/INFO */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -289,7 +302,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* BACK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* BACK */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");

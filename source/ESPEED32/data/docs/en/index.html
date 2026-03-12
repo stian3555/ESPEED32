@@ -327,10 +327,9 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h3>WiFi</h3>
     <ol>
       <li>Open <code>SETTINGS -> WIFI</code> to enter the WiFi submenu.</li>
+      <li><code>START WIFI</code>/<code>STOP WIFI</code>: starts or stops background WiFi immediately.</li>
       <li><code>INFO PAGE</code>: opens the WiFi page directly and starts WiFi/AP automatically. Leaving the info page stops WiFi again (unless background mode was started first).</li>
       <li><code>AUTO OFF</code>: set timeout for background WiFi (1-120 min, default 5 min).</li>
-      <li><code>START WIFI</code>: starts WiFi without opening the info page, so you can return to the main menu.</li>
-      <li><code>STOP WIFI</code>: manually stops background WiFi before timeout.</li>
       <li>While WiFi is active: connect to AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) and open OLED IP in browser (typically <code>192.168.4.1</code>).</li>
       <li>On the info page you can use <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code>, and <code>/docs</code>.</li>
     </ol>
@@ -362,18 +361,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SETTINGS
 |  |- POWER
 |  |  |- SCRSV
+|  |  |  |- NOW
 |  |  |  |- LINE1
 |  |  |  |- LINE2
 |  |  |  |- TIME (0-240 s, 0=OFF)
-|  |  |  |- NOW
 |  |  |  `- BACK
 |  |  |- SLEEP
-|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  |- SLEEP NOW
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
 |  |  |  `- BACK
 |  |  |- DEEP SLEEP
-|  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  |- SLEEP NOW (power-off)
+|  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
 |  |  `- BACK
@@ -394,9 +393,9 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- WIFI
+|  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
 |  |  |- AUTO OFF (1-120 min, default 5)
-|  |  |- START/STOP WIFI
 |  |  `- BACK
 |  |- USB
 |  |- RESET

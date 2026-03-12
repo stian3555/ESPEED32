@@ -14,13 +14,14 @@ extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screens
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
 extern uint8_t getMainMenuSelector();
+extern uint8_t getMainMenuItemsCount();
 
 /**
  * Show the Lap Stats screen
  * Displays lap count, best time, current lap time, motor current,
  * and a scrollable list of the last 20 lap times.
  * Encoder scrolls through lap list, button click returns to main menu.
- * Brake button resets lap counter.
+ * Brake short press returns to main menu, long press resets lap stats.
  */
 void showLapStats() {
   obdFill(&g_obd, OBD_WHITE, 1);
@@ -89,17 +90,37 @@ void showLapStats() {
       break;
     }
 
-    /* Brake button = back (exit to main menu) */
+    /* Brake button:
+       - short press: back (exit)
+       - long press: reset lap stats */
     static bool brakeInStats = false;
-    static uint32_t lastBrakeStats = 0;
+    static bool brakeLongHandled = false;
+    static uint32_t brakePressStartMs = 0;
     if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-      if (!brakeInStats && millis() - lastBrakeStats > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+      if (!brakeInStats) {
         brakeInStats = true;
-        lastBrakeStats = millis();
+        brakeLongHandled = false;
+        brakePressStartMs = millis();
+      }
+      if (!brakeLongHandled && (millis() - brakePressStartMs > BUTTON_LONG_PRESS_MS)) {
+        brakeLongHandled = true;
+        g_escVar.lapCount = 0;
+        g_escVar.bestLapTime_ms = 0;
+        g_escVar.lapStartTime_ms = 0;
+        for (uint8_t i = 0; i < LAP_MAX_COUNT; i++) {
+          g_escVar.lapTimes[i] = 0;
+        }
+        g_rotaryEncoder.reset(0);
+        needFullRedraw = true;
+      }
+    } else if (brakeInStats) {
+      uint32_t pressMs = millis() - brakePressStartMs;
+      bool shortPress = (!brakeLongHandled && pressMs > BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      brakeInStats = false;
+      brakeLongHandled = false;
+      if (shortPress) {
         break;
       }
-    } else {
-      brakeInStats = false;
     }
 
     /* Update encoder scroll boundaries based on lap count */
@@ -197,6 +218,6 @@ void showLapStats() {
   /* Restore main menu encoder settings */
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, MENU_ITEMS_COUNT, false);
+  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
   g_rotaryEncoder.reset(getMainMenuSelector());
 }

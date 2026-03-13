@@ -130,6 +130,8 @@ form{margin:0}
 .about-list{margin:8px 0 8px 18px;padding:0}
 .about-list li{margin:6px 0;color:#c8d6ef}
 .about-card a{color:#7ed6ff}
+.repo-card p{margin:6px 0;color:#d7e1f4;line-height:1.45}
+.repo-card a{color:#7ed6ff}
 .release-line{margin:3px 0}
 .release-list{margin:6px 0 6px 18px;padding:0}
 .release-list li{margin:4px 0;color:#d7deef}
@@ -246,6 +248,7 @@ form{margin:0}
     align-items:start;
   }
   .about-panel,
+  .repo-panel,
   .backup-panel,
   .guide-panel,
   .usb-panel,
@@ -261,8 +264,8 @@ form{margin:0}
   .layout-grid{
     grid-template-columns:repeat(12,minmax(0,1fr));
     grid-template-areas:
-      "about about about about about about about about about about about about"
-      "guide guide guide guide guide guide usb usb usb usb usb usb"
+      "about about about about about about about about about about repo repo"
+      "guide guide guide guide guide guide guide guide guide guide usb usb"
       "backup backup backup backup backup backup backup backup backup backup backup backup"
       "updates updates updates updates updates updates updates updates updates updates updates updates"
       "editor editor editor editor editor editor editor editor editor editor editor editor";
@@ -270,10 +273,15 @@ form{margin:0}
     align-items:start;
   }
   .about-panel{grid-area:about}
+  .repo-panel{grid-area:repo}
   .guide-panel{grid-area:guide}
   .usb-panel{grid-area:usb}
   .backup-panel{grid-area:backup}
   .editor-shell{grid-area:editor}
+  .guide-panel,
+  .usb-panel{
+    align-self:stretch;
+  }
   .update-stack{
     grid-area:updates;
     align-content:start;
@@ -344,6 +352,11 @@ form{margin:0}
 <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
 <li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
 </ul>
+</div>
+</section>
+<section class="panel repo-panel">
+<h2>Repo &amp; Release</h2>
+<div class="card repo-card">
 <p class="tiny"><b>Main repository for espeed32.com:</b> <a href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">nerdweeg/ESPEED32</a></p>
 <div id="release-info" class="tiny">Latest firmware release (official repo nerdweeg/ESPEED32): checking...</div>
 <p class="tiny">Original upstream project: <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a></p>

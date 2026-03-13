@@ -135,7 +135,15 @@ form{margin:0}
 .release-line{margin:3px 0}
 .release-list{margin:6px 0 6px 18px;padding:0}
 .release-list li{margin:4px 0;color:#d7deef}
-.release-note{margin:4px 0 0 0;color:#9eb0ce}
+.release-note{margin:4px 0 0 0}
+.repo-card .tiny,
+.repo-card .release-line,
+.repo-card .release-list li,
+.repo-card .release-note{
+  font-size:13px;
+  color:#d7e1f4;
+  line-height:1.45;
+}
 .tiny{font-size:12px;color:#9eb0ce}
 .section-stack{
   display:grid;
@@ -264,8 +272,8 @@ form{margin:0}
   .layout-grid{
     grid-template-columns:repeat(12,minmax(0,1fr));
     grid-template-areas:
-      "about about about about about about about about about about repo repo"
-      "guide guide guide guide guide guide guide guide guide guide usb usb"
+      "about about about about about about about about repo repo repo repo"
+      "guide guide guide guide guide guide usb usb usb usb usb usb"
       "backup backup backup backup backup backup backup backup backup backup backup backup"
       "updates updates updates updates updates updates updates updates updates updates updates updates"
       "editor editor editor editor editor editor editor editor editor editor editor editor";
@@ -278,6 +286,16 @@ form{margin:0}
   .usb-panel{grid-area:usb}
   .backup-panel{grid-area:backup}
   .editor-shell{grid-area:editor}
+  .about-panel,
+  .repo-panel{
+    align-self:stretch;
+    display:flex;
+    flex-direction:column;
+  }
+  .about-panel .card,
+  .repo-panel .card{
+    flex:1;
+  }
   .guide-panel,
   .usb-panel{
     align-self:stretch;

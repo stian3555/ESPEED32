@@ -133,6 +133,7 @@ form{margin:0}
 .release-line{margin:3px 0}
 .release-list{margin:6px 0 6px 18px;padding:0}
 .release-list li{margin:4px 0;color:#d7deef}
+.release-note{margin:4px 0 0 0;color:#9eb0ce}
 .tiny{font-size:12px;color:#9eb0ce}
 .section-stack{
   display:grid;
@@ -343,8 +344,9 @@ form{margin:0}
 <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
 <li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
 </ul>
-<div id="release-info" class="tiny">Latest firmware release (nerdweeg/ESPEED32): checking...</div>
-<p class="tiny">Forked from <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a>.</p>
+<p class="tiny"><b>Main repository for espeed32.com:</b> <a href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">nerdweeg/ESPEED32</a></p>
+<div id="release-info" class="tiny">Latest firmware release (official repo nerdweeg/ESPEED32): checking...</div>
+<p class="tiny">Original upstream project: <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a></p>
 </div>
 </section>
 <section class="panel guide-panel">
@@ -400,8 +402,8 @@ form{margin:0}
 <input type="file" id="fw" accept=".bin">
 <button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
 </form>
-<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Latest Release)</button>
-<p class="tiny">Auto update downloads the latest firmware in your browser, then uploads it to the controller.</p>
+<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Latest Release, Internet Required)</button>
+<p class="tiny" id="fw-auto-desc">Auto update requires internet on this device to download from GitHub, then uploads to the controller.</p>
 </div>
 <div id="fw-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
@@ -418,8 +420,8 @@ form{margin:0}
 <input type="file" id="spiffs" accept=".bin">
 <button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
 </form>
-<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release)</button>
-<p class="tiny">Auto update downloads the latest SPIFFS image in your browser, then uploads it to the controller.</p>
+<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release, Internet Required)</button>
+<p class="tiny" id="spiffs-auto-desc">Auto update requires internet on this device to download from GitHub, then uploads to the controller.</p>
 </div>
 <div id="spiffs-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
@@ -617,9 +619,9 @@ function updateReleaseInfoUi(){
 
   if(!latestReleaseTag || !latestReleaseUrl){
     if(!releaseFetchTried){
-      el.textContent='Latest firmware release (nerdweeg/ESPEED32): checking...';
+      el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): checking...';
     }else{
-      el.textContent='Latest firmware release (nerdweeg/ESPEED32): unavailable (offline or rate-limited).';
+      el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): unavailable (offline or rate-limited).';
     }
     updateFirmwareUiState();
     return;
@@ -649,6 +651,11 @@ function updateReleaseInfoUi(){
   }
 
   if(updateAvailable){
+    var updateTitle=document.createElement('div');
+    updateTitle.className='release-line';
+    updateTitle.appendChild(document.createTextNode('Latest release assets for '+normalizeVersionTag(latestReleaseTag)+':'));
+    el.appendChild(updateTitle);
+
     var list=document.createElement('ul');
     list.className='release-list';
 
@@ -657,7 +664,7 @@ function updateReleaseInfoUi(){
     dl.href=latestFirmwareBinUrl||latestReleaseUrl;
     dl.target='_blank';
     dl.rel='noopener';
-    dl.textContent='Download firmware (.bin)';
+    dl.textContent='Download firmware '+normalizeVersionTag(latestReleaseTag)+' (.bin)';
     itemFw.appendChild(dl);
     list.appendChild(itemFw);
 
@@ -666,11 +673,16 @@ function updateReleaseInfoUi(){
     dlFs.href=latestSpiffsBinUrl||latestReleaseUrl;
     dlFs.target='_blank';
     dlFs.rel='noopener';
-    dlFs.textContent='Download SPIFFS (.bin)';
+    dlFs.textContent='Download SPIFFS '+normalizeVersionTag(latestReleaseTag)+' (.bin)';
     itemFs.appendChild(dlFs);
     list.appendChild(itemFs);
 
     el.appendChild(list);
+
+    var note=document.createElement('div');
+    note.className='release-note tiny';
+    note.appendChild(document.createTextNode('These files are from the latest release, not the current device version shown above.'));
+    el.appendChild(note);
   }
 
   updateFirmwareUiState();
@@ -817,6 +829,14 @@ function otaUpdateUnavailableReason(label){
   return '';
 }
 
+function canShowAutoUpdateControls(){
+  if(hostedMode) return false;
+  if((location.hostname||'')!=='192.168.4.1') return false;
+  if(usb) return false;
+  if(typeof navigator!=='undefined' && navigator.onLine===false) return false;
+  return true;
+}
+
 function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
@@ -826,19 +846,24 @@ function updateFirmwareUiState(){
   var fsBtn=document.getElementById('btn-spiffs-upload');
   var fsAutoBtn=document.getElementById('btn-spiffs-auto');
   var fsNote=document.getElementById('spiffs-note');
-  if(!input || !btn || !autoBtn || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsNote) return;
+  var fwAutoDesc=document.getElementById('fw-auto-desc');
+  var spiffsAutoDesc=document.getElementById('spiffs-auto-desc');
+  if(!input || !btn || !autoBtn || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsNote || !fwAutoDesc || !spiffsAutoDesc) return;
 
   var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
   var reason=busyReason || otaUpdateUnavailableReason('Firmware update');
   var fsReason=busyReason || otaUpdateUnavailableReason('Filesystem update');
+  var showAutoControls=canShowAutoUpdateControls();
   var autoReason=reason;
   var fsAutoReason=fsReason;
 
-  if(!autoReason && !latestFirmwareBinUrl){
-    autoReason=releaseFetchTried?'Latest firmware .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
-  }
-  if(!fsAutoReason && !latestSpiffsBinUrl){
-    fsAutoReason=releaseFetchTried?'Latest SPIFFS .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+  if(showAutoControls){
+    if(!autoReason && !latestFirmwareBinUrl){
+      autoReason=releaseFetchTried?'Latest firmware .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+    }
+    if(!fsAutoReason && !latestSpiffsBinUrl){
+      fsAutoReason=releaseFetchTried?'Latest SPIFFS .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
+    }
   }
 
   var disabled=(reason!=='');
@@ -849,6 +874,8 @@ function updateFirmwareUiState(){
   input.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
+  autoBtn.style.display=showAutoControls?'':'none';
+  fwAutoDesc.style.display=showAutoControls?'block':'none';
   autoBtn.disabled=autoDisabled;
   autoBtn.classList.toggle('disabled',autoDisabled);
   note.style.display=(reason!=='' || autoReason!==reason)?'block':'none';
@@ -857,10 +884,23 @@ function updateFirmwareUiState(){
   fsInput.disabled=fsDisabled;
   fsBtn.disabled=fsDisabled;
   fsBtn.classList.toggle('disabled',fsDisabled);
+  fsAutoBtn.style.display=showAutoControls?'':'none';
+  spiffsAutoDesc.style.display=showAutoControls?'block':'none';
   fsAutoBtn.disabled=fsAutoDisabled;
   fsAutoBtn.classList.toggle('disabled',fsAutoDisabled);
   fsNote.style.display=(fsReason!=='' || fsAutoReason!==fsReason)?'block':'none';
   fsNote.textContent=(fsAutoReason!==fsReason)?fsAutoReason:fsReason;
+
+  if(hostedMode){
+    fwAutoDesc.textContent='Auto update works only on the controller WiFi page (typically 192.168.4.1), not on hosted espeed32.com.';
+    spiffsAutoDesc.textContent='Auto update works only on the controller WiFi page (typically 192.168.4.1), not on hosted espeed32.com.';
+  }else if(usb){
+    fwAutoDesc.textContent='Auto update requires WiFi OTA mode. Disconnect USB first, then use the controller WiFi page.';
+    spiffsAutoDesc.textContent='Auto update requires WiFi OTA mode. Disconnect USB first, then use the controller WiFi page.';
+  }else{
+    fwAutoDesc.textContent='Auto update requires internet on this device to download from GitHub, then uploads over controller WiFi.';
+    spiffsAutoDesc.textContent='Auto update requires internet on this device to download from GitHub, then uploads over controller WiFi.';
+  }
 }
 
 function setUsbReadyState(ready,msg){
@@ -1453,14 +1493,29 @@ async function runOtaUpload(opts){
       ss(opts.statusId,'err',res.text||('HTTP '+res.status));
     }
   }catch(e){
+    var errMsg=(e&&e.message)?e.message:String(e);
+    if(opts.downloadUrl){
+      var low=errMsg.toLowerCase();
+      if(low.indexOf('failed to fetch')!==-1 ||
+         low.indexOf('networkerror')!==-1 ||
+         low.indexOf('network error')!==-1 ||
+         low.indexOf('download failed')!==-1 ||
+         low.indexOf('missing release url')!==-1){
+        errMsg+=' Auto update needs internet on this device. If you are connected only to ESPEED32 WiFi, download the .bin manually first, then use Upload.';
+      }
+    }
     setProgress(progressPrefix,'Transfer failed',null);
-    ss(opts.statusId,'err',(e&&e.message)?e.message:String(e));
+    ss(opts.statusId,'err',errMsg);
   }finally{
     setOtaBusy(false);
   }
 }
 
 async function autoUpdateFirmware(){
+  if(!canShowAutoUpdateControls()){
+    ss('ost','err','Auto update is available only on 192.168.4.1 with internet access and no USB connection.');
+    return;
+  }
   var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
   if(blocked){
     ss('ost','err',blocked);
@@ -1482,6 +1537,10 @@ async function autoUpdateFirmware(){
 }
 
 async function autoUpdateSpiffs(){
+  if(!canShowAutoUpdateControls()){
+    ss('sst','err','Auto update is available only on 192.168.4.1 with internet access and no USB connection.');
+    return;
+  }
   var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
   if(blocked){
     ss('sst','err',blocked);
@@ -1578,6 +1637,10 @@ applyHostedMode();
 updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
+if(typeof window!=='undefined'){
+  window.addEventListener('online',updateFirmwareUiState);
+  window.addEventListener('offline',updateFirmwareUiState);
+}
 loadInfo();
 loadLatestReleaseInfo();
 </script>

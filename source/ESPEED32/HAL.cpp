@@ -27,6 +27,7 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
   MT6701 mt6701;  /* MT6701 magnetic sensor instance */
 
 #elif defined(TLE493D_MAG)
+  #define TLE493D_W2B6_A0_ADDR 0x35
   #define TLE493D_W2B6_A3_ADDR 0x44
   #define TLE493D_W2B6_MOD1_REG 0x11
   #define TLE493D_W2B6_MOD1_CONFIG 0b11110111
@@ -39,6 +40,7 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
   enum class TLE493DVariant : uint8_t {
     NONE = 0,
     W2B6,
+    W2B6_A0,
     P3B6
   };
 
@@ -56,6 +58,7 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
   static uint8_t TLE493D_EncodeVariant(TLE493DVariant variant) {
     switch (variant) {
       case TLE493DVariant::W2B6: return 1;
+      case TLE493DVariant::W2B6_A0: return 3;
       case TLE493DVariant::P3B6: return 2;
       default: return 0;
     }
@@ -65,6 +68,7 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
     switch (value) {
       case 1: return TLE493DVariant::W2B6;
       case 2: return TLE493DVariant::P3B6;
+      case 3: return TLE493DVariant::W2B6_A0;
       default: return TLE493DVariant::NONE;
     }
   }
@@ -87,6 +91,8 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
     TLE493DVariant decoded = TLE493D_DecodeVariant(storedVariant);
     if (decoded == TLE493DVariant::W2B6) {
       if (storedAddress != TLE493D_W2B6_A3_ADDR) return false;
+    } else if (decoded == TLE493DVariant::W2B6_A0) {
+      if (storedAddress != TLE493D_W2B6_A0_ADDR) return false;
     } else if (decoded == TLE493DVariant::P3B6) {
       if (!TLE493D_IsValidP3Address(storedAddress)) return false;
     } else {
@@ -137,6 +143,22 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
       Wire1.beginTransmission(address);
       Wire1.write(TLE493D_W2B6_MOD1_REG);
       Wire1.write(TLE493D_W2B6_MOD1_CONFIG);
+      uint8_t txStatus = Wire1.endTransmission();
+      if (txStatus == 0) {
+        uint8_t frame[7];
+        if (TLE493D_ReadFrame(address, frame, sizeof(frame))) return true;
+      }
+      delay(TLE493D_INIT_RETRY_DELAY_MS);
+    }
+    return false;
+  }
+
+  static bool TLE493D_TryInitW2B6_A0(uint8_t address, uint8_t retries = TLE493D_INIT_RETRIES) {
+    for (uint8_t attempt = 0; attempt < retries; ++attempt) {
+      Wire1.beginTransmission(address);
+      Wire1.write(0x10);
+      Wire1.write(0x11);
+      Wire1.write(0x91);
       uint8_t txStatus = Wire1.endTransmission();
       if (txStatus == 0) {
         uint8_t frame[7];
@@ -216,6 +238,8 @@ void HAL_InitHW() {
   if (TLE493D_LoadCachedConfig(&cachedVariant, &cachedAddress)) {
     if (cachedVariant == TLE493DVariant::W2B6) {
       tleReady = TLE493D_TryInitW2B6(cachedAddress, 1);
+    } else if (cachedVariant == TLE493DVariant::W2B6_A0) {
+      tleReady = TLE493D_TryInitW2B6_A0(cachedAddress, 1);
     } else if (cachedVariant == TLE493DVariant::P3B6) {
       tleReady = TLE493D_TryInitP3B6(cachedAddress, 1);
     }
@@ -227,7 +251,11 @@ void HAL_InitHW() {
 
   /* Fallback path: full auto-detect when cache is missing/stale. */
   if (!tleReady) {
-    if (TLE493D_TryInitW2B6(TLE493D_W2B6_A3_ADDR)) {
+    if (TLE493D_TryInitW2B6_A0(TLE493D_W2B6_A0_ADDR)) {
+      detectedVariant = TLE493DVariant::W2B6_A0;
+      detectedAddress = TLE493D_W2B6_A0_ADDR;
+      tleReady = true;
+    } else if (TLE493D_TryInitW2B6(TLE493D_W2B6_A3_ADDR)) {
       detectedVariant = TLE493DVariant::W2B6;
       detectedAddress = TLE493D_W2B6_A3_ADDR;
       tleReady = true;
@@ -255,11 +283,17 @@ void HAL_InitHW() {
     TLE493D_SaveCachedConfig(detectedVariant, detectedAddress);
 
     Serial.print("TLE493D ready, variant=");
-    Serial.print((g_tleVariant == TLE493DVariant::W2B6) ? "W2B6" : "P3B6");
+    if (g_tleVariant == TLE493DVariant::W2B6) {
+      Serial.print("W2B6");
+    } else if (g_tleVariant == TLE493DVariant::W2B6_A0) {
+      Serial.print("W2B6_A0");
+    } else {
+      Serial.print("P3B6");
+    }
     Serial.print(", addr=0x");
     Serial.println(g_tleAddress, HEX);
   } else {
-    Serial.println("WARN: TLE493D init not confirmed for W2B6/P3B6 (continuing).");
+    Serial.println("WARN: TLE493D init not confirmed for W2B6/W2B6_A0/P3B6 (continuing).");
   }
 #endif
 
@@ -306,7 +340,7 @@ int16_t HAL_ReadTriggerRaw() {
     retVal = analogRead(AN_THROT_PIN);
 
   #elif defined(TLE493D_MAG)
-    if (g_tleVariant == TLE493DVariant::W2B6) {
+    if (g_tleVariant == TLE493DVariant::W2B6 || g_tleVariant == TLE493DVariant::W2B6_A0) {
       uint8_t data[7];
       if (!TLE493D_ReadFrame(g_tleAddress, data, sizeof(data))) {
         retVal = g_tleLastAngleValid ? (uint16_t)g_tleLastAngle : 0;
@@ -350,6 +384,8 @@ void HAL_GetTriggerSensorInfo(char* buffer, size_t bufferSize) {
 #if defined(TLE493D_MAG)
   if (g_tleVariant == TLE493DVariant::W2B6) {
     snprintf(buffer, bufferSize, "TLE493D W2B6 0x%02X", g_tleAddress);
+  } else if (g_tleVariant == TLE493DVariant::W2B6_A0) {
+    snprintf(buffer, bufferSize, "TLE493D W2B6_A0 0x%02X", g_tleAddress);
   } else if (g_tleVariant == TLE493DVariant::P3B6) {
     snprintf(buffer, bufferSize, "TLE493D P3B6 0x%02X", g_tleAddress);
   } else {

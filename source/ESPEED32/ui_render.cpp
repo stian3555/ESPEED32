@@ -123,6 +123,8 @@ void displayStatusLine() {
 void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   static uint16_t lastBrake = 999;
   static uint16_t lastSensi = 999;
+  static bool lastBrakeUsesPot = false;
+  static bool lastSensiUsesPot = false;
   static uint8_t lastSelectedItem = 255;
   static bool lastIsEditing = false;
   static uint16_t lastCarSel = 999;
@@ -135,6 +137,8 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   if (g_forceRaceRedraw || selectedItem != lastSelectedItem || isEditing != lastIsEditing || g_carSel != lastCarSel) {
     lastBrake = 999;
     lastSensi = 999;
+    lastBrakeUsesPot = false;
+    lastSensiUsesPot = false;
     lastSelectedItem = selectedItem;
     lastIsEditing = isEditing;
     lastCarSel = g_carSel;
@@ -145,29 +149,41 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   uint8_t colorSensi = (selectedItem == 1) ? OBD_WHITE : OBD_BLACK;
 
   /* BRAKE - left column, using FONT_12x16 for both label and value */
+  bool brakeUsesPot = isExtPotBrakeTarget() && !(isEditing && selectedItem == 0);
   uint16_t brakeValue = getEffectiveBrakePct();
-  if (brakeValue != lastBrake) {
+  if (brakeUsesPot != lastBrakeUsesPot || (!brakeUsesPot && brakeValue != lastBrake)) {
     /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
     const char* brakeLabel = getRaceLabel(g_storedVar.language, 0);
     uint8_t labelWidth = strlen(brakeLabel) * 12;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 0, (char *)brakeLabel, FONT_12x16, colorBrake, 1);
-    /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
-    sprintf(msgStr, "%3d%%", brakeValue);
-    obdWriteString(&g_obd, 0, col1_center - 24, 16, msgStr, FONT_12x16, colorBrake, 1);
+    if (brakeUsesPot) {
+      obdWriteString(&g_obd, 0, col1_center - 18, 16, (char *)"POT", FONT_12x16, colorBrake, 1);
+    } else {
+      /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
+      sprintf(msgStr, "%3d%%", brakeValue);
+      obdWriteString(&g_obd, 0, col1_center - 24, 16, msgStr, FONT_12x16, colorBrake, 1);
+    }
     lastBrake = brakeValue;
+    lastBrakeUsesPot = brakeUsesPot;
   }
 
   /* SENSI - right column, using FONT_12x16 for both label and value */
+  bool sensiUsesPot = isExtPotSensiTarget() && !(isEditing && selectedItem == 1);
   uint16_t sensiRaw = getEffectiveSensiRaw();
-  if (sensiRaw != lastSensi) {
+  if (sensiUsesPot != lastSensiUsesPot || (!sensiUsesPot && sensiRaw != lastSensi)) {
     /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
     const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
     uint8_t labelWidth = strlen(sensiLabel) * 12;
     obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2), 0, (char *)sensiLabel, FONT_12x16, colorSensi, 1);
-    /* Value in 0.5% resolution, e.g. 20.5% */
-    sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
-    obdWriteString(&g_obd, 0, col2_center - 30, 16, msgStr, FONT_12x16, colorSensi, 1);
+    if (sensiUsesPot) {
+      obdWriteString(&g_obd, 0, col2_center - 18, 16, (char *)"POT", FONT_12x16, colorSensi, 1);
+    } else {
+      /* Value in 0.5% resolution, e.g. 20.5% */
+      sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
+      obdWriteString(&g_obd, 0, col2_center - 30, 16, msgStr, FONT_12x16, colorSensi, 1);
+    }
     lastSensi = sensiRaw;
+    lastSensiUsesPot = sensiUsesPot;
   }
 
   /* Note: Car name, voltage, and LIMITER warning are displayed by displayStatusLine() */
@@ -183,6 +199,8 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
 void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   static uint16_t lastBrake = 999;
   static uint16_t lastSensi = 999;
+  static bool lastBrakeUsesPot = false;
+  static bool lastSensiUsesPot = false;
   static uint16_t lastAntis = 999;
   static uint16_t lastCurve = 999;
   static uint8_t lastSelectedItem = 255;
@@ -199,6 +217,8 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
     /* Force redraw of all items when selection changes */
     lastBrake = 999;
     lastSensi = 999;
+    lastBrakeUsesPot = false;
+    lastSensiUsesPot = false;
     lastAntis = 999;
     lastCurve = 999;
 
@@ -215,29 +235,41 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   uint8_t colorCar = (selectedItem == 4) ? OBD_WHITE : OBD_BLACK;
 
   /* BRAKE - left column */
+  bool brakeUsesPot = isExtPotBrakeTarget() && !(isEditing && selectedItem == 0);
   uint16_t brakeValue = getEffectiveBrakePct();
-  if (brakeValue != lastBrake) {
+  if (brakeUsesPot != lastBrakeUsesPot || (!brakeUsesPot && brakeValue != lastBrake)) {
     /* Label - using language-specific text, dynamically centered */
     const char* brakeLabel = getRaceLabel(g_storedVar.language, 0);
     uint8_t labelWidth = strlen(brakeLabel) * 6;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)brakeLabel, FONT_6x8, colorBrake, 1);
-    /* Value - "100%" is 4 chars × 8px = 32px wide, center at col1_center - 16 */
-    sprintf(msgStr, "%3d%%", brakeValue);
-    obdWriteString(&g_obd, 0, col1_center - 16, 12, msgStr, FONT_8x8, colorBrake, 1);
+    if (brakeUsesPot) {
+      obdWriteString(&g_obd, 0, col1_center - 12, 12, (char *)"POT", FONT_8x8, colorBrake, 1);
+    } else {
+      /* Value - "100%" is 4 chars × 8px = 32px wide, center at col1_center - 16 */
+      sprintf(msgStr, "%3d%%", brakeValue);
+      obdWriteString(&g_obd, 0, col1_center - 16, 12, msgStr, FONT_8x8, colorBrake, 1);
+    }
     lastBrake = brakeValue;
+    lastBrakeUsesPot = brakeUsesPot;
   }
 
   /* SENSI - right column */
+  bool sensiUsesPot = isExtPotSensiTarget() && !(isEditing && selectedItem == 1);
   uint16_t sensiRaw = getEffectiveSensiRaw();
-  if (sensiRaw != lastSensi) {
+  if (sensiUsesPot != lastSensiUsesPot || (!sensiUsesPot && sensiRaw != lastSensi)) {
     /* Label - using language-specific text, shifted 1px right */
     const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
     uint8_t labelWidth = strlen(sensiLabel) * 6;
     obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)sensiLabel, FONT_6x8, colorSensi, 1);
-    /* Value in 0.5% resolution, e.g. 20.5% */
-    sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
-    obdWriteString(&g_obd, 0, col2_center - 20, 12, msgStr, FONT_8x8, colorSensi, 1);
+    if (sensiUsesPot) {
+      obdWriteString(&g_obd, 0, col2_center - 11, 12, (char *)"POT", FONT_8x8, colorSensi, 1);
+    } else {
+      /* Value in 0.5% resolution, e.g. 20.5% */
+      sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
+      obdWriteString(&g_obd, 0, col2_center - 20, 12, msgStr, FONT_8x8, colorSensi, 1);
+    }
     lastSensi = sensiRaw;
+    lastSensiUsesPot = sensiUsesPot;
   }
 
   /* ANTIS - left column, lower */

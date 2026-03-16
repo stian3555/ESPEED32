@@ -111,6 +111,37 @@ Behavior when current sense is unavailable:
 - lap detection stays disabled
 - self-test skips current-specific checks cleanly
 
+## External Pot Overrides
+
+The firmware also has an initial **external potentiometer override** feature for live control of:
+
+- `BRAKE`
+- `SENSI`
+
+Current hardware mapping in firmware:
+
+- `POT1` = `GPIO35`
+- `POT2` = `GPIO15`
+
+Current behavior:
+
+- `POT1` and `POT2` are configured from `Settings -> EXT POT`
+- each pot can be assigned to `OFF`, `BRAKE`, or `SENSI`
+- the pots act as **live global overrides**
+- they do **not** overwrite the stored car values in flash
+- the UI/race screen shows `POT1` / `POT2` when an override is active
+- if both pots are assigned to the same target, the older/conflicting assignment is forced back to `OFF`
+
+Important hardware note:
+
+- `GPIO15` is an `ADC2` pin on ESP32, so it may be unreliable for analog reading while WiFi is active
+
+Please verify the actual board routing against:
+
+- `ESPEED32_V3_0_schematic_PCB.pdf`
+
+before soldering to spare pads or assuming a given pad name matches the expected ESP32 GPIO.
+
 ## On-Device Documentation (NO/EN/ES/DE)
 
 User documentation served by the controller lives in:

@@ -31,6 +31,10 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
   #define TLE493D_W2B6_A3_ADDR 0x44
   #define TLE493D_W2B6_MOD1_REG 0x11
   #define TLE493D_W2B6_MOD1_CONFIG 0b11110111
+  /* TLE493D-W2B6 A0: configuration sequence per datasheet/example (CFG and MOD1 registers). */
+  #define TLE493D_W2B6_A0_CFG_REG    0x10
+  #define TLE493D_W2B6_A0_CFG_VALUE  0x11
+  #define TLE493D_W2B6_A0_MOD1_VALUE 0x91
   #define TLE493D_P3B6_A0_ADDR 0x5D
   #define TLE493D_P3B6_A1_ADDR 0x13
   #define TLE493D_P3B6_A2_ADDR 0x29
@@ -156,9 +160,9 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
   static bool TLE493D_TryInitW2B6_A0(uint8_t address, uint8_t retries = TLE493D_INIT_RETRIES) {
     for (uint8_t attempt = 0; attempt < retries; ++attempt) {
       Wire1.beginTransmission(address);
-      Wire1.write(0x10);
-      Wire1.write(0x11);
-      Wire1.write(0x91);
+      Wire1.write(TLE493D_W2B6_A0_CFG_REG);
+      Wire1.write(TLE493D_W2B6_A0_CFG_VALUE);
+      Wire1.write(TLE493D_W2B6_A0_MOD1_VALUE);
       uint8_t txStatus = Wire1.endTransmission();
       if (txStatus == 0) {
         uint8_t frame[7];

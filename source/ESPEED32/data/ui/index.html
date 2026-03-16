@@ -208,6 +208,41 @@ form{margin:0}
 .update-actions .btn{width:100%;min-width:0;margin:0}
 .update-actions form{margin:0}
 .guide-panel .warn,.usb-panel .warn{margin:4px 0 0 0}
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background:rgba(5,10,18,.72);
+  z-index:1000;
+}
+.modal-backdrop.open{display:flex}
+.modal-card{
+  width:min(100%,440px);
+  border:1px solid #5a4726;
+  border-radius:14px;
+  padding:16px;
+  background:linear-gradient(180deg,#17131a 0,#101824 100%);
+  box-shadow:0 16px 44px rgba(0,0,0,.45);
+}
+.modal-card h3{
+  margin:0 0 8px 0;
+  font-size:17px;
+  color:#ffe0aa;
+}
+.modal-card p{
+  margin:0;
+  color:#d8e2f4;
+  font-size:14px;
+  line-height:1.5;
+}
+.modal-actions{
+  display:grid;
+  gap:10px;
+  margin-top:14px;
+}
 .progress-wrap{
   display:none;
   margin-top:10px;
@@ -465,6 +500,17 @@ form{margin:0}
 </div>
 </main>
 </div>
+<div id="fw-backup-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="fw-backup-modal-title" aria-describedby="fw-backup-modal-text">
+<div class="modal-card">
+<h3 id="fw-backup-modal-title">Backup Config Before OTA?</h3>
+<p id="fw-backup-modal-text">Recommended: download a config backup before OTA firmware update, so restore is easier if settings change or something goes wrong.</p>
+<div class="modal-actions">
+<button type="button" class="btn dl" id="btn-fw-backup-modal-download">Download Config Backup</button>
+<button type="button" class="btn ota" id="btn-fw-backup-modal-continue">Continue Firmware Update Without Backup</button>
+<button type="button" class="btn aux" id="btn-fw-backup-modal-cancel">Cancel</button>
+</div>
+</div>
+</div>
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
@@ -477,9 +523,12 @@ var latestFirmwareBinUrl='';
 var latestSpiffsBinUrl='';
 var releaseFetchTried=false;
 var otaBusy=false;
+var backupDownloadedThisSession=false;
+var firmwareBackupPromptResolver=null;
 var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
+var BACKUP_SESSION_KEY='espeed32_backup_downloaded_v1';
 
 function isLikelyDeviceHost(h){
   return h==='192.168.4.1' || h==='localhost' || h==='127.0.0.1' || /\.local$/i.test(h||'');
@@ -868,6 +917,47 @@ function canShowAutoUpdateControls(){
   return true;
 }
 
+function loadBackupSessionState(){
+  try{
+    backupDownloadedThisSession=(sessionStorage.getItem(BACKUP_SESSION_KEY)==='1');
+  }catch(_){
+    backupDownloadedThisSession=false;
+  }
+}
+
+function markBackupDownloadedThisSession(){
+  backupDownloadedThisSession=true;
+  try{
+    sessionStorage.setItem(BACKUP_SESSION_KEY,'1');
+  }catch(_){ }
+}
+
+function closeFirmwareBackupPrompt(allowContinue){
+  var modal=document.getElementById('fw-backup-modal');
+  if(modal) modal.classList.remove('open');
+  document.body.style.overflow='';
+  if(firmwareBackupPromptResolver){
+    var resolve=firmwareBackupPromptResolver;
+    firmwareBackupPromptResolver=null;
+    resolve(!!allowContinue);
+  }
+}
+
+function openFirmwareBackupPrompt(){
+  var modal=document.getElementById('fw-backup-modal');
+  if(!modal) return;
+  modal.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function confirmFirmwareBackupBeforeOta(){
+  if(backupDownloadedThisSession) return Promise.resolve(true);
+  return new Promise(function(resolve){
+    firmwareBackupPromptResolver=resolve;
+    openFirmwareBackupPrompt();
+  });
+}
+
 function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
@@ -1068,21 +1158,25 @@ async function usbToggle(){
   }
 }
 
-async function doBackup(){
+async function doBackup(statusId){
+  statusId=statusId||'st';
   var d=new Date().toISOString().slice(0,10);
   var fn=d+'-espeed32_v'+info.version+'_'+info.deviceId+'_backup.json';
   if(hostedMode && !usb){
-    ss('st','err','Hosted page: connect via USB first.');
+    ss(statusId,'err','Hosted page: connect via USB first.');
     return;
   }
   if(!usb){
+    ss(statusId,'','Starting backup download...');
     var a=document.createElement('a');
     a.href='/backup';
     a.download=fn;
     a.click();
+    markBackupDownloadedThisSession();
+    ss(statusId,'ok','Backup download started');
     return;
   }
-  ss('st','','Reading backup...');
+  ss(statusId,'','Reading backup...');
   try{
     if(!(await ensureUsbReady(false))) return;
     _b='';
@@ -1092,10 +1186,11 @@ async function doBackup(){
     a2.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));
     a2.download=fn;
     a2.click();
-    ss('st','ok','Backup downloaded');
+    markBackupDownloadedThisSession();
+    ss(statusId,'ok','Backup downloaded');
   }catch(e){
     usbReady=false;
-    ss('st','err',e.message+' - retry USB connect');
+    ss(statusId,'err',e.message+' - retry USB connect');
   }
 }
 
@@ -1556,6 +1651,7 @@ async function autoUpdateFirmware(){
     ss('ost','err',releaseFetchTried?'Latest firmware URL is unavailable.':'Still checking latest release metadata...');
     return;
   }
+  if(!(await confirmFirmwareBackupBeforeOta())) return;
   await runOtaUpload({
     endpoint:'/ota',
     downloadUrl:latestFirmwareBinUrl,
@@ -1633,6 +1729,7 @@ document.getElementById('of').onsubmit=async function(e){
   var f=document.getElementById('fw').files[0];
   if(!f){alert('Select a .bin file');return;}
   if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
+  if(!(await confirmFirmwareBackupBeforeOta())) return;
   await runOtaUpload({
     endpoint:'/ota',
     fileBlob:f,
@@ -1663,7 +1760,21 @@ document.getElementById('sf').onsubmit=async function(e){
   });
 };
 
+document.getElementById('btn-fw-backup-modal-download').onclick=async function(){
+  await doBackup('ost');
+  if(backupDownloadedThisSession) closeFirmwareBackupPrompt(false);
+};
+
+document.getElementById('btn-fw-backup-modal-continue').onclick=function(){
+  closeFirmwareBackupPrompt(true);
+};
+
+document.getElementById('btn-fw-backup-modal-cancel').onclick=function(){
+  closeFirmwareBackupPrompt(false);
+};
+
 hostedMode=detectHostedMode();
+loadBackupSessionState();
 applyHostedMode();
 updateUsbUiState();
 setEditorUiReady(false);

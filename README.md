@@ -32,19 +32,20 @@ Current HAL behavior (`source/ESPEED32/HAL.cpp`):
 - caches detected variant + address in NVS (`sensor_cfg`) for faster next boot
 - no manual `ADDRESS` edit is normally required
 
-The part-number suffix still determines the I2C address:
+Supported auto-detect variants:
 
-| Part number suffix | 7-bit I2C address |
-|---|---|
-| A3 (TLE493D-W2B6 **A3**) | 0x44 |
-| A0 (e.g. TLE493D-P3B6 **A0**) | 0x5D |
-| A1 | 0x13 |
-| A2 | 0x29 |
-| A3 (TLE493D-P3B6 **A3**) | 0x46 |
+| Family | Part / suffix example | 7-bit I2C address | Notes |
+|---|---|---|---|
+| W2B6 | `TLE493D-W2B6 A0` / `TLE493D-W2B6 A0 HTSA1` | `0x35` | Newly supported W2B6 A0 variant |
+| W2B6 | `TLE493D-W2B6 A3` | `0x44` | Existing W2B6 support |
+| P3B6 | `TLE493D-P3B6 A0` | `0x5D` | Version 3 silicon |
+| P3B6 | `TLE493D-P3B6 A1` | `0x13` |  |
+| P3B6 | `TLE493D-P3B6 A2` | `0x29` |  |
+| P3B6 | `TLE493D-P3B6 A3` | `0x46` |  |
 
 If detection fails, firmware continues and prints a warning on serial output.
 
-> **Silicon revision note:** The TLE493D-P3B6 A0 is version 3 silicon and is available on Digikey/Mouser. The older P2 revision has known issues — some users have managed to get it working, but it is not guaranteed.
+> **Silicon revision note:** `TLE493D-P3B6 A0` is version 3 silicon and is available on Digikey/Mouser. The older P2 revision has known issues; some users have managed to get it working, but it is not guaranteed.
 
 ## On-Device Documentation (NO/EN/ES/DE)
 

@@ -18,19 +18,30 @@ extern void requestEscapeToMain();
 extern void showScreensaver();
 extern void saveEEPROM(StoredVar_type toSave);
 
+static const char* getExtPotTargetLabel(uint8_t lang, uint16_t target) {
+  switch (target) {
+    case EXT_POT_TARGET_BRAKE:
+      return getRaceLabel(lang, 0);
+    case EXT_POT_TARGET_SENSI:
+      return getRaceLabel(lang, 1);
+    default:
+      return getOnOffLabel(lang, 0);
+  }
+}
+
 void showExtPotSettings() {
-  const uint8_t NUM_ITEMS = 3;  /* ACTIVE, TARGET, BACK */
-  const uint8_t ITEM_ACTIVE = 0;
-  const uint8_t ITEM_TARGET = 1;
+  const uint8_t NUM_ITEMS = 3;  /* POT 1, POT 2, BACK */
+  const uint8_t ITEM_POT1 = 0;
+  const uint8_t ITEM_POT2 = 1;
   const uint8_t ITEM_BACK = 2;
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
 
   const char* itemLabels[4][NUM_ITEMS] = {
-    {"AKTIV", "STYRER", "TILBAKE"},
-    {"ACTIVE", "TARGET", "BACK"},
-    {"ACTIVE", "TARGET", "BACK"},
-    {"ACTIVE", "TARGET", "BACK"}
+    {"POT 1", "POT 2", "TILBAKE"},
+    {"POT 1", "POT 2", "BACK"},
+    {"POT 1", "POT 2", "BACK"},
+    {"POT 1", "POT 2", "BACK"}
   };
 
   obdFill(&g_obd, OBD_WHITE, 1);
@@ -101,13 +112,11 @@ void showExtPotSettings() {
       lastInteraction = millis();
       if (sel == ITEM_BACK) {
         break;
-      } else if (sel == ITEM_ACTIVE) {
-        g_extPotEnabled = g_extPotEnabled ? 0 : 1;
-        resetExtPotFilter();
+      } else if (sel == ITEM_POT1) {
+        cycleExtPotTarget(0);
         saveEEPROM(g_storedVar);
-      } else if (sel == ITEM_TARGET) {
-        g_extPotTarget = (g_extPotTarget == EXT_POT_TARGET_BRAKE) ? EXT_POT_TARGET_SENSI : EXT_POT_TARGET_BRAKE;
-        resetExtPotFilter();
+      } else if (sel == ITEM_POT2) {
+        cycleExtPotTarget(1);
         saveEEPROM(g_storedVar);
       }
       needRedraw = true;
@@ -137,10 +146,8 @@ void showExtPotSettings() {
         obdWriteString(&g_obd, 0, 0, i * lineH, (char*)itemLabels[lang][i],
                        menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
 
-        if (i == ITEM_ACTIVE) {
-          snprintf(msgStr, sizeof(msgStr), "%3s", getOnOffLabel(lang, g_extPotEnabled ? 1 : 0));
-        } else if (i == ITEM_TARGET) {
-          snprintf(msgStr, sizeof(msgStr), "%5s", getRaceLabel(lang, g_extPotTarget == EXT_POT_TARGET_BRAKE ? 0 : 1));
+        if (i == ITEM_POT1 || i == ITEM_POT2) {
+          snprintf(msgStr, sizeof(msgStr), "%5s", getExtPotTargetLabel(lang, getExtPotTarget(i)));
         } else {
           msgStr[0] = '\0';
         }

@@ -114,8 +114,10 @@ static bool g_wifiTimedActive = false;        /* True when background WiFi shoul
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
 static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
 static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
-static const char* PREF_KEY_EXT_POT_ENABLED = "ext_pot_en";
-static const char* PREF_KEY_EXT_POT_TARGET = "ext_pot_tgt";
+static const char* PREF_KEY_EXT_POT1_TARGET = "ext_pot1_tgt";
+static const char* PREF_KEY_EXT_POT2_TARGET = "ext_pot2_tgt";
+static const char* PREF_KEY_EXT_POT_ENABLED_LEGACY = "ext_pot_en";
+static const char* PREF_KEY_EXT_POT_TARGET_LEGACY = "ext_pot_tgt";
 
 /* Long press tracking shared across all submenus (only one active at a time) */
 static uint32_t g_lpRaceStart = 0;
@@ -361,9 +363,21 @@ void Task1code(void *pvParameters) {
           {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
             g_statsEnabled = g_pref.getUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT) ? 1 : 0;
-            g_extPotEnabled = g_pref.getUChar(PREF_KEY_EXT_POT_ENABLED, EXT_POT_ENABLED_DEFAULT) ? 1 : 0;
-            g_extPotTarget = constrain(g_pref.getUChar(PREF_KEY_EXT_POT_TARGET, EXT_POT_TARGET_DEFAULT),
-                                       EXT_POT_TARGET_BRAKE, EXT_POT_TARGET_SENSI);
+            if (g_pref.isKey(PREF_KEY_EXT_POT1_TARGET) || g_pref.isKey(PREF_KEY_EXT_POT2_TARGET)) {
+              g_extPotTarget[0] = constrain(g_pref.getUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT),
+                                            EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX);
+              g_extPotTarget[1] = constrain(g_pref.getUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT),
+                                            EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX);
+            } else {
+              bool legacyEnabled = g_pref.getUChar(PREF_KEY_EXT_POT_ENABLED_LEGACY, 0) != 0;
+              uint16_t legacyTarget = g_pref.getUChar(PREF_KEY_EXT_POT_TARGET_LEGACY, 0);
+              g_extPotTarget[0] = EXT_POT1_TARGET_DEFAULT;
+              g_extPotTarget[1] = EXT_POT2_TARGET_DEFAULT;
+              if (legacyEnabled) {
+                g_extPotTarget[0] = (legacyTarget == 0) ? EXT_POT_TARGET_BRAKE : EXT_POT_TARGET_SENSI;
+              }
+            }
+            sanitizeExtPotTargets(0);
             resetExtPotFilter();
 
             /* One-time migration: old firmware stored SENSI in whole-percent units. */
@@ -450,13 +464,13 @@ void Task1code(void *pvParameters) {
         g_pref.putUChar("stored_var_ver", STORED_VAR_VERSION);
         g_pref.putBool(PREF_KEY_SENSI_HALF, true);
         g_pref.putUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT);
-        g_pref.putUChar(PREF_KEY_EXT_POT_ENABLED, EXT_POT_ENABLED_DEFAULT);
-        g_pref.putUChar(PREF_KEY_EXT_POT_TARGET, EXT_POT_TARGET_DEFAULT);
+        g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT);
+        g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT);
 
         initStoredVariables();  /* Initialize stored variables with default values */
         g_statsEnabled = STATS_ENABLED_DEFAULT;
-        g_extPotEnabled = EXT_POT_ENABLED_DEFAULT;
-        g_extPotTarget = EXT_POT_TARGET_DEFAULT;
+        g_extPotTarget[0] = EXT_POT1_TARGET_DEFAULT;
+        g_extPotTarget[1] = EXT_POT2_TARGET_DEFAULT;
         resetExtPotFilter();
 
         /* Reset Min and Max to the opposite side, in order to have effective calibration */
@@ -1151,7 +1165,7 @@ void saveEEPROM(StoredVar_type toSave) {
   g_pref.begin("stored_var", false);                      /* Open the "stored" namespace in read/write mode */
   g_pref.putBytes("user_param", &toSave, sizeof(toSave)); /* Put the value of the stored user_param */
   g_pref.putUChar(PREF_KEY_STATS_ENABLED, g_statsEnabled ? 1 : 0);
-  g_pref.putUChar(PREF_KEY_EXT_POT_ENABLED, g_extPotEnabled ? 1 : 0);
-  g_pref.putUChar(PREF_KEY_EXT_POT_TARGET, constrain(g_extPotTarget, EXT_POT_TARGET_BRAKE, EXT_POT_TARGET_SENSI));
+  g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, constrain(g_extPotTarget[0], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
+  g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, constrain(g_extPotTarget[1], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.end();                                           /* Close the namespace */
 }

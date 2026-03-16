@@ -225,8 +225,8 @@ static void doResetSettings() {
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
   g_statsEnabled              = STATS_ENABLED_DEFAULT;
-  g_extPotEnabled             = EXT_POT_ENABLED_DEFAULT;
-  g_extPotTarget              = EXT_POT_TARGET_DEFAULT;
+  g_extPotTarget[0]           = EXT_POT1_TARGET_DEFAULT;
+  g_extPotTarget[1]           = EXT_POT2_TARGET_DEFAULT;
   resetExtPotFilter();
 }
 

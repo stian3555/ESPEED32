@@ -110,10 +110,14 @@
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
 #define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
 #define STATS_ENABLED_DEFAULT    1  /* Show STATS menu item by default */
-#define EXT_POT_ENABLED_DEFAULT  0  /* External GPIO35 pot off by default */
-#define EXT_POT_TARGET_BRAKE     0
-#define EXT_POT_TARGET_SENSI     1
-#define EXT_POT_TARGET_DEFAULT   EXT_POT_TARGET_BRAKE
+#define EXT_POT_COUNT            2  /* Two optional external ADC pots: GPIO35 and GPIO15 */
+#define EXT_POT_TARGET_OFF       0
+#define EXT_POT_TARGET_BRAKE     1
+#define EXT_POT_TARGET_SENSI     2
+#define EXT_POT_TARGET_MIN       EXT_POT_TARGET_OFF
+#define EXT_POT_TARGET_MAX       EXT_POT_TARGET_SENSI
+#define EXT_POT1_TARGET_DEFAULT  EXT_POT_TARGET_OFF
+#define EXT_POT2_TARGET_DEFAULT  EXT_POT_TARGET_OFF
 
 /* Text Case Style */
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */

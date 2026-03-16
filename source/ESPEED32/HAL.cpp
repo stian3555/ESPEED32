@@ -417,7 +417,8 @@ void HAL_PinSetup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(BUTT_PIN, INPUT_PULLUP);
   pinMode(ENCODER_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(EXT_POT_PIN, INPUT);
+  pinMode(EXT_POT1_PIN, INPUT);
+  pinMode(EXT_POT2_PIN, INPUT);
 }
 
 /**
@@ -494,8 +495,12 @@ uint16_t HAL_ReadMotorCurrent() {
   return HAL_ConvertMotorCurrentAdcToMilliAmps((uint32_t)analogRead(HB_AN_PIN));
 }
 
-uint16_t HAL_ReadExternalPotRaw() {
-  return (uint16_t)analogRead(EXT_POT_PIN);
+uint16_t HAL_ReadExternalPot1Raw() {
+  return (uint16_t)analogRead(EXT_POT1_PIN);
+}
+
+uint16_t HAL_ReadExternalPot2Raw() {
+  return (uint16_t)analogRead(EXT_POT2_PIN);
 }
 
 /**

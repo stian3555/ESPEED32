@@ -68,16 +68,18 @@
 #define BUZZ_CHAN         6     /* PWM channel for buzzer */
 #define THR_PWM_RES_BIT   8     /* PWM resolution in bits */ 
 
-/* Trigger Sensor Selection */
-/* Uncomment ONLY ONE of the following sensor types */
-//#define AS5600_MAG      /* AS5600 magnetic sensor (default) */
-#define TLE493D_MAG     /* Infineon TLE493D magnetic sensor */
-//#define AS5600L_MAG     /* AS5600L variant with different I2C address */
+/* Trigger Sensor Family Selection
+ * Select exactly one sensor family at compile time.
+ * For TLE493D, the concrete variant/address is auto-detected at runtime in HAL.cpp
+ * (for example W2B6, W2B6_A0, or P3B6). */
+//#define AS5600_MAG      /* AMS AS5600 magnetic trigger sensor */
+#define TLE493D_MAG     /* Infineon TLE493D family (runtime variant auto-detect) */
+//#define AS5600L_MAG     /* AMS AS5600L variant with different I2C address */
 //#define ANALOG_TRIG     /* Analog potentiometer trigger */
-//#define MT6701_MAG      /* MT6701 magnetic sensor */
+//#define MT6701_MAG      /* MagnTek MT6701 magnetic trigger sensor */
 
 /* Trigger Reversal Configuration */
-#if defined(AS5600_MAG) || defined(AS5600L)
+#if defined(AS5600_MAG) || defined(AS5600L_MAG)
   #define THROTTLE_REV  1  /* 1 = trigger inverted (full press = minimum ADC value) */
 #elif defined(MT6701_MAG)
   #define THROTTLE_REV  1
@@ -110,7 +112,8 @@
 
 /* Analog Input Pins */
 #define AN_VIN_DIV  36    /* Voltage divider input */
-#define EXT_POT_PIN 35    /* Optional external pot input (ADC1) */
+#define EXT_POT1_PIN 35   /* Optional external pot #1 input (ADC1) */
+#define EXT_POT2_PIN 15   /* Optional external pot #2 input (ADC2; may be unreliable while WiFi is active) */
 
 /* Rotary Encoder Pins */
 #define ENCODER_A_PIN      16  /* Encoder signal A (S1) */
@@ -151,6 +154,7 @@ void keySound();
 bool     HAL_HasMotorCurrentSense();
 uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw);
 uint16_t HAL_ReadMotorCurrent();
-uint16_t HAL_ReadExternalPotRaw();
+uint16_t HAL_ReadExternalPot1Raw();
+uint16_t HAL_ReadExternalPot2Raw();
 
 #endif  /* HAL_H_ */

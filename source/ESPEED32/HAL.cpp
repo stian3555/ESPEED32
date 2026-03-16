@@ -439,23 +439,49 @@ uint16_t HAL_ReadVoltageDivider(int analogInput, uint32_t rvfbl, uint32_t rvfbh)
 }
 
 /**
+ * @brief Check whether the current build provides usable motor current sense
+ */
+bool HAL_HasMotorCurrentSense() {
+#if CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_NONE
+  return false;
+#else
+  return true;
+#endif
+}
+
+/**
  * @brief Convert motor current ADC reading to milliamps
- * @details Hardware: IS → 2.2kΩ → GND, IS → 2.2kΩ → D25, D25 → 100nF → GND
- *          BTN9960LV: IS = ILOAD / kILIS where kILIS ≈ 8500
- *          Voltage divider gives: V_ADC = (ILOAD / 8500) * 2200 / 2
- *          Therefore: ILOAD = V_ADC * 7752 mA
+ * @details Converts the raw ADC reading using the selected compile-time
+ *          current-sense profile. BTN99X0 keeps the existing calibrated
+ *          conversion. BTS7960 / IBT_2 uses an initial kILIS/RIS-based
+ *          approximation which may need tuning for the actual module.
  * @param adcRaw Raw ADC reading from the current-sense input
  * @return Motor current in milliamps [mA]
  */
 uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw) {
   /* Calculate voltage at ADC pin */
   uint32_t voltage_mV = (ACD_VOLTAGE_RANGE_MVOLTS * adcRaw) / ACD_RESOLUTION_STEPS;
-  
+
+#if CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_BTN99X0
   /* Calculate motor current based on BTN9960LV IS characteristic and voltage divider
      ILOAD [mA] = V_ADC [V] * 7752 = V_ADC [mV] * 7.752 */
-  uint32_t current_mA = (voltage_mV * 7752UL) / 1000UL;
-  
+  uint32_t current_mA = (voltage_mV * BTN99X0_CURRENT_SENSE_MA_PER_V) / 1000UL;
+
   return (uint16_t)current_mA;
+#elif CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_NONE
+  (void)voltage_mV;
+  return 0;
+#elif CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_BTS7960
+  if (voltage_mV <= BTS7960_CURRENT_SENSE_OFFSET_MV) return 0;
+
+  uint32_t senseVoltage_mV = voltage_mV - BTS7960_CURRENT_SENSE_OFFSET_MV;
+  uint32_t current_mA = (senseVoltage_mV * BTS7960_CURRENT_SENSE_KILIS)
+                        / BTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS;
+  if (current_mA > 65535UL) current_mA = 65535UL;
+  return (uint16_t)current_mA;
+#else
+  #error "Unsupported CURRENT_SENSE_PROFILE value"
+#endif
 }
 
 /**
@@ -463,6 +489,7 @@ uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw) {
  * @return Motor current in milliamps [mA]
  */
 uint16_t HAL_ReadMotorCurrent() {
+  if (!HAL_HasMotorCurrentSense()) return 0;
   return HAL_ConvertMotorCurrentAdcToMilliAmps((uint32_t)analogRead(HB_AN_PIN));
 }
 

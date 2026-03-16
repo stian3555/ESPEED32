@@ -38,8 +38,8 @@ void Task2code(void *pvParameters) {
                                                 g_storedVar.maxTrigger_raw, THROTTLE_NORMALIZED, THROTTLE_REV);
       g_escVar.trigger_norm = addDeadBand(g_escVar.trigger_norm, 0, THROTTLE_NORMALIZED, THROTTLE_DEADBAND_NORM);
       
-      /* Lap detection via motor load drop (current sense from half-bridge IS pin).
-         VIN is still sampled for display/status, but lap trigger uses car load only. */
+      /* Lap detection requires motor-load sensing.
+         Builds without current sense keep lap timing disabled. */
       {
         static uint8_t lapState = 0;  /* 0=TRACKING, 1=GAP, 2=COOLDOWN */
         static uint32_t gapStartMs = 0;
@@ -49,7 +49,8 @@ void Task2code(void *pvParameters) {
         uint32_t vinRaw = analogRead(AN_VIN_DIV);
         uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
                          * (RVIFBL + RVIFBH) / RVIFBL;
-        uint16_t motorCurrent_mA = HAL_ConvertMotorCurrentAdcToMilliAmps((uint32_t)analogRead(HB_AN_PIN));
+        bool hasCurrentSense = HAL_HasMotorCurrentSense();
+        uint16_t motorCurrent_mA = hasCurrentSense ? HAL_ReadMotorCurrent() : 0;
         g_escVar.motorCurrent_mA = motorCurrent_mA;
 
         /* Update display voltage with 8-sample moving average to filter ADC noise */
@@ -63,22 +64,29 @@ void Task2code(void *pvParameters) {
 
         uint32_t throttlePct = ((uint32_t)g_escVar.trigger_norm * 100U) / THROTTLE_NORMALIZED;
         bool throttleActive = (throttlePct >= LAP_TRIGGER_ACTIVE_PCT);
+        bool inDeadSpot = false;
+        bool deadSpotRecovered = false;
 
-        if (throttleActive && motorCurrent_mA >= LAP_CURRENT_GAP_MIN_MA) {
-          if (driveCurrentEma_mA == 0) driveCurrentEma_mA = motorCurrent_mA;
-          else driveCurrentEma_mA = (driveCurrentEma_mA * 7U + motorCurrent_mA) / 8U;
-        } else if (driveCurrentEma_mA > 0) {
-          driveCurrentEma_mA = (driveCurrentEma_mA * 7U) / 8U;
+        if (hasCurrentSense) {
+          if (throttleActive && motorCurrent_mA >= LAP_CURRENT_GAP_MIN_MA) {
+            if (driveCurrentEma_mA == 0) driveCurrentEma_mA = motorCurrent_mA;
+            else driveCurrentEma_mA = (driveCurrentEma_mA * 7U + motorCurrent_mA) / 8U;
+          } else if (driveCurrentEma_mA > 0) {
+            driveCurrentEma_mA = (driveCurrentEma_mA * 7U) / 8U;
+          }
+
+          uint32_t currentGapThreshold = driveCurrentEma_mA / 6U;      /* ~17% of running baseline */
+          uint32_t currentRecoverThreshold = driveCurrentEma_mA / 3U;  /* ~33% of running baseline */
+          if (currentGapThreshold < LAP_CURRENT_GAP_MIN_MA) currentGapThreshold = LAP_CURRENT_GAP_MIN_MA;
+          if (currentRecoverThreshold < LAP_CURRENT_RECOVER_MIN_MA) currentRecoverThreshold = LAP_CURRENT_RECOVER_MIN_MA;
+
+          bool currentDetectArmed = throttleActive && (driveCurrentEma_mA >= LAP_CURRENT_BASE_MIN_MA);
+          inDeadSpot = currentDetectArmed && (motorCurrent_mA <= currentGapThreshold);
+          deadSpotRecovered = (motorCurrent_mA >= currentRecoverThreshold);
+        } else {
+          driveCurrentEma_mA = 0;
+          lapState = 0;
         }
-
-        uint32_t currentGapThreshold = driveCurrentEma_mA / 6U;      /* ~17% of running baseline */
-        uint32_t currentRecoverThreshold = driveCurrentEma_mA / 3U;  /* ~33% of running baseline */
-        if (currentGapThreshold < LAP_CURRENT_GAP_MIN_MA) currentGapThreshold = LAP_CURRENT_GAP_MIN_MA;
-        if (currentRecoverThreshold < LAP_CURRENT_RECOVER_MIN_MA) currentRecoverThreshold = LAP_CURRENT_RECOVER_MIN_MA;
-
-        bool currentDetectArmed = throttleActive && (driveCurrentEma_mA >= LAP_CURRENT_BASE_MIN_MA);
-        bool inDeadSpot = currentDetectArmed && (motorCurrent_mA <= currentGapThreshold);
-        bool deadSpotRecovered = (motorCurrent_mA >= currentRecoverThreshold);
 
         uint32_t nowMs = millis();
 

@@ -47,6 +47,70 @@ If detection fails, firmware continues and prints a warning on serial output.
 
 > **Silicon revision note:** `TLE493D-P3B6 A0` is version 3 silicon and is available on Digikey/Mouser. The older P2 revision has known issues; some users have managed to get it working, but it is not guaranteed.
 
+## Motor Current Sense Profiles
+
+The firmware now keeps the original motor current path as the default, but allows advanced builders to select a different **current-sense profile** at compile time.
+
+Current profile defines live in `source/ESPEED32/HAL.h`:
+
+- `CURRENT_SENSE_PROFILE_BTN99X0` = original/default hardware behavior
+- `CURRENT_SENSE_PROFILE_NONE` = disables current-sense-dependent behavior
+- `CURRENT_SENSE_PROFILE_BTS7960` = initial BTS7960 / IBT_2 current-sense profile
+
+Important:
+
+- The default build is still `CURRENT_SENSE_PROFILE_BTN99X0`
+- `CURRENT_SENSE_PROFILE_BTS7960` currently changes **current measurement only**
+- it is **not** a complete alternate motor-driver implementation
+- the BTS7960 values are starting points and may need tuning for the exact module and resistor/filter network used
+
+### Default build
+
+Nothing needs to be changed for the standard controller hardware.
+
+Use the normal flow:
+
+- `./scripts/flash_all.sh`
+- or `./scripts/flash_all.sh --compile-only`
+
+### Custom BTS7960 / IBT_2 current-sense build
+
+If you want to try the BTS7960 current-sense profile **without changing the default in the repo**, override it at compile time:
+
+```bash
+arduino-cli compile \
+  --fqbn esp32:esp32:esp32 \
+  --board-options "JTAGAdapter=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none,ZigbeeMode=default" \
+  --build-path build-bts7960 \
+  --build-property build.extra_flags="-DCURRENT_SENSE_PROFILE=2" \
+  source/ESPEED32
+```
+
+Optional tuning overrides for the BTS7960 profile:
+
+```bash
+--build-property build.extra_flags="-DCURRENT_SENSE_PROFILE=2 -DBTS7960_CURRENT_SENSE_KILIS=8500 -DBTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS=1000 -DBTS7960_CURRENT_SENSE_OFFSET_MV=0"
+```
+
+What the BTS7960 tuning values mean:
+
+- `BTS7960_CURRENT_SENSE_KILIS`: datasheet current-sense ratio starting point
+- `BTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS`: effective load resistance seen by the `IS` pin at the ADC input
+- `BTS7960_CURRENT_SENSE_OFFSET_MV`: optional offset trim if the module shows idle bias
+
+Current status of the BTS7960 profile:
+
+- it compiles successfully
+- it uses a first-pass `kILIS` / resistor-based conversion model
+- it likely still needs validation and tuning on real IBT_2 / BTS7960 hardware
+- if the module does not expose a usable `IS` signal, use `CURRENT_SENSE_PROFILE_NONE` instead
+
+Behavior when current sense is unavailable:
+
+- current readout is shown as `N/A`
+- lap detection stays disabled
+- self-test skips current-specific checks cleanly
+
 ## On-Device Documentation (NO/EN/ES/DE)
 
 User documentation served by the controller lives in:

@@ -1,5 +1,6 @@
 #include "diagnostics_lap_stats.h"
 #include <Arduino.h>
+#include "HAL.h"
 #include "slot_ESC.h"
 #include "ui_render.h"
 
@@ -167,15 +168,23 @@ void showLapStats() {
       currentLapTime = millis() - g_escVar.lapStartTime_ms;
     }
     uint16_t motorCurrent = g_escVar.motorCurrent_mA;
+    bool hasCurrentSense = HAL_HasMotorCurrentSense();
     /* Update every ~200ms to avoid flicker */
     if ((currentLapTime / 200) != (prevCurrentLap / 200) || motorCurrent != prevMotorCurrent) {
       if (g_escVar.lapStartTime_ms > 0) {
-        sprintf(msgStr, "Curr:%d.%ds  mA:%-4d",
-                (int)(currentLapTime / 1000),
-                (int)((currentLapTime % 1000) / 100),
-                motorCurrent);
+        if (hasCurrentSense) {
+          sprintf(msgStr, "Curr:%d.%ds  mA:%-4d",
+                  (int)(currentLapTime / 1000),
+                  (int)((currentLapTime % 1000) / 100),
+                  motorCurrent);
+        } else {
+          sprintf(msgStr, "Curr:%d.%ds  mA:N/A ",
+                  (int)(currentLapTime / 1000),
+                  (int)((currentLapTime % 1000) / 100));
+        }
       } else {
-        sprintf(msgStr, "Curr:---   mA:%-4d ", motorCurrent);
+        if (hasCurrentSense) sprintf(msgStr, "Curr:---   mA:%-4d ", motorCurrent);
+        else sprintf(msgStr, "Curr:---   mA:N/A ");
       }
       obdWriteString(&g_obd, 0, 0, 16, msgStr, FONT_6x8, OBD_BLACK, 1);
       prevCurrentLap = currentLapTime;

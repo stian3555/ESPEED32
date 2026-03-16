@@ -34,6 +34,31 @@
 #define VIN_CAL_READ 1108
 #define ACD_VOLTAGE_RANGE_MVOLTS  ((3300 * VIN_CAL_SET) / VIN_CAL_READ)  /* Calibrated ADC voltage range */
 
+/* Motor Current Sense Profiles
+ * Keep BTN99X0 as the default. Custom builders can switch this to NONE
+ * or add another profile implementation later (for example BTS7960). */
+#define CURRENT_SENSE_PROFILE_BTN99X0  0
+#define CURRENT_SENSE_PROFILE_NONE     1
+#define CURRENT_SENSE_PROFILE_BTS7960  2
+#ifndef CURRENT_SENSE_PROFILE
+#define CURRENT_SENSE_PROFILE CURRENT_SENSE_PROFILE_BTN99X0
+#endif
+#ifndef BTN99X0_CURRENT_SENSE_MA_PER_V
+#define BTN99X0_CURRENT_SENSE_MA_PER_V 7752UL
+#endif
+/* BTS7960 / IBT_2 current-sense defaults.
+ * These are only an initial approximation and may need adjustment
+ * to match the actual module's IS resistor/filter network. */
+#ifndef BTS7960_CURRENT_SENSE_KILIS
+#define BTS7960_CURRENT_SENSE_KILIS               8500UL  /* Datasheet-typical kILIS starting point */
+#endif
+#ifndef BTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS
+#define BTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS    1000UL  /* Effective IS load seen by the ADC input */
+#endif
+#ifndef BTS7960_CURRENT_SENSE_OFFSET_MV
+#define BTS7960_CURRENT_SENSE_OFFSET_MV           0UL     /* Optional offset trim for module-specific idle bias */
+#endif
+
 #define MAX_INT16   32767   /* Maximum int16 value for calibration */
 #define MIN_INT16   -32768  /* Minimum int16 value for calibration */
 
@@ -122,6 +147,7 @@ void calibSound();
 void keySound();
 
 /* Current Sensing */
+bool     HAL_HasMotorCurrentSense();
 uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw);
 uint16_t HAL_ReadMotorCurrent();
 

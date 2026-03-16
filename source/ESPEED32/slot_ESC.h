@@ -151,7 +151,7 @@
 #define STATUS_OUTPUT   1   /* Motor output % (5 chars, e.g. " 75%O") */
 #define STATUS_THROTTLE 2   /* Trigger input % (5 chars, e.g. " 75%T") */
 #define STATUS_CAR      3   /* Car name (5 chars, e.g. "CAR1 ") */
-#define STATUS_CURRENT  4   /* Motor current (5 chars, e.g. " 1.5A") */
+#define STATUS_CURRENT  4   /* Motor current (5 chars, e.g. " 1.5A" / " N/A ") */
 #define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
 /* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
 #define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
@@ -163,7 +163,6 @@
 #define LAP_MAX_COUNT        20    /* Max stored lap times */
 #define LAP_MIN_TIME_MS      3000  /* Minimum lap time [ms] */
 #define LAP_GAP_MAX_MS       200   /* Max dead spot duration [ms] */
-#define LAP_VIN_THRESHOLD_MV 2000  /* Legacy VIN threshold [mV] (lap detect now uses motor load) */
 #define LAP_TRIGGER_ACTIVE_PCT      8    /* Current-based lap detect is active above this throttle [%] */
 #define LAP_CURRENT_BASE_MIN_MA   150    /* Minimum rolling current baseline to arm current-based detect [mA] */
 #define LAP_CURRENT_GAP_MIN_MA     80    /* Absolute low-current floor considered as dead spot [mA] */

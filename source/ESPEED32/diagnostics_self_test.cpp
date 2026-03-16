@@ -1,5 +1,6 @@
 #include "diagnostics_self_test.h"
 #include <Arduino.h>
+#include "HAL.h"
 #include "slot_ESC.h"
 #include "connectivity_portal.h"
 
@@ -177,12 +178,30 @@ void showSelfTest() {
 
   /* ======== Step 8: Motor Controller (idle current sense) ======== */
   selfTestStep(8, TOTAL, "Motor ctrl");
-  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"Idle current check", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"(no PWM applied)", FONT_6x8, OBD_BLACK, 1);
-  uint16_t idleCurrent_mA = HAL_ReadMotorCurrent();
+  bool hasCurrentSense = HAL_HasMotorCurrentSense();
+#if CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_BTS7960
+  const char* motorCtrlSubLine = hasCurrentSense ? "(current profile only)" : "(current sense N/A)";
+#else
+  const char* motorCtrlSubLine = hasCurrentSense ? "(no PWM applied)" : "(current sense N/A)";
+#endif
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8,
+    hasCurrentSense ? (char*)"Idle current check" : (char*)"Driver diag check",
+    FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8,
+    (char*)motorCtrlSubLine,
+    FONT_6x8, OBD_BLACK, 1);
+  uint16_t idleCurrent_mA = hasCurrentSense ? HAL_ReadMotorCurrent() : 0;
+#if CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_BTN99X0
   bool motorDiagOk = (HalfBridge_GetDiagnosis() == 0);  /* 0 = NO_ERROR */
-  results[7] = (idleCurrent_mA < 500) && motorDiagOk;
-  sprintf(line, "Idle: %d mA", idleCurrent_mA);
+  results[7] = hasCurrentSense ? ((idleCurrent_mA < 500) && motorDiagOk) : motorDiagOk;
+#elif CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_BTS7960
+  results[7] = hasCurrentSense ? (idleCurrent_mA < 500) : true;
+#else
+  bool motorDiagOk = (HalfBridge_GetDiagnosis() == 0);  /* 0 = NO_ERROR */
+  results[7] = hasCurrentSense ? (idleCurrent_mA < 500) : motorDiagOk;
+#endif
+  if (hasCurrentSense) sprintf(line, "Idle: %d mA", idleCurrent_mA);
+  else sprintf(line, "Idle: skipped");
   obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
   selfTestResult(results[7]);
   delay(3000);

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "HAL.h"
 #include "ui_render.h"
 #include "ui_strings.h"
 #include "ui_text_access.h"
@@ -90,8 +91,12 @@ void displayStatusLine() {
         color = carSelected ? OBD_WHITE : OBD_BLACK;
         break;
       case STATUS_CURRENT: {
-        uint16_t mA = g_escVar.motorCurrent_mA;
-        sprintf(buf, "%2d.%01dA", mA / 1000, (mA % 1000) / 100);
+        if (HAL_HasMotorCurrentSense()) {
+          uint16_t mA = g_escVar.motorCurrent_mA;
+          sprintf(buf, "%2d.%01dA", mA / 1000, (mA % 1000) / 100);
+        } else {
+          strcpy(buf, " N/A ");
+        }
         break;
       }
       case STATUS_VOLTAGE: {

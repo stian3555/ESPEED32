@@ -1,6 +1,7 @@
 #include "settings_reset_menu.h"
 #include <Arduino.h>
 #include "slot_ESC.h"
+#include "ext_pot.h"
 
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
@@ -224,6 +225,9 @@ static void doResetSettings() {
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
   g_statsEnabled              = STATS_ENABLED_DEFAULT;
+  g_extPotEnabled             = EXT_POT_ENABLED_DEFAULT;
+  g_extPotTarget              = EXT_POT_TARGET_DEFAULT;
+  resetExtPotFilter();
 }
 
 /** Reset trigger calibration to factory defaults. */

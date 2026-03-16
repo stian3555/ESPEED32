@@ -11,6 +11,7 @@
 #include "settings_display_menu.h"
 #include "settings_power_sleep_submenus.h"
 #include "settings_sound_wifi_submenus.h"
+#include "settings_ext_pot_menu.h"
 #include "settings_power_menu.h"
 #include "settings_menu_root.h"
 #include "settings_quick_brake_menu.h"
@@ -21,6 +22,7 @@
 #include "menu_car.h"
 #include "ui_render.h"
 #include "task_control_loop.h"
+#include "ext_pot.h"
 
 /* Version defined in slot_ESC.h */
 
@@ -76,6 +78,9 @@ ESC_type g_escVar {
   .trigger_norm = 0,
   .encoderPos = 1,
   .Vin_mV = 0,
+  .motorCurrent_mA = 0,
+  .effectiveBrake_pct = BRAKE_DEFAULT,
+  .effectiveSensi_raw = MIN_SPEED_DEFAULT,
   .lapCount = 0,
   .bestLapTime_ms = 0,
   .lapStartTime_ms = 0
@@ -109,6 +114,8 @@ static bool g_wifiTimedActive = false;        /* True when background WiFi shoul
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
 static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
 static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
+static const char* PREF_KEY_EXT_POT_ENABLED = "ext_pot_en";
+static const char* PREF_KEY_EXT_POT_TARGET = "ext_pot_tgt";
 
 /* Long press tracking shared across all submenus (only one active at a time) */
 static uint32_t g_lpRaceStart = 0;
@@ -354,6 +361,10 @@ void Task1code(void *pvParameters) {
           {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
             g_statsEnabled = g_pref.getUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT) ? 1 : 0;
+            g_extPotEnabled = g_pref.getUChar(PREF_KEY_EXT_POT_ENABLED, EXT_POT_ENABLED_DEFAULT) ? 1 : 0;
+            g_extPotTarget = constrain(g_pref.getUChar(PREF_KEY_EXT_POT_TARGET, EXT_POT_TARGET_DEFAULT),
+                                       EXT_POT_TARGET_BRAKE, EXT_POT_TARGET_SENSI);
+            resetExtPotFilter();
 
             /* One-time migration: old firmware stored SENSI in whole-percent units. */
             if (!g_pref.getBool(PREF_KEY_SENSI_HALF, false)) {
@@ -439,9 +450,14 @@ void Task1code(void *pvParameters) {
         g_pref.putUChar("stored_var_ver", STORED_VAR_VERSION);
         g_pref.putBool(PREF_KEY_SENSI_HALF, true);
         g_pref.putUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT);
+        g_pref.putUChar(PREF_KEY_EXT_POT_ENABLED, EXT_POT_ENABLED_DEFAULT);
+        g_pref.putUChar(PREF_KEY_EXT_POT_TARGET, EXT_POT_TARGET_DEFAULT);
 
         initStoredVariables();  /* Initialize stored variables with default values */
         g_statsEnabled = STATS_ENABLED_DEFAULT;
+        g_extPotEnabled = EXT_POT_ENABLED_DEFAULT;
+        g_extPotTarget = EXT_POT_TARGET_DEFAULT;
+        resetExtPotFilter();
 
         /* Reset Min and Max to the opposite side, in order to have effective calibration */
         g_storedVar.minTrigger_raw = MAX_INT16;
@@ -791,7 +807,7 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
 
   /* Bypass anti-spin if disabled */
   if (g_storedVar.carParam[g_carSel].antiSpin == 0) {
-    lastOutputSpeedx1000 = g_storedVar.carParam[g_carSel].minSpeed * 500;
+    lastOutputSpeedx1000 = getEffectiveSensiRaw() * 500;
     return requestedSpeed;
   }
 
@@ -808,7 +824,7 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
   }
 
   /* Apply anti-spin ramp for acceleration */
-  uint16_t minSpeedTmpRaw = max((uint16_t)g_storedVar.carParam[g_carSel].minSpeed, antispinPercStartRaw);
+  uint16_t minSpeedTmpRaw = max(getEffectiveSensiRaw(), antispinPercStartRaw);
   uint16_t maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
   
   /* Calculate maximum allowed speed change: deltaSpeed = ((minSpeed-maxSpeed) * deltaTime) / antiSpin */
@@ -825,8 +841,8 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
   }
 
   /* Ensure ramp starts from minSpeed, not zero */
-  if (outputSpeedX1000 < g_storedVar.carParam[g_carSel].minSpeed * 500) {
-    outputSpeedX1000 = g_storedVar.carParam[g_carSel].minSpeed * 500;
+  if (outputSpeedX1000 < getEffectiveSensiRaw() * 500) {
+    outputSpeedX1000 = getEffectiveSensiRaw() * 500;
   }
 
   lastOutputSpeedx1000 = outputSpeedX1000;
@@ -884,7 +900,7 @@ uint16_t throttleCurve2(uint16_t inputThrottleNorm )
   uint16_t maxSpeedRaw;                  /* Maximum speed in 0.5% units */
 
   /* dual throttle curve: When decelerating , if dragB is higher than 100%-minSpeed, then set a lower minSpeed on the curve to allow the desired drag brake to be applied*/
-  tmpMinSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed;
+  tmpMinSpeedRaw = getEffectiveSensiRaw();
   maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
 
   /* Calculate the output speed of the throttle curve vertex
@@ -1135,5 +1151,7 @@ void saveEEPROM(StoredVar_type toSave) {
   g_pref.begin("stored_var", false);                      /* Open the "stored" namespace in read/write mode */
   g_pref.putBytes("user_param", &toSave, sizeof(toSave)); /* Put the value of the stored user_param */
   g_pref.putUChar(PREF_KEY_STATS_ENABLED, g_statsEnabled ? 1 : 0);
+  g_pref.putUChar(PREF_KEY_EXT_POT_ENABLED, g_extPotEnabled ? 1 : 0);
+  g_pref.putUChar(PREF_KEY_EXT_POT_TARGET, constrain(g_extPotTarget, EXT_POT_TARGET_BRAKE, EXT_POT_TARGET_SENSI));
   g_pref.end();                                           /* Close the namespace */
 }

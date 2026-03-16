@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "HAL.h"
 #include "slot_ESC.h"
+#include "ext_pot.h"
 
 extern StateMachine_enum g_currState;
 extern StoredVar_type g_storedVar;
@@ -37,6 +38,7 @@ void Task2code(void *pvParameters) {
       g_escVar.trigger_norm = normalizeAndClamp(g_escVar.trigger_raw, g_storedVar.minTrigger_raw, 
                                                 g_storedVar.maxTrigger_raw, THROTTLE_NORMALIZED, THROTTLE_REV);
       g_escVar.trigger_norm = addDeadBand(g_escVar.trigger_norm, 0, THROTTLE_NORMALIZED, THROTTLE_DEADBAND_NORM);
+      updateExtPotRuntimeValues();
       
       /* Lap detection requires motor-load sensing.
          Builds without current sense keep lap timing disabled. */
@@ -132,7 +134,7 @@ void Task2code(void *pvParameters) {
         if (g_escVar.trigger_norm == 0) {
           /* Apply brake when trigger is released */
           /* Check if brake button is pressed - use alternate brake value */
-          uint16_t effectiveBrake = g_storedVar.carParam[g_carSel].brake;
+          uint16_t effectiveBrake = getEffectiveBrakePct();
           if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
             /* Use brakeButtonReduction as alternate brake value (not a reduction) */
             effectiveBrake = g_storedVar.carParam[g_carSel].brakeButtonReduction;

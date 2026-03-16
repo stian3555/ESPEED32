@@ -6,6 +6,7 @@
 #include "settings_power_menu.h"
 #include "settings_display_menu.h"
 #include "settings_sound_wifi_submenus.h"
+#include "settings_ext_pot_menu.h"
 #include "settings_reset_menu.h"
 #include "diagnostics_self_test.h"
 #include "settings_about_screen.h"
@@ -127,6 +128,13 @@ void showSettingsMenu() {
         /* SOUND submenu */
         if (settingsSelector == 3) {
           showSoundSettings();
+          if (isEscapeToMainRequested()) break;
+          resumeAfterSettingsChild();
+          continue;
+        }
+        /* EXT POT submenu */
+        if (settingsSelector == 4) {
+          showExtPotSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;

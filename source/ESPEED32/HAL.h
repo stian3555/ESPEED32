@@ -110,6 +110,7 @@
 
 /* Analog Input Pins */
 #define AN_VIN_DIV  36    /* Voltage divider input */
+#define EXT_POT_PIN 35    /* Optional external pot input (ADC1) */
 
 /* Rotary Encoder Pins */
 #define ENCODER_A_PIN      16  /* Encoder signal A (S1) */
@@ -150,5 +151,6 @@ void keySound();
 bool     HAL_HasMotorCurrentSense();
 uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw);
 uint16_t HAL_ReadMotorCurrent();
+uint16_t HAL_ReadExternalPotRaw();
 
 #endif  /* HAL_H_ */

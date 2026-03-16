@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "HAL.h"
+#include "ext_pot.h"
 #include "ui_render.h"
 #include "ui_strings.h"
 #include "ui_text_access.h"
@@ -144,28 +145,29 @@ void displayRaceModeSimple(uint8_t selectedItem, bool isEditing) {
   uint8_t colorSensi = (selectedItem == 1) ? OBD_WHITE : OBD_BLACK;
 
   /* BRAKE - left column, using FONT_12x16 for both label and value */
-  if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
+  uint16_t brakeValue = getEffectiveBrakePct();
+  if (brakeValue != lastBrake) {
     /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
     const char* brakeLabel = getRaceLabel(g_storedVar.language, 0);
     uint8_t labelWidth = strlen(brakeLabel) * 12;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 0, (char *)brakeLabel, FONT_12x16, colorBrake, 1);
     /* Value - "100%" with FONT_12x16: 4 chars × 12px = 48px wide, center at col1_center - 24 */
-    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
+    sprintf(msgStr, "%3d%%", brakeValue);
     obdWriteString(&g_obd, 0, col1_center - 24, 16, msgStr, FONT_12x16, colorBrake, 1);
-    lastBrake = g_storedVar.carParam[g_carSel].brake;
+    lastBrake = brakeValue;
   }
 
   /* SENSI - right column, using FONT_12x16 for both label and value */
-  if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
+  uint16_t sensiRaw = getEffectiveSensiRaw();
+  if (sensiRaw != lastSensi) {
     /* Label - using language-specific text with FONT_12x16: 5 chars × 12px = 60px wide */
     const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
     uint8_t labelWidth = strlen(sensiLabel) * 12;
     obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2), 0, (char *)sensiLabel, FONT_12x16, colorSensi, 1);
     /* Value in 0.5% resolution, e.g. 20.5% */
-    uint16_t sensiRaw = g_storedVar.carParam[g_carSel].minSpeed;
     sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
     obdWriteString(&g_obd, 0, col2_center - 30, 16, msgStr, FONT_12x16, colorSensi, 1);
-    lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
+    lastSensi = sensiRaw;
   }
 
   /* Note: Car name, voltage, and LIMITER warning are displayed by displayStatusLine() */
@@ -213,28 +215,29 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   uint8_t colorCar = (selectedItem == 4) ? OBD_WHITE : OBD_BLACK;
 
   /* BRAKE - left column */
-  if (g_storedVar.carParam[g_carSel].brake != lastBrake) {
+  uint16_t brakeValue = getEffectiveBrakePct();
+  if (brakeValue != lastBrake) {
     /* Label - using language-specific text, dynamically centered */
     const char* brakeLabel = getRaceLabel(g_storedVar.language, 0);
     uint8_t labelWidth = strlen(brakeLabel) * 6;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 2, (char *)brakeLabel, FONT_6x8, colorBrake, 1);
     /* Value - "100%" is 4 chars × 8px = 32px wide, center at col1_center - 16 */
-    sprintf(msgStr, "%3d%%", g_storedVar.carParam[g_carSel].brake);
+    sprintf(msgStr, "%3d%%", brakeValue);
     obdWriteString(&g_obd, 0, col1_center - 16, 12, msgStr, FONT_8x8, colorBrake, 1);
-    lastBrake = g_storedVar.carParam[g_carSel].brake;
+    lastBrake = brakeValue;
   }
 
   /* SENSI - right column */
-  if (g_storedVar.carParam[g_carSel].minSpeed != lastSensi) {
+  uint16_t sensiRaw = getEffectiveSensiRaw();
+  if (sensiRaw != lastSensi) {
     /* Label - using language-specific text, shifted 1px right */
     const char* sensiLabel = getRaceLabel(g_storedVar.language, 1);
     uint8_t labelWidth = strlen(sensiLabel) * 6;
     obdWriteString(&g_obd, 0, col2_center - (labelWidth / 2) + 1, 2, (char *)sensiLabel, FONT_6x8, colorSensi, 1);
     /* Value in 0.5% resolution, e.g. 20.5% */
-    uint16_t sensiRaw = g_storedVar.carParam[g_carSel].minSpeed;
     sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
     obdWriteString(&g_obd, 0, col2_center - 20, 12, msgStr, FONT_8x8, colorSensi, 1);
-    lastSensi = g_storedVar.carParam[g_carSel].minSpeed;
+    lastSensi = sensiRaw;
   }
 
   /* ANTIS - left column, lower */
@@ -488,9 +491,12 @@ void printMainMenu(MenuState_enum currMenuState)
         /* if the value is a number, cast to *(unit16_t *), then print number and unit */
         if (g_mainMenu.item[menuIndex].type == VALUE_TYPE_INTEGER)
         {
+          if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 0)) == 0) {
+            sprintf(msgStr, "%3d%%", getEffectiveBrakePct());
+          }
           /* SENSI is stored in 0.5% steps and shown with one decimal */
-          if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 1)) == 0) {
-            uint16_t sensiRaw = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
+          else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 1)) == 0) {
+            uint16_t sensiRaw = getEffectiveSensiRaw();
             sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
           }
           /* Special handling for QB item: display ON/OFF instead of 0/1 */

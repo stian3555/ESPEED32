@@ -24,7 +24,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 10   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
@@ -110,6 +110,10 @@
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
 #define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
 #define STATS_ENABLED_DEFAULT    1  /* Show STATS menu item by default */
+#define EXT_POT_ENABLED_DEFAULT  0  /* External GPIO35 pot off by default */
+#define EXT_POT_TARGET_BRAKE     0
+#define EXT_POT_TARGET_SENSI     1
+#define EXT_POT_TARGET_DEFAULT   EXT_POT_TARGET_BRAKE
 
 /* Text Case Style */
 #define TEXT_CASE_UPPER     0  /* BRAKE, SENSI, etc. */
@@ -268,6 +272,8 @@ typedef struct {
   uint16_t encoderPos;        /* Current rotary encoder position */
   uint16_t Vin_mV;            /* [mV] Input voltage */
   uint16_t motorCurrent_mA;   /* [mA] Motor current */
+  uint16_t effectiveBrake_pct; /* [%] Active brake value after external overrides */
+  uint16_t effectiveSensi_raw; /* [0.5%] Active SENSI value after external overrides */
   /* Lap detection */
   uint16_t lapCount;                    /* Total laps completed */
   uint32_t lapTimes[LAP_MAX_COUNT];     /* Circular buffer: last 20 lap times [ms] */

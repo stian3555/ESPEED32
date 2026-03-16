@@ -122,6 +122,7 @@ void calibSound();
 void keySound();
 
 /* Current Sensing */
+uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw);
 uint16_t HAL_ReadMotorCurrent();
 
 #endif  /* HAL_H_ */

@@ -1,5 +1,6 @@
 #include "task_control_loop.h"
 #include <Arduino.h>
+#include "HAL.h"
 #include "slot_ESC.h"
 
 extern StateMachine_enum g_currState;
@@ -12,14 +13,6 @@ extern uint16_t normalizeAndClamp(uint16_t raw, uint16_t minIn, uint16_t maxIn, 
 extern uint16_t addDeadBand(uint16_t inputVal, uint16_t minVal, uint16_t maxVal, uint16_t deadBand);
 extern uint16_t throttleCurve2(uint16_t inputThrottleNorm);
 extern uint16_t throttleAntiSpin3(uint16_t requestedSpeed);
-
-/* Fast local read to support dead-spot detection even when Task1 is busy. */
-static uint16_t readMotorCurrentFast_mA() {
-  uint32_t adcRaw = analogRead(HB_AN_PIN);
-  uint32_t voltage_mV = (ACD_VOLTAGE_RANGE_MVOLTS * adcRaw) / ACD_RESOLUTION_STEPS;
-  uint32_t current_mA = (voltage_mV * 7752UL) / 1000UL;
-  return (uint16_t)current_mA;
-}
 
 void Task2code(void *pvParameters) {
   static unsigned long prevCallTime_uS = 0;
@@ -56,7 +49,7 @@ void Task2code(void *pvParameters) {
         uint32_t vinRaw = analogRead(AN_VIN_DIV);
         uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
                          * (RVIFBL + RVIFBH) / RVIFBL;
-        uint16_t motorCurrent_mA = readMotorCurrentFast_mA();
+        uint16_t motorCurrent_mA = HAL_ConvertMotorCurrentAdcToMilliAmps((uint32_t)analogRead(HB_AN_PIN));
         g_escVar.motorCurrent_mA = motorCurrent_mA;
 
         /* Update display voltage with 8-sample moving average to filter ADC noise */

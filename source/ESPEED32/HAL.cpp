@@ -439,24 +439,31 @@ uint16_t HAL_ReadVoltageDivider(int analogInput, uint32_t rvfbl, uint32_t rvfbh)
 }
 
 /**
- * @brief Read motor current from BTN9960LV IS pin
+ * @brief Convert motor current ADC reading to milliamps
  * @details Hardware: IS → 2.2kΩ → GND, IS → 2.2kΩ → D25, D25 → 100nF → GND
  *          BTN9960LV: IS = ILOAD / kILIS where kILIS ≈ 8500
  *          Voltage divider gives: V_ADC = (ILOAD / 8500) * 2200 / 2
  *          Therefore: ILOAD = V_ADC * 7752 mA
+ * @param adcRaw Raw ADC reading from the current-sense input
  * @return Motor current in milliamps [mA]
  */
-uint16_t HAL_ReadMotorCurrent() {
-  uint32_t adcRaw = analogRead(HB_AN_PIN);
-  
+uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw) {
   /* Calculate voltage at ADC pin */
   uint32_t voltage_mV = (ACD_VOLTAGE_RANGE_MVOLTS * adcRaw) / ACD_RESOLUTION_STEPS;
   
   /* Calculate motor current based on BTN9960LV IS characteristic and voltage divider
      ILOAD [mA] = V_ADC [V] * 7752 = V_ADC [mV] * 7.752 */
-  uint32_t current_mA = (voltage_mV * 7752) / 1000;
+  uint32_t current_mA = (voltage_mV * 7752UL) / 1000UL;
   
   return (uint16_t)current_mA;
+}
+
+/**
+ * @brief Read motor current from BTN9960LV IS pin
+ * @return Motor current in milliamps [mA]
+ */
+uint16_t HAL_ReadMotorCurrent() {
+  return HAL_ConvertMotorCurrentAdcToMilliAmps((uint32_t)analogRead(HB_AN_PIN));
 }
 
 /**

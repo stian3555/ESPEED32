@@ -20,10 +20,10 @@
 #define SW_MINOR_VERSION 0
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 19 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
+#define MENU_ITEMS_COUNT    12    /* Number of items in main menu (incl. FADE, QB submenu entry, STATS) */
 #define SETTINGS_ITEMS_COUNT 13   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
@@ -69,6 +69,7 @@
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
+#define FADE_DEFAULT              0     /* [%] Fade disabled by default for legacy behavior */
 #define PWM_FREQ_DEFAULT          30    /* [100*Hz] Motor PWM frequency (3.0 kHz) */
 #define BRAKE_BUTTON_REDUCTION_DEFAULT  50   /* [%] Brake reduction when button is pressed */
 #define QUICK_BRAKE_ENABLED_DEFAULT     0    /* Quick brake off by default */
@@ -82,6 +83,7 @@
 #define BRAKE_MAX_VALUE           100   /* [%] Maximum brake strength */
 #define THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE  90   /* [%] Throttle curve max */
 #define THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE  10   /* [%] Throttle curve min */
+#define FADE_MAX_VALUE            30    /* [%] Maximum trigger travel used for fade-in to SENSI */
 #define ANTISPIN_MAX_VALUE        500   /* [ms] Maximum anti-spin time */
 #define ANTISPIN_STEP_MIN           1   /* [ms] Minimum ANTIS encoder step */
 #define ANTISPIN_STEP_MAX          50   /* [ms] Maximum ANTIS encoder step */
@@ -248,6 +250,7 @@ typedef struct {
   uint16_t brake;                           /* [%] Brake strength (0-100%) */
   uint16_t maxSpeed;                        /* [%] Maximum motor speed (5-100%) */
   ThrottleCurveVertex_type throttleCurveVertex;  /* Throttle response curve */
+  uint16_t fade;                            /* [%] Initial trigger zone that ramps from 0 to SENSI */
   uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-500ms) */
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
@@ -336,6 +339,22 @@ typedef struct {
 /* SENSI conversion helpers (stored in 0.5% units) */
 static inline uint16_t sensiToWholePctFloor(uint16_t sensiRaw) {
   return sensiRaw / SENSI_SCALE;
+}
+
+static inline uint16_t fadePctToThrottleNorm(uint16_t fadePct) {
+  if (fadePct >= 100U) {
+    return THROTTLE_NORMALIZED;
+  }
+  return (uint16_t)(((uint32_t)fadePct * (uint32_t)THROTTLE_NORMALIZED) / 100U);
+}
+
+static inline uint16_t curveVertexInputWithFade(uint16_t fadeThrottleNorm, uint16_t baseCurveInputNorm) {
+  if (fadeThrottleNorm >= THROTTLE_NORMALIZED) {
+    return THROTTLE_NORMALIZED;
+  }
+  return (uint16_t)(fadeThrottleNorm +
+                    (((uint32_t)(THROTTLE_NORMALIZED - fadeThrottleNorm) * (uint32_t)baseCurveInputNorm) /
+                     (uint32_t)THROTTLE_NORMALIZED));
 }
 
 static inline uint16_t sensiToWholePctCeil(uint16_t sensiRaw) {

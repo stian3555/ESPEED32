@@ -6,5 +6,6 @@ void showCopyCarSettings();
 void showSelectRenameCar();
 void showRenameCar();
 void showCurveSelection();
+void showFadeSelection();
 
 #endif  /* MENU_CAR_H_ */

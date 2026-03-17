@@ -253,6 +253,7 @@ static void doResetCar() {
     g_storedVar.carParam[i].maxSpeed   = MAX_SPEED_DEFAULT;
     g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT;
     g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = THROTTLE_CURVE_SPEED_DIFF_DEFAULT;
+    g_storedVar.carParam[i].fade                 = FADE_DEFAULT;
     g_storedVar.carParam[i].freqPWM              = PWM_FREQ_DEFAULT;
     g_storedVar.carParam[i].brakeButtonReduction = BRAKE_BUTTON_REDUCTION_DEFAULT;
     g_storedVar.carParam[i].quickBrakeEnabled    = QUICK_BRAKE_ENABLED_DEFAULT;

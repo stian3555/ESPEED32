@@ -1002,10 +1002,14 @@ uint16_t throttleCurve2(uint16_t inputThrottleNorm )
   uint16_t outputSpeedRaw = 0;           /* Output speed in 0.5% units */
   uint16_t tmpMinSpeedRaw;               /* Minimum speed in 0.5% units */
   uint16_t maxSpeedRaw;                  /* Maximum speed in 0.5% units */
+  uint16_t fadeThrottleNorm;
+  uint16_t curveVertexInputNorm;
 
   /* dual throttle curve: When decelerating , if dragB is higher than 100%-minSpeed, then set a lower minSpeed on the curve to allow the desired drag brake to be applied*/
   tmpMinSpeedRaw = getEffectiveSensiRaw();
   maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
+  fadeThrottleNorm = fadePctToThrottleNorm(min((uint16_t)FADE_MAX_VALUE, g_storedVar.carParam[g_carSel].fade));
+  curveVertexInputNorm = curveVertexInputWithFade(fadeThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle);
 
   /* Calculate the output speed of the throttle curve vertex
      This is calculated as the curveSpeedDiff (from 10% to 90%) percentage of the difference between minSpeed and maxSpeed */
@@ -1014,14 +1018,33 @@ uint16_t throttleCurve2(uint16_t inputThrottleNorm )
   if (inputThrottleNorm == 0)   /* If input throttle is 0 --> output speed is 0% */
   {
     outputSpeedRaw = 0;
-  } 
-  else if (inputThrottleNorm <= g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle) /* If the input throttle is less than the vertex point (fixed at 50%), than map the output speed from 0 to the throttleCurveVertexSpeed */
+  }
+  else if (fadeThrottleNorm > 0 && inputThrottleNorm <= fadeThrottleNorm)
   {
-    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, 0, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, tmpMinSpeedRaw, throttleCurveVertexSpeedRaw);
-  } 
-  else  /* If the input throttle is more than the vertex point (fixed at 50%), than map the output speed from throttleCurveVertexSpeed to the maxSpeed*/
+    /* FADE fills the gap between 0 output and SENSI over the first part of trigger travel. */
+    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, 0, fadeThrottleNorm, 0, tmpMinSpeedRaw);
+  }
+  else if (inputThrottleNorm <= curveVertexInputNorm)
   {
-    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, THROTTLE_NORMALIZED, throttleCurveVertexSpeedRaw, maxSpeedRaw);
+    if (curveVertexInputNorm <= fadeThrottleNorm)
+    {
+      outputSpeedRaw = (uint16_t)throttleCurveVertexSpeedRaw;
+    }
+    else
+    {
+      outputSpeedRaw = (uint16_t)map(inputThrottleNorm, fadeThrottleNorm, curveVertexInputNorm, tmpMinSpeedRaw, throttleCurveVertexSpeedRaw);
+    }
+  }
+  else
+  {
+    if (curveVertexInputNorm >= THROTTLE_NORMALIZED)
+    {
+      outputSpeedRaw = maxSpeedRaw;
+    }
+    else
+    {
+      outputSpeedRaw = (uint16_t)map(inputThrottleNorm, curveVertexInputNorm, THROTTLE_NORMALIZED, throttleCurveVertexSpeedRaw, maxSpeedRaw);
+    }
   }
 
   outputSpeed = (outputSpeedRaw + 1U) / SENSI_SCALE;  /* round to nearest whole percent */

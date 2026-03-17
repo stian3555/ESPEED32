@@ -1,14 +1,14 @@
 #include "ui_strings.h"
 
 /* Menu item names in different languages: [language][item] */
-const char* MENU_NAMES[][11] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_KNP", "R-Brems", "GRENSE", "INNSTILL", "STATS", "*BIL*"},
-  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "R-Brake", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
-  /* CS  */ {"BRAKE", "ATTACK", "CHOKE2", "PROFIL", "PWM_F", "B_BTN", "R-Brake", "CHOKE1", "SETTINGS", "STATS", "*CAR*"},
-  /* ACD */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "PWM_F", "B_BTN", "R-Brake", "CHOKE", "SETTINGS", "STATS", "*CAR*"},
-  /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "PWM_F", "B_BTN", "R-Freno", "LIMITE", "AJUSTES", "STATS", "*AUTO*"},
-  /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "PWM_F", "B_BTN", "R-Brems", "LIMIT", "SETUP", "STATS", "*AUTO*"},
-  /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "PWM_F", "B_BTN", "R-Freno", "LIMITE", "SETUP", "STATS", "*AUTO*"}
+const char* MENU_NAMES[][12] = {
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "B_KNP", "R-Brems", "GRENSE", "INNSTILL", "STATS", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "B_BTN", "R-Brake", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
+  /* CS  */ {"BRAKE", "ATTACK", "CHOKE2", "PROFIL", "FADE", "PWM_F", "B_BTN", "R-Brake", "CHOKE1", "SETTINGS", "STATS", "*CAR*"},
+  /* ACD */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "B_BTN", "R-Brake", "CHOKE", "SETTINGS", "STATS", "*CAR*"},
+  /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "B_BTN", "R-Freno", "LIMITE", "AJUSTES", "STATS", "*AUTO*"},
+  /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "B_BTN", "R-Brems", "LIMIT", "SETUP", "STATS", "*AUTO*"},
+  /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "B_BTN", "R-Freno", "LIMITE", "SETUP", "STATS", "*AUTO*"}
 };
 
 /* Settings menu item names: [language][item] */
@@ -136,14 +136,14 @@ const char* FONT_SIZE_LABELS[][2] = {
 };
 
 /* Menu item names - Pascal Case: [language][item] */
-const char* MENU_NAMES_PASCAL[][11] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Knp", "R-Brems", "Grense", "Innstill", "Stats", "*Bil*"},
-  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "R-Brake", "Limit", "Settings", "Stats", "*Car*"},
-  /* CS  */ {"Brake", "Attack", "Choke2", "Profil", "Pwm_F", "B_Btn", "R-Brake", "Choke1", "Settings", "Stats", "*Car*"},
-  /* ACD */ {"Brake", "Sensi", "Antis", "Curve", "Pwm_F", "B_Btn", "R-Brake", "Choke", "Settings", "Stats", "*Car*"},
-  /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Pwm_F", "B_Btn", "R-Freno", "Limite", "Ajustes", "Stats", "*Auto*"},
-  /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Pwm_F", "B_Btn", "R-Brems", "Limit", "Setup", "Stats", "*Auto*"},
-  /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Pwm_F", "B_Btn", "R-Freno", "Limite", "Setup", "Stats", "*Auto*"}
+const char* MENU_NAMES_PASCAL[][12] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "B_Knp", "R-Brems", "Grense", "Innstill", "Stats", "*Bil*"},
+  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "B_Btn", "R-Brake", "Limit", "Settings", "Stats", "*Car*"},
+  /* CS  */ {"Brake", "Attack", "Choke2", "Profil", "Fade", "Pwm_F", "B_Btn", "R-Brake", "Choke1", "Settings", "Stats", "*Car*"},
+  /* ACD */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "B_Btn", "R-Brake", "Choke", "Settings", "Stats", "*Car*"},
+  /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "B_Btn", "R-Freno", "Limite", "Ajustes", "Stats", "*Auto*"},
+  /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "B_Btn", "R-Brems", "Limit", "Setup", "Stats", "*Auto*"},
+  /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "B_Btn", "R-Freno", "Limite", "Setup", "Stats", "*Auto*"}
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */

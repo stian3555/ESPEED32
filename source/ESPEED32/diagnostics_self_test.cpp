@@ -100,15 +100,15 @@ void showSelfTest() {
 
   /* ======== Step 3: Encoder Rotate ======== */
   g_rotaryEncoder.setAcceleration(0);
-  g_rotaryEncoder.setBoundaries(-50, 50, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(-50, 50, false);
+  resetUiEncoder(0);
   while (g_rotaryEncoder.isEncoderButtonClicked()) {}
   selfTestStep(3, TOTAL, "Enc Rotate");
   obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"Rotate encoder...", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"(auto-pass at 3)", FONT_6x8, OBD_BLACK, 1);
   int16_t encPeak = 0;
   while (abs(encPeak) < 3) {
-    int16_t pos = (int16_t)g_rotaryEncoder.readEncoder();
+    int16_t pos = (int16_t)readUiEncoder();
     if (abs(pos) > abs(encPeak)) encPeak = pos;
     sprintf(line, "Clicks: %+d      ", pos);
     obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
@@ -222,8 +222,8 @@ void showSelfTest() {
   for (uint8_t i = 0; i < TOTAL; i++) if (results[i]) passCount++;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, 1, false);
+  resetUiEncoder(0);
 
   uint8_t summaryPage = 0;
   auto drawSummary = [&](uint8_t page) {
@@ -250,7 +250,7 @@ void showSelfTest() {
   bool summaryExit = false;
   while (!summaryExit) {
     if (g_rotaryEncoder.encoderChanged()) {
-      uint8_t newPage = (uint8_t)g_rotaryEncoder.readEncoder();
+      uint8_t newPage = (uint8_t)readUiEncoder();
       if (newPage != summaryPage) {
         summaryPage = newPage;
         drawSummary(summaryPage);
@@ -260,7 +260,7 @@ void showSelfTest() {
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       if (summaryPage < 1) {
         summaryPage++;
-        g_rotaryEncoder.reset(summaryPage);
+        resetUiEncoder(summaryPage);
         drawSummary(summaryPage);
       } else {
         summaryExit = true;

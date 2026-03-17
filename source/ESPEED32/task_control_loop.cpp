@@ -131,6 +131,13 @@ void Task2code(void *pvParameters) {
 
       /* Apply motor control (skip if in calibration or init state) */
       if (!(g_currState == CALIBRATION || g_currState == INIT)) {
+        static uint16_t prevTriggerNorm = 0;
+        bool triggerReleasing = g_escVar.trigger_norm < prevTriggerNorm;
+        uint16_t releaseBrakeMode = g_storedVar.carParam[g_carSel].quickBrakeEnabled;
+        uint16_t releaseZone_norm = (uint32_t)g_storedVar.carParam[g_carSel].quickBrakeThreshold
+                                    * THROTTLE_NORMALIZED / 100;
+        bool inReleaseZone = (releaseZone_norm > 0) && (g_escVar.trigger_norm < releaseZone_norm);
+
         if (g_escVar.trigger_norm == 0) {
           /* Apply brake when trigger is released */
           /* Check if brake button is pressed - use alternate brake value */
@@ -143,15 +150,11 @@ void Task2code(void *pvParameters) {
           g_escVar.outputSpeed_pct = 0;
           throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
         } else {
-          /* Check if quick brake zone is active */
-          bool inQuickBrakeZone = false;
-          if (g_storedVar.carParam[g_carSel].quickBrakeEnabled) {
-            uint16_t qbThreshold_norm = (uint32_t)g_storedVar.carParam[g_carSel].quickBrakeThreshold
-                                        * THROTTLE_NORMALIZED / 100;
-            inQuickBrakeZone = (g_escVar.trigger_norm < qbThreshold_norm);
-          }
-          if (inQuickBrakeZone) {
-            /* Quick brake zone: apply configured brake strength */
+          bool applyQuickBrake = (releaseBrakeMode == RELEASE_BRAKE_QUICK) && inReleaseZone;
+          bool applyDragBrake = (releaseBrakeMode == RELEASE_BRAKE_DRAG) && inReleaseZone && triggerReleasing;
+
+          if (applyQuickBrake) {
+            /* QUICK mode: cut output and apply brake in the release zone */
             HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].quickBrakeStrength);
             g_escVar.outputSpeed_pct = 0;
             throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
@@ -159,11 +162,13 @@ void Task2code(void *pvParameters) {
             /* Apply throttle curve and anti-spin */
             g_escVar.outputSpeed_pct = throttleCurve2(g_escVar.trigger_norm);
             g_escVar.outputSpeed_pct = throttleAntiSpin3(g_escVar.outputSpeed_pct);
-            HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, 0);
+            uint16_t dragPct = applyDragBrake ? g_storedVar.carParam[g_carSel].quickBrakeStrength : 0;
+            HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, dragPct);
           }
           /* Update last interaction time to prevent screensaver while driving */
           g_lastEncoderInteraction = millis();
         }
+        prevTriggerNorm = g_escVar.trigger_norm;
       }
     }
   }

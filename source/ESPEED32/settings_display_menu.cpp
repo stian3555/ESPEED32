@@ -34,8 +34,8 @@ void showDisplaySettings() {
 
   uint16_t lang = g_storedVar.language;
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+  resetUiEncoder(1);
 
   uint16_t sel = 1;
   uint16_t prevSel = 0;
@@ -67,7 +67,7 @@ void showDisplaySettings() {
 
     /* Screensaver wake-up */
     if (ssActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != ssEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -86,7 +86,7 @@ void showDisplaySettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!ssActive) {
           ssActive = true;
-          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          ssEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
@@ -110,8 +110,8 @@ void showDisplaySettings() {
           if (isEscapeToMainRequested()) break;
           initDisplayMenuItems();
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
-          g_rotaryEncoder.reset(sel);
+          setUiEncoderBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+          resetUiEncoder(sel);
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSel = 0;
           continue;
@@ -139,19 +139,19 @@ void showDisplaySettings() {
           if (!isEditingLanguage && !isEditingTextCase && !isEditingFontSize) {
             valuePtr = (uint16_t *)g_settingsMenu.item[sel - 1].value;
           }
-          g_rotaryEncoder.setBoundaries(g_settingsMenu.item[sel - 1].minValue,
+          setUiEncoderBoundaries(g_settingsMenu.item[sel - 1].minValue,
                                         g_settingsMenu.item[sel - 1].maxValue, false);
           uint16_t resetVal = isEditingLanguage ? tempLanguage :
                               (isEditingTextCase ? tempTextCase :
                               (isEditingFontSize ? tempFontSize : *valuePtr));
-          g_rotaryEncoder.reset(resetVal);
+          resetUiEncoder(resetVal);
         }
       } else {
         /* Confirm edit */
         menuState = ITEM_SELECTION;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
-        g_rotaryEncoder.reset(sel);
+        setUiEncoderBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+        resetUiEncoder(sel);
         if (isEditingLanguage) { g_storedVar.language = tempLanguage; lang = tempLanguage; isEditingLanguage = false; }
         if (isEditingTextCase) { g_storedVar.textCase = tempTextCase; isEditingTextCase = false; }
         if (isEditingFontSize) { g_storedVar.listFontSize = tempFontSize; isEditingFontSize = false; }
@@ -177,20 +177,20 @@ void showDisplaySettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (menuState == ITEM_SELECTION) {
-        sel = g_rotaryEncoder.readEncoder();
+        sel = readUiEncoder();
       } else {
         if (isEditingLanguage) {
-          tempLanguage = g_rotaryEncoder.readEncoder();
+          tempLanguage = readUiEncoder();
         } else if (isEditingTextCase) {
-          uint16_t newTC = g_rotaryEncoder.readEncoder();
+          uint16_t newTC = readUiEncoder();
           if (newTC != tempTextCase) {
             tempTextCase = newTC;
             obdFill(&g_obd, OBD_WHITE, 1);
           }
         } else if (isEditingFontSize) {
-          tempFontSize = g_rotaryEncoder.readEncoder();
+          tempFontSize = readUiEncoder();
         } else {
-          *valuePtr = g_rotaryEncoder.readEncoder();
+          *valuePtr = readUiEncoder();
         }
       }
     }
@@ -210,8 +210,8 @@ void showDisplaySettings() {
           else if (valuePtr != NULL) { *valuePtr = originalValue; }
           menuState = ITEM_SELECTION;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, DISPLAY_ITEMS_COUNT, false);
-          g_rotaryEncoder.reset(sel);
+          setUiEncoderBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+          resetUiEncoder(sel);
           obdFill(&g_obd, OBD_WHITE, 1);
         } else {
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }

@@ -37,8 +37,8 @@ void showSoundSettings() {
   obdFill(&g_obd, OBD_WHITE, 1);
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, SND_ITEMS, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, SND_ITEMS, false);
+  resetUiEncoder(1);
 
   uint8_t sel = 1;
   uint8_t prevSel = 0xFF;
@@ -54,7 +54,7 @@ void showSoundSettings() {
 
     /* Screensaver wake-up */
     if (ssActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != ssEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -74,7 +74,7 @@ void showSoundSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!ssActive) {
           ssActive = true;
-          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          ssEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
@@ -89,7 +89,7 @@ void showSoundSettings() {
     /* Encoder movement */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      sel = (uint8_t)readUiEncoder();
       needRedraw = true;
     }
 
@@ -181,8 +181,8 @@ void showWiFiSettings() {
   bool needRedraw = true;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+  resetUiEncoder(0);
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
@@ -195,7 +195,7 @@ void showWiFiSettings() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -214,7 +214,7 @@ void showWiFiSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -238,9 +238,9 @@ void showWiFiSettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (editing) {
-        tmpMinutes = (uint16_t)g_rotaryEncoder.readEncoder();
+        tmpMinutes = (uint16_t)readUiEncoder();
       } else {
-        sel = (int8_t)g_rotaryEncoder.readEncoder();
+        sel = (int8_t)readUiEncoder();
       }
       needRedraw = true;
     }
@@ -251,8 +251,8 @@ void showWiFiSettings() {
         setWiFiTimedMinutes(tmpMinutes);
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(ITEM_TIMER);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_TIMER);
       } else if (sel == ITEM_ACTIVE) {
         if (isWiFiPortalActive()) {
           stopTimedWiFiPortal();
@@ -271,8 +271,8 @@ void showWiFiSettings() {
         editing = true;
         tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, 120, false);
-        g_rotaryEncoder.reset(tmpMinutes);
+        setUiEncoderBoundaries(1, 120, false);
+        resetUiEncoder(tmpMinutes);
       } else if (sel == ITEM_BACK) {
         break;
       }
@@ -290,8 +290,8 @@ void showWiFiSettings() {
         if (editing) {
           editing = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-          g_rotaryEncoder.reset(ITEM_TIMER);
+          setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+          resetUiEncoder(ITEM_TIMER);
           needRedraw = true;
         } else {
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }

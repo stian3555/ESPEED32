@@ -31,8 +31,8 @@ void showPowerSettings() {
   const uint8_t lineH    = HEIGHT8x8;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, NUM - 1, false);
+  resetUiEncoder(0);
 
   uint8_t sel = 0;
   bool editing = false;
@@ -47,10 +47,10 @@ void showPowerSettings() {
     lastInteraction = millis();
     setLastEncoderInteraction(lastInteraction);
     ssActive = false;
-    ssEncoderPos = g_rotaryEncoder.readEncoder();
+    ssEncoderPos = readUiEncoder();
     g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-    g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
-    g_rotaryEncoder.reset(selectedIndex);
+    setUiEncoderBoundaries(0, NUM - 1, false);
+    resetUiEncoder(selectedIndex);
     obdFill(&g_obd, OBD_WHITE, 1);
     needRedraw = true;
   };
@@ -61,7 +61,7 @@ void showPowerSettings() {
 
     /* Screensaver wake-up */
     if (ssActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != ssEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -81,7 +81,7 @@ void showPowerSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!ssActive) {
           ssActive = true;
-          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          ssEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
@@ -97,9 +97,9 @@ void showPowerSettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (editing) {
-        tmpDelay = (uint16_t)g_rotaryEncoder.readEncoder();
+        tmpDelay = (uint16_t)readUiEncoder();
       } else {
-        sel = (uint8_t)g_rotaryEncoder.readEncoder();
+        sel = (uint8_t)readUiEncoder();
       }
       needRedraw = true;
     }
@@ -113,8 +113,8 @@ void showPowerSettings() {
         saveEEPROM(g_storedVar);
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
-        g_rotaryEncoder.reset(3);
+        setUiEncoderBoundaries(0, NUM - 1, false);
+        resetUiEncoder(3);
         needRedraw = true;
       } else if (sel == 0) {  /* SCRSV */
         showScreensaverSettings();
@@ -133,8 +133,8 @@ void showPowerSettings() {
         origDelay = g_storedVar.startupDelay;
         tmpDelay  = g_storedVar.startupDelay;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, false);
-        g_rotaryEncoder.reset(tmpDelay);
+        setUiEncoderBoundaries(STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, false);
+        resetUiEncoder(tmpDelay);
         needRedraw = true;
       } else {  /* BACK */
         break;
@@ -153,8 +153,8 @@ void showPowerSettings() {
           tmpDelay = origDelay;
           editing = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(0, NUM - 1, false);
-          g_rotaryEncoder.reset(3);
+          setUiEncoderBoundaries(0, NUM - 1, false);
+          resetUiEncoder(3);
           needRedraw = true;
         } else {
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }

@@ -469,7 +469,7 @@ void printMainMenu(MenuState_enum currMenuState)
 
   /* Check for any wake-up input (throttle, encoder change, or button press) */
   if (screensaverActive) {
-    uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+    uint16_t currentEncoderPos = readUiEncoder();
     if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
         currentEncoderPos != screensaverEncoderPos ||
         digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -490,7 +490,7 @@ void printMainMenu(MenuState_enum currMenuState)
     /* Timeout reached and throttle below threshold - show screensaver */
     if (!screensaverActive) {
       screensaverActive = true;
-      screensaverEncoderPos = g_rotaryEncoder.readEncoder();  /* Save position when entering screensaver */
+      screensaverEncoderPos = readUiEncoder();  /* Save position when entering screensaver */
       showScreensaver();
     }
     /* Auto power save: triggers after screensaverTimeout + powerSaveTimeout min of inactivity.
@@ -552,8 +552,8 @@ void printMainMenu(MenuState_enum currMenuState)
           }
           /* Special handling for QB item: display ON/OFF instead of 0/1 */
           else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 6)) == 0) {
-            uint16_t enabled = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
-            sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, enabled ? 1 : 0));
+            uint16_t mode = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
+            snprintf(msgStr, sizeof(msgStr), "%3s", getReleaseBrakeModeLabel(g_storedVar.language, mode));
           } else {
             /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
             sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[menuIndex].value), g_mainMenu.item[menuIndex].unit);

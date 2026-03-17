@@ -15,6 +15,7 @@
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
 extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_encoderInvertEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -40,8 +41,8 @@ void showSettingsMenu() {
   setInSettingsMenu(true);
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+  resetUiEncoder(1);
 
   uint16_t settingsSelector = 1;
   uint16_t prevSettingsSelector = 0;
@@ -61,11 +62,11 @@ void showSettingsMenu() {
     lastSettingsInteraction = millis();
     g_lastEncoderInteraction = lastSettingsInteraction;
     settingsScreensaverActive = false;
-    settingsScreensaverEncoderPos = g_rotaryEncoder.readEncoder();
+    settingsScreensaverEncoderPos = readUiEncoder();
     initSettingsMenuItems();
     g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-    g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
-    g_rotaryEncoder.reset(settingsSelector);
+    setUiEncoderBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+    resetUiEncoder(settingsSelector);
     obdFill(&g_obd, OBD_WHITE, 1);
     prevSettingsSelector = 0;
   };
@@ -76,7 +77,7 @@ void showSettingsMenu() {
     /* Screensaver wake-up */
     bool wakeUpTriggered = false;
     if (settingsScreensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != settingsScreensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -95,7 +96,7 @@ void showSettingsMenu() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!settingsScreensaverActive) {
           settingsScreensaverActive = true;
-          settingsScreensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          settingsScreensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastSettingsInteraction, &settingsScreensaverActive)) {
@@ -180,16 +181,16 @@ void showSettingsMenu() {
           originalSettingsValue = *settingsValuePtr;
           settingsMenuState = VALUE_SELECTION;
           g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(g_settingsMenu.item[settingsSelector - 1].minValue,
-                                        g_settingsMenu.item[settingsSelector - 1].maxValue, false);
-          g_rotaryEncoder.reset(*settingsValuePtr);
+          setUiEncoderBoundaries(g_settingsMenu.item[settingsSelector - 1].minValue,
+                                 g_settingsMenu.item[settingsSelector - 1].maxValue, false);
+          resetUiEncoder(*settingsValuePtr);
         }
       } else {
         /* Confirm edit */
         settingsMenuState = ITEM_SELECTION;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
-        g_rotaryEncoder.reset(settingsSelector);
+        setUiEncoderBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+        resetUiEncoder(settingsSelector);
         saveEEPROM(g_storedVar);
         if (settingsValuePtr == &g_statsEnabled) {
           initMenuItems();
@@ -202,9 +203,14 @@ void showSettingsMenu() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastSettingsInteraction = millis();
       if (settingsMenuState == ITEM_SELECTION) {
-        settingsSelector = g_rotaryEncoder.readEncoder();
+        settingsSelector = readUiEncoder();
       } else {
-        *settingsValuePtr = g_rotaryEncoder.readEncoder();
+        uint16_t newValue = (uint16_t)readUiEncoder();
+        if (settingsValuePtr == &g_encoderInvertEnabled) {
+          applyEncoderInvertSetting(newValue);
+        } else {
+          *settingsValuePtr = newValue;
+        }
       }
     }
 
@@ -217,11 +223,15 @@ void showSettingsMenu() {
         lastBrakeBtnSettingsTime = millis();
         lastSettingsInteraction = millis();
         if (settingsMenuState == VALUE_SELECTION) {
-          if (settingsValuePtr != NULL) { *settingsValuePtr = originalSettingsValue; }
+          if (settingsValuePtr == &g_encoderInvertEnabled) {
+            applyEncoderInvertSetting(originalSettingsValue);
+          } else if (settingsValuePtr != NULL) {
+            *settingsValuePtr = originalSettingsValue;
+          }
           settingsMenuState = ITEM_SELECTION;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, SETTINGS_ITEMS_COUNT, false);
-          g_rotaryEncoder.reset(settingsSelector);
+          setUiEncoderBoundaries(1, SETTINGS_ITEMS_COUNT, false);
+          resetUiEncoder(settingsSelector);
           obdFill(&g_obd, OBD_WHITE, 1);
         } else {
           break;
@@ -262,7 +272,8 @@ void showSettingsMenu() {
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
         bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
         uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
-        if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_statsEnabled) {
+        if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_statsEnabled ||
+            (uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_encoderInvertEnabled) {
           sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, value ? 1 : 0));
         } else {
           if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {
@@ -282,8 +293,8 @@ void showSettingsMenu() {
 
   setInSettingsMenu(false);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-  g_rotaryEncoder.reset(getMainMenuSelector());
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
   saveEEPROM(g_storedVar);
   obdFill(&g_obd, OBD_WHITE, 1);

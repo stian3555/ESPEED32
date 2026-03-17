@@ -24,7 +24,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 12   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 13   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
@@ -65,6 +65,7 @@
 #define BRAKE_DEFAULT             95    /* [%] Brake strength */
 #define ANTISPIN_DEFAULT          30    /* [ms] Anti-spin ramp time */
 #define ANTISPIN_STEP_DEFAULT      5    /* [ms] Default encoder step when editing ANTIS */
+#define ENCODER_INVERT_DEFAULT     0    /* Encoder rotation follows default hardware direction */
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
@@ -87,6 +88,9 @@
 #define FREQ_MIN_VALUE            1000  /* [Hz] Minimum PWM frequency */
 #define QUICK_BRAKE_THRESHOLD_MAX 50    /* [%] Maximum quick brake threshold */
 #define QUICK_BRAKE_STRENGTH_MAX  100   /* [%] Maximum quick brake strength */
+#define RELEASE_BRAKE_OFF          0    /* Release brake disabled */
+#define RELEASE_BRAKE_QUICK        1    /* Release brake uses full quick-brake cut */
+#define RELEASE_BRAKE_DRAG         2    /* Release brake blends output with drag while releasing */
 #define MAX_UINT16                32767 /* Maximum 16-bit unsigned value */
 
 /* Display Font Sizes */
@@ -197,6 +201,12 @@ typedef enum {
   FAULT         /* Fault state (currently unused) */
 } StateMachine_enum;
 
+/* Shared UI encoder helpers: values are mirrored automatically when ENC INV is enabled. */
+long readUiEncoder();
+void resetUiEncoder(long logicalValue);
+void setUiEncoderBoundaries(long minValue, long maxValue, bool circleValues);
+void applyEncoderInvertSetting(uint16_t enabled);
+
 /**
  * @brief Menu navigation states
  */
@@ -240,9 +250,9 @@ typedef struct {
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */
   uint16_t brakeButtonReduction;            /* [%] Brake reduction when button pressed (0-100%) */
-  uint16_t quickBrakeEnabled;              /* 0=OFF, 1=ON */
-  uint16_t quickBrakeThreshold;            /* [%] Trigger position where quick brake engages */
-  uint16_t quickBrakeStrength;             /* [%] Brake force in quick brake zone */
+  uint16_t quickBrakeEnabled;              /* Release brake mode: OFF / QUICK / DRAG */
+  uint16_t quickBrakeThreshold;            /* [%] Release-brake zone near trigger release */
+  uint16_t quickBrakeStrength;             /* [%] Release-brake level (quick or drag) */
 } CarParam_type;
 
 /**

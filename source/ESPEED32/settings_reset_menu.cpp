@@ -6,6 +6,7 @@
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
 extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_encoderInvertEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -126,7 +127,7 @@ static bool resetConfirm(const char* label) {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -144,7 +145,7 @@ static bool resetConfirm(const char* label) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -189,7 +190,7 @@ static bool resetConfirm(const char* label) {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -207,7 +208,7 @@ static bool resetConfirm(const char* label) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -276,6 +277,7 @@ static void doResetSettings() {
   g_storedVar.listFontSize         = FONT_SIZE_DEFAULT;
   g_storedVar.startupDelay         = STARTUP_DELAY_DEFAULT;
   g_antiSpinStepMs                 = ANTISPIN_STEP_DEFAULT;
+  g_encoderInvertEnabled           = ENCODER_INVERT_DEFAULT;
   strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';
   strncpy(g_storedVar.screensaverLine2, SCREENSAVER_LINE2_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
@@ -325,8 +327,8 @@ void showResetSubmenu() {
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, RS_ITEMS, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, RS_ITEMS, false);
+  resetUiEncoder(1);
 
   uint8_t sel      = 1;
   uint8_t prevSel  = 0xFF;
@@ -343,7 +345,7 @@ void showResetSubmenu() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -362,7 +364,7 @@ void showResetSubmenu() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -399,7 +401,7 @@ void showResetSubmenu() {
     /* Encoder scroll */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      sel = (uint8_t)readUiEncoder();
       forceRedraw = true;
     }
 
@@ -444,8 +446,8 @@ void showResetSubmenu() {
 
       /* Re-init encoder and redraw submenu */
       g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-      g_rotaryEncoder.setBoundaries(1, RS_ITEMS, false);
-      g_rotaryEncoder.reset(sel);
+      setUiEncoderBoundaries(1, RS_ITEMS, false);
+      resetUiEncoder(sel);
       obdFill(&g_obd, OBD_WHITE, 1);
       prevSel     = 0xFF;
       forceRedraw = true;

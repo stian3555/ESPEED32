@@ -42,8 +42,8 @@ void showCarSelection() {
 
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
-  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  setUiEncoderBoundaries(0, CAR_MAX_COUNT - 1, false);
+  resetUiEncoder(g_storedVar.selectedCarNumber);
 
   /* Screensaver support */
   uint32_t lastInteraction = millis();
@@ -59,7 +59,7 @@ void showCarSelection() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -77,7 +77,7 @@ void showCarSelection() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -100,7 +100,7 @@ void showCarSelection() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      g_storedVar.selectedCarNumber = g_rotaryEncoder.readEncoder();
+      g_storedVar.selectedCarNumber = readUiEncoder();
     }
 
     /* If encoder move out of frame, adjust frame */
@@ -170,8 +170,8 @@ void showCopyCarSettings() {
 
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
-  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  setUiEncoderBoundaries(0, CAR_MAX_COUNT - 1, false);
+  resetUiEncoder(g_storedVar.selectedCarNumber);
   sourceCar = g_storedVar.selectedCarNumber;
 
   /* Select source car */
@@ -183,7 +183,7 @@ void showCopyCarSettings() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -201,7 +201,7 @@ void showCopyCarSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -223,7 +223,7 @@ void showCopyCarSettings() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      sourceCar = g_rotaryEncoder.readEncoder();
+      sourceCar = readUiEncoder();
     }
 
     /* If encoder move out of frame, adjust frame */
@@ -280,8 +280,8 @@ void showCopyCarSettings() {
   screensaverActive = false;
 
   /* Reset encoder for destination car selection (CAR_MAX_COUNT = ALL option) */
-  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT, false);  /* 0-19 = cars, 20 = ALL */
-  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  setUiEncoderBoundaries(0, CAR_MAX_COUNT, false);  /* 0-19 = cars, 20 = ALL */
+  resetUiEncoder(g_storedVar.selectedCarNumber);
   destCar = g_storedVar.selectedCarNumber;
 
   /* Reset frame if needed */
@@ -300,7 +300,7 @@ void showCopyCarSettings() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -318,7 +318,7 @@ void showCopyCarSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -340,7 +340,7 @@ void showCopyCarSettings() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      destCar = g_rotaryEncoder.readEncoder();
+      destCar = readUiEncoder();
     }
 
     /* If encoder move out of frame, adjust frame */
@@ -457,8 +457,8 @@ void showSelectRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 5, false); /* Boundaries are [0, 5] because there are six options */
-  g_rotaryEncoder.reset(selectedOption);
+  setUiEncoderBoundaries(0, 5, false); /* Boundaries are [0, 5] because there are six options */
+  resetUiEncoder(selectedOption);
 
   /* Setup scrolling frame - number of visible items depends on font size */
   const uint8_t totalOptions = 6;
@@ -484,7 +484,7 @@ void showSelectRenameCar() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -502,7 +502,7 @@ void showSelectRenameCar() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -526,8 +526,8 @@ void showSelectRenameCar() {
           /* Cancel RACESWP editing */
           isEditingRaceswp = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(0, 5, false);
-          g_rotaryEncoder.reset(selectedOption);
+          setUiEncoderBoundaries(0, 5, false);
+          resetUiEncoder(selectedOption);
         } else {
           /* Exit CAR menu completely */
           goto exitCarMenu;
@@ -541,10 +541,10 @@ void showSelectRenameCar() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (!isEditingRaceswp) {
-        selectedOption = g_rotaryEncoder.readEncoder();
+        selectedOption = readUiEncoder();
       } else {
         /* When editing RACESWP, encoder changes the value */
-        tempRaceswpValue = g_rotaryEncoder.readEncoder();
+        tempRaceswpValue = readUiEncoder();
       }
     }
 
@@ -634,8 +634,8 @@ void showSelectRenameCar() {
     /* First click on RACESWP: enter edit mode */
     isEditingRaceswp = true;
     g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-    g_rotaryEncoder.setBoundaries(0, 1, false);  /* 0=OFF, 1=ON */
-    g_rotaryEncoder.reset(tempRaceswpValue);
+    setUiEncoderBoundaries(0, 1, false);  /* 0=OFF, 1=ON */
+    resetUiEncoder(tempRaceswpValue);
     /* Wait for second click to confirm */
     while (!g_rotaryEncoder.isEncoderButtonClicked()) {
       /* Check for brake button to cancel editing */
@@ -644,13 +644,13 @@ void showSelectRenameCar() {
         /* Cancel editing - restore encoder for option selection */
         isEditingRaceswp = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, 5, false);
-        g_rotaryEncoder.reset(selectedOption);
+        setUiEncoderBoundaries(0, 5, false);
+        resetUiEncoder(selectedOption);
         obdFill(&g_obd, OBD_WHITE, 1);
         break;
       }
 
-      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : tempRaceswpValue;
+      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? readUiEncoder() : tempRaceswpValue;
 
       /* Redraw the RACESWP option with updated value */
       uint8_t optionScreenPos = CAR_OPTION_GRID_SEL - frameUpper;
@@ -728,8 +728,8 @@ void showSelectRenameCar() {
 exitCarMenu:
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-  g_rotaryEncoder.reset(getMainMenuSelector());
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
@@ -757,8 +757,8 @@ void showRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
-  g_rotaryEncoder.reset(selectedOption);
+  setUiEncoderBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
+  resetUiEncoder(selectedOption);
 
   /* Print "-RENAME THE CAR-"  and "-CLICK OK TO CONFIRM" */
   obdWriteString(&g_obd, 0, 16, 0, (char *)STR_RENAME_CAR[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
@@ -787,7 +787,7 @@ void showRenameCar() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -814,7 +814,7 @@ void showRenameCar() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -839,11 +839,11 @@ void showRenameCar() {
       lastInteraction = millis();
       /* Change selectedOption if in RENAME_CAR_SELECT_OPTION_MODE */
       if (mode == RENAME_CAR_SELECT_OPTION_MODE) {
-        selectedOption = g_rotaryEncoder.readEncoder();
+        selectedOption = readUiEncoder();
       }
       /* Change selectedChar if in RENAME_CAR_SELECT_CHAR_MODE */
       if (mode == RENAME_CAR_SELECT_CHAR_MODE) {
-        selectedChar = g_rotaryEncoder.readEncoder();
+        selectedChar = readUiEncoder();
         tmpName[selectedOption] = (char)selectedChar; /* Change the value of the selected char in the temp name */
 
         /* Draw the upward and downward arrows on the selected char to indicate that it can be changed */
@@ -896,8 +896,8 @@ void showRenameCar() {
         /* switch mode */
         mode = RENAME_CAR_SELECT_CHAR_MODE;
         /* Reset encode */
-        g_rotaryEncoder.setBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
-        g_rotaryEncoder.reset((uint16_t)tmpName[selectedOption]);
+        setUiEncoderBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
+        resetUiEncoder((uint16_t)tmpName[selectedOption]);
         selectedChar = (uint16_t)tmpName[selectedOption];
       }
       /* If in RENAME_CAR_SELECT_CHAR_MODE */
@@ -905,8 +905,8 @@ void showRenameCar() {
         /* switch mode */
         mode = RENAME_CAR_SELECT_OPTION_MODE;
         /* Reset encode */
-        g_rotaryEncoder.setBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
-        g_rotaryEncoder.reset(selectedOption);
+        setUiEncoderBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
+        resetUiEncoder(selectedOption);
         /* Cancel the upward and downward arrows (draw them black) */
         for (uint8_t j = 0; j < 6; j++) {
           obdDrawLine(&g_obd, 1 + j + (selectedOption * 12), 14 - j, 11 - j + (selectedOption * 12), 14 - j, OBD_WHITE, 1);
@@ -965,8 +965,8 @@ void showCurveSelection()
 
   /* Set encoder to curve parameters */
   g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, false);
-  g_rotaryEncoder.reset(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+  setUiEncoderBoundaries(THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, false);
+  resetUiEncoder(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
 
   /* Save original curve value for cancel */
   uint16_t originalCurveValue = g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
@@ -1026,7 +1026,7 @@ void showCurveSelection()
       obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_WHITE, 1);
       
       /* Update the speed coordinate of the vertex */
-      g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff = g_rotaryEncoder.readEncoder();
+      g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff = readUiEncoder();
       sprintf(msgStr, "%3d%c", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff, '%');
       throttleCurveVertexSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed + ((((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE) - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
       obdWriteString(&g_obd, 0, OLED_WIDTH - 48, 34, msgStr, FONT_12x16, OBD_BLACK, 1);
@@ -1047,8 +1047,8 @@ void showCurveSelection()
 
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-  g_rotaryEncoder.reset(getMainMenuSelector());
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
 
   /* Only save if not canceled */

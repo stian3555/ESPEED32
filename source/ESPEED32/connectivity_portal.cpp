@@ -9,6 +9,7 @@
 /* External references from main .ino */
 extern StoredVar_type g_storedVar;
 extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_encoderInvertEnabled;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern void saveEEPROM(StoredVar_type toSave);
@@ -111,6 +112,7 @@ static String buildJsonBackup() {
   sprintf(buf, "  \"soundBoot\": %u,\n", g_storedVar.soundBoot);         json += buf;
   sprintf(buf, "  \"soundRace\": %u,\n", g_storedVar.soundRace);         json += buf;
   sprintf(buf, "  \"antiSpinStep\": %u,\n", g_antiSpinStepMs);           json += buf;
+  sprintf(buf, "  \"encoderInvert\": %u,\n", g_encoderInvertEnabled ? 1 : 0); json += buf;
   sprintf(buf, "  \"gridCarSelectEnabled\": %u,\n", g_storedVar.gridCarSelectEnabled); json += buf;
   sprintf(buf, "  \"raceViewMode\": %u,\n", g_storedVar.raceViewMode);   json += buf;
   sprintf(buf, "  \"language\": %u,\n", g_storedVar.language);           json += buf;
@@ -246,13 +248,16 @@ static bool inRange(int32_t val, int32_t minVal, int32_t maxVal) {
  * @brief Parse and validate uploaded JSON, populate temporary StoredVar
  * @return true if valid, false with error message
  */
-static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs, String* errorMsg) {
+static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs, uint16_t* encoderInvertEnabled, String* errorMsg) {
   int32_t v;
 
   /* Initialize with current settings as defaults (missing fields keep current values) */
   *sv = g_storedVar;
   if (antiSpinStepMs != nullptr) {
     *antiSpinStepMs = g_antiSpinStepMs;
+  }
+  if (encoderInvertEnabled != nullptr) {
+    *encoderInvertEnabled = g_encoderInvertEnabled ? 1 : 0;
   }
 
   /* Version check - warn but allow cross-version restore for car profiles */
@@ -279,6 +284,11 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
       parseJsonInt(json, "antiSpinStep", v) &&
       inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) {
     *antiSpinStepMs = (uint16_t)v;
+  }
+  if (encoderInvertEnabled != nullptr &&
+      parseJsonInt(json, "encoderInvert", v) &&
+      inRange(v, 0, 1)) {
+    *encoderInvertEnabled = (uint16_t)v;
   }
   if (parseJsonInt(json, "gridCarSelectEnabled", v) && inRange(v, 0, 1))
     sv->gridCarSelectEnabled = v;
@@ -370,8 +380,8 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
     }
     c.brakeButtonReduction = v;
 
-    /* Quick brake fields — optional for backwards compatibility with older backups */
-    if (parseJsonInt(carJson, "quickBrakeEnabled", v) && inRange(v, 0, 1))
+    /* Release-brake fields — optional for backwards compatibility with older backups */
+    if (parseJsonInt(carJson, "quickBrakeEnabled", v) && inRange(v, RELEASE_BRAKE_OFF, RELEASE_BRAKE_DRAG))
       c.quickBrakeEnabled = v;
     if (parseJsonInt(carJson, "quickBrakeThreshold", v) && inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX))
       c.quickBrakeThreshold = v;
@@ -500,6 +510,8 @@ static String buildSchemaJson() {
   appendSchemaEnumField(json, first, "soundRace", "Race Sound",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaIntField(json, first, "antiSpinStep", "ANTIS Step", ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX, 1, "ms");
+  appendSchemaEnumField(json, first, "encoderInvert", "ENC INV",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaEnumField(json, first, "gridCarSelectEnabled", "Grid Car Select",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
@@ -533,10 +545,10 @@ static String buildSchemaJson() {
   appendSchemaIntField(json, first, "antiSpin", "ANTIS", 0, ANTISPIN_MAX_VALUE, 1, "ms");
   appendSchemaIntField(json, first, "freqPWM", "PWM_F", FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100, 1, "x0.1kHz");
   appendSchemaIntField(json, first, "brakeButton", "B_BTN", 0, 100, 1, "%");
-  appendSchemaEnumField(json, first, "quickBrakeEnabled", "Q-BRAKE",
-                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
-  appendSchemaIntField(json, first, "quickBrakeThreshold", "Q-BRAKE Threshold", 0, QUICK_BRAKE_THRESHOLD_MAX, 1, "%");
-  appendSchemaIntField(json, first, "quickBrakeStrength", "Q-BRAKE Strength", 0, QUICK_BRAKE_STRENGTH_MAX, 1, "%");
+  appendSchemaEnumField(json, first, "quickBrakeEnabled", "R-BRAKE",
+                        "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"QUICK\"},{\"value\":2,\"label\":\"DRAG\"}]");
+  appendSchemaIntField(json, first, "quickBrakeThreshold", "R-BRAKE Zone", 0, QUICK_BRAKE_THRESHOLD_MAX, 1, "%");
+  appendSchemaIntField(json, first, "quickBrakeStrength", "R-BRAKE Level", 0, QUICK_BRAKE_STRENGTH_MAX, 1, "%");
   json += "]";
   json += "}";
   return json;
@@ -573,6 +585,7 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"soundBoot\":%u,", g_storedVar.soundBoot); json += buf;
   snprintf(buf, sizeof(buf), "\"soundRace\":%u,", g_storedVar.soundRace); json += buf;
   snprintf(buf, sizeof(buf), "\"antiSpinStep\":%u,", g_antiSpinStepMs); json += buf;
+  snprintf(buf, sizeof(buf), "\"encoderInvert\":%u,", g_encoderInvertEnabled ? 1 : 0); json += buf;
   snprintf(buf, sizeof(buf), "\"gridCarSelectEnabled\":%u,", g_storedVar.gridCarSelectEnabled); json += buf;
   snprintf(buf, sizeof(buf), "\"raceViewMode\":%u,", g_storedVar.raceViewMode); json += buf;
   snprintf(buf, sizeof(buf), "\"language\":%u,", g_storedVar.language); json += buf;
@@ -655,6 +668,10 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
   if (parseJsonInt(json, "antiSpinStep", v)) {
     if (!inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) { *errorMsg = "Error: invalid antiSpinStep"; return false; }
     g_antiSpinStepMs = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "encoderInvert", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid encoderInvert"; return false; }
+    applyEncoderInvertSetting((uint16_t)v);
   }
   if (parseJsonInt(json, "gridCarSelectEnabled", v)) {
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid gridCarSelectEnabled"; return false; }
@@ -748,7 +765,7 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     car.brakeButtonReduction = (uint16_t)v;
   }
   if (parseJsonInt(json, "quickBrakeEnabled", v)) {
-    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid quickBrakeEnabled"; return false; }
+    if (!inRange(v, RELEASE_BRAKE_OFF, RELEASE_BRAKE_DRAG)) { *errorMsg = "Error: invalid quickBrakeEnabled"; return false; }
     car.quickBrakeEnabled = (uint16_t)v;
   }
   if (parseJsonInt(json, "quickBrakeThreshold", v)) {
@@ -993,9 +1010,11 @@ static void handleSerialCommand(const String& cmd) {
     StoredVar_type tempVar;
     String errorMsg;
     uint16_t tempAntiSpinStep = g_antiSpinStepMs;
-    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &errorMsg)) {
+    uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
+    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &errorMsg)) {
       g_storedVar = tempVar;
       g_antiSpinStepMs = tempAntiSpinStep;
+      g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
       saveEEPROM(g_storedVar);
       Serial.println("OK - Settings restored");
       Serial.flush();
@@ -1154,9 +1173,11 @@ static void handleRestore() {
   String errorMsg;
 
   uint16_t tempAntiSpinStep = g_antiSpinStepMs;
-  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &errorMsg)) {
+  uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
+  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &errorMsg)) {
     g_storedVar = tempVar;
     g_antiSpinStepMs = tempAntiSpinStep;
+    g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
     saveEEPROM(g_storedVar);
     g_wifiServer->send(200, "text/plain", "OK - Settings restored! Restarting...");
     g_uploadBuffer = "";

@@ -210,13 +210,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>R-BRAKE</code> has three modes: <code>OFF</code>, <code>QUICK</code>, and <code>DRAG</code>.</li>
       <li><code>QUICK</code> is the old pre-release brake zone: below the selected <code>Zone</code>, controller cuts drive and applies <code>Level</code> as brake force.</li>
-      <li><code>DRAG</code> only acts while you are actively releasing the trigger inside the selected zone. It blends output with drag and feels softer than QUICK.</li>
-      <li><code>Zone</code> is used by both <code>QUICK</code> and <code>DRAG</code>. In QUICK it is a real zero-output zone near trigger release.</li>
+      <li><code>DRAG</code> only acts while you are actively releasing the trigger. It keeps throttle active, adds drag during the release movement, and feels softer than QUICK.</li>
+      <li><code>Zone</code> is used only by <code>QUICK</code>. In QUICK it is a real zero-output zone near trigger release.</li>
       <li>So with <code>QUICK</code> active it is normal to see a few <code>%T</code> on screen while output still remains <code>0%</code> until trigger moves above the selected zone.</li>
       <li>Main difference: <code>QUICK</code> is a hard cut inside the zone, while <code>DRAG</code> keeps throttle active and only adds drag while the trigger is moving toward release.</li>
       <li>Typical QUICK use: tracks or cars that need a clear early brake hit. Example: <code>Zone</code> 6-10% and <code>Level</code> 70-100% for a strong, repeatable brake as you start to release the last part of trigger travel.</li>
-      <li>Typical DRAG use: nervous cars that feel too abrupt with QUICK. Example: <code>Zone</code> 10-20% and <code>Level</code> 20-50% to add gentle deceleration while releasing, without the full cut-to-zero feel.</li>
-      <li><code>Zone</code> range: 0-50%. <code>Level</code> range: 0-100%.</li>
+      <li>Typical DRAG use: nervous cars that feel too abrupt with QUICK. Example: <code>Level</code> 20-50% to add gentle deceleration while releasing, without the full cut-to-zero feel.</li>
+      <li><code>QUICK Zone</code> range: 0-50%. <code>Level</code> range: 0-100%.</li>
       <li>Use QUICK for a clear early brake hit. Use DRAG for smoother release support without the abrupt feel of full quick brake.</li>
     </ul>
   </section>
@@ -254,7 +254,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
-        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + zone/level</td><td>OFF</td><td>Release-brake helper near trigger release. QUICK is stronger; DRAG is softer and only active while releasing.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Release-brake helper near trigger release. QUICK uses a zero-output zone; DRAG adds release drag without a zone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Lap counter, best lap, and scrollable lap history.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
@@ -304,6 +304,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: auto sleep timeout + manual sleep now (wake with encoder button).</li>
       <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: welcome delay 0-990 ms in 10 ms steps.</li>
+      <li><code>VIN CAL</code>: measure actual track voltage with a multimeter, set that value on the controller, then click to calibrate the ADC voltage scale. Use only if VIN reading is noticeably off.</li>
     </ul>
     <h3>SETTINGS root items</h3>
     <ul>
@@ -332,6 +333,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </tbody>
     </table>
     <p class="small">Values are estimates and depend on supply voltage, hardware variant, and measurement setup. Motor load for the car is additional.</p>
+    <h3>Internal battery (optional)</h3>
+    <p>Some hardware variants may include a small 1-cell lithium battery for off-track setup work. It charges while the controller is powered from the track or from USB. This battery is meant for menu changes, pre-race setup, lane-change adjustments, or avoiding startup delay before the track powers up. It is not intended for long standalone operation.</p>
+    <p class="small">Runtime below means controller use while not connected to the track. Charging current can vary by charger and board, but a typical 1-cell lithium charge current is about 100-200 mA while the cell moves through roughly 3.7-4.2 V.</p>
+    <table>
+      <thead>
+        <tr><th>Battery</th><th>Typical charge time</th><th>Typical off-track runtime</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>about 1.5-3 hours</td><td>about 1.5-2.5 hours</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>about 3-5.5 hours</td><td>about 3-5 hours</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section>
@@ -342,7 +355,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32 cars on low-grip tracks: try higher <code>ANTIS</code> (around 100-150 ms) and softer <code>CURVE</code> (&lt;50).</li>
       <li>1/24 cars on high-grip tracks: often lower <code>ANTIS</code> (0-40 ms) and more direct <code>CURVE</code> (50-70).</li>
       <li>Use <code>B_BTN</code> as a temporary cornering tool instead of changing BRAKE between heats.</li>
-      <li>Use <code>R-BRAKE QUICK</code> with low zone (5-12%) and medium level (40-70%) for clearer early braking. Try <code>DRAG</code> if you want the same area to feel softer.</li>
+      <li>Use <code>R-BRAKE QUICK</code> with low zone (5-12%) and medium level (40-70%) for clearer early braking. Try <code>DRAG</code> around 20-50% if you want release help without a zero-output zone.</li>
       <li>If the car spins early in trigger travel: lower <code>SENSI</code> or increase <code>ANTIS</code>.</li>
       <li>If the car feels lazy on exit: raise <code>SENSI</code> slightly or reduce <code>ANTIS</code>.</li>
     </ul>
@@ -381,7 +394,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- B_BTN
 |- R-BRAKE
 |  |- Mode (OFF/QUICK/DRAG)
-|  |- Zone (%)
+|  |- Zone (%) [QUICK only]
 |  |- Level (%)
 |  `- Back
 |- LIMIT
@@ -402,6 +415,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

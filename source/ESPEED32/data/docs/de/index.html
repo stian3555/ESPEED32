@@ -209,13 +209,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>R-BRAKE</code> hat drei Modi: <code>OFF</code>, <code>QUICK</code> und <code>DRAG</code>.</li>
       <li><code>QUICK</code> ist die alte Pre-Release-Bremszone: unterhalb der gewaehlten <code>Zone</code> wird der Antrieb getrennt und <code>Stufe</code> als Bremskraft genutzt.</li>
-      <li><code>DRAG</code> wirkt nur waehrend du den Trigger innerhalb der gewaehlten Zone aktiv loest. Es mischt Drag in den Ausgang und fuehlt sich weicher an als QUICK.</li>
-      <li><code>Zone</code> wird sowohl von <code>QUICK</code> als auch von <code>DRAG</code> benutzt. In QUICK ist sie eine echte Null-Output-Zone nahe dem Loslassen des Triggers.</li>
+      <li><code>DRAG</code> wirkt nur waehrend du den Trigger aktiv loest. Das Gas bleibt aktiv, Drag wird waehrend der Release-Bewegung hinzugemischt und fuehlt sich weicher an als QUICK.</li>
+      <li><code>Zone</code> wird nur von <code>QUICK</code> benutzt. In QUICK ist sie eine echte Null-Output-Zone nahe dem Loslassen des Triggers.</li>
       <li>Darum ist es bei aktivem <code>QUICK</code> normal, einige <code>%T</code> auf dem Display zu sehen, waehrend der Output bis oberhalb der gewaehlten Zone weiter auf <code>0%</code> bleibt.</li>
       <li>Hauptunterschied: <code>QUICK</code> ist ein harter Cut innerhalb der Zone, waehrend <code>DRAG</code> das Gas aktiv laesst und nur beim Loslassen Drag hinzumischt.</li>
       <li>Typischer QUICK-Einsatz: Bahnen oder Autos, die einen klaren fruehen Bremspunkt brauchen. Beispiel: <code>Zone</code> 6-10% und <code>Stufe</code> 70-100% fuer eine starke, gut reproduzierbare Bremse beim Loslassen des letzten Triggerwegs.</li>
-      <li>Typischer DRAG-Einsatz: nervoese Autos, die mit QUICK zu abrupt wirken. Beispiel: <code>Zone</code> 10-20% und <code>Stufe</code> 20-50% fuer sanfte Verzoegerung beim Loslassen ohne das volle Cut-to-zero-Gefuehl.</li>
-      <li><code>Zone</code>: 0-50%. <code>Stufe</code>: 0-100%.</li>
+      <li>Typischer DRAG-Einsatz: nervoese Autos, die mit QUICK zu abrupt wirken. Beispiel: <code>Stufe</code> 20-50% fuer sanfte Verzoegerung beim Loslassen ohne das volle Cut-to-zero-Gefuehl.</li>
+      <li><code>QUICK Zone</code>: 0-50%. <code>Stufe</code>: 0-100%.</li>
       <li>QUICK fuer klaren fruehen Bremseinsatz. DRAG fuer sanftere Unterstuetzung beim Loslassen.</li>
     </ul>
   </section>
@@ -233,7 +233,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
-        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + zone/stufe</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK ist staerker; DRAG ist weicher und wirkt nur beim Loslassen.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, Bestzeit, Verlauf.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
@@ -283,6 +283,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: Auto-Sleep + manueller Sleep (Wake ueber Encoder-Knopf).</li>
       <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: Startverzoegerung 0-990 ms.</li>
+      <li><code>VIN CAL</code>: echte Bahnspannung mit Multimeter messen, diesen Wert am Controller einstellen und zur ADC-Kalibrierung bestaetigen. Nur benutzen, wenn die VIN-Anzeige merklich danebenliegt.</li>
     </ul>
     <h3>SETTINGS-Hauptebene</h3>
     <ul>
@@ -305,6 +306,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </tbody>
     </table>
     <p class="small">Schaetzwerte, abhaengig von Versorgungsspannung, Hardware und Messaufbau. Motorlast des Fahrzeugs ist nicht enthalten.</p>
+    <h3>Interner Akku (optional)</h3>
+    <p>Einige Hardware-Varianten koennen einen kleinen 1-Zellen-Lithium-Akku fuer Einstellungen ohne angeschlossene Bahn haben. Er laedt, wenn der Controller ueber die Bahn oder ueber USB versorgt wird. Dieser Akku ist fuer Menueaenderungen, Vorbereitung vor dem Lauf, Spurwechsel oder zum Vermeiden von Startverzoegerung gedacht, falls die Bahn noch nicht eingeschaltet ist. Er ist nicht fuer langen Standalone-Betrieb vorgesehen.</p>
+    <p class="small">Die Laufzeit unten bedeutet Nutzung des Controllers ohne angeschlossene Bahn. Der Ladestrom kann je nach Ladequelle und Hardware variieren, typisch sind aber etwa 100-200 mA bei einer 1-Zellen-Lithium-Ladung, waehrend die Zelle sich grob zwischen 3.7 und 4.2 V bewegt.</p>
+    <table>
+      <thead>
+        <tr><th>Akku</th><th>Typische Ladezeit</th><th>Typische Laufzeit ohne Bahn</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>ca. 1.5-3 Stunden</td><td>ca. 1.5-2.5 Stunden</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>ca. 3-5.5 Stunden</td><td>ca. 3-5 Stunden</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section>
@@ -315,7 +328,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32 auf rutschiger Bahn: hoeheres <code>ANTIS</code> (100-150 ms), <code>CURVE</code> &lt; 50.</li>
       <li>1/24 mit gutem Grip: niedrigeres <code>ANTIS</code> (0-40 ms), <code>CURVE</code> 50-70.</li>
       <li><code>B_BTN</code> als temporaires Kurvenwerkzeug nutzen, statt BRAKE-Grundwert laufend zu aendern.</li>
-      <li><code>R-BRAKE QUICK</code> mit kleiner Zone (5-12%) und mittlerer Stufe (40-70%) fuer klarere fruehe Bremsung. <code>DRAG</code> probieren, wenn dieselbe Zone weicher wirken soll.</li>
+      <li><code>R-BRAKE QUICK</code> mit kleiner Zone (5-12%) und mittlerer Stufe (40-70%) fuer klarere fruehe Bremsung. <code>DRAG</code> um 20-50% probieren, wenn Release-Hilfe ohne Null-Output-Zone gewuenscht ist.</li>
     </ul>
   </section>
 
@@ -352,7 +365,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- B_BTN
 |- R-BRAKE
 |  |- Mode (OFF/QUICK/DRAG)
-|  |- Zone (%)
+|  |- Zone (%) [nur QUICK]
 |  |- Level (%)
 |  `- Back
 |- LIMIT
@@ -373,6 +386,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

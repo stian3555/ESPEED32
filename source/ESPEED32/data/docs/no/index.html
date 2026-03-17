@@ -210,13 +210,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>R-BRAKE</code> har tre moduser: <code>OFF</code>, <code>QUICK</code> og <code>DRAG</code>.</li>
       <li><code>QUICK</code> er den gamle pre-release bremsesonen: under valgt <code>Sone</code> kuttes driv og <code>Niva</code> brukes som bremsekraft.</li>
-      <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren innenfor valgt sone. Den blander inn drag og foles mykere enn QUICK.</li>
-      <li><code>Sone</code> brukes av bade <code>QUICK</code> og <code>DRAG</code>. I QUICK er dette en ekte null-output-sone nar triggeren er nesten sluppet.</li>
+      <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren. Den lar vanlig gasskurve leve videre, blander inn drag under selve slippbevegelsen og foles mykere enn QUICK.</li>
+      <li><code>Sone</code> brukes bare av <code>QUICK</code>. I QUICK er dette en ekte null-output-sone nar triggeren er nesten sluppet.</li>
       <li>Det er derfor normalt at skjermen kan vise noen <code>%T</code> mens output fortsatt star pa <code>0%</code> sa lenge triggeren er innenfor valgt sone i <code>QUICK</code>.</li>
       <li>Hovedforskjellen er at <code>QUICK</code> er et hardt kutt i sonen, mens <code>DRAG</code> lar vanlig gasskurve leve videre og bare blander inn drag mens triggeren er pa vei ut.</li>
       <li>Typisk bruk av QUICK: baner eller biler som trenger en tydelig tidlig brems. Eksempel: <code>Sone</code> 6-10% og <code>Niva</code> 70-100% gir en klar og repeterbar brems idet du slipper siste del av triggeren.</li>
-      <li>Typisk bruk av DRAG: nervose biler som blir for brutale med QUICK. Eksempel: <code>Sone</code> 10-20% og <code>Niva</code> 20-50% gir mykere retardasjon under trigger-slipp uten full nulling av output.</li>
-      <li><code>Sone</code>: 0-50%. <code>Niva</code>: 0-100%.</li>
+      <li>Typisk bruk av DRAG: nervose biler som blir for brutale med QUICK. Eksempel: <code>Niva</code> 20-50% gir mykere retardasjon under trigger-slipp uten full nulling av output.</li>
+      <li><code>QUICK Sone</code>: 0-50%. <code>Niva</code>: 0-100%.</li>
       <li>Bruk QUICK for tydelig tidlig innbremsing. Bruk DRAG for en roligere og mer progressiv støtte ved trigger-slipp.</li>
     </ul>
   </section>
@@ -254,7 +254,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
-        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + sone/niva</td><td>OFF</td><td>Release-brake nær trigger-slipp. QUICK bremser hardere; DRAG er mykere og virker bare mens trigger slippes.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(sone+niva)/DRAG(niva)</td><td>OFF</td><td>Release-brake nar trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
@@ -304,6 +304,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
       <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
+      <li><code>VIN CAL</code>: mal faktisk banespenning med multimeter, still inn den verdien pa kontrolleren og trykk for a kalibrere ADC-skalaen. Bruk bare hvis VIN-visningen er merkbart feil.</li>
     </ul>
     <h3>SETTINGS-rotnivå</h3>
     <ul>
@@ -332,6 +333,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </tbody>
     </table>
     <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg.</p>
+    <h3>Internt batteri (valgfritt)</h3>
+    <p>Noen hardware-varianter kan ha et lite 1-cells litiumbatteri for oppsett uten koblet bane. Det lades mens kontrolleren er koblet til banen eller til USB. Batteriet er tenkt for menyjustering, forberedelser før heat, filskifte eller for aa unnga forsinkelse hvis banen ikke er oppe ennå. Det er ikke ment for langvarig standalone-bruk.</p>
+    <p class="small">Brukstid under betyr bruk av kontrolleren uten tilkoblet bane. Ladestrømmen kan variere med lader og hardware, men en typisk 1-cells litium-lading ligger rundt 100-200 mA mens cellen beveger seg gjennom omtrent 3.7-4.2 V.</p>
+    <table>
+      <thead>
+        <tr><th>Batteri</th><th>Typisk ladetid</th><th>Typisk brukstid uten bane</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>ca. 1.5-3 timer</td><td>ca. 1.5-2.5 timer</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>ca. 3-5.5 timer</td><td>ca. 3-5 timer</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section>
@@ -342,7 +355,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
       <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
       <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
-      <li>Bruk <code>R-BRAKE QUICK</code> med lav sone (5-12%) og moderat niva (40-70%) for tydelig tidligere brems. Prøv <code>DRAG</code> hvis du vil ha samme område, men mykere følelse.</li>
+      <li>Bruk <code>R-BRAKE QUICK</code> med lav sone (5-12%) og moderat niva (40-70%) for tydelig tidligere brems. Prov <code>DRAG</code> rundt 20-50% hvis du vil ha hjelp ved trigger-slipp uten null-output-sone.</li>
       <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
       <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
     </ul>
@@ -381,7 +394,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- B_BTN
 |- R-BRAKE
 |  |- Mode (OFF/QUICK/DRAG)
-|  |- Zone (%)
+|  |- Zone (%) [kun QUICK]
 |  |- Level (%)
 |  `- Back
 |- LIMIT
@@ -402,6 +415,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |  |- INTERVAL (0 eller 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

@@ -209,13 +209,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>R-BRAKE</code> tiene tres modos: <code>OFF</code>, <code>QUICK</code> y <code>DRAG</code>.</li>
       <li><code>QUICK</code> es la antigua zona de frenado antes del release completo: por debajo de la <code>Zona</code> corta la traccion y aplica <code>Nivel</code> como fuerza de freno.</li>
-      <li><code>DRAG</code> solo actua mientras estas soltando el trigger dentro de la zona seleccionada. Mezcla la salida con drag y se siente mas suave que QUICK.</li>
-      <li><code>Zona</code> se usa tanto en <code>QUICK</code> como en <code>DRAG</code>. En QUICK es una zona real de salida cero cerca del release del trigger.</li>
+      <li><code>DRAG</code> solo actua mientras estas soltando el trigger. Mantiene la traccion activa y anade drag durante el movimiento de release, con sensacion mas suave que QUICK.</li>
+      <li><code>Zona</code> se usa solo en <code>QUICK</code>. En QUICK es una zona real de salida cero cerca del release del trigger.</li>
       <li>Por eso con <code>QUICK</code> activo es normal ver algunos <code>%T</code> en pantalla mientras la salida sigue en <code>0%</code> hasta pasar la zona seleccionada.</li>
       <li>Diferencia principal: <code>QUICK</code> hace un corte duro dentro de la zona, mientras <code>DRAG</code> mantiene el throttle activo y solo anade drag mientras el trigger va hacia el release.</li>
       <li>Uso tipico de QUICK: pistas o coches que necesitan una frenada temprana muy clara. Ejemplo: <code>Zona</code> 6-10% y <code>Nivel</code> 70-100% para una frenada fuerte y repetible al empezar a soltar la ultima parte del trigger.</li>
-      <li>Uso tipico de DRAG: coches nerviosos que se sienten demasiado bruscos con QUICK. Ejemplo: <code>Zona</code> 10-20% y <code>Nivel</code> 20-50% para anadir desaceleracion suave al soltar, sin la sensacion de corte total a cero.</li>
-      <li><code>Zona</code>: 0-50%. <code>Nivel</code>: 0-100%.</li>
+      <li>Uso tipico de DRAG: coches nerviosos que se sienten demasiado bruscos con QUICK. Ejemplo: <code>Nivel</code> 20-50% para anadir desaceleracion suave al soltar, sin sensacion de corte total a cero.</li>
+      <li><code>QUICK Zona</code>: 0-50%. <code>Nivel</code>: 0-100%.</li>
       <li>Usa QUICK para una entrada de freno mas clara. Usa DRAG si quieres apoyo al soltar pero con sensacion mas suave.</li>
     </ul>
   </section>
@@ -233,7 +233,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Frecuencia PWM del motor.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Valor alternativo de freno con boton de freno + trigger suelto.</td></tr>
-        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + zona/nivel</td><td>OFF</td><td>Ayuda de frenado al soltar trigger. QUICK es mas fuerte; DRAG es mas suave y solo actua mientras sueltas.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zona+nivel)/DRAG(nivel)</td><td>OFF</td><td>Ayuda de frenado al soltar trigger. QUICK usa zona a salida cero; DRAG anade drag sin zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Salida maxima del motor.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Vueltas, mejor vuelta e historial.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
@@ -283,6 +283,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: sleep automatico + sleep manual (wake con encoder).</li>
       <li><code>DEEP SLEEP</code>: deep sleep automatico (0 o 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: retardo de bienvenida 0-990 ms.</li>
+      <li><code>VIN CAL</code>: mide el voltaje real con multimetro, ajusta ese valor en el controlador y pulsa para calibrar la escala ADC. Usalo solo si la lectura VIN se ve claramente desviada.</li>
     </ul>
     <h3>Elementos raiz de SETTINGS</h3>
     <ul>
@@ -305,6 +306,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </tbody>
     </table>
     <p class="small">Valores estimados; dependen de tension, hardware y metodo de medicion. La carga del motor del coche no esta incluida.</p>
+    <h3>Bateria interna (opcional)</h3>
+    <p>Algunas variantes de hardware pueden incluir una pequena bateria de litio de 1 celda para ajustes fuera de pista. Se carga cuando el controlador esta alimentado desde la pista o desde USB. Esta bateria esta pensada para cambios de menu, preparacion antes de la carrera, cambio de carril o para evitar retrasos si la pista aun no tiene alimentacion. No esta pensada para uso standalone prolongado.</p>
+    <p class="small">La autonomia de abajo significa uso del controlador sin estar conectado a la pista. La corriente de carga puede variar segun cargador y hardware, pero una carga tipica para litio de 1 celda esta en torno a 100-200 mA mientras la celda pasa aproximadamente por 3.7-4.2 V.</p>
+    <table>
+      <thead>
+        <tr><th>Bateria</th><th>Tiempo tipico de carga</th><th>Autonomia tipica fuera de pista</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>aprox. 1.5-3 horas</td><td>aprox. 1.5-2.5 horas</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>aprox. 3-5.5 horas</td><td>aprox. 3-5 horas</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section>
@@ -315,7 +328,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32 en pista deslizante: subir <code>ANTIS</code> (100-150 ms) y usar <code>CURVE</code> &lt; 50.</li>
       <li>1/24 con buen grip: <code>ANTIS</code> bajo (0-40 ms) y <code>CURVE</code> 50-70.</li>
       <li>Usa <code>B_BTN</code> como ajuste temporal de curva, sin cambiar BRAKE base.</li>
-      <li>Usa <code>R-BRAKE QUICK</code> con zona baja (5-12%) y nivel medio (40-70%) para frenada temprana mas clara. Prueba <code>DRAG</code> si quieres la misma zona pero mas suave.</li>
+      <li>Usa <code>R-BRAKE QUICK</code> con zona baja (5-12%) y nivel medio (40-70%) para frenada temprana mas clara. Prueba <code>DRAG</code> sobre 20-50% si quieres ayuda al soltar sin una zona a salida cero.</li>
     </ul>
   </section>
 
@@ -352,7 +365,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- B_BTN
 |- R-BRAKE
 |  |- Mode (OFF/QUICK/DRAG)
-|  |- Zone (%)
+|  |- Zone (%) [solo QUICK]
 |  |- Level (%)
 |  `- Back
 |- LIMIT
@@ -373,6 +386,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)

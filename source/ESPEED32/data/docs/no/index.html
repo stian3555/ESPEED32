@@ -210,7 +210,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <ul>
       <li><code>R-BRAKE</code> har tre moduser: <code>OFF</code>, <code>QUICK</code> og <code>DRAG</code>.</li>
       <li><code>QUICK</code> er den gamle pre-release bremsesonen: under valgt <code>Sone</code> kuttes driv og <code>Niva</code> brukes som bremsekraft.</li>
-      <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren innenfor valgt sone. Den blander inn drag og føles mykere enn QUICK.</li>
+      <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren innenfor valgt sone. Den blander inn drag og foles mykere enn QUICK.</li>
+      <li><code>Sone</code> brukes av bade <code>QUICK</code> og <code>DRAG</code>. I QUICK er dette en ekte null-output-sone nar triggeren er nesten sluppet.</li>
+      <li>Det er derfor normalt at skjermen kan vise noen <code>%T</code> mens output fortsatt star pa <code>0%</code> sa lenge triggeren er innenfor valgt sone i <code>QUICK</code>.</li>
+      <li>Hovedforskjellen er at <code>QUICK</code> er et hardt kutt i sonen, mens <code>DRAG</code> lar vanlig gasskurve leve videre og bare blander inn drag mens triggeren er pa vei ut.</li>
+      <li>Typisk bruk av QUICK: baner eller biler som trenger en tydelig tidlig brems. Eksempel: <code>Sone</code> 6-10% og <code>Niva</code> 70-100% gir en klar og repeterbar brems idet du slipper siste del av triggeren.</li>
+      <li>Typisk bruk av DRAG: nervose biler som blir for brutale med QUICK. Eksempel: <code>Sone</code> 10-20% og <code>Niva</code> 20-50% gir mykere retardasjon under trigger-slipp uten full nulling av output.</li>
       <li><code>Sone</code>: 0-50%. <code>Niva</code>: 0-100%.</li>
       <li>Bruk QUICK for tydelig tidlig innbremsing. Bruk DRAG for en roligere og mer progressiv støtte ved trigger-slipp.</li>
     </ul>
@@ -245,7 +250,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A-STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
@@ -255,6 +260,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
+    <h3>Notat om linearitet</h3>
+    <ul>
+      <li><code>LIMIT</code>: lineær begrensning i kommandert output %. Faktisk toppfart på banen blir ikke helt lineær.</li>
+      <li><code>BRAKE</code>: lineær bremse/drag-kommando i %. Faktisk bremsefølelse avhenger av motor, dekk og grep i banen.</li>
+      <li><code>SENSI</code>: lineært minimumsnivå for output i %, men ikke en lineær gain-knott gjennom hele trigger-vandringen siden <code>CURVE</code> former resten.</li>
+      <li><code>ANTIS</code>: er hovedsakelig en tidsinnstilling i ms. Når antispinn er aktivt gir høyere verdi lengre/mykere rampe, men totalfølelsen er ikke helt lineær fordi lavfarts-bypass også flytter seg med innstillingen.</li>
+    </ul>
     <figure class="doc-media">
       <img src="../assets/curve_examples.png" alt="Linear, Soft og Hard curve eksempler">
       <figcaption>CURVE-eksempler fra manual: Linear (50%), Soft (lavere verdi), Hard (høyere verdi).</figcaption>
@@ -296,7 +308,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h3>SETTINGS-rotnivå</h3>
     <ul>
       <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen.</li>
-      <li><code>A-STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
+      <li><code>A STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
       <li><code>ENC INV</code>: snur encoder-retningen globalt hvis menyen føles bakvendt.</li>
     </ul>
     <h3>DISPLAY + ABOUT</h3>
@@ -408,7 +420,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A-STEP (1-50 ms, default 5)
+|  |- A STEP (1-50 ms, default 5)
 |  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI

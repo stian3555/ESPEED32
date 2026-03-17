@@ -211,6 +211,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>R-BRAKE</code> ha tre modi: <code>OFF</code>, <code>QUICK</code> e <code>DRAG</code>.</li>
       <li><code>QUICK</code> e la vecchia zona di frenata anticipata: sotto la <code>Zona</code> scelta il controller taglia la trazione e applica <code>Livello</code> come forza frenante.</li>
       <li><code>DRAG</code> agisce solo mentre stai rilasciando il trigger dentro la zona selezionata. Miscela l'uscita con drag e risulta piu morbido di QUICK.</li>
+      <li><code>Zona</code> viene usata sia da <code>QUICK</code> sia da <code>DRAG</code>. In QUICK e una vera zona a output zero vicino al rilascio del trigger.</li>
+      <li>Per questo con <code>QUICK</code> attivo e normale vedere qualche <code>%T</code> sul display mentre l'output resta a <code>0%</code> finche il trigger non supera la zona selezionata.</li>
+      <li>Differenza principale: <code>QUICK</code> fa un taglio netto dentro la zona, mentre <code>DRAG</code> lascia attiva la curva gas e aggiunge drag solo mentre il trigger sta tornando verso il rilascio.</li>
+      <li>Uso tipico di QUICK: piste o auto che richiedono una frenata anticipata molto chiara. Esempio: <code>Zona</code> 6-10% e <code>Livello</code> 70-100% per una frenata forte e ripetibile quando inizi a rilasciare l'ultima parte della corsa trigger.</li>
+      <li>Uso tipico di DRAG: auto nervose che con QUICK risultano troppo brusche. Esempio: <code>Zona</code> 10-20% e <code>Livello</code> 20-50% per aggiungere una decelerazione dolce al rilascio senza la sensazione di taglio totale a zero.</li>
       <li><code>Zona</code>: 0-50%. <code>Livello</code>: 0-100%.</li>
       <li>Usa QUICK per una frenata anticipata piu netta. Usa DRAG se vuoi un aiuto al rilascio piu progressivo.</li>
     </ul>
@@ -225,7 +230,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Frenata con trigger rilasciato.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (e &lt;= LIMIT)</td><td>20</td><td>Potenza minima al primo movimento utile del trigger.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Rampa anti-spin. Valore piu alto = erogazione piu morbida. Il passo encoder si imposta globalmente in <code>SETTINGS -&gt; A-STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Rampa anti-spin. Valore piu alto = erogazione piu morbida. Il passo encoder si imposta globalmente in <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Curva del trigger. 50 = lineare.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Frequenza PWM del motore.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Freno alternativo mentre il pulsante freno e premuto e trigger=0.</td></tr>
@@ -235,6 +240,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 profili</td><td>CAR0</td><td>Seleziona o gestisci il profilo attivo.</td></tr>
       </tbody>
     </table>
+    <h3>Note sulla linearita</h3>
+    <ul>
+      <li><code>LIMIT</code>: limite lineare dell'output comandato in %. La velocita massima reale in pista non risulta perfettamente lineare.</li>
+      <li><code>BRAKE</code>: comando freno/drag lineare in %. La sensazione reale di frenata dipende da motore, gomme e grip della pista.</li>
+      <li><code>SENSI</code>: livello minimo di output lineare in %, ma non e una manopola di gain lineare su tutta la corsa del trigger perche <code>CURVE</code> modella il resto.</li>
+      <li><code>ANTIS</code>: e soprattutto un'impostazione di tempo in ms. Quando anti-spin e attivo, un valore piu alto produce una rampa piu lunga/morbida, ma la sensazione complessiva non e perfettamente lineare perche cambia anche la soglia di bypass alle basse velocita.</li>
+    </ul>
     <figure class="doc-media">
       <img src="../assets/curve_examples.png" alt="Esempi curva lineare, soft e hard">
       <figcaption>Esempi CURVE dal manuale: Lineare (50%), Soft (valore piu basso), Hard (valore piu alto).</figcaption>
@@ -276,7 +288,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h3>Voci principali di SETTINGS</h3>
     <ul>
       <li><code>STATS</code>: mostra o nasconde la voce STATS nel menu principale.</li>
-      <li><code>A-STEP</code>: passo globale encoder per ANTIS, 1-50 ms (default 5 ms). Il valore ANTIS resta comunque per singolo profilo auto.</li>
+      <li><code>A STEP</code>: passo globale encoder per ANTIS, 1-50 ms (default 5 ms). Il valore ANTIS resta comunque per singolo profilo auto.</li>
       <li><code>ENC INV</code>: inverte globalmente la direzione dell'encoder se il menu gira al contrario.</li>
     </ul>
     <h3>DISPLAY + ABOUT</h3>
@@ -388,7 +400,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A-STEP (1-50 ms, default 5)
+|  |- A STEP (1-50 ms, default 5)
 |  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI

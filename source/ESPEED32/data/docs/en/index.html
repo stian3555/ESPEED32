@@ -211,6 +211,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>R-BRAKE</code> has three modes: <code>OFF</code>, <code>QUICK</code>, and <code>DRAG</code>.</li>
       <li><code>QUICK</code> is the old pre-release brake zone: below the selected <code>Zone</code>, controller cuts drive and applies <code>Level</code> as brake force.</li>
       <li><code>DRAG</code> only acts while you are actively releasing the trigger inside the selected zone. It blends output with drag and feels softer than QUICK.</li>
+      <li><code>Zone</code> is used by both <code>QUICK</code> and <code>DRAG</code>. In QUICK it is a real zero-output zone near trigger release.</li>
+      <li>So with <code>QUICK</code> active it is normal to see a few <code>%T</code> on screen while output still remains <code>0%</code> until trigger moves above the selected zone.</li>
+      <li>Main difference: <code>QUICK</code> is a hard cut inside the zone, while <code>DRAG</code> keeps throttle active and only adds drag while the trigger is moving toward release.</li>
+      <li>Typical QUICK use: tracks or cars that need a clear early brake hit. Example: <code>Zone</code> 6-10% and <code>Level</code> 70-100% for a strong, repeatable brake as you start to release the last part of trigger travel.</li>
+      <li>Typical DRAG use: nervous cars that feel too abrupt with QUICK. Example: <code>Zone</code> 10-20% and <code>Level</code> 20-50% to add gentle deceleration while releasing, without the full cut-to-zero feel.</li>
       <li><code>Zone</code> range: 0-50%. <code>Level</code> range: 0-100%.</li>
       <li>Use QUICK for a clear early brake hit. Use DRAG for smoother release support without the abrupt feel of full quick brake.</li>
     </ul>
@@ -245,7 +250,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Brake force when trigger is released.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup. Encoder step is set globally in <code>SETTINGS -&gt; A-STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup. Encoder step is set globally in <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
@@ -255,6 +260,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
       </tbody>
     </table>
+    <h3>Linearity notes</h3>
+    <ul>
+      <li><code>LIMIT</code>: linear cap in commanded output %. Real top speed on track is not perfectly linear.</li>
+      <li><code>BRAKE</code>: linear brake/drag command in %. Real braking feel depends on motor, tires, and track grip.</li>
+      <li><code>SENSI</code>: linear minimum output floor in %, but not a linear gain knob across the whole trigger travel because <code>CURVE</code> shapes the rest.</li>
+      <li><code>ANTIS</code>: mainly a time setting in ms. Once anti-spin is active, a higher value gives a longer/weaker ramp, but the overall feel is not perfectly linear because the low-speed bypass threshold also shifts with the setting.</li>
+    </ul>
     <figure class="doc-media">
       <img src="../assets/curve_examples.png" alt="Linear, Soft and Hard curve examples">
       <figcaption>CURVE examples from manual: Linear (50%), Soft (lower value), Hard (higher value).</figcaption>
@@ -296,7 +308,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h3>SETTINGS root items</h3>
     <ul>
       <li><code>STATS</code>: show or hide the STATS entry in the main menu.</li>
-      <li><code>A-STEP</code>: global ANTIS encoder step, 1-50 ms (default 5 ms). ANTIS itself stays per car profile.</li>
+      <li><code>A STEP</code>: global ANTIS encoder step, 1-50 ms (default 5 ms). ANTIS itself stays per car profile.</li>
       <li><code>ENC INV</code>: invert encoder rotation globally if the menu feels backwards on your hardware.</li>
     </ul>
     <h3>DISPLAY + ABOUT</h3>
@@ -408,7 +420,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A-STEP (1-50 ms, default 5)
+|  |- A STEP (1-50 ms, default 5)
 |  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI

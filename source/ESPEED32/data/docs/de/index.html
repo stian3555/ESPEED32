@@ -210,6 +210,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>R-BRAKE</code> hat drei Modi: <code>OFF</code>, <code>QUICK</code> und <code>DRAG</code>.</li>
       <li><code>QUICK</code> ist die alte Pre-Release-Bremszone: unterhalb der gewaehlten <code>Zone</code> wird der Antrieb getrennt und <code>Stufe</code> als Bremskraft genutzt.</li>
       <li><code>DRAG</code> wirkt nur waehrend du den Trigger innerhalb der gewaehlten Zone aktiv loest. Es mischt Drag in den Ausgang und fuehlt sich weicher an als QUICK.</li>
+      <li><code>Zone</code> wird sowohl von <code>QUICK</code> als auch von <code>DRAG</code> benutzt. In QUICK ist sie eine echte Null-Output-Zone nahe dem Loslassen des Triggers.</li>
+      <li>Darum ist es bei aktivem <code>QUICK</code> normal, einige <code>%T</code> auf dem Display zu sehen, waehrend der Output bis oberhalb der gewaehlten Zone weiter auf <code>0%</code> bleibt.</li>
+      <li>Hauptunterschied: <code>QUICK</code> ist ein harter Cut innerhalb der Zone, waehrend <code>DRAG</code> das Gas aktiv laesst und nur beim Loslassen Drag hinzumischt.</li>
+      <li>Typischer QUICK-Einsatz: Bahnen oder Autos, die einen klaren fruehen Bremspunkt brauchen. Beispiel: <code>Zone</code> 6-10% und <code>Stufe</code> 70-100% fuer eine starke, gut reproduzierbare Bremse beim Loslassen des letzten Triggerwegs.</li>
+      <li>Typischer DRAG-Einsatz: nervoese Autos, die mit QUICK zu abrupt wirken. Beispiel: <code>Zone</code> 10-20% und <code>Stufe</code> 20-50% fuer sanfte Verzoegerung beim Loslassen ohne das volle Cut-to-zero-Gefuehl.</li>
       <li><code>Zone</code>: 0-50%. <code>Stufe</code>: 0-100%.</li>
       <li>QUICK fuer klaren fruehen Bremseinsatz. DRAG fuer sanftere Unterstuetzung beim Loslassen.</li>
     </ul>
@@ -224,7 +229,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A-STEP</code> eingestellt.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A STEP</code> eingestellt.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
@@ -234,6 +239,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
+    <h3>Hinweis zur Linearitaet</h3>
+    <ul>
+      <li><code>LIMIT</code>: lineare Begrenzung des angeforderten Outputs in %. Die reale Endgeschwindigkeit auf der Bahn ist nicht perfekt linear.</li>
+      <li><code>BRAKE</code>: linearer Brems/Drag-Befehl in %. Das reale Bremsgefuehl haengt von Motor, Reifen und Streckengrip ab.</li>
+      <li><code>SENSI</code>: linearer Mindest-Output in %, aber kein linearer Gain-Regler ueber den ganzen Triggerweg, weil <code>CURVE</code> den Rest formt.</li>
+      <li><code>ANTIS</code>: ist hauptsaechlich eine Zeitvorgabe in ms. Wenn Anti-Spin aktiv ist, ergibt ein hoeherer Wert eine laengere/weichere Rampe, aber das Gesamtgefuehl ist nicht perfekt linear, weil sich auch die Low-Speed-Bypass-Schwelle mitveraendert.</li>
+    </ul>
     <figure class="doc-media">
       <img src="../assets/curve_examples.png" alt="Linear, Soft und Hard Kurvenbeispiele">
       <figcaption>CURVE-Beispiele aus dem Handbuch: Linear (50%), Soft (niedriger Wert), Hard (hoeherer Wert).</figcaption>
@@ -275,7 +287,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h3>SETTINGS-Hauptebene</h3>
     <ul>
       <li><code>STATS</code>: STATS-Eintrag im Hauptmenue ein- oder ausblenden.</li>
-      <li><code>A-STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
+      <li><code>A STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
       <li><code>ENC INV</code>: Encoder-Richtung global umkehren, falls sich das Menue verkehrt anfuehlt.</li>
     </ul>
     <h3>Geschaetzter Stromverbrauch (Controller-Elektronik)</h3>
@@ -379,7 +391,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A-STEP (1-50 ms, default 5)
+|  |- A STEP (1-50 ms, default 5)
 |  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI

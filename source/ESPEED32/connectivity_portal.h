@@ -12,6 +12,7 @@
 
 /* Function prototypes - called from settings menu */
 void showWiFiPortalScreen();
+void showWiFiQrScreen();
 void showUSBPortalScreen();
 
 /* Non-blocking WiFi portal controls (used by timed/background mode) */

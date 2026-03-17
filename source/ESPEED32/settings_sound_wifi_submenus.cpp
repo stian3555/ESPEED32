@@ -161,15 +161,17 @@ void showWiFiSettings() {
   uint16_t lang = g_storedVar.language;
 
   const char* lblOpen[7]    = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
+  const char* lblQr[7]      = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
   const char* lblTimer[7]   = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
   const char* lblStartBg[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
   const char* lblStopBg[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_INFO = 1;
-  const uint8_t ITEM_TIMER = 2;
-  const uint8_t ITEM_BACK = 3;
-  const uint8_t NUM_ITEMS = 4;  /* 0=ACTIVE, 1=INFO, 2=MINUTES, 3=BACK */
+  const uint8_t ITEM_QR = 2;
+  const uint8_t ITEM_TIMER = 3;
+  const uint8_t ITEM_BACK = 4;
+  const uint8_t NUM_ITEMS = 5;  /* 0=ACTIVE, 1=INFO, 2=QR, 3=MINUTES, 4=BACK */
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
 
@@ -261,6 +263,10 @@ void showWiFiSettings() {
         showWiFiPortalScreen();
         lastInteraction = millis();
         screensaverActive = false;
+      } else if (sel == ITEM_QR) {
+        showWiFiQrScreen();
+        lastInteraction = millis();
+        screensaverActive = false;
       } else if (sel == ITEM_TIMER) {
         editing = true;
         tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
@@ -306,16 +312,19 @@ void showWiFiSettings() {
       bool s1 = (!editing && sel == ITEM_INFO);
       obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblOpen[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s2 = (!editing && sel == ITEM_TIMER);
-      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblTimer[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s2 = (!editing && sel == ITEM_QR);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblQr[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s3 = (!editing && sel == ITEM_TIMER);
+      obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)lblTimer[lang], menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
       char minutesStr[10];
       uint16_t shownMinutes = editing ? tmpMinutes : constrain(getWiFiTimedMinutes(), 1, 120);
       snprintf(minutesStr, sizeof(minutesStr), "%3dm", shownMinutes);
       uint8_t mx = OLED_WIDTH - (uint8_t)(strlen(minutesStr) * WIDTH8x8);
-      obdWriteString(&g_obd, 0, mx, 2 * lineH, minutesStr, menuFont, (s2 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, mx, 3 * lineH, minutesStr, menuFont, (s3 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s3 = (!editing && sel == ITEM_BACK);
-      obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)getBackLabel(lang), menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s4 = (!editing && sel == ITEM_BACK);
+      obdWriteString(&g_obd, 0, 0, 4 * lineH, (char*)getBackLabel(lang), menuFont, s4 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;
     }

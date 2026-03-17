@@ -317,14 +317,14 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="small">Schaetzwerte, abhaengig von Versorgungsspannung, Hardware und Messaufbau. Motorlast des Fahrzeugs ist nicht enthalten.</p>
     <h3>Interner Akku (optional)</h3>
     <p>Einige Hardware-Varianten koennen einen kleinen 1-Zellen-Lithium-Akku fuer Einstellungen ohne angeschlossene Bahn haben. Er laedt, wenn der Controller ueber die Bahn oder ueber USB versorgt wird. Dieser Akku ist fuer Menueaenderungen, Vorbereitung vor dem Lauf, Spurwechsel oder zum Vermeiden von Startverzoegerung gedacht, falls die Bahn noch nicht eingeschaltet ist. Er ist nicht fuer langen Standalone-Betrieb vorgesehen.</p>
-    <p class="small">Die Laufzeit unten bedeutet Nutzung des Controllers ohne angeschlossene Bahn. Der Ladestrom kann je nach Ladequelle und Hardware variieren, typisch sind aber etwa 100-200 mA bei einer 1-Zellen-Lithium-Ladung, waehrend die Zelle sich grob zwischen 3.7 und 4.2 V bewegt.</p>
+    <p class="small">Die Laufzeit unten bedeutet Nutzung des Controllers ohne angeschlossene Bahn. Der Ladestrom kann je nach Ladequelle und Hardware variieren, aber wenn die reale Ladung nahe 200 mA liegt und der Controller rund 100 mA zieht, ist die Laufzeit ohne Bahn oft grob doppelt so lang wie die Ladezeit. Die reale Lithium-Ladezeit liegt trotzdem meist etwas ueber der einfachen Rechnung, weil die letzte Ladephase in Richtung voll langsamer wird.</p>
     <table>
       <thead>
         <tr><th>Akku</th><th>Typische Ladezeit</th><th>Typische Laufzeit ohne Bahn</th></tr>
       </thead>
       <tbody>
-        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>ca. 1.5-3 Stunden</td><td>ca. 1.5-2.5 Stunden</td></tr>
-        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>ca. 3-5.5 Stunden</td><td>ca. 3-5 Stunden</td></tr>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>ca. 1.4-1.8 Stunden</td><td>ca. 2.0-2.5 Stunden</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>ca. 2.8-3.6 Stunden</td><td>ca. 4.0-5.0 Stunden</td></tr>
       </tbody>
     </table>
   </section>

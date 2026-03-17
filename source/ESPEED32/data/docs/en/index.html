@@ -344,14 +344,14 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="small">Values are estimates and depend on supply voltage, hardware variant, and measurement setup. Motor load for the car is additional.</p>
     <h3>Internal battery (optional)</h3>
     <p>Some hardware variants may include a small 1-cell lithium battery for off-track setup work. It charges while the controller is powered from the track or from USB. This battery is meant for menu changes, pre-race setup, lane-change adjustments, or avoiding startup delay before the track powers up. It is not intended for long standalone operation.</p>
-    <p class="small">Runtime below means controller use while not connected to the track. Charging current can vary by charger and board, but a typical 1-cell lithium charge current is about 100-200 mA while the cell moves through roughly 3.7-4.2 V.</p>
+    <p class="small">Runtime below means controller use while not connected to the track. Charging current can vary by charger and board, but if charging is close to 200 mA and controller draw is around 100 mA, off-track runtime will often be roughly double the charge time. Real lithium charge time is still a bit longer than the simple math because the last part of charging slows down near full.</p>
     <table>
       <thead>
         <tr><th>Battery</th><th>Typical charge time</th><th>Typical off-track runtime</th></tr>
       </thead>
       <tbody>
-        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>about 1.5-3 hours</td><td>about 1.5-2.5 hours</td></tr>
-        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>about 3-5.5 hours</td><td>about 3-5 hours</td></tr>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>about 1.4-1.8 hours</td><td>about 2.0-2.5 hours</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>about 2.8-3.6 hours</td><td>about 4.0-5.0 hours</td></tr>
       </tbody>
     </table>
   </section>

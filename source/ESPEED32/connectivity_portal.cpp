@@ -99,7 +99,7 @@ a{color:#7ed6ff}
  */
 static String buildJsonBackup() {
   String json;
-  json.reserve(5300);
+  json.reserve(5600);
   char buf[128];
 
   json += "{\n";
@@ -133,6 +133,7 @@ static String buildJsonBackup() {
     sprintf(buf, "      \"maxSpeed\": %u,\n", c.maxSpeed);               json += buf;
     sprintf(buf, "      \"curveInput\": %u,\n", c.throttleCurveVertex.inputThrottle); json += buf;
     sprintf(buf, "      \"curveDiff\": %u,\n", c.throttleCurveVertex.curveSpeedDiff); json += buf;
+    sprintf(buf, "      \"fade\": %u,\n", c.fade);                       json += buf;
     sprintf(buf, "      \"antiSpin\": %u,\n", c.antiSpin);               json += buf;
     sprintf(buf, "      \"freqPWM\": %u,\n", c.freqPWM);                 json += buf;
     sprintf(buf, "      \"brakeButton\": %u,\n", c.brakeButtonReduction);  json += buf;
@@ -375,6 +376,9 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
     }
     c.throttleCurveVertex.curveSpeedDiff = v;
 
+    if (parseJsonInt(carJson, "fade", v) && inRange(v, 0, FADE_MAX_VALUE))
+      c.fade = v;
+
     if (!parseJsonInt(carJson, "antiSpin", v) || !inRange(v, 0, ANTISPIN_MAX_VALUE)) {
       *errorMsg = "Error: invalid antiSpin in car " + String(i); return false;
     }
@@ -553,6 +557,7 @@ static String buildSchemaJson() {
   appendSchemaIntField(json, first, "brake", "BRAKE", 0, BRAKE_MAX_VALUE, 1, "%");
   appendSchemaIntField(json, first, "maxSpeed", "LIMIT", 5, 100, 1, "%");
   appendSchemaIntField(json, first, "curveDiff", "CURVE", THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, 1, "%");
+  appendSchemaIntField(json, first, "fade", "FADE", 0, FADE_MAX_VALUE, 1, "%");
   appendSchemaIntField(json, first, "antiSpin", "ANTIS", 0, ANTISPIN_MAX_VALUE, 1, "ms");
   appendSchemaIntField(json, first, "freqPWM", "PWM_F", FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100, 1, "x0.1kHz");
   appendSchemaIntField(json, first, "brakeButton", "B_BTN", 0, 100, 1, "%");
@@ -622,6 +627,7 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"brake\":%u,", c.brake); json += buf;
   snprintf(buf, sizeof(buf), "\"maxSpeed\":%u,", c.maxSpeed); json += buf;
   snprintf(buf, sizeof(buf), "\"curveDiff\":%u,", c.throttleCurveVertex.curveSpeedDiff); json += buf;
+  snprintf(buf, sizeof(buf), "\"fade\":%u,", c.fade); json += buf;
   snprintf(buf, sizeof(buf), "\"antiSpin\":%u,", c.antiSpin); json += buf;
   snprintf(buf, sizeof(buf), "\"freqPWM\":%u,", c.freqPWM); json += buf;
   snprintf(buf, sizeof(buf), "\"brakeButton\":%u,", c.brakeButtonReduction); json += buf;
@@ -770,6 +776,10 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
       *errorMsg = "Error: invalid curveDiff"; return false;
     }
     car.throttleCurveVertex.curveSpeedDiff = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "fade", v)) {
+    if (!inRange(v, 0, FADE_MAX_VALUE)) { *errorMsg = "Error: invalid fade"; return false; }
+    car.fade = (uint16_t)v;
   }
   if (parseJsonInt(json, "antiSpin", v)) {
     if (!inRange(v, 0, ANTISPIN_MAX_VALUE)) { *errorMsg = "Error: invalid antiSpin"; return false; }

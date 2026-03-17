@@ -1256,7 +1256,7 @@ function categorizeGlobalField(id){
 
 function categorizeCarField(id){
   if(id==='carName') return 'Profile';
-  if(id==='minSpeed' || id==='maxSpeed' || id==='curveDiff' || id==='antiSpin' || id==='freqPWM') return 'Throttle & Power';
+  if(id==='minSpeed' || id==='maxSpeed' || id==='curveDiff' || id==='fade' || id==='antiSpin' || id==='freqPWM') return 'Throttle & Power';
   if(id==='brake' || id==='brakeButton' || id==='quickBrakeEnabled' || id==='quickBrakeThreshold' || id==='quickBrakeStrength') return 'Braking';
   return 'Other';
 }

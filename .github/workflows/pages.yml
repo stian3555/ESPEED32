@@ -7,6 +7,7 @@ on:
     paths:
       - "source/ESPEED32/data/docs/**"
       - "source/ESPEED32/data/ui/**"
+      - "CNAME"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -55,10 +56,56 @@ jobs:
           cp -R source/ESPEED32/data/ui/. site/ui/
           cp source/ESPEED32/data/ui/index.html site/index.html
 
+          SITE_URL=""
+
           # Optional custom domain: commit a CNAME file in repository root.
           if [ -f CNAME ]; then
+            SITE_HOST="$(tr -d '[:space:]' < CNAME)"
+            if [ -n "$SITE_HOST" ]; then
+              SITE_URL="https://$SITE_HOST"
+            fi
             cp CNAME site/CNAME
           fi
+
+          if [ -z "$SITE_URL" ]; then
+            REPO_NAME="${GITHUB_REPOSITORY#*/}"
+            SITE_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}"
+          fi
+
+          TODAY="$(date -u +%F)"
+
+          cat > site/robots.txt << EOF
+          User-agent: *
+          Allow: /
+
+          Sitemap: ${SITE_URL}/sitemap.xml
+          EOF
+
+          cat > site/sitemap.xml << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>${SITE_URL}/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+            <url>
+              <loc>${SITE_URL}/docs/en/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+            <url>
+              <loc>${SITE_URL}/docs/no/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+            <url>
+              <loc>${SITE_URL}/docs/es/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+            <url>
+              <loc>${SITE_URL}/docs/de/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+          </urlset>
+          EOF
 
           touch site/.nojekyll
 

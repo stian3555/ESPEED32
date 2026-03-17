@@ -225,8 +225,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>4. Hovedparametere i Main Menu</h2>
     <h3>Terminologi-profiler</h3>
     <ul>
-      <li><code>NOR/ESP/DEU/ITA</code>: lokalisert UI med standardnavnene <code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>.</li>
-      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: lokalisert UI med standardnavnene <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
       <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
     </ul>
@@ -252,6 +252,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
         <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Myk startsone. 0 = av / gammel oppføring. Over 0 rampes første del av triggeren fra 0 opp til SENSI før vanlig CURVE tar over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
         <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(sone+niva)/DRAG(niva)</td><td>OFF</td><td>Release-brake nar trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
@@ -260,11 +261,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
+    <h3>FADE i praksis</h3>
+    <ul>
+      <li><code>FADE</code> lager en myk <code>0 -&gt; SENSI</code>-rampe helt i starten av triggeren.</li>
+      <li><code>FADE = 0%</code> betyr av og gir samme direkte respons som tidligere.</li>
+      <li>Prøv <code>5-15%</code> hvis bilen blir for brå akkurat idet SENSI begynner.</li>
+      <li>Tenk på <code>FADE</code> som et ekstra første punkt i grafen: den endrer bare bunnen, mens <code>CURVE</code> fortsatt former resten.</li>
+    </ul>
     <h3>Notat om linearitet</h3>
     <ul>
       <li><code>LIMIT</code>: lineær begrensning i kommandert output %. Faktisk toppfart på banen blir ikke helt lineær.</li>
       <li><code>BRAKE</code>: lineær bremse/drag-kommando i %. Faktisk bremsefølelse avhenger av motor, dekk og grep i banen.</li>
       <li><code>SENSI</code>: lineært minimumsnivå for output i %, men ikke en lineær gain-knott gjennom hele trigger-vandringen siden <code>CURVE</code> former resten.</li>
+      <li><code>FADE</code>: lineær i % av trigger-vandringen. Den virker bare helt i starten og gir deretter kontrollen videre til <code>CURVE</code>.</li>
       <li><code>ANTIS</code>: er hovedsakelig en tidsinnstilling i ms. Når antispinn er aktivt gir høyere verdi lengre/mykere rampe, men totalfølelsen er ikke helt lineær fordi lavfarts-bypass også flytter seg med innstillingen.</li>
     </ul>
     <figure class="doc-media">
@@ -351,11 +360,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>8. Kjøretips</h2>
     <ul>
       <li>Juster en parameter av gangen, og kjør 5-10 runder mellom hver endring.</li>
-      <li>Start med <code>SENSI</code>, deretter <code>BRAKE</code>, så <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
+      <li>Start med <code>SENSI</code>, deretter <code>FADE</code>, så <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
       <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
       <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
       <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
       <li>Bruk <code>R-BRAKE QUICK</code> med lav sone (5-12%) og moderat niva (40-70%) for tydelig tidligere brems. Prov <code>DRAG</code> rundt 20-50% hvis du vil ha hjelp ved trigger-slipp uten null-output-sone.</li>
+      <li>Hvis bilen napper for hardt akkurat idet triggeren begynner å virke: behold <code>SENSI</code> og legg inn litt <code>FADE</code> før du senker SENSI.</li>
       <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
       <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
     </ul>
@@ -390,6 +400,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SENSI
 |- ANTIS
 |- CURVE (grafvisning)
+|- FADE (grafvisning)
 |- PWM_F
 |- B_BTN
 |- R-BRAKE

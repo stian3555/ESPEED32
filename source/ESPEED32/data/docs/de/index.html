@@ -231,6 +231,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
         <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A STEP</code> eingestellt.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Sanfte Startzone. 0 = aus / altes Verhalten. Oberhalb von 0 laeuft der erste Triggerweg von 0 bis SENSI hoch, bevor die normale CURVE uebernimmt.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
         <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
@@ -239,11 +240,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
+    <h3>FADE in der Praxis</h3>
+    <ul>
+      <li><code>FADE</code> erzeugt ganz am Anfang des Triggerwegs eine sanfte <code>0 -&gt; SENSI</code>-Rampe.</li>
+      <li><code>FADE = 0%</code> schaltet es aus und behaelt das alte direkte Ansprechverhalten.</li>
+      <li>Probiere <code>5-15%</code>, wenn das Auto genau beim Einsetzen von SENSI zu hart anspricht.</li>
+      <li><code>FADE</code> ist praktisch ein zusaetzlicher erster Punkt in der Grafik: nur der unterste Bereich wird geaendert, waehrend <code>CURVE</code> den Rest formt.</li>
+    </ul>
     <h3>Hinweis zur Linearitaet</h3>
     <ul>
       <li><code>LIMIT</code>: lineare Begrenzung des angeforderten Outputs in %. Die reale Endgeschwindigkeit auf der Bahn ist nicht perfekt linear.</li>
       <li><code>BRAKE</code>: linearer Brems/Drag-Befehl in %. Das reale Bremsgefuehl haengt von Motor, Reifen und Streckengrip ab.</li>
       <li><code>SENSI</code>: linearer Mindest-Output in %, aber kein linearer Gain-Regler ueber den ganzen Triggerweg, weil <code>CURVE</code> den Rest formt.</li>
+      <li><code>FADE</code>: linear in % des Triggerwegs. Es wirkt nur ganz unten und uebergibt danach an <code>CURVE</code>.</li>
       <li><code>ANTIS</code>: ist hauptsaechlich eine Zeitvorgabe in ms. Wenn Anti-Spin aktiv ist, ergibt ein hoeherer Wert eine laengere/weichere Rampe, aber das Gesamtgefuehl ist nicht perfekt linear, weil sich auch die Low-Speed-Bypass-Schwelle mitveraendert.</li>
     </ul>
     <figure class="doc-media">
@@ -324,11 +333,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>8. Fahrtipps</h2>
     <ul>
       <li>Immer nur einen Parameter aendern und dann 5-10 Runden testen.</li>
-      <li>Empfohlene Reihenfolge: <code>SENSI</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
+      <li>Empfohlene Reihenfolge: <code>SENSI</code>, <code>FADE</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
       <li>1/32 auf rutschiger Bahn: hoeheres <code>ANTIS</code> (100-150 ms), <code>CURVE</code> &lt; 50.</li>
       <li>1/24 mit gutem Grip: niedrigeres <code>ANTIS</code> (0-40 ms), <code>CURVE</code> 50-70.</li>
       <li><code>B_BTN</code> als temporaires Kurvenwerkzeug nutzen, statt BRAKE-Grundwert laufend zu aendern.</li>
       <li><code>R-BRAKE QUICK</code> mit kleiner Zone (5-12%) und mittlerer Stufe (40-70%) fuer klarere fruehe Bremsung. <code>DRAG</code> um 20-50% probieren, wenn Release-Hilfe ohne Null-Output-Zone gewuenscht ist.</li>
+      <li>Wenn das Auto genau beim ersten wirksamen Triggerweg zu hart anschlaegt, lass <code>SENSI</code> stehen und probiere erst etwas <code>FADE</code>.</li>
     </ul>
   </section>
 
@@ -361,6 +371,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SENSI
 |- ANTIS
 |- CURVE (graph view)
+|- FADE (graph view)
 |- PWM_F
 |- B_BTN
 |- R-BRAKE

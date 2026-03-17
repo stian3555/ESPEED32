@@ -231,6 +231,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>SENSI</code></td><td>0-90 % (y &lt;= LIMIT)</td><td>20</td><td>Potencia minima al primer movimiento de trigger.</td></tr>
         <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave. El paso del encoder se ajusta globalmente en <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona de salida suave. 0 = desactivado / comportamiento antiguo. Por encima de 0, la primera parte del trigger sube de 0 a SENSI antes de que siga la CURVE normal.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Frecuencia PWM del motor.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Valor alternativo de freno con boton de freno + trigger suelto.</td></tr>
         <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zona+nivel)/DRAG(nivel)</td><td>OFF</td><td>Ayuda de frenado al soltar trigger. QUICK usa zona a salida cero; DRAG anade drag sin zona.</td></tr>
@@ -239,11 +240,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
       </tbody>
     </table>
+    <h3>FADE en la practica</h3>
+    <ul>
+      <li><code>FADE</code> crea una rampa suave <code>0 -&gt; SENSI</code> al inicio del recorrido del trigger.</li>
+      <li><code>FADE = 0%</code> lo desactiva y mantiene el tacto directo anterior.</li>
+      <li>Prueba <code>5-15%</code> si el coche pega un golpe demasiado brusco justo cuando empieza SENSI.</li>
+      <li>Puedes pensar en <code>FADE</code> como un primer punto extra en la grafica: solo cambia la parte baja, mientras <code>CURVE</code> sigue moldeando el resto.</li>
+    </ul>
     <h3>Notas sobre linealidad</h3>
     <ul>
       <li><code>LIMIT</code>: limite lineal del output mandado en %. La velocidad maxima real en pista no sera perfectamente lineal.</li>
       <li><code>BRAKE</code>: mando lineal de freno/drag en %. La sensacion real de frenado depende del motor, neumaticos y grip de la pista.</li>
       <li><code>SENSI</code>: suelo minimo lineal de output en %, pero no es una ganancia lineal a lo largo de todo el recorrido porque <code>CURVE</code> modela el resto.</li>
+      <li><code>FADE</code>: lineal en % de recorrido del trigger. Solo trabaja al principio y luego deja el control a <code>CURVE</code>.</li>
       <li><code>ANTIS</code>: es sobre todo un ajuste de tiempo en ms. Cuando anti-spin esta activo, un valor mayor da una rampa mas larga/suave, pero la sensacion total no es perfectamente lineal porque tambien cambia el umbral de bypass a baja velocidad.</li>
     </ul>
     <figure class="doc-media">
@@ -324,11 +333,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>8. Consejos de conduccion</h2>
     <ul>
       <li>Cambia un parametro por vez y prueba 5-10 vueltas antes del siguiente cambio.</li>
-      <li>Orden recomendado: <code>SENSI</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
+      <li>Orden recomendado: <code>SENSI</code>, <code>FADE</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
       <li>1/32 en pista deslizante: subir <code>ANTIS</code> (100-150 ms) y usar <code>CURVE</code> &lt; 50.</li>
       <li>1/24 con buen grip: <code>ANTIS</code> bajo (0-40 ms) y <code>CURVE</code> 50-70.</li>
       <li>Usa <code>B_BTN</code> como ajuste temporal de curva, sin cambiar BRAKE base.</li>
       <li>Usa <code>R-BRAKE QUICK</code> con zona baja (5-12%) y nivel medio (40-70%) para frenada temprana mas clara. Prueba <code>DRAG</code> sobre 20-50% si quieres ayuda al soltar sin una zona a salida cero.</li>
+      <li>Si el coche golpea demasiado justo al empezar a actuar el trigger, manten <code>SENSI</code> donde te gusta y prueba un poco de <code>FADE</code> antes de bajar SENSI.</li>
     </ul>
   </section>
 
@@ -361,6 +371,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SENSI
 |- ANTIS
 |- CURVE (graph view)
+|- FADE (graph view)
 |- PWM_F
 |- B_BTN
 |- R-BRAKE

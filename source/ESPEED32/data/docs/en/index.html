@@ -225,8 +225,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>4. Main menu parameters</h2>
     <h3>Terminology profiles</h3>
     <ul>
-      <li><code>NOR/ESP/DEU/ITA</code>: localized UI using the standard <code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code> naming set.</li>
-      <li><code>ENG</code>: generic naming (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: localized UI using the standard <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code> naming set.</li>
+      <li><code>ENG</code>: generic naming (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
       <li><code>CS</code>: CarSteen-style terms (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
       <li><code>ACD</code>: ACD-style terms where directly applicable (<code>SENSI</code> and <code>CHOKE</code> for limit). <code>ANTIS</code> remains anti-spin because the ACD manual does not define a separate Choke2 term.</li>
     </ul>
@@ -252,6 +252,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>SENSI</code></td><td>0-90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
         <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup. Encoder step is set globally in <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Soft-start zone. 0 = disabled / old behavior. Above 0, the first part of trigger travel ramps from 0 up to SENSI before normal CURVE takes over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
         <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Release-brake helper near trigger release. QUICK uses a zero-output zone; DRAG adds release drag without a zone.</td></tr>
@@ -260,11 +261,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
       </tbody>
     </table>
+    <h3>FADE in practice</h3>
+    <ul>
+      <li><code>FADE</code> creates a soft <code>0 -&gt; SENSI</code> ramp in the first part of trigger travel.</li>
+      <li><code>FADE = 0%</code> disables it and keeps the old direct feel.</li>
+      <li>Try <code>5-15%</code> if the car feels too abrupt right when SENSI starts.</li>
+      <li>Think of <code>FADE</code> as an extra first point in the graph: it only changes the very bottom end, while <code>CURVE</code> still shapes the rest.</li>
+    </ul>
     <h3>Linearity notes</h3>
     <ul>
       <li><code>LIMIT</code>: linear cap in commanded output %. Real top speed on track is not perfectly linear.</li>
       <li><code>BRAKE</code>: linear brake/drag command in %. Real braking feel depends on motor, tires, and track grip.</li>
       <li><code>SENSI</code>: linear minimum output floor in %, but not a linear gain knob across the whole trigger travel because <code>CURVE</code> shapes the rest.</li>
+      <li><code>FADE</code>: linear in trigger-travel %. It only affects the first part of the trigger and then hands control over to <code>CURVE</code>.</li>
       <li><code>ANTIS</code>: mainly a time setting in ms. Once anti-spin is active, a higher value gives a longer/weaker ramp, but the overall feel is not perfectly linear because the low-speed bypass threshold also shifts with the setting.</li>
     </ul>
     <figure class="doc-media">
@@ -351,11 +360,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>8. Driving tips</h2>
     <ul>
       <li>Change one parameter at a time, then run 5-10 laps before the next change.</li>
-      <li>Tune in this order: <code>SENSI</code>, then <code>BRAKE</code>, then <code>ANTIS</code>, <code>CURVE</code>, and finally <code>PWM_F</code>.</li>
+      <li>Tune in this order: <code>SENSI</code>, then <code>FADE</code>, then <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, and finally <code>PWM_F</code>.</li>
       <li>1/32 cars on low-grip tracks: try higher <code>ANTIS</code> (around 100-150 ms) and softer <code>CURVE</code> (&lt;50).</li>
       <li>1/24 cars on high-grip tracks: often lower <code>ANTIS</code> (0-40 ms) and more direct <code>CURVE</code> (50-70).</li>
       <li>Use <code>B_BTN</code> as a temporary cornering tool instead of changing BRAKE between heats.</li>
       <li>Use <code>R-BRAKE QUICK</code> with low zone (5-12%) and medium level (40-70%) for clearer early braking. Try <code>DRAG</code> around 20-50% if you want release help without a zero-output zone.</li>
+      <li>If the car hits too hard exactly when the trigger starts working, keep <code>SENSI</code> where you want it and add a little <code>FADE</code> first.</li>
       <li>If the car spins early in trigger travel: lower <code>SENSI</code> or increase <code>ANTIS</code>.</li>
       <li>If the car feels lazy on exit: raise <code>SENSI</code> slightly or reduce <code>ANTIS</code>.</li>
     </ul>
@@ -390,6 +400,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SENSI
 |- ANTIS
 |- CURVE (graph view)
+|- FADE (graph view)
 |- PWM_F
 |- B_BTN
 |- R-BRAKE

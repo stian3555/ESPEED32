@@ -232,6 +232,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>SENSI</code></td><td>0-90 % (e &lt;= LIMIT)</td><td>20</td><td>Potenza minima al primo movimento utile del trigger.</td></tr>
         <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Rampa anti-spin. Valore piu alto = erogazione piu morbida. Il passo encoder si imposta globalmente in <code>SETTINGS -&gt; A STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Curva del trigger. 50 = lineare.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona di avvio morbido. 0 = disattivato / comportamento precedente. Sopra 0, la prima parte del trigger sale da 0 a SENSI prima che continui la CURVE normale.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Frequenza PWM del motore.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Freno alternativo mentre il pulsante freno e premuto e trigger=0.</td></tr>
         <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK(zona+livello)/DRAG(livello)</td><td>OFF</td><td>Aiuto frenata vicino al rilascio del trigger. QUICK usa una zona a output zero; DRAG aggiunge drag senza zona.</td></tr>
@@ -240,11 +241,19 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CAR</code></td><td>0-19 profili</td><td>CAR0</td><td>Seleziona o gestisci il profilo attivo.</td></tr>
       </tbody>
     </table>
+    <h3>FADE nella pratica</h3>
+    <ul>
+      <li><code>FADE</code> crea una rampa morbida <code>0 -&gt; SENSI</code> all'inizio della corsa trigger.</li>
+      <li><code>FADE = 0%</code> lo disattiva e mantiene la risposta diretta di prima.</li>
+      <li>Prova <code>5-15%</code> se l'auto e troppo brusca proprio nel momento in cui inizia SENSI.</li>
+      <li>Pensa a <code>FADE</code> come a un primo punto extra nel grafico: cambia solo la parte bassa, mentre <code>CURVE</code> continua a modellare il resto.</li>
+    </ul>
     <h3>Note sulla linearita</h3>
     <ul>
       <li><code>LIMIT</code>: limite lineare dell'output comandato in %. La velocita massima reale in pista non risulta perfettamente lineare.</li>
       <li><code>BRAKE</code>: comando freno/drag lineare in %. La sensazione reale di frenata dipende da motore, gomme e grip della pista.</li>
       <li><code>SENSI</code>: livello minimo di output lineare in %, ma non e una manopola di gain lineare su tutta la corsa del trigger perche <code>CURVE</code> modella il resto.</li>
+      <li><code>FADE</code>: lineare in % di corsa trigger. Lavora solo nella prima parte e poi lascia il controllo a <code>CURVE</code>.</li>
       <li><code>ANTIS</code>: e soprattutto un'impostazione di tempo in ms. Quando anti-spin e attivo, un valore piu alto produce una rampa piu lunga/morbida, ma la sensazione complessiva non e perfettamente lineare perche cambia anche la soglia di bypass alle basse velocita.</li>
     </ul>
     <figure class="doc-media">
@@ -331,11 +340,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>8. Consigli di guida</h2>
     <ul>
       <li>Cambia un solo parametro alla volta e poi prova 5-10 giri prima del passo successivo.</li>
-      <li>Ordine consigliato: <code>SENSI</code>, poi <code>BRAKE</code>, poi <code>ANTIS</code>, <code>CURVE</code> e infine <code>PWM_F</code>.</li>
+      <li>Ordine consigliato: <code>SENSI</code>, poi <code>FADE</code>, poi <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> e infine <code>PWM_F</code>.</li>
       <li>Auto 1/32 su piste con poco grip: prova <code>ANTIS</code> piu alto (100-150 ms) e <code>CURVE</code> piu morbida (&lt;50).</li>
       <li>Auto 1/24 su piste con molto grip: spesso <code>ANTIS</code> piu basso (0-40 ms) e <code>CURVE</code> 50-70.</li>
       <li>Usa <code>B_BTN</code> come strumento temporaneo in curva invece di cambiare BRAKE tra una manche e l'altra.</li>
       <li>Usa <code>R-BRAKE QUICK</code> con zona bassa (5-12%) e livello medio (40-70%) per una frenata anticipata piu netta. Prova <code>DRAG</code> intorno a 20-50% se vuoi aiuto al rilascio senza zona a output zero.</li>
+      <li>Se l'auto colpisce troppo forte proprio all'inizio del trigger utile, lascia <code>SENSI</code> dov'e e prova prima un po' di <code>FADE</code>.</li>
       <li>Se l'auto pattina presto all'inizio corsa trigger: abbassa <code>SENSI</code> o aumenta <code>ANTIS</code>.</li>
       <li>Se l'uscita di curva sembra pigra: alza leggermente <code>SENSI</code> o riduci <code>ANTIS</code>.</li>
     </ul>
@@ -370,6 +380,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- SENSI
 |- ANTIS
 |- CURVE (graph view)
+|- FADE (graph view)
 |- PWM_F
 |- B_BTN
 |- R-BRAKE

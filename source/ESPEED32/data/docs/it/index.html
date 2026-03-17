@@ -187,10 +187,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/trig_cal.png" alt="Calibrazione trigger">
       <figcaption>Calibrazione: muovi il trigger su tutta la corsa piu volte per ottenere una mappatura corretta 0-100%.</figcaption>
     </figure>
+    <h3>Meccanica del trigger</h3>
+    <ul>
+      <li>La corsa del trigger puo essere regolata meccanicamente con la vite di fine corsa posteriore.</li>
+      <li>Il ritorno dipende dal precarico della molla / tensione di ritorno; regola con cautela il supporto o il cursore della molla.</li>
+      <li>Dopo aver cambiato corsa o tensione della molla, ricalibra il trigger prima di guidare.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>3. Fondamentali in guida: BRAKE, B_BTN e Q-BRAKE</h2>
+    <h2>3. Fondamentali in guida: BRAKE, B_BTN e R-BRAKE</h2>
     <h3>BRAKE</h3>
     <p>Con il trigger completamente rilasciato, il controller applica la frenata normale usando il valore <code>BRAKE</code>.</p>
     <h3>B_BTN (Brake Button)</h3>
@@ -200,13 +206,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Se la barra di stato mostra OUTPUT, appare <code>Bxxx%</code> mentre il pulsante freno e premuto.</li>
       <li>Uso tipico: frenata temporaneamente piu forte o piu dolce in ingresso curva senza cambiare il setup base.</li>
     </ul>
-    <h3>Q-BRAKE (Quick Brake)</h3>
+    <h3>R-BRAKE (Release Brake)</h3>
     <ul>
-      <li>Attivo solo quando <code>Q-BRAKE</code> e su ON.</li>
-      <li>Funziona come zona di frenata prima del rilascio completo: il freno entra prima che il trigger arrivi a zero.</li>
-      <li>Con trigger sopra 0 ma sotto la soglia, il controller usa <code>Strength</code> come forza frenante.</li>
-      <li><code>Threshold</code>: 0-50%. <code>Strength</code>: 0-100%.</li>
-      <li>Uso pratico: iniziare la frenata prima nelle sezioni tecniche senza dover chiudere del tutto il trigger.</li>
+      <li><code>R-BRAKE</code> ha tre modi: <code>OFF</code>, <code>QUICK</code> e <code>DRAG</code>.</li>
+      <li><code>QUICK</code> e la vecchia zona di frenata anticipata: sotto la <code>Zona</code> scelta il controller taglia la trazione e applica <code>Livello</code> come forza frenante.</li>
+      <li><code>DRAG</code> agisce solo mentre stai rilasciando il trigger dentro la zona selezionata. Miscela l'uscita con drag e risulta piu morbido di QUICK.</li>
+      <li><code>Zona</code>: 0-50%. <code>Livello</code>: 0-100%.</li>
+      <li>Usa QUICK per una frenata anticipata piu netta. Usa DRAG se vuoi un aiuto al rilascio piu progressivo.</li>
     </ul>
   </section>
 
@@ -219,11 +225,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Frenata con trigger rilasciato.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (e &lt;= LIMIT)</td><td>20</td><td>Potenza minima al primo movimento utile del trigger.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Rampa anti-spin. Valore piu alto = erogazione piu morbida. Il passo encoder si imposta globalmente in <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Rampa anti-spin. Valore piu alto = erogazione piu morbida. Il passo encoder si imposta globalmente in <code>SETTINGS -&gt; A-STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Curva del trigger. 50 = lineare.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Frequenza PWM del motore.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Freno alternativo mentre il pulsante freno e premuto e trigger=0.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Zona di frenata dedicata vicino al rilascio del trigger.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + zona/livello</td><td>OFF</td><td>Aiuto frenata vicino al rilascio del trigger. QUICK e piu deciso; DRAG e piu morbido e attivo solo mentre rilasci.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Uscita massima del motore.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Contagiri, miglior giro e cronologia scorrevole dei giri.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profili</td><td>CAR0</td><td>Seleziona o gestisci il profilo attivo.</td></tr>
@@ -266,7 +272,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: sleep automatico + sleep manuale (risveglio con pulsante encoder).</li>
       <li><code>DEEP SLEEP</code>: deep sleep automatico (0 o 2-30 min) + manuale.</li>
       <li><code>STARTUP</code>: ritardo avvio 0-990 ms.</li>
-      <li><code>A STEP</code>: passo globale encoder per ANTIS, 1-50 ms (default 5 ms). Il valore ANTIS resta comunque per singolo profilo auto.</li>
+    </ul>
+    <h3>Voci principali di SETTINGS</h3>
+    <ul>
+      <li><code>STATS</code>: mostra o nasconde la voce STATS nel menu principale.</li>
+      <li><code>A-STEP</code>: passo globale encoder per ANTIS, 1-50 ms (default 5 ms). Il valore ANTIS resta comunque per singolo profilo auto.</li>
+      <li><code>ENC INV</code>: inverte globalmente la direzione dell'encoder se il menu gira al contrario.</li>
     </ul>
     <h3>DISPLAY + ABOUT</h3>
     <ul>
@@ -299,7 +310,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Auto 1/32 su piste con poco grip: prova <code>ANTIS</code> piu alto (100-150 ms) e <code>CURVE</code> piu morbida (&lt;50).</li>
       <li>Auto 1/24 su piste con molto grip: spesso <code>ANTIS</code> piu basso (0-40 ms) e <code>CURVE</code> 50-70.</li>
       <li>Usa <code>B_BTN</code> come strumento temporaneo in curva invece di cambiare BRAKE tra una manche e l'altra.</li>
-      <li>Usa <code>Q-BRAKE</code> con soglia bassa (5-12%) e forza media (40-70%) nelle sezioni tecniche.</li>
+      <li>Usa <code>R-BRAKE QUICK</code> con zona bassa (5-12%) e livello medio (40-70%) per una frenata anticipata piu netta. Prova <code>DRAG</code> se vuoi la stessa zona ma piu morbida.</li>
       <li>Se l'auto pattina presto all'inizio corsa trigger: abbassa <code>SENSI</code> o aumenta <code>ANTIS</code>.</li>
       <li>Se l'uscita di curva sembra pigra: alza leggermente <code>SENSI</code> o riduci <code>ANTIS</code>.</li>
     </ul>
@@ -320,7 +331,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="small">Comportamento della barra di stato con WiFi attivo: <code>WIFI</code> usa il primo slot vuoto; se non esistono slot vuoti, lo slot 4 viene mostrato temporaneamente come <code>WIFI</code> finche il WiFi non si ferma.</p>
     <h3>USB</h3>
     <ol>
-      <li>Apri <code>SETTINGS -> USB</code>.</li>
+      <li>Apri <code>SETTINGS -> USB INFO</code>.</li>
       <li>Usa Chrome/Edge (WebSerial).</li>
       <li>Backup/restore funzionano via USB; OTA richiede la modalita WiFi.</li>
     </ol>
@@ -336,10 +347,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- CURVE (graph view)
 |- PWM_F
 |- B_BTN
-|- Q-BRAKE
-|  |- Enable (ON/OFF)
-|  |- Threshold (%)
-|  |- Strength (%)
+|- R-BRAKE
+|  |- Mode (OFF/QUICK/DRAG)
+|  |- Zone (%)
+|  |- Level (%)
 |  `- Back
 |- LIMIT
 |- SETTINGS
@@ -377,14 +388,15 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A STEP (1-50 ms, default 5)
+|  |- A-STEP (1-50 ms, default 5)
+|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
 |  |  |- MOSTRA QR
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
-|  |- USB
+|  |- USB INFO
 |  |- RESET
 |  |  |- CAR
 |  |  |- SETTINGS

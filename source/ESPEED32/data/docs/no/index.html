@@ -187,10 +187,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/trig_cal.png" alt="Trigger-kalibrering">
       <figcaption>Kalibrering: beveg trigger helt gjennom vandringen flere ganger for korrekt 0-100% mapping.</figcaption>
     </figure>
+    <h3>Trigger-mekanikk</h3>
+    <ul>
+      <li>Trigger-vandring kan justeres mekanisk med stoppeskruen bak.</li>
+      <li>Returfølelse avhenger av fjærforspenning / return tension; juster fjærfeste eller strammer forsiktig.</li>
+      <li>Etter endring av trigger-vandring eller returfjær bør du kalibrere trigger på nytt før kjøring.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>3. Viktig under kjøring: BRAKE, B_BTN og Q-BRAKE</h2>
+    <h2>3. Viktig under kjøring: BRAKE, B_BTN og R-BRAKE</h2>
     <h3>BRAKE</h3>
     <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
     <h3>B_BTN (Brake Button)</h3>
@@ -200,13 +206,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
       <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
     </ul>
-    <h3>Q-BRAKE (Quick Brake)</h3>
+    <h3>R-BRAKE (Release Brake)</h3>
     <ul>
-      <li>Aktiveres bare hvis <code>Q-BRAKE</code> er ON.</li>
-      <li>Gir en pre-release bremsesone: brems starter mens triggeren er på vei ut, før den er helt sluppet.</li>
-      <li>Når trigger er over 0 men under terskelen, brukes <code>Strength</code> som bremsekraft.</li>
-      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
-      <li>Praktisk bruk: få tidligere innbremsing ved trigger-slipp uten å måtte gå helt til null.</li>
+      <li><code>R-BRAKE</code> har tre moduser: <code>OFF</code>, <code>QUICK</code> og <code>DRAG</code>.</li>
+      <li><code>QUICK</code> er den gamle pre-release bremsesonen: under valgt <code>Sone</code> kuttes driv og <code>Niva</code> brukes som bremsekraft.</li>
+      <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren innenfor valgt sone. Den blander inn drag og føles mykere enn QUICK.</li>
+      <li><code>Sone</code>: 0-50%. <code>Niva</code>: 0-100%.</li>
+      <li>Bruk QUICK for tydelig tidlig innbremsing. Bruk DRAG for en roligere og mer progressiv støtte ved trigger-slipp.</li>
     </ul>
   </section>
 
@@ -228,7 +234,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td>Attack</td><td><code>SENSI</code></td><td>Hvor hardt bilen svarer ved første triggerbevegelse.</td></tr>
         <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Begrenser toppnivå og styrer hvor mykt effekten bygges opp.</td></tr>
         <tr><td>Profile</td><td><code>CURVE</code></td><td>Formen på gassresponsen (tidlig vs sen aggressivitet).</td></tr>
-        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>Q-BRAKE</code></td><td>Bremseeffekt ved slipp, midlertidig brems og tidlig bremsesone.</td></tr>
+        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>R-BRAKE</code></td><td>Bremseeffekt ved slipp, midlertidig brems og tidlig bremsesone.</td></tr>
       </tbody>
     </table>
     <p class="small">Typisk "myk og kontrollert" startoppsett (fra eldre guide): prøv rundt <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, og juster derfra.</p>
@@ -239,11 +245,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A-STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + terskel/styrke</td><td>OFF</td><td>Egen bremsesone nær trigger-slipp.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + sone/niva</td><td>OFF</td><td>Release-brake nær trigger-slipp. QUICK bremser hardere; DRAG er mykere og virker bare mens trigger slippes.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
@@ -286,7 +292,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
       <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
-      <li><code>A STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
+    </ul>
+    <h3>SETTINGS-rotnivå</h3>
+    <ul>
+      <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen.</li>
+      <li><code>A-STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
+      <li><code>ENC INV</code>: snur encoder-retningen globalt hvis menyen føles bakvendt.</li>
     </ul>
     <h3>DISPLAY + ABOUT</h3>
     <ul>
@@ -319,7 +330,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
       <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
       <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
-      <li>Bruk <code>Q-BRAKE</code> lav terskel (5-12%) og moderat styrke (40-70%) for mer rolig inngang i tekniske partier.</li>
+      <li>Bruk <code>R-BRAKE QUICK</code> med lav sone (5-12%) og moderat niva (40-70%) for tydelig tidligere brems. Prøv <code>DRAG</code> hvis du vil ha samme område, men mykere følelse.</li>
       <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
       <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
     </ul>
@@ -340,7 +351,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="small">Statuslinje ved aktiv WiFi: <code>WIFI</code> bruker første ledige felt. Hvis ingen felt er ledige, vises <code>WIFI</code> i felt 4 til WiFi stoppes.</p>
     <h3>USB</h3>
     <ol>
-      <li>Gå til <code>SETTINGS -> USB</code>.</li>
+      <li>Gå til <code>SETTINGS -> USB INFO</code>.</li>
       <li>Bruk Chrome/Edge (WebSerial).</li>
       <li>Backup/restore fungerer over USB; OTA krever WiFi-modus.</li>
     </ol>
@@ -356,10 +367,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- CURVE (grafvisning)
 |- PWM_F
 |- B_BTN
-|- Q-BRAKE
-|  |- Enable (ON/OFF)
-|  |- Threshold (%)
-|  |- Strength (%)
+|- R-BRAKE
+|  |- Mode (OFF/QUICK/DRAG)
+|  |- Zone (%)
+|  |- Level (%)
 |  `- Back
 |- LIMIT
 |- SETTINGS
@@ -397,14 +408,15 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A STEP (1-50 ms, default 5)
+|  |- A-STEP (1-50 ms, default 5)
+|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO SIDE
 |  |  |- VIS QR
 |  |  |- AUTO AV (1-120 min, default 5)
 |  |  `- BACK
-|  |- USB
+|  |- USB INFO
 |  |- RESET
 |  |  |- CAR
 |  |  |- SETTINGS

@@ -186,10 +186,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/trig_cal.png" alt="Trigger Kalibrierung">
       <figcaption>Kalibrierung: Trigger mehrfach durch den kompletten Weg bewegen, damit 0-100% korrekt erfasst werden.</figcaption>
     </figure>
+    <h3>Trigger-Mechanik</h3>
+    <ul>
+      <li>Der Triggerweg kann mechanisch ueber die hintere Anschlagschraube angepasst werden.</li>
+      <li>Das Rueckstellgefuehl haengt von Feder-Vorspannung / Rueckstellspannung ab; Federhalter oder Spannschieber vorsichtig justieren.</li>
+      <li>Nach Aenderung von Triggerweg oder Rueckstellfeder den Trigger vor dem Fahren neu kalibrieren.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>3. Wichtig beim Fahren: BRAKE, B_BTN und Q-BRAKE</h2>
+    <h2>3. Wichtig beim Fahren: BRAKE, B_BTN und R-BRAKE</h2>
     <h3>BRAKE</h3>
     <p>Bei komplett losgelassenem Trigger verwendet der Controller den normalen Bremswert <code>BRAKE</code>.</p>
     <h3>B_BTN (Brake Button)</h3>
@@ -199,13 +205,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Wenn die Statuszeile OUTPUT anzeigt, erscheint <code>Bxxx%</code> solange der Knopf gehalten wird.</li>
       <li>Typischer Einsatz: temporaer haerteres/weicheres Einbremsen ohne Basis-Setup zu aendern.</li>
     </ul>
-    <h3>Q-BRAKE (Quick Brake)</h3>
+    <h3>R-BRAKE (Release Brake)</h3>
     <ul>
-      <li>Nur aktiv, wenn <code>Q-BRAKE</code> auf ON steht.</li>
-      <li>Arbeitet als Pre-Release-Bremszone: Bremsung beginnt, bevor der Trigger ganz losgelassen ist.</li>
-      <li>Liegt Trigger ueber 0, aber unter dem Threshold, wird <code>Strength</code> als Bremskraft genutzt.</li>
-      <li><code>Threshold</code>: 0-50%. <code>Strength</code>: 0-100%.</li>
-      <li>Praktischer Nutzen: frueheres Einbremsen beim Loesen des Triggers, ohne erst auf null zu gehen.</li>
+      <li><code>R-BRAKE</code> hat drei Modi: <code>OFF</code>, <code>QUICK</code> und <code>DRAG</code>.</li>
+      <li><code>QUICK</code> ist die alte Pre-Release-Bremszone: unterhalb der gewaehlten <code>Zone</code> wird der Antrieb getrennt und <code>Stufe</code> als Bremskraft genutzt.</li>
+      <li><code>DRAG</code> wirkt nur waehrend du den Trigger innerhalb der gewaehlten Zone aktiv loest. Es mischt Drag in den Ausgang und fuehlt sich weicher an als QUICK.</li>
+      <li><code>Zone</code>: 0-50%. <code>Stufe</code>: 0-100%.</li>
+      <li>QUICK fuer klaren fruehen Bremseinsatz. DRAG fuer sanftere Unterstuetzung beim Loslassen.</li>
     </ul>
   </section>
 
@@ -218,11 +224,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A STEP</code> eingestellt.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A-STEP</code> eingestellt.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Zusaetzliche Bremszone nahe Trigger-Release.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + zone/stufe</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK ist staerker; DRAG ist weicher und wirkt nur beim Loslassen.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, Bestzeit, Verlauf.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
@@ -265,7 +271,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: Auto-Sleep + manueller Sleep (Wake ueber Encoder-Knopf).</li>
       <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: Startverzoegerung 0-990 ms.</li>
-      <li><code>A STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
+    </ul>
+    <h3>SETTINGS-Hauptebene</h3>
+    <ul>
+      <li><code>STATS</code>: STATS-Eintrag im Hauptmenue ein- oder ausblenden.</li>
+      <li><code>A-STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
+      <li><code>ENC INV</code>: Encoder-Richtung global umkehren, falls sich das Menue verkehrt anfuehlt.</li>
     </ul>
     <h3>Geschaetzter Stromverbrauch (Controller-Elektronik)</h3>
     <table>
@@ -292,7 +303,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32 auf rutschiger Bahn: hoeheres <code>ANTIS</code> (100-150 ms), <code>CURVE</code> &lt; 50.</li>
       <li>1/24 mit gutem Grip: niedrigeres <code>ANTIS</code> (0-40 ms), <code>CURVE</code> 50-70.</li>
       <li><code>B_BTN</code> als temporaires Kurvenwerkzeug nutzen, statt BRAKE-Grundwert laufend zu aendern.</li>
-      <li><code>Q-BRAKE</code> mit niedrigem Threshold (5-12%) und mittlerer Strength (40-70%) fuer technische Sektionen.</li>
+      <li><code>R-BRAKE QUICK</code> mit kleiner Zone (5-12%) und mittlerer Stufe (40-70%) fuer klarere fruehe Bremsung. <code>DRAG</code> probieren, wenn dieselbe Zone weicher wirken soll.</li>
     </ul>
   </section>
 
@@ -311,7 +322,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="small">Statuszeile bei aktivem WiFi: <code>WIFI</code> nutzt zuerst einen leeren Slot; wenn keiner frei ist, wird Slot 4 temporaer als <code>WIFI</code> angezeigt, bis WiFi stoppt.</p>
     <h3>USB</h3>
     <ol>
-      <li><code>SETTINGS -> USB</code> oeffnen.</li>
+      <li><code>SETTINGS -> USB INFO</code> oeffnen.</li>
       <li>Chrome/Edge nutzen (WebSerial).</li>
       <li>Backup/Restore geht ueber USB, OTA nur im WiFi-Modus.</li>
     </ol>
@@ -327,10 +338,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- CURVE (graph view)
 |- PWM_F
 |- B_BTN
-|- Q-BRAKE
-|  |- Enable (ON/OFF)
-|  |- Threshold (%)
-|  |- Strength (%)
+|- R-BRAKE
+|  |- Mode (OFF/QUICK/DRAG)
+|  |- Zone (%)
+|  |- Level (%)
 |  `- Back
 |- LIMIT
 |- SETTINGS
@@ -368,14 +379,15 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A STEP (1-50 ms, default 5)
+|  |- A-STEP (1-50 ms, default 5)
+|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
 |  |  |- QR CODE
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
-|  |- USB
+|  |- USB INFO
 |  |- RESET
 |  |  |- CAR
 |  |  |- SETTINGS

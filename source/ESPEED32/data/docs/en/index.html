@@ -187,10 +187,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/trig_cal.png" alt="Trigger calibration">
       <figcaption>Calibration: move trigger through full travel several times for correct 0-100% mapping.</figcaption>
     </figure>
+    <h3>Trigger mechanics</h3>
+    <ul>
+      <li>Trigger travel can be changed mechanically with the rear travel-stop screw.</li>
+      <li>Trigger return feel depends on spring preload/return tension; adjust the spring anchor or tension slider carefully.</li>
+      <li>After changing trigger travel or spring tension, recalibrate trigger before driving.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>3. Critical while driving: BRAKE, B_BTN and Q-BRAKE</h2>
+    <h2>3. Critical while driving: BRAKE, B_BTN and R-BRAKE</h2>
     <h3>BRAKE</h3>
     <p>When trigger is fully released, the controller applies normal braking using the <code>BRAKE</code> value.</p>
     <h3>B_BTN (Brake Button)</h3>
@@ -200,13 +206,13 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>If the status bar shows OUTPUT, it displays <code>Bxxx%</code> while the brake button is held.</li>
       <li>Typical use: temporary extra hard/soft corner entry braking without changing base setup.</li>
     </ul>
-    <h3>Q-BRAKE (Quick Brake)</h3>
+    <h3>R-BRAKE (Release Brake)</h3>
     <ul>
-      <li>Active only when <code>Q-BRAKE</code> is set to ON.</li>
-      <li>Works as a pre-release brake zone: braking starts before trigger is fully released.</li>
-      <li>When trigger is above 0 but below threshold, controller applies <code>Strength</code> as brake force.</li>
-      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
-      <li>Practical use: earlier corner-entry braking during trigger release, without going fully to zero first.</li>
+      <li><code>R-BRAKE</code> has three modes: <code>OFF</code>, <code>QUICK</code>, and <code>DRAG</code>.</li>
+      <li><code>QUICK</code> is the old pre-release brake zone: below the selected <code>Zone</code>, controller cuts drive and applies <code>Level</code> as brake force.</li>
+      <li><code>DRAG</code> only acts while you are actively releasing the trigger inside the selected zone. It blends output with drag and feels softer than QUICK.</li>
+      <li><code>Zone</code> range: 0-50%. <code>Level</code> range: 0-100%.</li>
+      <li>Use QUICK for a clear early brake hit. Use DRAG for smoother release support without the abrupt feel of full quick brake.</li>
     </ul>
   </section>
 
@@ -228,7 +234,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td>Attack</td><td><code>SENSI</code></td><td>How hard the car launches at first trigger movement.</td></tr>
         <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Top-end limitation and ramp smoothness.</td></tr>
         <tr><td>Profile</td><td><code>CURVE</code></td><td>Trigger response shape (early vs late aggression).</td></tr>
-        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>Q-BRAKE</code></td><td>Release braking and temporary/early braking behavior.</td></tr>
+        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>R-BRAKE</code></td><td>Release braking and temporary/early braking behavior.</td></tr>
       </tbody>
     </table>
     <p class="small">Legacy setup example (from older guides): for a soft and controlled feel, start around <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, and adjust from there.</p>
@@ -239,11 +245,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Brake force when trigger is released.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup. Encoder step is set globally in <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup. Encoder step is set globally in <code>SETTINGS -&gt; A-STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Dedicated brake zone near trigger release.</td></tr>
+        <tr><td><code>R-BRAKE</code></td><td>OFF/QUICK/DRAG + zone/level</td><td>OFF</td><td>Release-brake helper near trigger release. QUICK is stronger; DRAG is softer and only active while releasing.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Lap counter, best lap, and scrollable lap history.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
@@ -286,7 +292,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: auto sleep timeout + manual sleep now (wake with encoder button).</li>
       <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: welcome delay 0-990 ms in 10 ms steps.</li>
-      <li><code>A STEP</code>: global ANTIS encoder step, 1-50 ms (default 5 ms). ANTIS itself stays per car profile.</li>
+    </ul>
+    <h3>SETTINGS root items</h3>
+    <ul>
+      <li><code>STATS</code>: show or hide the STATS entry in the main menu.</li>
+      <li><code>A-STEP</code>: global ANTIS encoder step, 1-50 ms (default 5 ms). ANTIS itself stays per car profile.</li>
+      <li><code>ENC INV</code>: invert encoder rotation globally if the menu feels backwards on your hardware.</li>
     </ul>
     <h3>DISPLAY + ABOUT</h3>
     <ul>
@@ -319,7 +330,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>1/32 cars on low-grip tracks: try higher <code>ANTIS</code> (around 100-150 ms) and softer <code>CURVE</code> (&lt;50).</li>
       <li>1/24 cars on high-grip tracks: often lower <code>ANTIS</code> (0-40 ms) and more direct <code>CURVE</code> (50-70).</li>
       <li>Use <code>B_BTN</code> as a temporary cornering tool instead of changing BRAKE between heats.</li>
-      <li>Use <code>Q-BRAKE</code> with low threshold (5-12%) and medium strength (40-70%) for calmer technical sections.</li>
+      <li>Use <code>R-BRAKE QUICK</code> with low zone (5-12%) and medium level (40-70%) for clearer early braking. Try <code>DRAG</code> if you want the same area to feel softer.</li>
       <li>If the car spins early in trigger travel: lower <code>SENSI</code> or increase <code>ANTIS</code>.</li>
       <li>If the car feels lazy on exit: raise <code>SENSI</code> slightly or reduce <code>ANTIS</code>.</li>
     </ul>
@@ -340,7 +351,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <p class="small">Status bar behavior while WiFi is active: <code>WIFI</code> uses the first blank slot; if no blank slot exists, slot 4 is shown as <code>WIFI</code> until WiFi stops.</p>
     <h3>USB</h3>
     <ol>
-      <li>Open <code>SETTINGS -> USB</code>.</li>
+      <li>Open <code>SETTINGS -> USB INFO</code>.</li>
       <li>Use Chrome/Edge (WebSerial).</li>
       <li>Backup/restore works over USB; OTA requires WiFi mode.</li>
     </ol>
@@ -356,10 +367,10 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- CURVE (graph view)
 |- PWM_F
 |- B_BTN
-|- Q-BRAKE
-|  |- Enable (ON/OFF)
-|  |- Threshold (%)
-|  |- Strength (%)
+|- R-BRAKE
+|  |- Mode (OFF/QUICK/DRAG)
+|  |- Zone (%)
+|  |- Level (%)
 |  `- Back
 |- LIMIT
 |- SETTINGS
@@ -397,14 +408,15 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
 |  |- STATS (ON/OFF)
-|  |- A STEP (1-50 ms, default 5)
+|  |- A-STEP (1-50 ms, default 5)
+|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
 |  |  |- SHOW QR
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
-|  |- USB
+|  |- USB INFO
 |  |- RESET
 |  |  |- CAR
 |  |  |- SETTINGS

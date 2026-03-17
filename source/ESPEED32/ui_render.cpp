@@ -312,7 +312,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
 /**
  * @brief Show screensaver with branding
- * @details Displays personalized branding and optional LIMITER warning (full screen, no status line).
+ * @details Displays personalized branding only (full screen, no status line).
  *          Text is configurable on-device and via web UI.
  */
 void showScreensaver() {
@@ -333,11 +333,6 @@ void showScreensaver() {
   /* Display subtitle in smaller font centered below */
   obdWriteString(&g_obd, 0, line2_x, 34, g_storedVar.screensaverLine2, FONT_6x8, OBD_BLACK, 1);
 
-  /* Display LIMITER warning if active at same position as in menu */
-  if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
-  {
-    obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)STR_LIMITER[g_storedVar.language], FONT_8x8, OBD_WHITE, 1);
-  }
 }
 
 /**

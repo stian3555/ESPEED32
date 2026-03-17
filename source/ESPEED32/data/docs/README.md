@@ -18,6 +18,7 @@ By keeping one canonical location, docs in Git and docs on device stay aligned.
 - `no/index.html` - full Norwegian user guide
 - `es/index.html` - full Spanish user guide
 - `de/index.html` - full German user guide
+- `it/index.html` - full Italian user guide
 - `assets/curve_examples.png` - curve graph from manuals
 - `assets/trig_cal.png` - trigger calibration figure
 
@@ -46,6 +47,7 @@ Firmware serves docs from:
 - `/docs/no`
 - `/docs/es`
 - `/docs/de`
+- `/docs/it`
 
 Routes are implemented in `source/ESPEED32/connectivity_portal.cpp`.
 

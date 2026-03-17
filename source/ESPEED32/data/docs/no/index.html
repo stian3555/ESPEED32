@@ -138,6 +138,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <a class="btn ghost" href="../en/" data-doc-lang="en">English</a>
       <a class="btn ghost" href="../es/" data-doc-lang="es">Espanol</a>
       <a class="btn ghost" href="../de/" data-doc-lang="de">Deutsch</a>
+      <a class="btn ghost" href="../it/" data-doc-lang="it">Italiano</a>
     </nav>
     <div class="theme-tools">
       <label for="theme-select">Tema</label>
@@ -213,6 +214,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>4. Hovedparametere i Main Menu</h2>
     <h3>Terminologi-profiler</h3>
     <ul>
+      <li><code>NOR/ESP/DEU/ITA</code>: lokalisert UI med standardnavnene <code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>.</li>
       <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
       <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
@@ -378,7 +380,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
-|  |  |- LANGUAGE (NOR/ENG/CS/ACD)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
 |  |  |- STATUS BAR
@@ -447,6 +449,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
   else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
   else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+  else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
 
   var langLinks = document.querySelectorAll("a[data-doc-lang]");
   for (var i = 0; i < langLinks.length; i++) {

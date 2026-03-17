@@ -417,7 +417,7 @@ form{margin:0}
 </section>
 <section class="panel guide-panel">
 <h2>User Guide</h2>
-<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE / IT)</a>
 <p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
 </section>
 <section class="panel usb-panel">
@@ -857,6 +857,7 @@ function hostedDocsPath(){
   if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/';
   if(lang.indexOf('es')===0) return 'docs/es/';
   if(lang.indexOf('de')===0) return 'docs/de/';
+  if(lang.indexOf('it')===0) return 'docs/it/';
   return 'docs/en/';
 }
 

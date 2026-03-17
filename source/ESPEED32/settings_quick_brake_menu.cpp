@@ -28,18 +28,16 @@ void showQuickBrakeMenu() {
   const uint8_t QB_ITEMS = 4;  /* QB, QB_TH, QB_ST, BACK */
   uint8_t lang = g_storedVar.language;
 
-  const char* rowNames[QB_ITEMS];
-  if (lang == LANG_NOR) {
-    rowNames[0] = "Aktiv";
-    rowNames[1] = "Terskel";
-    rowNames[2] = "Styrke";
-    rowNames[3] = "Tilbake";
-  } else {
-    rowNames[0] = "Enable";
-    rowNames[1] = "Threshold";
-    rowNames[2] = "Strength";
-    rowNames[3] = "Back";
-  }
+  const char* rowNamesByLang[7][QB_ITEMS] = {
+    {"Aktiv", "Terskel", "Styrke", "Tilbake"},
+    {"Enable", "Threshold", "Strength", "Back"},
+    {"Enable", "Threshold", "Strength", "Back"},
+    {"Enable", "Threshold", "Strength", "Back"},
+    {"Activo", "Umbral", "Fuerza", "Atras"},
+    {"Aktiv", "Schwelle", "Starke", "Zuruck"},
+    {"Attivo", "Soglia", "Forza", "Indietro"}
+  };
+  const char** rowNames = rowNamesByLang[lang];
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);

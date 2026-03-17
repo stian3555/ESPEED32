@@ -335,7 +335,7 @@ void initDisplayMenuItems() {
   g_settingsMenu.item[i].value = (void *)&g_storedVar.language;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = LANG_ACD;
+  g_settingsMenu.item[i].maxValue = LANG_MAX;
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 

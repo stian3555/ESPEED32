@@ -274,7 +274,7 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
     sv->gridCarSelectEnabled = v;
   if (parseJsonInt(json, "raceViewMode", v) && inRange(v, 0, 2))
     sv->raceViewMode = v;
-  if (parseJsonInt(json, "language", v) && inRange(v, LANG_NOR, LANG_ACD))
+  if (parseJsonInt(json, "language", v) && inRange(v, LANG_NOR, LANG_MAX))
     sv->language = v;
   if (parseJsonInt(json, "textCase", v) && inRange(v, TEXT_CASE_UPPER, TEXT_CASE_PASCAL))
     sv->textCase = v;
@@ -468,7 +468,7 @@ static void appendSchemaEnumField(
 
 static String buildSchemaJson() {
   String json;
-  json.reserve(5000);
+  json.reserve(5400);
 
   char buf[64];
   json += "{";
@@ -494,7 +494,7 @@ static String buildSchemaJson() {
   appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"FULL\"},{\"value\":2,\"label\":\"SIMPLE\"}]");
   appendSchemaEnumField(json, first, "language", "Language",
-                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"}]");
+                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"},{\"value\":4,\"label\":\"ESP\"},{\"value\":5,\"label\":\"DEU\"},{\"value\":6,\"label\":\"ITA\"}]");
   appendSchemaEnumField(json, first, "textCase", "Text Case",
                         "[{\"value\":0,\"label\":\"UPPER\"},{\"value\":1,\"label\":\"Pascal\"}]");
   appendSchemaEnumField(json, first, "listFontSize", "Font Size",
@@ -649,7 +649,7 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     updated.raceViewMode = (uint16_t)v;
   }
   if (parseJsonInt(json, "language", v)) {
-    if (!inRange(v, LANG_NOR, LANG_ACD)) { *errorMsg = "Error: invalid language"; return false; }
+    if (!inRange(v, LANG_NOR, LANG_MAX)) { *errorMsg = "Error: invalid language"; return false; }
     updated.language = (uint16_t)v;
   }
   if (parseJsonInt(json, "textCase", v)) {
@@ -771,8 +771,18 @@ static const char* getUiPath() {
   return "/ui/index.html";
 }
 
+static const char* getDocsPathForLanguage(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "/docs/no/index.html";
+    case LANG_ESP: return "/docs/es/index.html";
+    case LANG_DEU: return "/docs/de/index.html";
+    case LANG_ITA: return "/docs/it/index.html";
+    default:       return "/docs/en/index.html";
+  }
+}
+
 static const char* getDefaultDocsPath() {
-  return (g_storedVar.language == LANG_NOR) ? "/docs/no/index.html" : "/docs/en/index.html";
+  return getDocsPathForLanguage(g_storedVar.language);
 }
 
 static bool streamFileFromSpiffs(const char* path, const char* contentType) {
@@ -1058,7 +1068,8 @@ static void handleDocsDefault() {
       !streamHtmlFromSpiffs("/docs/en/index.html") &&
       !streamHtmlFromSpiffs("/docs/no/index.html") &&
       !streamHtmlFromSpiffs("/docs/es/index.html") &&
-      !streamHtmlFromSpiffs("/docs/de/index.html")) {
+      !streamHtmlFromSpiffs("/docs/de/index.html") &&
+      !streamHtmlFromSpiffs("/docs/it/index.html")) {
     sendDocsMissing(defaultPath);
   }
 }
@@ -1084,6 +1095,12 @@ static void handleDocsEs() {
 static void handleDocsDe() {
   if (!streamHtmlFromSpiffs("/docs/de/index.html")) {
     sendDocsMissing("/docs/de/index.html");
+  }
+}
+
+static void handleDocsIt() {
+  if (!streamHtmlFromSpiffs("/docs/it/index.html")) {
+    sendDocsMissing("/docs/it/index.html");
   }
 }
 
@@ -1293,6 +1310,9 @@ static void registerWebRoutes() {
   g_wifiServer->on("/docs/de", HTTP_GET, handleDocsDe);
   g_wifiServer->on("/docs/de/", HTTP_GET, handleDocsDe);
   g_wifiServer->on("/docs/de/index.html", HTTP_GET, handleDocsDe);
+  g_wifiServer->on("/docs/it", HTTP_GET, handleDocsIt);
+  g_wifiServer->on("/docs/it/", HTTP_GET, handleDocsIt);
+  g_wifiServer->on("/docs/it/index.html", HTTP_GET, handleDocsIt);
   g_wifiServer->on("/docs/assets/curve_examples.png", HTTP_GET, handleDocsCurveAsset);
   g_wifiServer->on("/docs/assets/trig_cal.png", HTTP_GET, handleDocsTriggerAsset);
   g_wifiServer->on("/restore", HTTP_POST, handleRestore, handleRestoreUpload);

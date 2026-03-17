@@ -176,7 +176,7 @@ void showPowerSettings() {
         if (i == 3) {
           char valStr[7];
           uint16_t disp = editing ? tmpDelay : g_storedVar.startupDelay;
-          if (disp == 0) snprintf(valStr, sizeof(valStr), "   %s", (lang == LANG_NOR) ? "AV" : "OFF");
+          if (disp == 0) snprintf(valStr, sizeof(valStr), "   %s", getOnOffLabel(lang, 0));
           else           snprintf(valStr, sizeof(valStr), "%3dms", disp * 10);
           uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * WIDTH8x8);
           obdWriteString(&g_obd, 0, vx, i * lineH, valStr, menuFont,

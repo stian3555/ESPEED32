@@ -20,6 +20,66 @@ extern void saveEEPROM(StoredVar_type toSave);
 extern void initMenuItems();
 extern void initSettingsMenuItems();
 
+static const char* getResetCancelText(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "TILBAKE=AVBRYT";
+    case LANG_ESP: return "ATRAS=CANCEL";
+    case LANG_DEU: return "ZURUCK=ABBR.";
+    case LANG_ITA: return "INDIET=ANNULLA";
+    default:       return "BACK=CANCEL";
+  }
+}
+
+static const char* getResetCancelledText(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "AVBRUTT!";
+    case LANG_ESP: return "CANCELADO!";
+    case LANG_DEU: return "ABBRUCH!";
+    case LANG_ITA: return "ANNULLATO!";
+    default:       return "CANCELLED!";
+  }
+}
+
+static const char* getResetPressTwiceText(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "TRYKK 2 GANGER";
+    case LANG_ESP: return "PULSA 2 VECES";
+    case LANG_DEU: return "ZWEIMAL DRUCK";
+    case LANG_ITA: return "PREMI 2 VOLTE";
+    default:       return "PRESS TWICE";
+  }
+}
+
+static const char* getResetAgainLine1(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "TRYKK IGJEN";
+    case LANG_ESP: return "PULSA OTRA";
+    case LANG_DEU: return "NOCHMAL";
+    case LANG_ITA: return "PREMI ANCORA";
+    default:       return "PRESS AGAIN";
+  }
+}
+
+static const char* getResetAgainLine2(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "FOR A NULLSTILLE";
+    case LANG_ESP: return "VEZ PARA RESET";
+    case LANG_DEU: return "FUER RESET";
+    case LANG_ITA: return "PER RESET";
+    default:       return "TO RESET";
+  }
+}
+
+static const char* getResetDoneText(uint16_t lang) {
+  switch (lang) {
+    case LANG_NOR: return "NULLSTILT!";
+    case LANG_ESP: return "RESET OK!";
+    case LANG_DEU: return "RESET OK!";
+    case LANG_ITA: return "RESET OK!";
+    default:       return "RESET DONE!";
+  }
+}
+
 /**
  * Show a double-click confirmation for a destructive reset action.
  * @param label  Short label shown on the confirm screen (e.g. "CAR")
@@ -27,18 +87,18 @@ extern void initSettingsMenuItems();
  */
 static bool resetConfirm(const char* label) {
   uint16_t lang = g_storedVar.language;
-  const char* cancelText = (lang == LANG_NOR) ? "TILBAKE=AVBRYT" : "BACK=CANCEL";
+  const char* cancelText = getResetCancelText(lang);
 
   auto showCancelled = [&]() {
     obdFill(&g_obd, OBD_WHITE, 1);
-    const char* msg = (lang == LANG_NOR) ? "AVBRUTT!" : "CANCELLED!";
+    const char* msg = getResetCancelledText(lang);
     int tw = strlen(msg) * WIDTH12x16;
     obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)msg, FONT_12x16, OBD_BLACK, 1);
     delay(1000);
     obdFill(&g_obd, OBD_WHITE, 1);
   };
 
-  const char* pressT = (lang == LANG_NOR) ? "TRYKK 2 GANGER" : "PRESS TWICE";
+  const char* pressT = getResetPressTwiceText(lang);
   auto drawFirstConfirm = [&]() {
     obdFill(&g_obd, OBD_WHITE, 1);
     obdWriteString(&g_obd, 0, 10, 5,  (char *)label, FONT_8x8, OBD_BLACK, 1);
@@ -48,15 +108,9 @@ static bool resetConfirm(const char* label) {
 
   auto drawSecondConfirm = [&]() {
     obdFill(&g_obd, OBD_WHITE, 1);
-    if (lang == LANG_NOR) {
-      obdWriteString(&g_obd, 0, 10, 5,  (char *)"TRYKK IGJEN",      FONT_8x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 10, 16, (char *)"FOR A NULLSTILLE", FONT_6x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 10, 24, (char *)label,              FONT_6x8, OBD_BLACK, 1);
-    } else {
-      obdWriteString(&g_obd, 0, 10, 5,  (char *)"PRESS AGAIN", FONT_8x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 10, 16, (char *)"TO RESET",    FONT_6x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 10, 24, (char *)label,         FONT_6x8, OBD_BLACK, 1);
-    }
+    obdWriteString(&g_obd, 0, 10, 5,  (char *)getResetAgainLine1(lang), FONT_8x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 16, (char *)getResetAgainLine2(lang), FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 10, 24, (char *)label,                   FONT_6x8, OBD_BLACK, 1);
     obdWriteString(&g_obd, 0, 10, 45, (char *)cancelText, FONT_6x8, OBD_BLACK, 1);
   };
 
@@ -256,20 +310,16 @@ void showResetSubmenu() {
   const uint8_t RS_ITEMS = 5;
   uint16_t lang = g_storedVar.language;
 
-  const char* rowNames[RS_ITEMS];
-  if (lang == LANG_NOR) {
-    rowNames[0] = "Bil";
-    rowNames[1] = "Innstillinger";
-    rowNames[2] = "Kalibrering";
-    rowNames[3] = "Alt";
-    rowNames[4] = "Tilbake";
-  } else {
-    rowNames[0] = "Car";
-    rowNames[1] = "Settings";
-    rowNames[2] = "Calibration";
-    rowNames[3] = "Everything";
-    rowNames[4] = "Back";
-  }
+  const char* rowNamesByLang[7][RS_ITEMS] = {
+    {"Bil", "Innstillinger", "Kalibrering", "Alt", "Tilbake"},
+    {"Car", "Settings", "Calibration", "Everything", "Back"},
+    {"Car", "Settings", "Calibration", "Everything", "Back"},
+    {"Car", "Settings", "Calibration", "Everything", "Back"},
+    {"Auto", "Ajustes", "Calibrac.", "Todo", "Atras"},
+    {"Auto", "Einstell.", "Kalibr.", "Alles", "Zuruck"},
+    {"Auto", "Impostaz.", "Calibraz.", "Tutto", "Indietro"}
+  };
+  const char** rowNames = rowNamesByLang[lang];
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -361,7 +411,7 @@ void showResetSubmenu() {
       screensaverActive = false;
       if (confirmed) {
         obdFill(&g_obd, OBD_WHITE, 1);
-        const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
+        const char* doneText = getResetDoneText(lang);
         int tw = strlen(doneText) * WIDTH12x16;
         obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
         delay(1500);

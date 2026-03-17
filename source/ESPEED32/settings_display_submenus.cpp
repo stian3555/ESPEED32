@@ -172,18 +172,22 @@ void showScreensaverSettings() {
   const uint8_t SS_ITEMS = 5;
   uint8_t lang = g_storedVar.language;
 
-  const char* ssNames[SS_ITEMS];
-  if (lang == LANG_NOR) {
-    ssNames[0] = "NA";      ssNames[1] = "LINJE1";
-    ssNames[2] = "LINJE2";  ssNames[3] = "TID";
-    ssNames[4] = "TILBAKE";
-  } else {
-    ssNames[0] = "NOW";     ssNames[1] = "LINE1";
-    ssNames[2] = "LINE2";   ssNames[3] = "TIME";
-    ssNames[4] = "BACK";
-  }
-  const char* editorTitleL1 = (lang == LANG_NOR) ? "Linje 1" : "Line 1";
-  const char* editorTitleL2 = (lang == LANG_NOR) ? "Linje 2" : "Line 2";
+  const char* ssNamesByLang[7][SS_ITEMS] = {
+    {"NA", "LINJE1", "LINJE2", "TID", "TILBAKE"},
+    {"NOW", "LINE1", "LINE2", "TIME", "BACK"},
+    {"NOW", "LINE1", "LINE2", "TIME", "BACK"},
+    {"NOW", "LINE1", "LINE2", "TIME", "BACK"},
+    {"AHORA", "LINEA1", "LINEA2", "TIEMPO", "ATRAS"},
+    {"JETZT", "ZEILE1", "ZEILE2", "ZEIT", "ZURUCK"},
+    {"ORA", "RIGA1", "RIGA2", "TEMPO", "INDIETRO"}
+  };
+  const char* editorTitleL1ByLang[7] = {"Linje 1", "Line 1", "Line 1", "Line 1", "Linea 1", "Zeile 1", "Riga 1"};
+  const char* editorTitleL2ByLang[7] = {"Linje 2", "Line 2", "Line 2", "Line 2", "Linea 2", "Zeile 2", "Riga 2"};
+  const char* offLabelByLang[7] = {"AV", "OFF", "OFF", "OFF", "OFF", "AUS", "OFF"};
+
+  const char** ssNames = ssNamesByLang[lang];
+  const char* editorTitleL1 = editorTitleL1ByLang[lang];
+  const char* editorTitleL2 = editorTitleL2ByLang[lang];
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -302,7 +306,7 @@ void showScreensaverSettings() {
         } else if (idx == 3) {
           /* TIME: show current timeout, right-justified (4 chars × 6px = 24px from right) */
           if (g_storedVar.screensaverTimeout == 0) {
-            sprintf(msgStr, "%4s", (lang == LANG_NOR) ? "AV" : "OFF");
+            sprintf(msgStr, "%4s", offLabelByLang[lang]);
           } else {
             sprintf(msgStr, "%3ds", g_storedVar.screensaverTimeout);
           }
@@ -386,34 +390,28 @@ void showStatusSettings() {
   uint8_t lang = g_storedVar.language;
 
   /* Row labels */
-  const char* rowNames[ST_ITEMS];
-  if (lang == LANG_NOR) {
-    rowNames[0] = "FELT 1"; rowNames[1] = "FELT 2";
-    rowNames[2] = "FELT 3"; rowNames[3] = "FELT 4";
-    rowNames[4] = "TILBAKE";
-  } else {
-    rowNames[0] = "SLOT 1"; rowNames[1] = "SLOT 2";
-    rowNames[2] = "SLOT 3"; rowNames[3] = "SLOT 4";
-    rowNames[4] = "BACK";
-  }
+  const char* rowNamesByLang[7][ST_ITEMS] = {
+    {"FELT 1", "FELT 2", "FELT 3", "FELT 4", "TILBAKE"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "BACK"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "BACK"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "BACK"},
+    {"CAMPO 1", "CAMPO 2", "CAMPO 3", "CAMPO 4", "ATRAS"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "ZURUCK"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "INDIETRO"}
+  };
+  const char** rowNames = rowNamesByLang[lang];
 
   /* Content type labels (max 4 chars, shown right-justified in menu) */
-  const char* slotLabels[ST_SLOT_MAX + 1];
-  if (lang == LANG_NOR) {
-    slotLabels[STATUS_BLANK]    = "---";
-    slotLabels[STATUS_OUTPUT]   = "OUT%";
-    slotLabels[STATUS_THROTTLE] = "GASS";
-    slotLabels[STATUS_CAR]      = "BIL";
-    slotLabels[STATUS_CURRENT]  = "AMPE";
-    slotLabels[STATUS_VOLTAGE]  = "VOLT";
-  } else {
-    slotLabels[STATUS_BLANK]    = "---";
-    slotLabels[STATUS_OUTPUT]   = "OUT%";
-    slotLabels[STATUS_THROTTLE] = "THRO";
-    slotLabels[STATUS_CAR]      = "CAR";
-    slotLabels[STATUS_CURRENT]  = "CURR";
-    slotLabels[STATUS_VOLTAGE]  = "VOLT";
-  }
+  const char* slotLabelsByLang[7][ST_SLOT_MAX + 1] = {
+    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"}
+  };
+  const char** slotLabels = slotLabelsByLang[lang];
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);

@@ -53,6 +53,10 @@
 #define LANG_ENG            1     /* English language */
 #define LANG_CS             2     /* CarSteen terminology (English-based) */
 #define LANG_ACD            3     /* ACD terminology (English-based) */
+#define LANG_ESP            4     /* Spanish language */
+#define LANG_DEU            5     /* German language */
+#define LANG_ITA            6     /* Italian language */
+#define LANG_MAX            LANG_ITA
 #define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */

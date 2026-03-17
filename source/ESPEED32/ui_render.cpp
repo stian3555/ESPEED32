@@ -584,7 +584,7 @@ void printMainMenu(MenuState_enum currMenuState)
           /* Special handling for LANG menu item */
           else if (strcmp(g_mainMenu.item[menuIndex].name, "LANG") == 0) {
             uint16_t language = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
-            const char* langLabel = (language <= LANG_ACD) ? LANG_LABELS[language] : LANG_LABELS[LANG_ENG];
+            const char* langLabel = (language <= LANG_MAX) ? LANG_LABELS[language] : LANG_LABELS[LANG_ENG];
             sprintf(msgStr, "%3s", langLabel);
           }
           else {

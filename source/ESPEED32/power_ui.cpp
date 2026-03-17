@@ -74,10 +74,14 @@ void showPowerSave(uint32_t inactivityStartMs) {
   }
 
   uint16_t lang = g_storedVar.language;
+  const char* sleepMsg[] = {
+    "SOVER...", "SLEEPING...", "SLEEPING...", "SLEEPING...",
+    "DURMIENDO...", "SCHLAFEN...", "RIPOSO..."
+  };
 
   /* Brief sleep message */
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* msg = (lang == LANG_NOR) ? "SOVER..." : "SLEEPING...";
+  const char* msg = sleepMsg[lang];
   int tw = strlen(msg) * WIDTH8x8;
   obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
   delay(1200);
@@ -119,10 +123,14 @@ void showDeepSleep() {
   }
 
   uint16_t lang = g_storedVar.language;
+  const char* powerOffMsg[] = {
+    "SLUKKER...", "POWER OFF...", "POWER OFF...", "POWER OFF...",
+    "APAGANDO...", "AUSSCHALT.", "SPEGNENDO..."
+  };
 
   /* Brief power-off message */
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* msg = (lang == LANG_NOR) ? "SLUKKER..." : "POWERING OFF...";
+  const char* msg = powerOffMsg[lang];
   int tw = strlen(msg) * WIDTH8x8;
   obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 28, (char*)msg, FONT_8x8, OBD_BLACK, 1);
   delay(1200);

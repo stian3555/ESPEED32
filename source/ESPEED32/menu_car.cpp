@@ -701,16 +701,23 @@ void showSelectRenameCar() {
   else if (selectedOption == CAR_OPTION_RESET)
   {
     uint16_t lang = g_storedVar.language;
-    const char* carLabel = (lang == LANG_NOR) ? "ALLE BILER" : "ALL CARS";
+    const char* allCarsLabel[] = {
+      "ALLE BILER", "ALL CARS", "ALL CARS", "ALL CARS",
+      "TODOS AUTOS", "ALLE AUTOS", "TUTTE AUTO"
+    };
+    const char* doneText[] = {
+      "NULLSTILT!", "RESET DONE!", "RESET DONE!", "RESET DONE!",
+      "RESET OK!", "RESET OK!", "RESET OK!"
+    };
+    const char* carLabel = allCarsLabel[lang];
     bool confirmed = showResetConfirmDialog(carLabel);
     if (confirmed) {
       resetAllCarsToFactoryDefaults();
       saveEEPROM(g_storedVar);
       initMenuItems();
       obdFill(&g_obd, OBD_WHITE, 1);
-      const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
-      int tw = strlen(doneText) * WIDTH12x16;
-      obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
+      int tw = strlen(doneText[lang]) * WIDTH12x16;
+      obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText[lang], FONT_12x16, OBD_BLACK, 1);
       delay(1500);
       obdFill(&g_obd, OBD_WHITE, 1);
     }

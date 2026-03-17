@@ -160,10 +160,10 @@ void showSoundSettings() {
 void showWiFiSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblOpen[4]    = {"INFO SIDE",   "INFO PAGE", "INFO PAGE", "INFO PAGE"};
-  const char* lblTimer[4]   = {"AUTO AV",     "AUTO OFF",  "AUTO OFF",  "AUTO OFF"};
-  const char* lblStartBg[4] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI"};
-  const char* lblStopBg[4]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI"};
+  const char* lblOpen[7]    = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
+  const char* lblTimer[7]   = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblStartBg[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
+  const char* lblStopBg[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_INFO = 1;

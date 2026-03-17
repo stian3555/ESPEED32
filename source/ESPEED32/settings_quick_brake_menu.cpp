@@ -26,15 +26,24 @@ enum ReleaseBrakeRowType : uint8_t {
 };
 
 static uint8_t getReleaseBrakeMenuItemCount(uint16_t mode) {
-  return (mode == RELEASE_BRAKE_OFF) ? 2 : 4;
+  if (mode == RELEASE_BRAKE_OFF) {
+    return 2;
+  }
+  if (mode == RELEASE_BRAKE_DRAG) {
+    return 3;
+  }
+  return 4;
 }
 
 static ReleaseBrakeRowType getReleaseBrakeRowType(uint16_t mode, uint8_t visibleIndex) {
-  if (visibleIndex <= 1) {
+  if (visibleIndex == 1) {
     return QB_ROW_MODE;
   }
   if (mode == RELEASE_BRAKE_OFF) {
     return QB_ROW_BACK;
+  }
+  if (mode == RELEASE_BRAKE_DRAG) {
+    return (visibleIndex == 2) ? QB_ROW_LEVEL : QB_ROW_BACK;
   }
   if (visibleIndex == 2) {
     return QB_ROW_ZONE;
@@ -85,9 +94,9 @@ static const char* getReleaseBrakeMenuModeValue(uint8_t lang, uint16_t mode) {
 /**
  * Release Brake submenu.
  * Opened by clicking the release-brake item in the main menu.
- * Items: MODE (OFF/QUICK/DRAG), optional ZONE + BRAKE/DRAG level, BACK.
- * QUICK cuts output to brake inside the zone. DRAG keeps output active and
- * blends in drag only while the trigger is moving toward release.
+ * Items: MODE (OFF/QUICK/DRAG), optional QUICK zone + level, DRAG level, BACK.
+ * QUICK cuts output to brake inside the configured zone. DRAG keeps output active
+ * and blends in drag while the trigger is moving toward release, with no zone.
  */
 void showQuickBrakeMenu() {
   uint8_t lang = g_storedVar.language;

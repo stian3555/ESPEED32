@@ -99,7 +99,7 @@ a{color:#7ed6ff}
  */
 static String buildJsonBackup() {
   String json;
-  json.reserve(5200);
+  json.reserve(5300);
   char buf[128];
 
   json += "{\n";
@@ -113,6 +113,7 @@ static String buildJsonBackup() {
   sprintf(buf, "  \"soundRace\": %u,\n", g_storedVar.soundRace);         json += buf;
   sprintf(buf, "  \"antiSpinStep\": %u,\n", g_antiSpinStepMs);           json += buf;
   sprintf(buf, "  \"encoderInvert\": %u,\n", g_encoderInvertEnabled ? 1 : 0); json += buf;
+  sprintf(buf, "  \"adcVoltageRangeMv\": %u,\n", g_adcVoltageRange_mV);  json += buf;
   sprintf(buf, "  \"gridCarSelectEnabled\": %u,\n", g_storedVar.gridCarSelectEnabled); json += buf;
   sprintf(buf, "  \"raceViewMode\": %u,\n", g_storedVar.raceViewMode);   json += buf;
   sprintf(buf, "  \"language\": %u,\n", g_storedVar.language);           json += buf;
@@ -248,7 +249,8 @@ static bool inRange(int32_t val, int32_t minVal, int32_t maxVal) {
  * @brief Parse and validate uploaded JSON, populate temporary StoredVar
  * @return true if valid, false with error message
  */
-static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs, uint16_t* encoderInvertEnabled, String* errorMsg) {
+static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs,
+                                 uint16_t* encoderInvertEnabled, uint16_t* adcVoltageRangeMv, String* errorMsg) {
   int32_t v;
 
   /* Initialize with current settings as defaults (missing fields keep current values) */
@@ -258,6 +260,9 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
   }
   if (encoderInvertEnabled != nullptr) {
     *encoderInvertEnabled = g_encoderInvertEnabled ? 1 : 0;
+  }
+  if (adcVoltageRangeMv != nullptr) {
+    *adcVoltageRangeMv = g_adcVoltageRange_mV;
   }
 
   /* Version check - warn but allow cross-version restore for car profiles */
@@ -289,6 +294,11 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
       parseJsonInt(json, "encoderInvert", v) &&
       inRange(v, 0, 1)) {
     *encoderInvertEnabled = (uint16_t)v;
+  }
+  if (adcVoltageRangeMv != nullptr &&
+      parseJsonInt(json, "adcVoltageRangeMv", v) &&
+      inRange(v, ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS)) {
+    *adcVoltageRangeMv = (uint16_t)v;
   }
   if (parseJsonInt(json, "gridCarSelectEnabled", v) && inRange(v, 0, 1))
     sv->gridCarSelectEnabled = v;
@@ -488,7 +498,7 @@ static void appendSchemaEnumField(
 
 static String buildSchemaJson() {
   String json;
-  json.reserve(5400);
+  json.reserve(5500);
 
   char buf[64];
   json += "{";
@@ -512,6 +522,7 @@ static String buildSchemaJson() {
   appendSchemaIntField(json, first, "antiSpinStep", "ANTIS Step", ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX, 1, "ms");
   appendSchemaEnumField(json, first, "encoderInvert", "ENC INV",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
+  appendSchemaIntField(json, first, "adcVoltageRangeMv", "VIN CAL ADC", ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS, 1, "mV");
   appendSchemaEnumField(json, first, "gridCarSelectEnabled", "Grid Car Select",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
@@ -567,7 +578,7 @@ static String buildStateJson(uint8_t carIndex) {
   const CarParam_type& c = g_storedVar.carParam[carIndex];
 
   String json;
-  json.reserve(2500);
+  json.reserve(2600);
   char buf[160];
 
   json += "{";
@@ -586,6 +597,7 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"soundRace\":%u,", g_storedVar.soundRace); json += buf;
   snprintf(buf, sizeof(buf), "\"antiSpinStep\":%u,", g_antiSpinStepMs); json += buf;
   snprintf(buf, sizeof(buf), "\"encoderInvert\":%u,", g_encoderInvertEnabled ? 1 : 0); json += buf;
+  snprintf(buf, sizeof(buf), "\"adcVoltageRangeMv\":%u,", g_adcVoltageRange_mV); json += buf;
   snprintf(buf, sizeof(buf), "\"gridCarSelectEnabled\":%u,", g_storedVar.gridCarSelectEnabled); json += buf;
   snprintf(buf, sizeof(buf), "\"raceViewMode\":%u,", g_storedVar.raceViewMode); json += buf;
   snprintf(buf, sizeof(buf), "\"language\":%u,", g_storedVar.language); json += buf;
@@ -672,6 +684,13 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
   if (parseJsonInt(json, "encoderInvert", v)) {
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid encoderInvert"; return false; }
     applyEncoderInvertSetting((uint16_t)v);
+  }
+  if (parseJsonInt(json, "adcVoltageRangeMv", v)) {
+    if (!inRange(v, ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS)) {
+      *errorMsg = "Error: invalid adcVoltageRangeMv";
+      return false;
+    }
+    applyAdcVoltageRangeMilliVolts((uint16_t)v);
   }
   if (parseJsonInt(json, "gridCarSelectEnabled", v)) {
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid gridCarSelectEnabled"; return false; }
@@ -1011,10 +1030,12 @@ static void handleSerialCommand(const String& cmd) {
     String errorMsg;
     uint16_t tempAntiSpinStep = g_antiSpinStepMs;
     uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
-    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &errorMsg)) {
+    uint16_t tempAdcVoltageRange = g_adcVoltageRange_mV;
+    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange, &errorMsg)) {
       g_storedVar = tempVar;
       g_antiSpinStepMs = tempAntiSpinStep;
       g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
+      applyAdcVoltageRangeMilliVolts(tempAdcVoltageRange);
       saveEEPROM(g_storedVar);
       Serial.println("OK - Settings restored");
       Serial.flush();
@@ -1174,10 +1195,12 @@ static void handleRestore() {
 
   uint16_t tempAntiSpinStep = g_antiSpinStepMs;
   uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
-  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &errorMsg)) {
+  uint16_t tempAdcVoltageRange = g_adcVoltageRange_mV;
+  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange, &errorMsg)) {
     g_storedVar = tempVar;
     g_antiSpinStepMs = tempAntiSpinStep;
     g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
+    applyAdcVoltageRangeMilliVolts(tempAdcVoltageRange);
     saveEEPROM(g_storedVar);
     g_wifiServer->send(200, "text/plain", "OK - Settings restored! Restarting...");
     g_uploadBuffer = "";

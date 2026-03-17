@@ -23,14 +23,14 @@ const char* SETTINGS_MENU_NAMES[][13] = {
 };
 
 /* Power submenu item names: [language][item] */
-const char* POWER_MENU_NAMES[][5] = {
-  /* NOR */ {"SKJSP", "DVALE", "DYP SOV", "OPPSTART", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "BACK"},
-  /* CS  */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "BACK"},
-  /* ACD */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "BACK"},
-  /* ESP */ {"SCRSV", "REPOSO", "SUSP PROF", "ARRANQUE", "ATRAS"},
-  /* DEU */ {"SCRSV", "SCHLAF", "TIEF SCHL", "START", "ZURUCK"},
-  /* ITA */ {"SCRSV", "RIPOSO", "SONNO PROF", "AVVIO", "INDIETRO"}
+const char* POWER_MENU_NAMES[][6] = {
+  /* NOR */ {"SKJSP", "DVALE", "DYP SOV", "OPPSTART", "VIN KAL", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL", "BACK"},
+  /* CS  */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL", "BACK"},
+  /* ACD */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL", "BACK"},
+  /* ESP */ {"SCRSV", "REPOSO", "SUSP PROF", "ARRANQUE", "VIN CAL", "ATRAS"},
+  /* DEU */ {"SCRSV", "SCHLAF", "TIEF SCHL", "START", "VIN KAL", "ZURUCK"},
+  /* ITA */ {"SCRSV", "RIPOSO", "SONNO PROF", "AVVIO", "VIN CAL", "INDIETRO"}
 };
 
 /* Display submenu item names: [language][item] */
@@ -158,14 +158,14 @@ const char* SETTINGS_MENU_NAMES_PASCAL[][13] = {
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */
-const char* POWER_MENU_NAMES_PASCAL[][5] = {
-  /* NOR */ {"Skjsp", "Dvale", "Dyp Sov", "Oppstart", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Back"},
-  /* CS  */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Back"},
-  /* ACD */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Back"},
-  /* ESP */ {"Scrsv", "Reposo", "Susp Prof", "Arranque", "Atras"},
-  /* DEU */ {"Scrsv", "Schlaf", "Tief Schl", "Start", "Zuruck"},
-  /* ITA */ {"Scrsv", "Riposo", "Sonno Prof", "Avvio", "Indietro"}
+const char* POWER_MENU_NAMES_PASCAL[][6] = {
+  /* NOR */ {"Skjsp", "Dvale", "Dyp Sov", "Oppstart", "Vin kal", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal", "Back"},
+  /* CS  */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal", "Back"},
+  /* ACD */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal", "Back"},
+  /* ESP */ {"Scrsv", "Reposo", "Susp Prof", "Arranque", "Vin Cal", "Atras"},
+  /* DEU */ {"Scrsv", "Schlaf", "Tief Schl", "Start", "Vin Kal", "Zuruck"},
+  /* ITA */ {"Scrsv", "Riposo", "Sonno Prof", "Avvio", "Vin Cal", "Indietro"}
 };
 
 /* Display submenu item names - Pascal Case: [language][item] */

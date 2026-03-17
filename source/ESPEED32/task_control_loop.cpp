@@ -48,9 +48,7 @@ void Task2code(void *pvParameters) {
         static uint32_t lapRegisteredMs = 0;
         static uint32_t driveCurrentEma_mA = 0;
 
-        uint32_t vinRaw = analogRead(AN_VIN_DIV);
-        uint32_t vinMv = (ACD_VOLTAGE_RANGE_MVOLTS * vinRaw / ACD_RESOLUTION_STEPS)
-                         * (RVIFBL + RVIFBH) / RVIFBL;
+        uint32_t vinMv = HAL_ReadVoltageDivider(AN_VIN_DIV, RVIFBL, RVIFBH);
         bool hasCurrentSense = HAL_HasMotorCurrentSense();
         uint16_t motorCurrent_mA = hasCurrentSense ? HAL_ReadMotorCurrent() : 0;
         g_escVar.motorCurrent_mA = motorCurrent_mA;
@@ -151,7 +149,7 @@ void Task2code(void *pvParameters) {
           throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
         } else {
           bool applyQuickBrake = (releaseBrakeMode == RELEASE_BRAKE_QUICK) && inReleaseZone;
-          bool applyDragBrake = (releaseBrakeMode == RELEASE_BRAKE_DRAG) && inReleaseZone && triggerReleasing;
+          bool applyDragBrake = (releaseBrakeMode == RELEASE_BRAKE_DRAG) && triggerReleasing;
 
           if (applyQuickBrake) {
             /* QUICK mode: cut output and apply brake in the release zone */

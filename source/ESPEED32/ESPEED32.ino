@@ -74,6 +74,7 @@ StoredVar_type g_storedVar;
 uint16_t g_statsEnabled = STATS_ENABLED_DEFAULT;  /* Main menu STATS visibility: 0=hidden, 1=shown */
 uint16_t g_antiSpinStepMs = ANTISPIN_STEP_DEFAULT; /* Global encoder step when editing ANTIS */
 uint16_t g_encoderInvertEnabled = ENCODER_INVERT_DEFAULT; /* Global encoder direction: 0=default, 1=inverted */
+uint16_t g_adcVoltageRange_mV = ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS; /* Global ADC voltage scale used for VIN/current conversion */
 
 /* ESC Runtime Variables */
 ESC_type g_escVar {
@@ -120,6 +121,7 @@ static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker fo
 static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
 static const char* PREF_KEY_ANTIS_STEP = "antis_step_v1";  /* persistent ANTIS encoder step */
 static const char* PREF_KEY_ENC_INVERT = "enc_inv_v1";     /* persistent encoder inversion toggle */
+static const char* PREF_KEY_ADC_RANGE = "adc_rng_mv_v1";   /* persistent ADC voltage calibration */
 static const char* PREF_KEY_EXT_POT1_TARGET = "ext_pot1_tgt";
 static const char* PREF_KEY_EXT_POT2_TARGET = "ext_pot2_tgt";
 static const char* PREF_KEY_EXT_POT_ENABLED_LEGACY = "ext_pot_en";
@@ -393,6 +395,11 @@ void setup() {
     1);          /* Core 1 */
 }
 
+void applyAdcVoltageRangeMilliVolts(uint16_t range_mV) {
+  g_adcVoltageRange_mV = constrain(range_mV, ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS);
+  HalfBridge_SetAdcVoltageRangeMilliVolts(g_adcVoltageRange_mV);
+}
+
 
 /*********************************************************************************************************************/
 /*                                                FreeRTOS Tasks                                                     */
@@ -437,6 +444,7 @@ void Task1code(void *pvParameters) {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
             g_statsEnabled = g_pref.getUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT) ? 1 : 0;
             g_encoderInvertEnabled = g_pref.getUChar(PREF_KEY_ENC_INVERT, ENCODER_INVERT_DEFAULT) ? 1 : 0;
+            applyAdcVoltageRangeMilliVolts(g_pref.getUShort(PREF_KEY_ADC_RANGE, ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS));
             if (g_pref.isKey(PREF_KEY_EXT_POT1_TARGET) || g_pref.isKey(PREF_KEY_EXT_POT2_TARGET)) {
               g_extPotTarget[0] = constrain(g_pref.getUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT),
                                             EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX);
@@ -542,11 +550,13 @@ void Task1code(void *pvParameters) {
         g_pref.putUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT);
         g_pref.putUShort(PREF_KEY_ANTIS_STEP, ANTISPIN_STEP_DEFAULT);
         g_pref.putUChar(PREF_KEY_ENC_INVERT, ENCODER_INVERT_DEFAULT);
+        g_pref.putUShort(PREF_KEY_ADC_RANGE, ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT);
         g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT);
 
         initStoredVariables();  /* Initialize stored variables with default values */
         g_statsEnabled = STATS_ENABLED_DEFAULT;
+        applyAdcVoltageRangeMilliVolts(ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_extPotTarget[0] = EXT_POT1_TARGET_DEFAULT;
         g_extPotTarget[1] = EXT_POT2_TARGET_DEFAULT;
         resetExtPotFilter();
@@ -1250,6 +1260,7 @@ void saveEEPROM(StoredVar_type toSave) {
   g_pref.putUChar(PREF_KEY_STATS_ENABLED, g_statsEnabled ? 1 : 0);
   g_pref.putUShort(PREF_KEY_ANTIS_STEP, constrain(g_antiSpinStepMs, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX));
   g_pref.putUChar(PREF_KEY_ENC_INVERT, g_encoderInvertEnabled ? 1 : 0);
+  g_pref.putUShort(PREF_KEY_ADC_RANGE, constrain(g_adcVoltageRange_mV, ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS));
   g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, constrain(g_extPotTarget[0], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, constrain(g_extPotTarget[1], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.end();                                           /* Close the namespace */

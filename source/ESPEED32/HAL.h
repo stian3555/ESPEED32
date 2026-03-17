@@ -32,7 +32,12 @@
 /* ADC Voltage Calibration */
 #define VIN_CAL_SET  1200
 #define VIN_CAL_READ 1108
-#define ACD_VOLTAGE_RANGE_MVOLTS  ((3300 * VIN_CAL_SET) / VIN_CAL_READ)  /* Calibrated ADC voltage range */
+#define ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS  ((3300 * VIN_CAL_SET) / VIN_CAL_READ)  /* Default ADC voltage range */
+#define ADC_VOLTAGE_RANGE_MIN_MVOLTS     2500U
+#define ADC_VOLTAGE_RANGE_MAX_MVOLTS     4500U
+#define VIN_CAL_TARGET_MIN_MVOLTS        8000U
+#define VIN_CAL_TARGET_MAX_MVOLTS        20000U
+#define VIN_CAL_TARGET_STEP_MVOLTS       10U
 
 /* Motor Current Sense Profiles
  * Keep BTN99X0 as the default. Custom builders can switch this to NONE
@@ -156,5 +161,6 @@ uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw);
 uint16_t HAL_ReadMotorCurrent();
 uint16_t HAL_ReadExternalPot1Raw();
 uint16_t HAL_ReadExternalPot2Raw();
+extern uint16_t g_adcVoltageRange_mV;
 
 #endif  /* HAL_H_ */

@@ -20,13 +20,165 @@ extern void setLastEncoderInteraction(uint32_t interactionMs);
 extern void showScreensaver();
 extern void saveEEPROM(StoredVar_type toSave);
 
+static void formatVoltageString(char* buffer, size_t bufferSize, uint16_t millivolts) {
+  snprintf(buffer, bufferSize, "%2u.%02uV", millivolts / 1000U, (millivolts % 1000U) / 10U);
+}
+
+static void showVinCalibrationScreen() {
+  uint16_t lang = g_storedVar.language;
+
+  const char* lblRead[7]   = {"LES", "READ", "READ", "READ", "LEE", "IST", "LETT"};
+  const char* lblSet[7]    = {"SETT", "SET", "SET", "SET", "SET", "SET", "SET"};
+  const char* lblSave[7]   = {"TRYKK=LAGR", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE"};
+  const char* lblCancel[7] = {"BREMS=TILB", "BRAKE=BACK", "BRAKE=BACK", "BRAKE=BACK", "FRENO=ATR", "BREMSE=ZRK", "FRENO=BACK"};
+  const char* lblNoVin[7]  = {"INGEN VIN", "NO VIN", "NO VIN", "NO VIN", "SIN VIN", "KEIN VIN", "NO VIN"};
+
+  const uint8_t menuFont = FONT_8x8;
+  const uint8_t lineH = HEIGHT8x8;
+  const long minTick = VIN_CAL_TARGET_MIN_MVOLTS / VIN_CAL_TARGET_STEP_MVOLTS;
+  const long maxTick = VIN_CAL_TARGET_MAX_MVOLTS / VIN_CAL_TARGET_STEP_MVOLTS;
+
+  uint16_t initialTarget_mV = constrain(
+    (g_escVar.Vin_mV >= VIN_CAL_TARGET_MIN_MVOLTS && g_escVar.Vin_mV <= VIN_CAL_TARGET_MAX_MVOLTS)
+      ? g_escVar.Vin_mV
+      : 12000U,
+    VIN_CAL_TARGET_MIN_MVOLTS,
+    VIN_CAL_TARGET_MAX_MVOLTS);
+  uint16_t target_mV = (initialTarget_mV / VIN_CAL_TARGET_STEP_MVOLTS) * VIN_CAL_TARGET_STEP_MVOLTS;
+  bool showNoVinWarning = false;
+  uint32_t noVinWarningUntil = 0;
+  bool needRedraw = true;
+
+  g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+  setUiEncoderBoundaries(minTick, maxTick, false);
+  resetUiEncoder(target_mV / VIN_CAL_TARGET_STEP_MVOLTS);
+
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
+  while (true) {
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = readUiEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        setLastEncoderInteraction(lastInteraction);
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
+    if (!wakeUp && !screensaverActive && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        screensaverActive = true;
+        screensaverEncoderPos = readUiEncoder();
+        showScreensaver();
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
+    if (showNoVinWarning && millis() > noVinWarningUntil) {
+      showNoVinWarning = false;
+      needRedraw = true;
+    }
+
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      setLastEncoderInteraction(lastInteraction);
+      target_mV = (uint16_t)readUiEncoder() * VIN_CAL_TARGET_STEP_MVOLTS;
+      needRedraw = true;
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      setLastEncoderInteraction(lastInteraction);
+
+      uint16_t measuredVin_mV = g_escVar.Vin_mV;
+      if (measuredVin_mV < 1000U) {
+        showNoVinWarning = true;
+        noVinWarningUntil = millis() + 1200UL;
+        needRedraw = true;
+      } else {
+        uint32_t scaledRange = ((uint32_t)g_adcVoltageRange_mV * target_mV + (measuredVin_mV / 2U)) / measuredVin_mV;
+        applyAdcVoltageRangeMilliVolts((uint16_t)scaledRange);
+        saveEEPROM(g_storedVar);
+        break;
+      }
+    }
+
+    static bool brakeBtnInVinCal = false;
+    static uint32_t lastBrakeBtnVinCalTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInVinCal && millis() - lastBrakeBtnVinCalTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInVinCal = true;
+        lastBrakeBtnVinCalTime = millis();
+        while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+        break;
+      }
+    } else {
+      brakeBtnInVinCal = false;
+    }
+
+    if (needRedraw) {
+      char voltageStr[12];
+      char lineBuf[17];
+      const char* title = getPowerMenuName(lang, 4);
+
+      obdFill(&g_obd, OBD_WHITE, 1);
+
+      uint8_t titleX = (OLED_WIDTH > (strlen(title) * WIDTH8x8))
+        ? (uint8_t)((OLED_WIDTH - (strlen(title) * WIDTH8x8)) / 2U)
+        : 0;
+      obdWriteString(&g_obd, 0, titleX, 0, (char*)title, menuFont, OBD_BLACK, 1);
+
+      formatVoltageString(voltageStr, sizeof(voltageStr), g_escVar.Vin_mV);
+      snprintf(lineBuf, sizeof(lineBuf), "%-4s%s", lblRead[lang], voltageStr);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, lineBuf, menuFont, OBD_BLACK, 1);
+
+      formatVoltageString(voltageStr, sizeof(voltageStr), target_mV);
+      snprintf(lineBuf, sizeof(lineBuf), "%-4s%s", lblSet[lang], voltageStr);
+      obdWriteString(&g_obd, 0, 0, 4 * lineH, lineBuf, menuFont, OBD_WHITE, 1);
+
+      obdWriteString(&g_obd, 0, 0, 6 * lineH,
+                     (char*)(showNoVinWarning ? lblNoVin[lang] : lblSave[lang]),
+                     menuFont, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 7 * lineH, (char*)lblCancel[lang], menuFont, OBD_BLACK, 1);
+
+      needRedraw = false;
+    }
+
+    if (checkRaceModeEscape()) { requestEscapeToMain(); break; }
+
+    vTaskDelay(10);
+  }
+}
+
 /**
- * Power settings submenu: SCRSV, SLEEP, DEEP SLEEP, STARTUP DELAY, BACK.
- * SCRSV/SLEEP/DEEP SLEEP open submenus; STARTUP DELAY is edited inline.
+ * Power settings submenu: SCRSV, SLEEP, DEEP SLEEP, STARTUP DELAY, VIN CAL, BACK.
+ * SCRSV/SLEEP/DEEP SLEEP open submenus; STARTUP DELAY is edited inline; VIN CAL opens a dedicated calibration screen.
  */
 void showPowerSettings() {
   uint16_t lang = g_storedVar.language;
-  const uint8_t NUM = POWER_ITEMS_COUNT;  /* 5: SCRSV, SLEEP, DEEP SLEEP, STARTUP, BACK */
+  const uint8_t NUM = POWER_ITEMS_COUNT;  /* 6: SCRSV, SLEEP, DEEP SLEEP, STARTUP, VIN CAL, BACK */
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH    = HEIGHT8x8;
 
@@ -136,6 +288,10 @@ void showPowerSettings() {
         setUiEncoderBoundaries(STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, false);
         resetUiEncoder(tmpDelay);
         needRedraw = true;
+      } else if (sel == 4) {  /* VIN CAL */
+        showVinCalibrationScreen();
+        if (isEscapeToMainRequested()) break;
+        resumeAfterChildMenu(4);
       } else {  /* BACK */
         break;
       }

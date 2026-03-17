@@ -218,7 +218,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-500 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A STEP</code> eingestellt.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-Frequenz des Motors.</td></tr>
         <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
@@ -265,6 +265,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SLEEP</code>: Auto-Sleep + manueller Sleep (Wake ueber Encoder-Knopf).</li>
       <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: Startverzoegerung 0-990 ms.</li>
+      <li><code>A STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
     </ul>
     <h3>Geschaetzter Stromverbrauch (Controller-Elektronik)</h3>
     <table>
@@ -302,6 +303,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>SETTINGS -> WIFI</code> oeffnen, um ins WiFi-Untermenue zu gehen.</li>
       <li><code>START WIFI</code>/<code>STOP WIFI</code>: startet oder stoppt Hintergrund-WiFi sofort.</li>
       <li><code>INFO PAGE</code>: oeffnet die WiFi-Seite direkt und startet WiFi/AP automatisch. Beim Verlassen der Info-Seite wird WiFi wieder gestoppt (ausser wenn vorher Hintergrundmodus gestartet wurde).</li>
+      <li><code>QR CODE</code>: zeigt einen Vollbild-WiFi-QR-Code, damit Handy oder Tablet direkt mit dem AP verbinden kann.</li>
       <li><code>AUTO OFF</code>: Timeout fuer Hintergrund-WiFi einstellen (1-120 min, Standard 5 min).</li>
       <li>Solange WiFi aktiv ist: mit <code>ESPEED32_XXXX</code> verbinden (Passwort <code>espeed32</code>) und die OLED-IP im Browser oeffnen (typisch <code>192.168.4.1</code>).</li>
       <li>Auf der Info-Seite sind <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> und <code>/docs</code> verfuegbar.</li>
@@ -365,9 +367,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- BOOT (ON/OFF)
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
+|  |- STATS (ON/OFF)
+|  |- A STEP (1-50 ms, default 5)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
+|  |  |- QR CODE
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
 |  |- USB

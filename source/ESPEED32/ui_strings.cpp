@@ -12,14 +12,14 @@ const char* MENU_NAMES[][11] = {
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][11] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "EKST POT", "STATS", "WIFI", "USB INFO", "NULLSTILL", "TEST", "INFO", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "STATS", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
-  /* CS  */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "STATS", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "STATS", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
-  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "POT EXT", "STATS", "WIFI", "USB INFO", "RESET", "TEST", "ACERCA", "ATRAS"},
-  /* DEU */ {"STROM", "ANZEIGE", "TON", "EXT POT", "STATS", "WIFI", "USB INFO", "RESET", "TEST", "INFO", "ZURUCK"},
-  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "POT EST", "STATS", "WIFI", "USB INFO", "RESET", "TEST", "INFO", "INDIETRO"}
+const char* SETTINGS_MENU_NAMES[][12] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "EKST POT", "STATS", "A STEP", "WIFI", "USB INFO", "NULLSTILL", "TEST", "INFO", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "STATS", "A STEP", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
+  /* CS  */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "STATS", "A STEP", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "STATS", "A STEP", "WIFI", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
+  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "POT EXT", "STATS", "A STEP", "WIFI", "USB INFO", "RESET", "TEST", "ACERCA", "ATRAS"},
+  /* DEU */ {"STROM", "ANZEIGE", "TON", "EXT POT", "STATS", "A STEP", "WIFI", "USB INFO", "RESET", "TEST", "INFO", "ZURUCK"},
+  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "POT EST", "STATS", "A STEP", "WIFI", "USB INFO", "RESET", "TEST", "INFO", "INDIETRO"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -136,14 +136,14 @@ const char* MENU_NAMES_PASCAL[][11] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][11] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Ekst pot", "Stats", "Wifi", "Usb info", "Nullstill", "Test", "Info", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Ext Pot", "Stats", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
-  /* CS  */ {"Power", "Display", "Sound", "Ext Pot", "Stats", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Ext Pot", "Stats", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
-  /* ESP */ {"Energia", "Pantalla", "Sonido", "Pot Ext", "Stats", "Wifi", "Usb info", "Reset", "Test", "Acerca", "Atras"},
-  /* DEU */ {"Strom", "Anzeige", "Ton", "Ext Pot", "Stats", "Wifi", "Usb info", "Reset", "Test", "Info", "Zuruck"},
-  /* ITA */ {"Potenza", "Schermo", "Suono", "Pot est", "Stats", "Wifi", "Usb info", "Reset", "Test", "Info", "Indietro"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][12] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Ekst pot", "Stats", "A Step", "Wifi", "Usb info", "Nullstill", "Test", "Info", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Ext Pot", "Stats", "A Step", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
+  /* CS  */ {"Power", "Display", "Sound", "Ext Pot", "Stats", "A Step", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Ext Pot", "Stats", "A Step", "Wifi", "Usb info", "Reset", "Test", "About", "Back"},
+  /* ESP */ {"Energia", "Pantalla", "Sonido", "Pot Ext", "Stats", "A Step", "Wifi", "Usb info", "Reset", "Test", "Acerca", "Atras"},
+  /* DEU */ {"Strom", "Anzeige", "Ton", "Ext Pot", "Stats", "A Step", "Wifi", "Usb info", "Reset", "Test", "Info", "Zuruck"},
+  /* ITA */ {"Potenza", "Schermo", "Suono", "Pot est", "Stats", "A Step", "Wifi", "Usb info", "Reset", "Test", "Info", "Indietro"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */

@@ -8,6 +8,7 @@
 
 /* External references from main .ino */
 extern StoredVar_type g_storedVar;
+extern uint16_t g_antiSpinStepMs;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern void saveEEPROM(StoredVar_type toSave);
@@ -109,6 +110,7 @@ static String buildJsonBackup() {
   sprintf(buf, "  \"screensaverTimeout\": %u,\n", g_storedVar.screensaverTimeout); json += buf;
   sprintf(buf, "  \"soundBoot\": %u,\n", g_storedVar.soundBoot);         json += buf;
   sprintf(buf, "  \"soundRace\": %u,\n", g_storedVar.soundRace);         json += buf;
+  sprintf(buf, "  \"antiSpinStep\": %u,\n", g_antiSpinStepMs);           json += buf;
   sprintf(buf, "  \"gridCarSelectEnabled\": %u,\n", g_storedVar.gridCarSelectEnabled); json += buf;
   sprintf(buf, "  \"raceViewMode\": %u,\n", g_storedVar.raceViewMode);   json += buf;
   sprintf(buf, "  \"language\": %u,\n", g_storedVar.language);           json += buf;
@@ -244,11 +246,14 @@ static bool inRange(int32_t val, int32_t minVal, int32_t maxVal) {
  * @brief Parse and validate uploaded JSON, populate temporary StoredVar
  * @return true if valid, false with error message
  */
-static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String* errorMsg) {
+static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs, String* errorMsg) {
   int32_t v;
 
   /* Initialize with current settings as defaults (missing fields keep current values) */
   *sv = g_storedVar;
+  if (antiSpinStepMs != nullptr) {
+    *antiSpinStepMs = g_antiSpinStepMs;
+  }
 
   /* Version check - warn but allow cross-version restore for car profiles */
   if (parseJsonInt(json, "version", v) && v != STORED_VAR_VERSION) {
@@ -270,6 +275,11 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, String*
     sv->soundBoot = v;
   if (parseJsonInt(json, "soundRace", v) && inRange(v, 0, 1))
     sv->soundRace = v;
+  if (antiSpinStepMs != nullptr &&
+      parseJsonInt(json, "antiSpinStep", v) &&
+      inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) {
+    *antiSpinStepMs = (uint16_t)v;
+  }
   if (parseJsonInt(json, "gridCarSelectEnabled", v) && inRange(v, 0, 1))
     sv->gridCarSelectEnabled = v;
   if (parseJsonInt(json, "raceViewMode", v) && inRange(v, 0, 2))
@@ -489,6 +499,7 @@ static String buildSchemaJson() {
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaEnumField(json, first, "soundRace", "Race Sound",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
+  appendSchemaIntField(json, first, "antiSpinStep", "ANTIS Step", ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX, 1, "ms");
   appendSchemaEnumField(json, first, "gridCarSelectEnabled", "Grid Car Select",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
@@ -561,6 +572,7 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"deepSleepTimeout\":%u,", g_storedVar.deepSleepTimeout); json += buf;
   snprintf(buf, sizeof(buf), "\"soundBoot\":%u,", g_storedVar.soundBoot); json += buf;
   snprintf(buf, sizeof(buf), "\"soundRace\":%u,", g_storedVar.soundRace); json += buf;
+  snprintf(buf, sizeof(buf), "\"antiSpinStep\":%u,", g_antiSpinStepMs); json += buf;
   snprintf(buf, sizeof(buf), "\"gridCarSelectEnabled\":%u,", g_storedVar.gridCarSelectEnabled); json += buf;
   snprintf(buf, sizeof(buf), "\"raceViewMode\":%u,", g_storedVar.raceViewMode); json += buf;
   snprintf(buf, sizeof(buf), "\"language\":%u,", g_storedVar.language); json += buf;
@@ -639,6 +651,10 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
   if (parseJsonInt(json, "soundRace", v)) {
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid soundRace"; return false; }
     updated.soundRace = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "antiSpinStep", v)) {
+    if (!inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) { *errorMsg = "Error: invalid antiSpinStep"; return false; }
+    g_antiSpinStepMs = (uint16_t)v;
   }
   if (parseJsonInt(json, "gridCarSelectEnabled", v)) {
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid gridCarSelectEnabled"; return false; }
@@ -976,8 +992,10 @@ static void handleSerialCommand(const String& cmd) {
     String json(jsonBuf);
     StoredVar_type tempVar;
     String errorMsg;
-    if (parseAndValidateJson(json, &tempVar, &errorMsg)) {
+    uint16_t tempAntiSpinStep = g_antiSpinStepMs;
+    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &errorMsg)) {
       g_storedVar = tempVar;
+      g_antiSpinStepMs = tempAntiSpinStep;
       saveEEPROM(g_storedVar);
       Serial.println("OK - Settings restored");
       Serial.flush();
@@ -1135,8 +1153,10 @@ static void handleRestore() {
   StoredVar_type tempVar;
   String errorMsg;
 
-  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &errorMsg)) {
+  uint16_t tempAntiSpinStep = g_antiSpinStepMs;
+  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &errorMsg)) {
     g_storedVar = tempVar;
+    g_antiSpinStepMs = tempAntiSpinStep;
     saveEEPROM(g_storedVar);
     g_wifiServer->send(200, "text/plain", "OK - Settings restored! Restarting...");
     g_uploadBuffer = "";
@@ -1254,26 +1274,6 @@ static void handleOta() {
   }
 }
 
-static void buildWifiSuffixIfNeeded() {
-  if (g_wifiSuffix[0] != '\0') {
-    return;
-  }
-  uint8_t wifiMac[6] = {0};
-  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
-    sprintf(g_wifiSuffix, "%02X%02X", wifiMac[4], wifiMac[5]);
-  } else {
-    uint64_t mac = ESP.getEfuseMac();
-    sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
-  }
-}
-
-void getWiFiPortalSsid(char* out, size_t outLen) {
-  if (out == nullptr || outLen == 0) {
-    return;
-  }
-  buildWifiSuffixIfNeeded();
-  snprintf(out, outLen, "%s_%s", WIFI_SSID, g_wifiSuffix);
-}
 static const uint8_t WIFI_QR_VERSION = 3;
 static const uint8_t WIFI_QR_SIZE = 29;
 static const uint8_t WIFI_QR_DATA_CODEWORDS = 55;
@@ -1742,6 +1742,26 @@ static void drawWiFiQrMatrix(const uint8_t modules[WIFI_QR_SIZE][WIFI_QR_SIZE]) 
   }
 }
 
+static void buildWifiSuffixIfNeeded() {
+  if (g_wifiSuffix[0] != '\0') {
+    return;
+  }
+  uint8_t wifiMac[6] = {0};
+  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+    sprintf(g_wifiSuffix, "%02X%02X", wifiMac[4], wifiMac[5]);
+  } else {
+    uint64_t mac = ESP.getEfuseMac();
+    sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  }
+}
+
+void getWiFiPortalSsid(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  buildWifiSuffixIfNeeded();
+  snprintf(out, outLen, "%s_%s", WIFI_SSID, g_wifiSuffix);
+}
 
 IPAddress getWiFiPortalIP() {
   return WiFi.softAPIP();
@@ -1930,26 +1950,6 @@ void showWiFiPortalScreen() {
   obdFill(&g_obd, OBD_WHITE, 1);
 }
 
-
-/**
- * @brief USB backup/restore screen - called from settings menu (USB item).
- * @details Shows a mini guide on the OLED and handles BACKUP/RESTORE serial commands.
- *          No WiFi is started. Returns when user presses encoder button or brake button.
- */
-void showUSBPortalScreen() {
-  obdFill(&g_obd, OBD_WHITE, 1);
-  const char* usbTitle = "USB mode";
-  obdWriteString(&g_obd, 0, centerX8x8(usbTitle), 0,  (char*)usbTitle, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0,  2 * HEIGHT8x8,  (char*)"1. Connect USB cable",  FONT_6x8,  OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0,  3 * HEIGHT8x8,  (char*)"2. Open espeed32.html", FONT_6x8,  OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0,  4 * HEIGHT8x8,  (char*)"   in Chrome/Edge",     FONT_6x8,  OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 0,  5 * HEIGHT8x8,  (char*)"3. Click Connect USB",  FONT_6x8,  OBD_BLACK, 1);
-
-  static bool brakeBtnInUsb = false;
-  static uint32_t lastBrakeBtnUsbTime = 0;
-
-  while (true) {
-    serviceConnectivityPortal();
 void showWiFiQrScreen() {
   bool wasAlreadyActive = isWiFiPortalActive();
 
@@ -2018,6 +2018,26 @@ void showWiFiQrScreen() {
   obdFill(&g_obd, OBD_WHITE, 1);
 }
 
+
+/**
+ * @brief USB backup/restore screen - called from settings menu (USB item).
+ * @details Shows a mini guide on the OLED and handles BACKUP/RESTORE serial commands.
+ *          No WiFi is started. Returns when user presses encoder button or brake button.
+ */
+void showUSBPortalScreen() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* usbTitle = "USB mode";
+  obdWriteString(&g_obd, 0, centerX8x8(usbTitle), 0,  (char*)usbTitle, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  2 * HEIGHT8x8,  (char*)"1. Connect USB cable",  FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  3 * HEIGHT8x8,  (char*)"2. Open espeed32.html", FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  4 * HEIGHT8x8,  (char*)"   in Chrome/Edge",     FONT_6x8,  OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0,  5 * HEIGHT8x8,  (char*)"3. Click Connect USB",  FONT_6x8,  OBD_BLACK, 1);
+
+  static bool brakeBtnInUsb = false;
+  static uint32_t lastBrakeBtnUsbTime = 0;
+
+  while (true) {
+    serviceConnectivityPortal();
 
     if (g_rotaryEncoder.isEncoderButtonClicked()) break;
 

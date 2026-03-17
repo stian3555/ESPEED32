@@ -24,7 +24,7 @@
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 12   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
@@ -64,6 +64,7 @@
 #define MIN_SPEED_DEFAULT         40    /* [0.5%] 20.0% default sensitivity */
 #define BRAKE_DEFAULT             95    /* [%] Brake strength */
 #define ANTISPIN_DEFAULT          30    /* [ms] Anti-spin ramp time */
+#define ANTISPIN_STEP_DEFAULT      5    /* [ms] Default encoder step when editing ANTIS */
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
@@ -80,7 +81,9 @@
 #define BRAKE_MAX_VALUE           100   /* [%] Maximum brake strength */
 #define THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE  90   /* [%] Throttle curve max */
 #define THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE  10   /* [%] Throttle curve min */
-#define ANTISPIN_MAX_VALUE        255   /* [ms] Maximum anti-spin time */
+#define ANTISPIN_MAX_VALUE        500   /* [ms] Maximum anti-spin time */
+#define ANTISPIN_STEP_MIN           1   /* [ms] Minimum ANTIS encoder step */
+#define ANTISPIN_STEP_MAX          50   /* [ms] Maximum ANTIS encoder step */
 #define FREQ_MIN_VALUE            1000  /* [Hz] Minimum PWM frequency */
 #define QUICK_BRAKE_THRESHOLD_MAX 50    /* [%] Maximum quick brake threshold */
 #define QUICK_BRAKE_STRENGTH_MAX  100   /* [%] Maximum quick brake strength */
@@ -232,7 +235,7 @@ typedef struct {
   uint16_t brake;                           /* [%] Brake strength (0-100%) */
   uint16_t maxSpeed;                        /* [%] Maximum motor speed (5-100%) */
   ThrottleCurveVertex_type throttleCurveVertex;  /* Throttle response curve */
-  uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-255ms) */
+  uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-500ms) */
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */

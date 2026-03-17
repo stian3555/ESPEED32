@@ -62,14 +62,17 @@ uint16_t g_carSel;    /* Currently selected car model index */
 AiEsp32RotaryEncoder g_rotaryEncoder = AiEsp32RotaryEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_BUTTON_PIN, ENCODER_VCC_PIN, ENCODER_STEPS);
 
 uint8_t g_encoderMainSelector = 1;                    /* Main menu item selector */
-static uint8_t g_encoderSecondarySelector = 0;        /* Secondary value selector */
+static uint16_t g_encoderSecondarySelector = 0;       /* Secondary value selector */
 static uint16_t *g_encoderSelectedValuePtr = NULL;    /* Pointer to currently selected value */
 static uint16_t g_originalValueBeforeEdit = 0;        /* Store original value when entering VALUE_SELECTION (for cancel) */
 static bool g_isEditingCarSelection = false;          /* Flag to prevent g_carSel update during CAR edit */
+static bool g_antiSpinStepEditActive = false;         /* True while ANTIS uses stepped encoder editing */
+static uint16_t g_antiSpinEditLastEncoder = 0;        /* Raw encoder position used to detect ANTIS step changes */
 
 /* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
 uint16_t g_statsEnabled = STATS_ENABLED_DEFAULT;  /* Main menu STATS visibility: 0=hidden, 1=shown */
+uint16_t g_antiSpinStepMs = ANTISPIN_STEP_DEFAULT; /* Global encoder step when editing ANTIS */
 
 /* ESC Runtime Variables */
 ESC_type g_escVar {
@@ -114,6 +117,7 @@ static bool g_wifiTimedActive = false;        /* True when background WiFi shoul
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
 static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
 static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
+static const char* PREF_KEY_ANTIS_STEP = "antis_step_v1";  /* persistent ANTIS encoder step */
 static const char* PREF_KEY_EXT_POT1_TARGET = "ext_pot1_tgt";
 static const char* PREF_KEY_EXT_POT2_TARGET = "ext_pot2_tgt";
 static const char* PREF_KEY_EXT_POT_ENABLED_LEGACY = "ext_pot_en";
@@ -126,6 +130,40 @@ void serviceTimedWiFiPortal();
 void showPowerSave();
 void showPowerSave(uint32_t inactivityStartMs);
 void showDeepSleep();
+
+static bool isAntiSpinEditTarget() {
+  return g_encoderSelectedValuePtr == &g_storedVar.carParam[g_carSel].antiSpin;
+}
+
+static void beginSteppedValueEdit() {
+  g_antiSpinStepEditActive = isAntiSpinEditTarget();
+  g_antiSpinEditLastEncoder = g_antiSpinStepEditActive ? *g_encoderSelectedValuePtr : 0;
+}
+
+static void endSteppedValueEdit() {
+  g_antiSpinStepEditActive = false;
+  g_antiSpinEditLastEncoder = 0;
+}
+
+static void applyValueEditFromEncoder(uint16_t encoderValue) {
+  if (g_encoderSelectedValuePtr == NULL) {
+    return;
+  }
+
+  if (!g_antiSpinStepEditActive || !isAntiSpinEditTarget()) {
+    *g_encoderSelectedValuePtr = encoderValue;
+    return;
+  }
+
+  int32_t deltaTicks = (int32_t)encoderValue - (int32_t)g_antiSpinEditLastEncoder;
+  if (deltaTicks == 0) {
+    return;
+  }
+
+  int32_t newValue = (int32_t)(*g_encoderSelectedValuePtr) + (deltaTicks * (int32_t)g_antiSpinStepMs);
+  *g_encoderSelectedValuePtr = (uint16_t)constrain(newValue, 0, ANTISPIN_MAX_VALUE);
+  g_antiSpinEditLastEncoder = encoderValue;
+}
 
 /**
  * @brief Detect long press on encoder button (shared across all submenus).
@@ -379,6 +417,8 @@ void Task1code(void *pvParameters) {
             }
             sanitizeExtPotTargets(0);
             resetExtPotFilter();
+            g_antiSpinStepMs = constrain(g_pref.getUShort(PREF_KEY_ANTIS_STEP, ANTISPIN_STEP_DEFAULT),
+                                         ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX);
 
             /* One-time migration: old firmware stored SENSI in whole-percent units. */
             if (!g_pref.getBool(PREF_KEY_SENSI_HALF, false)) {
@@ -464,6 +504,7 @@ void Task1code(void *pvParameters) {
         g_pref.putUChar("stored_var_ver", STORED_VAR_VERSION);
         g_pref.putBool(PREF_KEY_SENSI_HALF, true);
         g_pref.putUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT);
+        g_pref.putUShort(PREF_KEY_ANTIS_STEP, ANTISPIN_STEP_DEFAULT);
         g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT);
         g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT);
 
@@ -588,6 +629,7 @@ void Task1code(void *pvParameters) {
               *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
               g_encoderSelectedValuePtr = NULL;
             }
+            endSteppedValueEdit();
 
             menuState = ITEM_SELECTION;
             g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -618,6 +660,7 @@ void Task1code(void *pvParameters) {
                 *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
                 g_encoderSelectedValuePtr = NULL;  /* Clear pointer after use */
               }
+              endSteppedValueEdit();
 
               menuState = ITEM_SELECTION;
               g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -669,7 +712,7 @@ void Task1code(void *pvParameters) {
         {
           g_encoderSecondarySelector = g_escVar.encoderPos;         /* If in ITEM_SELECTION, update the encoder SecondaryEncoder with the encoder position */
           uint16_t prevLanguage = g_storedVar.language;             /* Store previous language for change detection */
-          *g_encoderSelectedValuePtr = g_encoderSecondarySelector;  /* Also update the value of the selected parameter */
+          applyValueEditFromEncoder(g_encoderSecondarySelector);    /* Update the selected parameter from encoder input */
 
           /* If language changed, reinitialize menu items with new language strings */
           if (g_storedVar.language != prevLanguage) {
@@ -1048,6 +1091,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;
       g_originalValueBeforeEdit = *g_encoderSelectedValuePtr;  /* Save original value for cancel */
+      beginSteppedValueEdit();
       return VALUE_SELECTION;
     }
     /* LIST mode handling */
@@ -1065,6 +1109,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);  /* Reset the encoder to the current value of the selected item */
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;   /* Set the encoderPos global variable to the current value of the selected item */
       g_originalValueBeforeEdit = *g_encoderSelectedValuePtr;  /* Save original value for cancel */
+      beginSteppedValueEdit();
       return VALUE_SELECTION;                             /* Return the VALUE_SELECTION state */
     }
     /* if an item has a callback, execute it, then return to ITEM SELECTION */
@@ -1076,6 +1121,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
   }
   else /* If the current state is VALUE_SELECTION */
   {
+    endSteppedValueEdit();
     g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);         /* Set the encoder acceleration to MENU_ACCELERATION */
 
     /* Set boundaries based on view mode */
@@ -1165,6 +1211,7 @@ void saveEEPROM(StoredVar_type toSave) {
   g_pref.begin("stored_var", false);                      /* Open the "stored" namespace in read/write mode */
   g_pref.putBytes("user_param", &toSave, sizeof(toSave)); /* Put the value of the stored user_param */
   g_pref.putUChar(PREF_KEY_STATS_ENABLED, g_statsEnabled ? 1 : 0);
+  g_pref.putUShort(PREF_KEY_ANTIS_STEP, constrain(g_antiSpinStepMs, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX));
   g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, constrain(g_extPotTarget[0], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, constrain(g_extPotTarget[1], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.end();                                           /* Close the namespace */

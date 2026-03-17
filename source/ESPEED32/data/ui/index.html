@@ -1246,6 +1246,7 @@ function renderField(prefix,field,val){
 function categorizeGlobalField(id){
   if(id==='selectedCarNumber' || id==='viewMode' || id==='gridCarSelectEnabled' || id==='raceViewMode') return 'Race & Driving';
   if(id==='screensaverTimeout' || id==='powerSaveTimeout' || id==='deepSleepTimeout' || id==='startupDelay') return 'Power & Startup';
+  if(id==='antiSpinStep') return 'Race & Driving';
   if(id==='language' || id==='textCase' || id==='listFontSize') return 'Display & Language';
   if(id==='statusSlot0' || id==='statusSlot1' || id==='statusSlot2' || id==='statusSlot3') return 'Status Slots';
   if(id==='soundBoot' || id==='soundRace') return 'Sound';

@@ -288,7 +288,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
     const char* antisLabel = getRaceLabel(g_storedVar.language, 2);
     uint8_t labelWidth = strlen(antisLabel) * 6;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)antisLabel, FONT_6x8, colorAntis, 1);
-    /* Value - "255ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
+    /* Value - "500ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
     sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
     obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
     lastAntis = g_storedVar.carParam[g_carSel].antiSpin;

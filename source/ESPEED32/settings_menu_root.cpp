@@ -14,6 +14,7 @@
 
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
+extern uint16_t g_antiSpinStepMs;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -264,7 +265,11 @@ void showSettingsMenu() {
         if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_statsEnabled) {
           sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, value ? 1 : 0));
         } else {
-          sprintf(msgStr, "%3d", value);
+          if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {
+            snprintf(msgStr, sizeof(msgStr), "%2d%s", value, g_settingsMenu.item[itemIndex].unit);
+          } else {
+            sprintf(msgStr, "%3d", value);
+          }
         }
         int textWidth = strlen(msgStr) * charWidth;
         obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,

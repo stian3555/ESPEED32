@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="430" viewBox="0 0 1550 430" role="img" aria-labelledby="title desc">
+  <title id="title">Fade examples</title>
+  <desc id="desc">Two throttle response graphs comparing Fade off and Fade on.</desc>
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .panel { fill: #fcfcfc; stroke: #cfcfcf; stroke-width: 2; rx: 18; ry: 18; }
+      .axis { stroke: #222222; stroke-width: 4; }
+      .grid { stroke: #dddddd; stroke-width: 2; stroke-dasharray: 6 8; }
+      .label { fill: #222222; font-family: Arial, Helvetica, sans-serif; font-size: 28px; }
+      .title { fill: #222222; font-family: Arial, Helvetica, sans-serif; font-size: 34px; font-weight: 700; }
+      .note { fill: #555555; font-family: Arial, Helvetica, sans-serif; font-size: 22px; }
+      .curve-off { fill: none; stroke: #111111; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .curve-on { fill: none; stroke: #111111; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .accent { fill: #d94f04; stroke: #d94f04; }
+      .accent-line { fill: none; stroke: #d94f04; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+      .sensi { stroke: #666666; stroke-width: 3; stroke-dasharray: 10 8; }
+      .tick { fill: #222222; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1550" height="430"/>
+
+  <g transform="translate(35,25)">
+    <rect class="panel" x="0" y="0" width="715" height="380"/>
+    <text class="title" x="36" y="48">FADE OFF</text>
+    <text class="note" x="36" y="78">Direct jump to SENSI</text>
+
+    <line class="grid" x1="120" y1="275" x2="650" y2="275"/>
+    <line class="grid" x1="120" y1="145" x2="650" y2="145"/>
+    <line class="axis" x1="120" y1="320" x2="120" y2="95"/>
+    <line class="axis" x1="120" y1="320" x2="650" y2="320"/>
+    <line class="sensi" x1="120" y1="230" x2="650" y2="230"/>
+
+    <circle class="tick" cx="120" cy="320" r="5"/>
+    <circle class="tick" cx="385" cy="320" r="5"/>
+    <circle class="tick" cx="650" cy="320" r="5"/>
+
+    <text class="label" x="52" y="104">100%</text>
+    <text class="label" x="58" y="239">SENSI</text>
+    <text class="label" x="86" y="328">0</text>
+    <text class="label" x="350" y="360">Trigger</text>
+    <text class="label" x="25" y="208" transform="rotate(-90 25 208)">Output</text>
+    <text class="label" x="610" y="360">100%</text>
+
+    <path class="curve-off" d="M120 320 L120 230 L650 110"/>
+    <circle class="accent" cx="120" cy="230" r="7"/>
+    <text class="label" x="138" y="222">first active point</text>
+  </g>
+
+  <g transform="translate(800,25)">
+    <rect class="panel" x="0" y="0" width="715" height="380"/>
+    <text class="title" x="36" y="48">FADE ON</text>
+    <text class="note" x="36" y="78">Soft ramp to SENSI first</text>
+
+    <line class="grid" x1="120" y1="275" x2="650" y2="275"/>
+    <line class="grid" x1="120" y1="145" x2="650" y2="145"/>
+    <line class="axis" x1="120" y1="320" x2="120" y2="95"/>
+    <line class="axis" x1="120" y1="320" x2="650" y2="320"/>
+    <line class="sensi" x1="120" y1="230" x2="650" y2="230"/>
+
+    <circle class="tick" cx="120" cy="320" r="5"/>
+    <circle class="tick" cx="240" cy="320" r="5"/>
+    <circle class="tick" cx="650" cy="320" r="5"/>
+
+    <text class="label" x="52" y="104">100%</text>
+    <text class="label" x="58" y="239">SENSI</text>
+    <text class="label" x="86" y="328">0</text>
+    <text class="label" x="350" y="360">Trigger</text>
+    <text class="label" x="25" y="208" transform="rotate(-90 25 208)">Output</text>
+    <text class="label" x="610" y="360">100%</text>
+    <text class="label" x="188" y="352">FADE</text>
+
+    <path class="curve-on" d="M120 320 L240 230 L650 110"/>
+    <path class="accent-line" d="M120 320 L240 230"/>
+    <circle class="accent" cx="240" cy="230" r="7"/>
+    <text class="label" x="256" y="222">soft ramp to SENSI</text>
+  </g>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="430" viewBox="0 0 1550 430" role="img" aria-labelledby="title desc">
+  <title id="title">LIMIT examples</title>
+  <desc id="desc">Two examples showing how LIMIT 100 and LIMIT 70 affect the maximum duty cycle.</desc>
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .panel { fill: #fcfcfc; stroke: #d2d2d2; stroke-width: 2; rx: 18; ry: 18; }
+      .axis { stroke: #171717; stroke-width: 4; }
+      .grid { stroke: #dfdfdf; stroke-width: 2; stroke-dasharray: 6 8; }
+      .label { fill: #171717; font-family: Arial, Helvetica, sans-serif; font-size: 27px; }
+      .title { fill: #171717; font-family: Arial, Helvetica, sans-serif; font-size: 35px; font-weight: 700; }
+      .note { fill: #555555; font-family: Arial, Helvetica, sans-serif; font-size: 21px; }
+      .wave { fill: none; stroke: #111111; stroke-width: 7; stroke-linecap: square; stroke-linejoin: miter; }
+      .duty { stroke: #767676; stroke-width: 3; stroke-dasharray: 10 8; }
+      .bar-bg { fill: #efefef; stroke: #cfcfcf; stroke-width: 2; rx: 8; ry: 8; }
+      .bar-fill { fill: #d94f04; rx: 8; ry: 8; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1550" height="430"/>
+
+  <g transform="translate(35,25)">
+    <rect class="panel" x="0" y="0" width="715" height="360"/>
+    <text class="title" x="36" y="48">LIMIT 100%</text>
+    <text class="note" x="36" y="78">Full trigger can reach full duty</text>
+
+    <line class="grid" x1="110" y1="295" x2="655" y2="295"/>
+    <line class="grid" x1="110" y1="120" x2="655" y2="120"/>
+    <line class="axis" x1="110" y1="310" x2="110" y2="90"/>
+    <line class="axis" x1="110" y1="310" x2="655" y2="310"/>
+
+    <text class="label" x="42" y="118">100%</text>
+    <text class="label" x="80" y="318">0</text>
+    <text class="label" x="360" y="350">Time</text>
+    <text class="label" x="24" y="220" transform="rotate(-90 24 220)">Voltage</text>
+    <text class="label" x="502" y="118">continuous high</text>
+
+    <path class="wave" d="M110 310 L150 310 L150 120 L655 120"/>
+
+    <rect class="bar-bg" x="180" y="255" width="360" height="28"/>
+    <rect class="bar-fill" x="180" y="255" width="360" height="28"/>
+    <text class="label" x="558" y="277">Duty 100%</text>
+  </g>
+
+  <g transform="translate(800,25)">
+    <rect class="panel" x="0" y="0" width="715" height="360"/>
+    <text class="title" x="36" y="48">LIMIT 70%</text>
+    <text class="note" x="36" y="78">Full trigger is capped to 70% duty</text>
+
+    <line class="grid" x1="110" y1="295" x2="655" y2="295"/>
+    <line class="grid" x1="110" y1="156" x2="655" y2="156"/>
+    <line class="axis" x1="110" y1="310" x2="110" y2="90"/>
+    <line class="axis" x1="110" y1="310" x2="655" y2="310"/>
+    <line class="duty" x1="110" y1="156" x2="655" y2="156"/>
+
+    <text class="label" x="42" y="118">100%</text>
+    <text class="label" x="58" y="164">70%</text>
+    <text class="label" x="80" y="318">0</text>
+    <text class="label" x="360" y="350">Time</text>
+    <text class="label" x="24" y="220" transform="rotate(-90 24 220)">Voltage</text>
+
+    <path class="wave" d="M110 310 L135 310 L135 120 L205 120 L205 310 L235 310 L235 120 L305 120 L305 310 L335 310 L335 120 L405 120 L405 310 L435 310 L435 120 L505 120 L505 310 L535 310 L535 120 L605 120 L605 310 L635 310"/>
+
+    <rect class="bar-bg" x="180" y="255" width="360" height="28"/>
+    <rect class="bar-fill" x="180" y="255" width="252" height="28"/>
+    <text class="label" x="450" y="277">Duty 70%</text>
+  </g>
+</svg>

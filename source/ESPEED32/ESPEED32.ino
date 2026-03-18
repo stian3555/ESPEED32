@@ -23,6 +23,7 @@
 #include "ui_render.h"
 #include "task_control_loop.h"
 #include "ext_pot.h"
+#include "telemetry_logging.h"
 
 /* Version defined in slot_ESC.h */
 
@@ -117,6 +118,9 @@ static bool g_escapeToMain = false;    /* Set by any submenu long press → casc
 static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
+static uint16_t g_loggingTimedMinutes = 30;   /* Runtime-only default for timed telemetry logging */
+static bool g_loggingTimedActive = false;     /* True when logging should auto-stop on deadline */
+static uint32_t g_loggingTimedStopAtMs = 0;   /* millis() deadline for telemetry logging stop */
 static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
 static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
 static const char* PREF_KEY_ANTIS_STEP = "antis_step_v1";  /* persistent ANTIS encoder step */
@@ -294,6 +298,15 @@ void resetEncoderForMainMenu() {
 void serviceTimedWiFiPortal() {
   serviceConnectivityPortal();
 
+  if (g_loggingTimedActive) {
+    if (!telemetryIsLoggingActive() || !isWiFiPortalActive()) {
+      g_loggingTimedActive = false;
+    } else if ((int32_t)(millis() - g_loggingTimedStopAtMs) >= 0) {
+      telemetryStopLogging();
+      g_loggingTimedActive = false;
+    }
+  }
+
   if (!g_wifiTimedActive) {
     return;
   }
@@ -306,6 +319,11 @@ void serviceTimedWiFiPortal() {
   if ((int32_t)(millis() - g_wifiTimedStopAtMs) >= 0) {
     if (isOtaInProgress()) {
       /* Keep portal alive during OTA and retry timed stop later. */
+      g_wifiTimedStopAtMs = millis() + 1000UL;
+      return;
+    }
+    if (telemetryIsLoggingActive()) {
+      /* Logging is WiFi-only, so keep the portal alive while telemetry is running. */
       g_wifiTimedStopAtMs = millis() + 1000UL;
       return;
     }
@@ -341,6 +359,30 @@ void setWiFiTimedMinutes(uint16_t minutes) {
   g_wifiTimedMinutes = constrain(minutes, 1, 120);
 }
 
+void startTimedTelemetryLogging(uint16_t minutes) {
+  g_loggingTimedMinutes = constrain(minutes, 1, 120);
+  g_loggingTimedActive = true;
+  g_loggingTimedStopAtMs = millis() + ((uint32_t)g_loggingTimedMinutes * 60000UL);
+  if (isWiFiPortalActive()) {
+    g_wifiTimedActive = true;
+    if ((int32_t)(g_loggingTimedStopAtMs - g_wifiTimedStopAtMs) > 0) {
+      g_wifiTimedStopAtMs = g_loggingTimedStopAtMs;
+    }
+  }
+}
+
+void stopTimedTelemetryLogging() {
+  g_loggingTimedActive = false;
+}
+
+uint16_t getTelemetryTimedMinutes() {
+  return g_loggingTimedMinutes;
+}
+
+void setTelemetryTimedMinutes(uint16_t minutes) {
+  g_loggingTimedMinutes = constrain(minutes, 1, 120);
+}
+
 /*********************************************************************************************************************/
 /*                                                Function Prototypes                                                */
 /*********************************************************************************************************************/
@@ -353,6 +395,10 @@ void startTimedWiFiPortal(uint16_t minutes);
 void stopTimedWiFiPortal();
 uint16_t getWiFiTimedMinutes();
 void setWiFiTimedMinutes(uint16_t minutes);
+void startTimedTelemetryLogging(uint16_t minutes);
+void stopTimedTelemetryLogging();
+uint16_t getTelemetryTimedMinutes();
+void setTelemetryTimedMinutes(uint16_t minutes);
 bool isEscapeToMainRequested();
 void setLastEncoderInteraction(uint32_t interactionMs);
 uint8_t getMainMenuSelector();

@@ -3,5 +3,6 @@
 
 void showSoundSettings();
 void showWiFiSettings();
+void showLoggingSettings();
 
 #endif  /* SETTINGS_SOUND_WIFI_SUBMENUS_H_ */

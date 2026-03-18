@@ -142,8 +142,15 @@ void showSettingsMenu() {
           continue;
         }
         /* WIFI submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 6) {
           showWiFiSettings();
+          if (isEscapeToMainRequested()) break;
+          resumeAfterSettingsChild();
+          continue;
+        }
+        /* LOGGING submenu */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
+          showLoggingSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;

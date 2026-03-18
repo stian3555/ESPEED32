@@ -122,10 +122,10 @@ th{background:var(--th-bg)}
 figure.doc-media{margin:10px 0 0}
 figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
 figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
-details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--ghost);padding:0 12px 12px}
-details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 26px 8px 0;position:relative}
+details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);overflow:hidden;padding:0 12px 12px}
+details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 38px 12px 12px;position:relative;background:var(--ghost);margin:0 -12px;border-bottom:1px solid var(--line)}
 details.doc-fold summary::-webkit-details-marker{display:none}
-details.doc-fold summary::after{content:'+';position:absolute;right:0;top:10px;font-size:20px;color:var(--muted)}
+details.doc-fold summary::after{content:'+';position:absolute;right:12px;top:10px;font-size:20px;color:var(--muted)}
 details.doc-fold[open] summary::after{content:'-'}
 details.doc-fold>:not(summary){margin-top:8px}
 @media (max-width:760px){

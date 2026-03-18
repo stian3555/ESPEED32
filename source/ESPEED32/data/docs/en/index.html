@@ -433,7 +433,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td>DEEP SLEEP</td><td>10 mA (estimated)</td><td>Power-off-like state, wake by power cycle.</td></tr>
       </tbody>
     </table>
-    <p class="small">Values are estimates and depend on supply voltage, hardware variant, and measurement setup. Motor load for the car is additional.</p>
+    <p class="small">Values are estimates and depend on supply voltage, hardware variant, and measurement setup. Motor load for the car is additional. The figures here were measured on the 5 V side after the step-down converter. If you measure on the 12 V side instead, the current reading will be different and is not directly comparable, ref. the voltage/current relationship (U = R * I).</p>
     <h3>Internal battery (optional)</h3>
     <p>Some hardware variants may include a small 1-cell lithium battery for off-track setup work. It charges while the controller is powered from the track or from USB. This battery is meant for menu changes, pre-race setup, lane-change adjustments, or avoiding startup delay before the track powers up. It is not intended for long standalone operation.</p>
     <p class="small">Runtime below means controller use while not connected to the track. Charging current can vary by charger and board, but if charging is close to 200 mA and controller draw is around 100 mA, off-track runtime will often be roughly double the charge time. Real lithium charge time is still a bit longer than the simple math because the last part of charging slows down near full.</p>

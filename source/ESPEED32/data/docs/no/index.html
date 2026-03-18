@@ -433,7 +433,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td>DEEP SLEEP</td><td>10 mA (estimert)</td><td>Power-off lignende modus, vekkes med power-cycle.</td></tr>
       </tbody>
     </table>
-    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg.</p>
+    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg. Målingene her er gjort på 5 V-siden etter step-down-converteren. Hvis du måler på 12 V-siden i stedet, vil strømtallet bli annerledes og kan ikke sammenliknes direkte, ref. sammenhengen mellom spenning og strøm (U = R * I).</p>
     <h3>Internt batteri (valgfritt)</h3>
     <p>Noen hardware-varianter kan ha et lite 1-cells litiumbatteri for oppsett uten koblet bane. Det lades mens kontrolleren er koblet til banen eller til USB. Batteriet er tenkt for menyjustering, forberedelser før heat, filskifte eller for å unngå forsinkelse hvis banen ikke er oppe ennå. Det er ikke ment for langvarig standalone-bruk.</p>
     <p class="small">Brukstid under betyr bruk av kontrolleren uten tilkoblet bane. Ladestrømmen kan variere med lader og hardware, men hvis ladingen ligger nær 200 mA og kontrolleren bruker rundt 100 mA, blir brukstiden uten bane ofte omtrent dobbelt så lang som ladetiden. Reell litium-lading tar likevel litt lenger tid enn enkel hoderegning fordi siste del av ladingen går saktere mot full batterispenning.</p>

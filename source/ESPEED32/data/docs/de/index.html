@@ -432,7 +432,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td>DEEP SLEEP</td><td>10 mA (geschaetzt)</td><td>Nahezu aus, Wake per Power-Cycle.</td></tr>
       </tbody>
     </table>
-    <p class="small">Schaetzwerte, abhaengig von Versorgungsspannung, Hardware und Messaufbau. Motorlast des Fahrzeugs ist nicht enthalten.</p>
+    <p class="small">Schaetzwerte, abhaengig von Versorgungsspannung, Hardware und Messaufbau. Motorlast des Fahrzeugs ist nicht enthalten. Die Werte hier wurden auf der 5-V-Seite hinter dem Step-Down-Wandler gemessen. Wenn du stattdessen auf der 12-V-Seite misst, ist der Stromwert anders und nicht direkt vergleichbar, siehe Zusammenhang zwischen Spannung und Strom (U = R * I).</p>
     <h3>Interner Akku (optional)</h3>
     <p>Einige Hardware-Varianten koennen einen kleinen 1-Zellen-Lithium-Akku fuer Einstellungen ohne angeschlossene Bahn haben. Er laedt, wenn der Controller ueber die Bahn oder ueber USB versorgt wird. Dieser Akku ist fuer Menueaenderungen, Vorbereitung vor dem Lauf, Spurwechsel oder zum Vermeiden von Startverzoegerung gedacht, falls die Bahn noch nicht eingeschaltet ist. Er ist nicht fuer langen Standalone-Betrieb vorgesehen.</p>
     <p class="small">Die Laufzeit unten bedeutet Nutzung des Controllers ohne angeschlossene Bahn. Der Ladestrom kann je nach Ladequelle und Hardware variieren, aber wenn die reale Ladung nahe 200 mA liegt und der Controller rund 100 mA zieht, ist die Laufzeit ohne Bahn oft grob doppelt so lang wie die Ladezeit. Die reale Lithium-Ladezeit liegt trotzdem meist etwas ueber der einfachen Rechnung, weil die letzte Ladephase in Richtung voll langsamer wird.</p>

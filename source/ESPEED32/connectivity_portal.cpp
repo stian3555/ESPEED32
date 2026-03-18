@@ -560,11 +560,11 @@ static String buildSchemaJson() {
   appendSchemaIntField(json, first, "fade", "FADE", 0, FADE_MAX_VALUE, 1, "%");
   appendSchemaIntField(json, first, "antiSpin", "ANTIS", 0, ANTISPIN_MAX_VALUE, 1, "ms");
   appendSchemaIntField(json, first, "freqPWM", "PWM_F", FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100, 1, "x0.1kHz");
-  appendSchemaIntField(json, first, "brakeButton", "B_BTN", 0, 100, 1, "%");
-  appendSchemaEnumField(json, first, "quickBrakeEnabled", "R-BRAKE",
+  appendSchemaIntField(json, first, "brakeButton", "Alt.Brake", 0, 100, 1, "%");
+  appendSchemaEnumField(json, first, "quickBrakeEnabled", "Rel.Brake",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"QUICK\"},{\"value\":2,\"label\":\"DRAG\"}]");
-  appendSchemaIntField(json, first, "quickBrakeThreshold", "R-BRAKE Zone", 0, QUICK_BRAKE_THRESHOLD_MAX, 1, "%");
-  appendSchemaIntField(json, first, "quickBrakeStrength", "R-BRAKE Level", 0, QUICK_BRAKE_STRENGTH_MAX, 1, "%");
+  appendSchemaIntField(json, first, "quickBrakeThreshold", "Rel.Brake Zone", 0, QUICK_BRAKE_THRESHOLD_MAX, 1, "%");
+  appendSchemaIntField(json, first, "quickBrakeStrength", "Rel.Brake Level", 0, QUICK_BRAKE_STRENGTH_MAX, 1, "%");
   json += "]";
   json += "}";
   return json;

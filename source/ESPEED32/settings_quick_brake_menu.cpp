@@ -59,8 +59,8 @@ static AdvancedBrakeRowType getAdvancedBrakeRowType(uint16_t mode, uint8_t visib
 }
 
 static const char* getAdvancedBrakeRowLabel(uint8_t lang, uint16_t mode, AdvancedBrakeRowType rowType) {
-  static const char* BUTTON_LABELS[7] = {"Alt brems", "Alt Brake", "Alt Brake", "Alt Brake", "Freno Alt", "Alt Brems", "Freno Alt"};
-  static const char* MODE_LABELS[7]   = {"R-Brems", "R-Brake", "R-Brake", "R-Brake", "R-Freno", "R-Brems", "R-Freno"};
+  static const char* BUTTON_LABELS[7] = {"Alt.brems", "Alt.Brake", "Alt.Brake", "Alt.Brake", "Alt.Freno", "Alt.Brems", "Alt.Freno"};
+  static const char* MODE_LABELS[7]   = {"Rel.brems", "Rel.Brake", "Rel.Brake", "Rel.Brake", "Rel.Freno", "Rel.Brems", "Rel.Freno"};
   static const char* ZONE_LABELS[7]   = {"Sone", "Zone", "Zone", "Zone", "Zona", "Zone", "Zona"};
   static const char* QUICK_LABELS[7]  = {"Quick", "Quick", "Quick", "Quick", "Quick", "Quick", "Quick"};
   static const char* DRAG_LABELS[7]   = {"Drag", "Drag", "Drag", "Drag", "Drag", "Drag", "Drag"};
@@ -100,7 +100,7 @@ static const char* getReleaseBrakeMenuModeValue(uint8_t lang, uint16_t mode) {
 /**
  * Advanced Brake submenu.
  * Opened by clicking BRAKE+ in the main menu.
- * Items: Alt Brake, R-Brake mode, optional QUICK zone + level, DRAG level, BACK.
+ * Items: Alt.Brake, Rel.Brake mode, optional QUICK zone + level, DRAG level, BACK.
  * QUICK cuts output to brake inside the configured zone. DRAG keeps output active
  * and blends in drag while the trigger is moving toward release, with no zone.
  */

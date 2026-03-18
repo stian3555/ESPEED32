@@ -178,23 +178,15 @@ void initMenuItems() {
   g_mainMenu.item[i].decimalPoint = 1;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 6));  /* B_BTN */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
-  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_mainMenu.item[i].unit, "%%");
-  g_mainMenu.item[i].maxValue = 100;
-  g_mainMenu.item[i].minValue = 0;
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 7));  /* Release brake submenu */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].quickBrakeEnabled;
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 6));  /* BRAKE+ submenu */
+  g_mainMenu.item[i].value = ITEM_NO_VALUE;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "");
-  g_mainMenu.item[i].maxValue = RELEASE_BRAKE_DRAG;
+  g_mainMenu.item[i].maxValue = 0;
   g_mainMenu.item[i].minValue = 0;
-  g_mainMenu.item[i].callback = &showQuickBrakeMenu;
+  g_mainMenu.item[i].callback = &showAdvancedBrakeMenu;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 8));  /* LIMIT */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 7));  /* LIMIT */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].maxSpeed;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "%%");
@@ -202,7 +194,7 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = max(5, (int)sensiToWholePctCeil(g_storedVar.carParam[g_carSel].minSpeed) + 5);
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* SETTINGS */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 8));  /* SETTINGS */
   g_mainMenu.item[i].value = ITEM_NO_VALUE;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "");
@@ -211,7 +203,7 @@ void initMenuItems() {
   g_mainMenu.item[i].callback = &showSettingsMenu;
 
   if (g_statsEnabled) {
-    sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 10));  /* STATS */
+    sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* STATS */
     g_mainMenu.item[i].value = ITEM_NO_VALUE;
     g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
     sprintf(g_mainMenu.item[i].unit, "");
@@ -220,7 +212,7 @@ void initMenuItems() {
     g_mainMenu.item[i].callback = &showLapStats;
   }
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 11));  /* CAR or BIL */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 10));  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)

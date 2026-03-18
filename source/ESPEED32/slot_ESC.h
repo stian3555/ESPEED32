@@ -23,7 +23,7 @@
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    12    /* Number of items in main menu (incl. FADE, QB submenu entry, STATS) */
+#define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. FADE, BRAKE+ submenu entry, STATS) */
 #define SETTINGS_ITEMS_COUNT 13   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
@@ -70,7 +70,7 @@
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
 #define FADE_DEFAULT              0     /* [%] Fade disabled by default for legacy behavior */
-#define PWM_FREQ_DEFAULT          30    /* [100*Hz] Motor PWM frequency (3.0 kHz) */
+#define PWM_FREQ_DEFAULT          40    /* [100*Hz] Motor PWM frequency (4.0 kHz) */
 #define BRAKE_BUTTON_REDUCTION_DEFAULT  50   /* [%] Brake reduction when button is pressed */
 #define QUICK_BRAKE_ENABLED_DEFAULT     0    /* Quick brake off by default */
 #define QUICK_BRAKE_THRESHOLD_DEFAULT   10   /* [%] Trigger position where quick brake engages */
@@ -84,7 +84,7 @@
 #define THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE  90   /* [%] Throttle curve max */
 #define THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE  10   /* [%] Throttle curve min */
 #define FADE_MAX_VALUE            30    /* [%] Maximum trigger travel used for fade-in to SENSI */
-#define ANTISPIN_MAX_VALUE        500   /* [ms] Maximum anti-spin time */
+#define ANTISPIN_MAX_VALUE        999   /* [ms] Maximum anti-spin time */
 #define ANTISPIN_STEP_MIN           1   /* [ms] Minimum ANTIS encoder step */
 #define ANTISPIN_STEP_MAX          50   /* [ms] Maximum ANTIS encoder step */
 #define FREQ_MIN_VALUE            1000  /* [Hz] Minimum PWM frequency */
@@ -251,7 +251,7 @@ typedef struct {
   uint16_t maxSpeed;                        /* [%] Maximum motor speed (5-100%) */
   ThrottleCurveVertex_type throttleCurveVertex;  /* Throttle response curve */
   uint16_t fade;                            /* [%] Initial trigger zone that ramps from 0 to SENSI */
-  uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-500ms) */
+  uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-999ms) */
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */

@@ -265,7 +265,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Some drivers prefer <code>Alt.Brake</code> lower than normal <code>BRAKE</code> for a softer temporary button brake, while others prefer it higher for a harder hit. That part is mainly user preference and car feel.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/alt_brake_examples.svg" alt="Concept graphs showing Alt.Brake lower than BRAKE and Alt.Brake higher than BRAKE">
+      <img src="../assets/alt_brake.svg" alt="Concept graphs showing Alt.Brake lower than BRAKE and Alt.Brake higher than BRAKE">
       <figcaption>Alternative brake examples: <code>Alt.Brake</code> can temporarily be set softer or harder than normal BRAKE, depending on driver preference.</figcaption>
     </figure>
     <h4>Release brake (<code>Rel.Brake</code>)</h4>
@@ -282,7 +282,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Use QUICK for a clear early brake hit. Use DRAG for smoother release support without the abrupt feel of full quick brake.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/release_brake_examples.svg" alt="Concept graphs showing QUICK and DRAG behavior for Rel.Brake">
+      <img src="../assets/rel_brake.svg" alt="Concept graphs showing QUICK and DRAG behavior for Rel.Brake">
       <figcaption>Release-brake examples: QUICK creates a zero-output zone with brake force below the selected zone, while DRAG adds softer release drag only during the release movement.</figcaption>
     </figure>
     <h3>Quick reference for the main menu</h3>
@@ -365,7 +365,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <figcaption>CURVE examples: Linear (50%), Soft (lower value), and Hard (higher value).</figcaption>
       </figure>
       <figure class="doc-media">
-        <img src="../assets/fade_curve_examples.svg" alt="Examples showing fade combined with linear and hard curve shapes">
+        <img src="../assets/fade_curve.svg" alt="Examples showing fade combined with linear and hard curve shapes">
         <figcaption>FADE plus CURVE: FADE can soften the very start while the rest of the response stays linear or is tuned harder.</figcaption>
       </figure>
     </details>
@@ -390,13 +390,13 @@ details.doc-fold>:not(summary){margin-top:8px}
       <h4>Scenario 1: partial trigger under LIMIT 100</h4>
       <p class="small">Compare these two images horizontally. Both show the same effective level, 50% duty, so the only difference is pulse density. The dashed line marks the average or effective level.</p>
       <figure class="doc-media">
-        <img src="../assets/pwm_frequency_partial_examples.svg" alt="PWM frequency examples comparing 1 kilohertz and 5 kilohertz at partial trigger with LIMIT 100">
+        <img src="../assets/pwm_part.svg" alt="PWM frequency examples comparing 1 kilohertz and 5 kilohertz at partial trigger with LIMIT 100">
         <figcaption>At 50% duty, <code>1 kHz</code> uses fewer and wider pulses, while <code>5 kHz</code> uses more and narrower pulses in the same time window.</figcaption>
       </figure>
       <h4>Scenario 2: full trigger under LIMIT 70</h4>
       <p class="small">Compare these two images horizontally as well. Both show full trigger, but <code>LIMIT 70</code> holds the effective level to 70% duty. Again, the dashed line marks the average or effective level.</p>
       <figure class="doc-media">
-        <img src="../assets/pwm_frequency_capped_examples.svg" alt="PWM frequency examples comparing 1 kilohertz and 5 kilohertz at full trigger with LIMIT 70">
+        <img src="../assets/pwm_cap.svg" alt="PWM frequency examples comparing 1 kilohertz and 5 kilohertz at full trigger with LIMIT 70">
         <figcaption>Here the duty is capped to 70% in both images. <code>PWM_F</code> changes how often pulses occur, not the LIMIT cap itself.</figcaption>
       </figure>
     </details>
@@ -492,7 +492,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>On the controller WiFi page the editor works directly in the browser over WiFi. On hosted <code>espeed32.com</code>, the same editor requires a USB WebSerial connection.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_config_editor_car_params.png" alt="Advanced Config Editor car parameter screenshot showing profile selection and live-editable throttle and power fields">
+      <img src="../assets/car_params.png" alt="Advanced Config Editor car parameter screenshot showing profile selection and live-editable throttle and power fields">
       <figcaption>Advanced Config Editor example: the screenshot shows the <code>Car Params</code> tab with profile selection and live-editable car settings. The editor UI is shown in English here, but the workflow is the same across all manuals.</figcaption>
     </figure>
     <h3>USB</h3>

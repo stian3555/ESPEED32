@@ -264,7 +264,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Algunos pilotos prefieren <code>Alt.Freno</code> mas bajo que el <code>BRAKE</code> normal para un boton de freno mas suave, mientras otros lo prefieren mas alto para un golpe mas fuerte. Esa parte depende sobre todo del gusto del usuario y de la sensacion del coche.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/alt_brake_examples.svg" alt="Graficas de concepto para Alt.Freno mas bajo que BRAKE y Alt.Freno mas alto que BRAKE">
+      <img src="../assets/alt_brake.svg" alt="Graficas de concepto para Alt.Freno mas bajo que BRAKE y Alt.Freno mas alto que BRAKE">
       <figcaption>Ejemplos de freno alternativo: <code>Alt.Freno</code> puede quedar temporalmente mas suave o mas fuerte que el BRAKE normal, segun la preferencia del piloto.</figcaption>
     </figure>
     <h4>Freno de liberacion (<code>Rel.Freno</code>)</h4>
@@ -281,7 +281,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Usa QUICK para una entrada de freno mas clara. Usa DRAG si quieres apoyo al soltar pero con sensacion mas suave.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/release_brake_examples.svg" alt="Graficas de concepto para QUICK y DRAG de Rel.Freno">
+      <img src="../assets/rel_brake.svg" alt="Graficas de concepto para QUICK y DRAG de Rel.Freno">
       <figcaption>Ejemplos de freno al soltar: QUICK crea una zona de salida cero con frenada por debajo de la zona elegida, mientras DRAG anade un drag mas suave solo durante el movimiento de release.</figcaption>
     </figure>
     <h3>De CarSteen/ACD a ESPEED32</h3>
@@ -357,7 +357,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <figcaption>Ejemplos de CURVE: Linear (50%), Soft (valor menor) y Hard (valor mayor).</figcaption>
     </figure>
     <figure class="doc-media">
-      <img src="../assets/fade_curve_examples.svg" alt="Ejemplo de Fade combinado con curva lineal y curva dura">
+      <img src="../assets/fade_curve.svg" alt="Ejemplo de Fade combinado con curva lineal y curva dura">
       <figcaption>FADE junto con CURVE: FADE puede suavizar el inicio mientras el resto de la respuesta sigue lineal o se ajusta mas agresivo.</figcaption>
     </figure>
     <h3>LIMIT en la practica</h3>
@@ -378,13 +378,13 @@ details.doc-fold>:not(summary){margin-top:8px}
     <h4>Escenario 1: gatillo parcial con LIMIT 100</h4>
     <p class="small">Compara estas dos imagenes en horizontal. Las dos muestran el mismo nivel efectivo, 50% duty, asi que la diferencia es solo la densidad de pulsos. La linea discontinua marca el nivel medio o efectivo.</p>
     <figure class="doc-media">
-      <img src="../assets/pwm_frequency_partial_examples.svg" alt="Ejemplos de PWM_F que comparan 1 kilohertz y 5 kilohertz con gatillo parcial y LIMIT 100">
+      <img src="../assets/pwm_part.svg" alt="Ejemplos de PWM_F que comparan 1 kilohertz y 5 kilohertz con gatillo parcial y LIMIT 100">
       <figcaption>Con 50% duty, <code>1 kHz</code> usa menos pulsos y mas anchos, mientras <code>5 kHz</code> usa mas pulsos y mas estrechos en la misma ventana.</figcaption>
     </figure>
     <h4>Escenario 2: gatillo a fondo con LIMIT 70</h4>
     <p class="small">Compara tambien estas dos imagenes en horizontal. Las dos muestran gatillo a fondo, pero <code>LIMIT 70</code> mantiene el nivel efectivo en 70% duty. De nuevo, la linea discontinua marca el nivel medio o efectivo.</p>
     <figure class="doc-media">
-      <img src="../assets/pwm_frequency_capped_examples.svg" alt="Ejemplos de PWM_F que comparan 1 kilohertz y 5 kilohertz con gatillo a fondo y LIMIT 70">
+      <img src="../assets/pwm_cap.svg" alt="Ejemplos de PWM_F que comparan 1 kilohertz y 5 kilohertz con gatillo a fondo y LIMIT 70">
       <figcaption>Aqui el duty queda limitado a 70% en ambas imagenes. <code>PWM_F</code> cambia la frecuencia de los pulsos, no el limite en si.</figcaption>
     </figure>
   </section>
@@ -477,7 +477,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>En la pagina WiFi del controlador el editor funciona directamente en el navegador por WiFi. En <code>espeed32.com</code>, el mismo editor requiere USB/WebSerial.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_config_editor_car_params.png" alt="Captura del Advanced Config Editor con Car Params, seleccion de perfil y campos editables de potencia y trigger">
+      <img src="../assets/car_params.png" alt="Captura del Advanced Config Editor con Car Params, seleccion de perfil y campos editables de potencia y trigger">
       <figcaption>Ejemplo del Advanced Config Editor: la captura muestra la pestaña <code>Car Params</code> con seleccion de perfil y ajustes del coche editables en vivo. La interfaz aparece en ingles aqui, pero el flujo de uso es el mismo en todos los manuales.</figcaption>
     </figure>
     <h3>USB</h3>

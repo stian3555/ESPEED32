@@ -20,17 +20,17 @@ By keeping one canonical location, docs in Git and docs on device stay aligned.
 - `de/index.html` - full German user guide
 - `it/index.html` - full Italian user guide
 - `assets/curve_examples.svg` - curve graph from manuals
-- `assets/advanced_brake_examples.svg` - Alt.Brake, QUICK, and DRAG concept graphs
+- `assets/adv_brake.svg` - Alt.Brake, QUICK, and DRAG concept graphs
 - `assets/fade_examples.svg` - fade off/on graph examples
-- `assets/fade_curve_examples.svg` - combined fade and curve graph examples
+- `assets/fade_curve.svg` - combined fade and curve graph examples
 - `assets/limit_examples.svg` - limit and duty cap examples
-- `assets/pwm_frequency_partial_examples.svg` - 1 kHz vs 5 kHz at 50% duty under LIMIT 100
-- `assets/pwm_frequency_capped_examples.svg` - 1 kHz vs 5 kHz at 70% duty under LIMIT 70
-- `assets/pwm_frequency_examples.svg` - PWM frequency examples
+- `assets/pwm_part.svg` - 1 kHz vs 5 kHz at 50% duty under LIMIT 100
+- `assets/pwm_cap.svg` - 1 kHz vs 5 kHz at 70% duty under LIMIT 70
+- `assets/pwm_freq.svg` - PWM frequency examples
 - `assets/wifi_examples.svg` - controller OLED WiFi info and full-screen QR examples
 - `assets/display_modes.svg` - OLED list and grid view mockups
-- `assets/advanced_config_editor_car_params.png` - wide browser screenshot of the Car Params editor
-- `assets/advanced_config_editor_car_params_tall.png` - taller browser screenshot of the Car Params editor
+- `assets/car_params.png` - wide browser screenshot of the Car Params editor
+- `assets/car_params_t.png` - taller browser screenshot of the Car Params editor
 - `assets/trig_cal.png` - trigger calibration figure
 
 Related SPIFFS content (outside this folder):

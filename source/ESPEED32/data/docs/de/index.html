@@ -264,7 +264,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Manche Fahrer moegen <code>Alt.Brems</code> niedriger als den normalen <code>BRAKE</code>-Wert fuer eine weichere Tastenbremse, andere lieber hoeher fuer einen staerkeren Bremseinsatz. Das ist vor allem Geschmacks- und Fahrgefuehlssache.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/alt_brake_examples.svg" alt="Konzeptgrafiken fuer Alt.Brems niedriger als BRAKE und Alt.Brems hoeher als BRAKE">
+      <img src="../assets/alt_brake.svg" alt="Konzeptgrafiken fuer Alt.Brems niedriger als BRAKE und Alt.Brems hoeher als BRAKE">
       <figcaption>Beispiele fuer alternative Bremse: <code>Alt.Brems</code> kann kurzzeitig weicher oder haerter als der normale BRAKE-Wert eingestellt werden, je nach Vorliebe des Fahrers.</figcaption>
     </figure>
     <h4>Release-Bremse (<code>Rel.Brems</code>)</h4>
@@ -281,7 +281,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>QUICK fuer klaren fruehen Bremseinsatz. DRAG fuer sanftere Unterstuetzung beim Loslassen.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/release_brake_examples.svg" alt="Konzeptgrafiken fuer QUICK und DRAG bei Rel.Brems">
+      <img src="../assets/rel_brake.svg" alt="Konzeptgrafiken fuer QUICK und DRAG bei Rel.Brems">
       <figcaption>Beispiele fuer Release-Bremse: QUICK erzeugt unterhalb der gewaehlten Zone eine Null-Output-Zone mit Bremskraft, waehrend DRAG nur waehrend der Release-Bewegung weicheren Drag addiert.</figcaption>
     </figure>
     <h3>Kurzreferenz fuer das Hauptmenue</h3>
@@ -364,7 +364,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <figcaption>CURVE-Beispiele: Linear (50%), Soft (niedriger Wert) und Hard (hoeherer Wert).</figcaption>
       </figure>
       <figure class="doc-media">
-        <img src="../assets/fade_curve_examples.svg" alt="Beispiel fuer Fade zusammen mit linearer und harter Kurve">
+        <img src="../assets/fade_curve.svg" alt="Beispiel fuer Fade zusammen mit linearer und harter Kurve">
         <figcaption>FADE zusammen mit CURVE: FADE kann den Start weicher machen, waehrend der Rest der Kennlinie linear bleibt oder haerter abgestimmt wird.</figcaption>
       </figure>
     </details>
@@ -389,13 +389,13 @@ details.doc-fold>:not(summary){margin-top:8px}
       <h4>Szenario 1: Teillast unter LIMIT 100</h4>
       <p class="small">Vergleiche diese beiden Bilder horizontal. Beide zeigen dasselbe effektive Niveau, also 50% Duty. Der Unterschied ist nur die Pulsdichte. Die gestrichelte Linie markiert das mittlere oder effektive Niveau.</p>
       <figure class="doc-media">
-        <img src="../assets/pwm_frequency_partial_examples.svg" alt="PWM_F-Beispiele zum Vergleich von 1 Kilohertz und 5 Kilohertz bei Teillast mit LIMIT 100">
+        <img src="../assets/pwm_part.svg" alt="PWM_F-Beispiele zum Vergleich von 1 Kilohertz und 5 Kilohertz bei Teillast mit LIMIT 100">
         <figcaption>Bei 50% Duty nutzt <code>1 kHz</code> weniger und breitere Pulse, waehrend <code>5 kHz</code> mehr und schmalere Pulse im selben Zeitfenster nutzt.</figcaption>
       </figure>
       <h4>Szenario 2: Volltrigger unter LIMIT 70</h4>
       <p class="small">Vergleiche auch diese beiden Bilder horizontal. Beide zeigen Volltrigger, aber <code>LIMIT 70</code> haelt das effektive Niveau bei 70% Duty. Auch hier markiert die gestrichelte Linie das mittlere oder effektive Niveau.</p>
       <figure class="doc-media">
-        <img src="../assets/pwm_frequency_capped_examples.svg" alt="PWM_F-Beispiele zum Vergleich von 1 Kilohertz und 5 Kilohertz bei Volltrigger mit LIMIT 70">
+        <img src="../assets/pwm_cap.svg" alt="PWM_F-Beispiele zum Vergleich von 1 Kilohertz und 5 Kilohertz bei Volltrigger mit LIMIT 70">
         <figcaption>Hier ist der Duty in beiden Bildern auf 70% begrenzt. <code>PWM_F</code> aendert, wie oft Pulse kommen, nicht das LIMIT selbst.</figcaption>
       </figure>
     </details>
@@ -489,7 +489,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Auf der WiFi-Seite des Controllers funktioniert der Editor direkt im Browser ueber WiFi. Auf <code>espeed32.com</code> braucht derselbe Editor stattdessen USB/WebSerial.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_config_editor_car_params.png" alt="Screenshot des Advanced Config Editor mit Car Params, Profilauswahl und live editierbaren Fahrzeugwerten">
+      <img src="../assets/car_params.png" alt="Screenshot des Advanced Config Editor mit Car Params, Profilauswahl und live editierbaren Fahrzeugwerten">
       <figcaption>Beispiel fuer den Advanced Config Editor: der Screenshot zeigt den Reiter <code>Car Params</code> mit Profilauswahl und live editierbaren Fahrzeugeinstellungen. Die Editor-Oberflaeche ist hier auf Englisch gezeigt, der Ablauf ist aber in allen Handbuechern derselbe.</figcaption>
     </figure>
     <h3>USB</h3>

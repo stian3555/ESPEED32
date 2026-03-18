@@ -265,7 +265,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Noen foretrekker <code>Alt.brems</code> lavere enn vanlig <code>BRAKE</code> for en mykere knappbrems, mens andre liker den høyere for et hardere bremseinnslag. Dette er i stor grad brukerpreferanse og bilfølelse.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/alt_brake_examples.svg" alt="Konseptgrafer som viser Alt.brems lavere enn BRAKE og Alt.brems høyere enn BRAKE">
+      <img src="../assets/alt_brake.svg" alt="Konseptgrafer som viser Alt.brems lavere enn BRAKE og Alt.brems høyere enn BRAKE">
       <figcaption>Eksempler på alternativ brems: <code>Alt.brems</code> kan midlertidig settes mykere eller hardere enn vanlig BRAKE, avhengig av hva føreren foretrekker.</figcaption>
     </figure>
     <h4>Release-brems (<code>Rel.brems</code>)</h4>
@@ -282,7 +282,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>Bruk QUICK for tydelig tidlig innbremsing. Bruk DRAG for en roligere og mer progressiv støtte ved trigger-slipp.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/release_brake_examples.svg" alt="Konseptgrafer som viser QUICK og DRAG for Rel.brems">
+      <img src="../assets/rel_brake.svg" alt="Konseptgrafer som viser QUICK og DRAG for Rel.brems">
       <figcaption>Eksempler på release-brems: QUICK lager en null-output-sone med bremsekraft under valgt sone, mens DRAG legger inn mykere release-drag bare under selve slippbevegelsen.</figcaption>
     </figure>
     <h3>Kort referanse for hovedmenyen</h3>
@@ -365,7 +365,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <figcaption>CURVE-eksempler: Lineær (50%), Soft (lavere verdi) og Hard (høyere verdi).</figcaption>
       </figure>
       <figure class="doc-media">
-        <img src="../assets/fade_curve_examples.svg" alt="Eksempel som viser fade sammen med lineær og hard kurve">
+        <img src="../assets/fade_curve.svg" alt="Eksempel som viser fade sammen med lineær og hard kurve">
         <figcaption>FADE sammen med CURVE: FADE kan myke opp starten mens resten av responsen fortsatt er lineær eller satt opp skarpere.</figcaption>
       </figure>
     </details>
@@ -390,13 +390,13 @@ details.doc-fold>:not(summary){margin-top:8px}
       <h4>Scenario 1: delgass under LIMIT 100</h4>
       <p class="small">Sammenlign disse to bildene horisontalt. Begge viser samme effektive nivå, 50% duty, så forskjellen er bare hvor tett pulsene ligger. Den stiplede linjen markerer gjennomsnittlig eller effektivt nivå.</p>
       <figure class="doc-media">
-        <img src="../assets/pwm_frequency_partial_examples.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved delgass og LIMIT 100">
+        <img src="../assets/pwm_part.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved delgass og LIMIT 100">
         <figcaption>Ved 50% duty gir <code>1 kHz</code> færre og bredere pulser, mens <code>5 kHz</code> gir flere og smalere pulser i samme tidsvindu.</figcaption>
       </figure>
       <h4>Scenario 2: full trigger under LIMIT 70</h4>
       <p class="small">Sammenlign også disse to bildene horisontalt. Begge viser full trigger, men <code>LIMIT 70</code> holder det effektive nivået nede på 70% duty. Igjen er den stiplede linjen gjennomsnittlig eller effektivt nivå.</p>
       <figure class="doc-media">
-        <img src="../assets/pwm_frequency_capped_examples.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved full trigger og LIMIT 70">
+        <img src="../assets/pwm_cap.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved full trigger og LIMIT 70">
         <figcaption>Her er duty begrenset til 70% i begge bilder. <code>PWM_F</code> endrer hvor ofte det pulses, men ikke selve LIMIT-taket.</figcaption>
       </figure>
     </details>
@@ -492,7 +492,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li>På kontrollerens WiFi-side fungerer editoren direkte i nettleseren over WiFi. På <code>espeed32.com</code> krever den i stedet USB/WebSerial.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_config_editor_car_params.png" alt="Skjermbilde av Advanced Config Editor med Car Params, profilvalg og redigerbare bilparametere">
+      <img src="../assets/car_params.png" alt="Skjermbilde av Advanced Config Editor med Car Params, profilvalg og redigerbare bilparametere">
       <figcaption>Eksempel på Advanced Config Editor: skjermbildet viser fanen <code>Car Params</code> med profilvalg og live-redigerbare bilinnstillinger. Selve editoren er vist på engelsk her, men arbeidsflyten er den samme i alle manualene.</figcaption>
     </figure>
     <h3>USB</h3>

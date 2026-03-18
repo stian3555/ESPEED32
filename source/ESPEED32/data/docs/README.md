@@ -19,7 +19,16 @@ By keeping one canonical location, docs in Git and docs on device stay aligned.
 - `es/index.html` - full Spanish user guide
 - `de/index.html` - full German user guide
 - `it/index.html` - full Italian user guide
-- `assets/curve_examples.png` - curve graph from manuals
+- `assets/curve_examples.svg` - curve graph from manuals
+- `assets/advanced_brake_examples.svg` - Alt Brake, QUICK, and DRAG concept graphs
+- `assets/fade_examples.svg` - fade off/on graph examples
+- `assets/fade_curve_examples.svg` - combined fade and curve graph examples
+- `assets/limit_examples.svg` - limit and duty cap examples
+- `assets/pwm_frequency_examples.svg` - PWM frequency examples
+- `assets/wifi_examples.svg` - controller OLED WiFi info and full-screen QR examples
+- `assets/display_modes.svg` - OLED list and grid view mockups
+- `assets/advanced_config_editor_car_params.png` - wide browser screenshot of the Car Params editor
+- `assets/advanced_config_editor_car_params_tall.png` - taller browser screenshot of the Car Params editor
 - `assets/trig_cal.png` - trigger calibration figure
 
 Related SPIFFS content (outside this folder):
@@ -80,5 +89,5 @@ Notes for online UI publishing:
 
 Custom domain:
 
-- Add a `CNAME` file in repository root (example: `docs.yourdomain.com`).
+- Add a `.github/CNAME` file (example: `docs.yourdomain.com`).
 - The workflow copies it to the published artifact automatically.

@@ -3,6 +3,7 @@
 #include "HAL.h"
 #include "slot_ESC.h"
 #include "ext_pot.h"
+#include "telemetry_logging.h"
 
 extern StateMachine_enum g_currState;
 extern StoredVar_type g_storedVar;
@@ -135,26 +136,32 @@ void Task2code(void *pvParameters) {
         uint16_t releaseZone_norm = (uint32_t)g_storedVar.carParam[g_carSel].quickBrakeThreshold
                                     * THROTTLE_NORMALIZED / 100;
         bool inReleaseZone = (releaseZone_norm > 0) && (g_escVar.trigger_norm < releaseZone_norm);
+        bool brakeButtonPressed = (digitalRead(BUTT_PIN) == BUTTON_PRESSED);
+        bool releaseActive = false;
+        uint8_t appliedBrakePct = 0;
 
         if (g_escVar.trigger_norm == 0) {
           /* Apply brake when trigger is released */
           /* Check if brake button is pressed - use alternate brake value */
           uint16_t effectiveBrake = getEffectiveBrakePct();
-          if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+          if (brakeButtonPressed) {
             /* Use brakeButtonReduction as alternate brake value (not a reduction) */
             effectiveBrake = g_storedVar.carParam[g_carSel].brakeButtonReduction;
           }
           HalfBridge_SetPwmDrag(0, effectiveBrake);
           g_escVar.outputSpeed_pct = 0;
+          appliedBrakePct = (uint8_t)constrain((int)effectiveBrake, 0, 100);
           throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
         } else {
           bool applyQuickBrake = (releaseBrakeMode == RELEASE_BRAKE_QUICK) && inReleaseZone;
           bool applyDragBrake = (releaseBrakeMode == RELEASE_BRAKE_DRAG) && triggerReleasing;
+          releaseActive = applyQuickBrake || applyDragBrake;
 
           if (applyQuickBrake) {
             /* QUICK mode: cut output and apply brake in the release zone */
             HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].quickBrakeStrength);
             g_escVar.outputSpeed_pct = 0;
+            appliedBrakePct = (uint8_t)constrain((int)g_storedVar.carParam[g_carSel].quickBrakeStrength, 0, 100);
             throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
           } else {
             /* Apply throttle curve and anti-spin */
@@ -162,10 +169,31 @@ void Task2code(void *pvParameters) {
             g_escVar.outputSpeed_pct = throttleAntiSpin3(g_escVar.outputSpeed_pct);
             uint16_t dragPct = applyDragBrake ? g_storedVar.carParam[g_carSel].quickBrakeStrength : 0;
             HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, dragPct);
+            appliedBrakePct = (uint8_t)constrain((int)dragPct, 0, 100);
           }
           /* Update last interaction time to prevent screensaver while driving */
           g_lastEncoderInteraction = millis();
         }
+
+        uint8_t triggerPct = (uint8_t)(((uint32_t)g_escVar.trigger_norm * 100U) / THROTTLE_NORMALIZED);
+        uint8_t outputPct = (uint8_t)constrain((int)g_escVar.outputSpeed_pct, 0, 100);
+        uint8_t telemetryFlags = 0;
+        if (brakeButtonPressed) telemetryFlags |= TELEMETRY_FLAG_BRAKE_BUTTON;
+        if (triggerReleasing) telemetryFlags |= TELEMETRY_FLAG_TRIGGER_RELEASING;
+        if (inReleaseZone) telemetryFlags |= TELEMETRY_FLAG_IN_RELEASE_ZONE;
+        if (releaseActive) telemetryFlags |= TELEMETRY_FLAG_RELEASE_ACTIVE;
+        if (HAL_HasMotorCurrentSense()) telemetryFlags |= TELEMETRY_FLAG_CURRENT_SENSE;
+
+        telemetryCaptureSample((uint8_t)g_carSel,
+                               &g_storedVar.carParam[g_carSel],
+                               triggerPct,
+                               outputPct,
+                               g_escVar.Vin_mV,
+                               g_escVar.motorCurrent_mA,
+                               appliedBrakePct,
+                               g_escVar.effectiveSensi_raw,
+                               (uint8_t)releaseBrakeMode,
+                               telemetryFlags);
         prevTriggerNorm = g_escVar.trigger_norm;
       }
     }

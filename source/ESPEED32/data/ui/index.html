@@ -87,6 +87,16 @@
   --theme-select-bg:#ffffff;
   --theme-select-border:#b9c7dd;
   --theme-select-text:#20314c;
+  --telemetry-plot-bg:#f7faff;
+  --telemetry-grid:#d8e3f4;
+  --telemetry-axis:#5b6d88;
+  --telemetry-chip-bg:#eef4ff;
+  --telemetry-chip-border:#bfd0ea;
+  --trace-trigger:#c84a5f;
+  --trace-output:#2f6fb3;
+  --trace-brake:#c27d18;
+  --trace-vin:#23846a;
+  --trace-current:#9b5431;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -162,6 +172,16 @@
     --theme-select-bg:#101b30;
     --theme-select-border:#40577f;
     --theme-select-text:#ebf2ff;
+    --telemetry-plot-bg:#0d1526;
+    --telemetry-grid:#243858;
+    --telemetry-axis:#a9bad6;
+    --telemetry-chip-bg:#111d33;
+    --telemetry-chip-border:#304463;
+    --trace-trigger:#ff7b8d;
+    --trace-output:#70b9ff;
+    --trace-brake:#ffc55f;
+    --trace-vin:#53d0af;
+    --trace-current:#ff9770;
   }
 }
 html[data-theme="light"]{
@@ -237,6 +257,16 @@ html[data-theme="light"]{
   --theme-select-bg:#ffffff;
   --theme-select-border:#b9c7dd;
   --theme-select-text:#20314c;
+  --telemetry-plot-bg:#f7faff;
+  --telemetry-grid:#d8e3f4;
+  --telemetry-axis:#5b6d88;
+  --telemetry-chip-bg:#eef4ff;
+  --telemetry-chip-border:#bfd0ea;
+  --trace-trigger:#c84a5f;
+  --trace-output:#2f6fb3;
+  --trace-brake:#c27d18;
+  --trace-vin:#23846a;
+  --trace-current:#9b5431;
 }
 html[data-theme="dark"]{
   --bg-main:#0c1426;
@@ -311,6 +341,16 @@ html[data-theme="dark"]{
   --theme-select-bg:#101b30;
   --theme-select-border:#40577f;
   --theme-select-text:#ebf2ff;
+  --telemetry-plot-bg:#0d1526;
+  --telemetry-grid:#243858;
+  --telemetry-axis:#a9bad6;
+  --telemetry-chip-bg:#111d33;
+  --telemetry-chip-border:#304463;
+  --trace-trigger:#ff7b8d;
+  --trace-output:#70b9ff;
+  --trace-brake:#ffc55f;
+  --trace-vin:#53d0af;
+  --trace-current:#ff9770;
 }
 *{box-sizing:border-box}
 body{
@@ -583,6 +623,112 @@ form{margin:0}
   0%{transform:translateX(-120%)}
   100%{transform:translateX(240%)}
 }
+.telemetry-toolbar{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+.telemetry-panel.telemetry-compact .telemetry-toolbar{
+  margin-top:6px;
+}
+.telemetry-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.telemetry-actions .btn{
+  margin:0;
+  width:auto;
+  min-width:0;
+  flex:1 1 170px;
+}
+.telemetry-metrics{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  margin:12px 0 10px 0;
+}
+.telemetry-metric{
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:10px;
+  padding:10px;
+  background:var(--telemetry-chip-bg);
+}
+.telemetry-metric-label{
+  display:block;
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.telemetry-metric-value{
+  display:block;
+  margin-top:5px;
+  font-size:15px;
+  font-weight:700;
+  color:var(--heading);
+}
+.telemetry-legend{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+  gap:8px;
+  margin:4px 0 10px 0;
+}
+.trace-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:9px;
+  padding:9px 10px;
+  background:var(--telemetry-chip-bg);
+  color:var(--text-main);
+  font-size:13px;
+}
+.trace-toggle input{margin:0}
+.trace-swatch{
+  width:12px;
+  height:12px;
+  border-radius:99px;
+  flex:0 0 auto;
+}
+.telemetry-plot-wrap{
+  position:relative;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:12px;
+  padding:10px;
+  background:var(--telemetry-plot-bg);
+}
+#telemetry-canvas{
+  display:block;
+  width:100%;
+  height:320px;
+}
+.telemetry-empty{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  text-align:center;
+  font-size:14px;
+  color:var(--text-muted);
+  pointer-events:none;
+}
+.telemetry-panel.telemetry-compact .telemetry-metrics,
+.telemetry-panel.telemetry-compact .telemetry-legend,
+.telemetry-panel.telemetry-compact .telemetry-plot-wrap,
+.telemetry-panel.telemetry-compact .telemetry-secondary-actions,
+.telemetry-panel.telemetry-compact #btn-telemetry-stop,
+.telemetry-panel.telemetry-compact #btn-telemetry-clear,
+.telemetry-panel.telemetry-compact #btn-telemetry-refresh,
+.telemetry-panel.telemetry-compact #tst{
+  display:none;
+}
+.telemetry-panel.telemetry-unavailable .telemetry-toolbar{
+  display:none;
+}
 
 @media (min-width:760px){
   body{padding:18px 18px 32px}
@@ -594,6 +740,7 @@ form{margin:0}
   }
   .about-panel,
   .repo-panel,
+  .telemetry-panel,
   .backup-panel,
   .guide-panel,
   .usb-panel,
@@ -611,6 +758,7 @@ form{margin:0}
     grid-template-areas:
       "about about about about about about about about repo repo repo repo"
       "guide guide guide guide guide guide usb usb usb usb usb usb"
+      "telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry"
       "backup backup backup backup backup backup backup backup backup backup backup backup"
       "updates updates updates updates updates updates updates updates updates updates updates updates"
       "editor editor editor editor editor editor editor editor editor editor editor editor";
@@ -621,6 +769,7 @@ form{margin:0}
   .repo-panel{grid-area:repo}
   .guide-panel{grid-area:guide}
   .usb-panel{grid-area:usb}
+  .telemetry-panel{grid-area:telemetry}
   .backup-panel{grid-area:backup}
   .editor-shell{grid-area:editor}
   .about-panel,
@@ -730,7 +879,7 @@ form{margin:0}
 </section>
 <section class="panel guide-panel">
 <h2>User Guide</h2>
-<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE / IT)</a>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide</a>
 <p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
 </section>
 <section class="panel usb-panel">
@@ -741,6 +890,43 @@ form{margin:0}
 <div id="ust" class="st"></div>
 </div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor.</p>
+</section>
+<section class="panel telemetry-panel">
+<h2>Telemetry &amp; Logging</h2>
+<p class="tiny">Live logging works over controller WiFi or USB WebSerial, with local CSV/JSON export. Time runs left-to-right in seconds since session start.</p>
+<p id="telemetry-note" class="warn" style="display:none"></p>
+<div class="telemetry-toolbar">
+<div class="telemetry-actions telemetry-primary-actions">
+<button id="btn-telemetry-start" class="btn aux" type="button" onclick="telemetryStart()">Start New Logging Session</button>
+<button id="btn-telemetry-stop" class="btn ul" type="button" onclick="telemetryStop()">Stop Logging</button>
+<button id="btn-telemetry-clear" class="btn dl" type="button" onclick="telemetryClear()">Clear Buffer</button>
+<button id="btn-telemetry-refresh" class="btn doc" type="button" onclick="telemetryRefresh()">Refresh Status</button>
+</div>
+<div class="telemetry-actions telemetry-secondary-actions">
+<a id="btn-telemetry-export-csv" class="btn dl" href="/api/telemetry/export.csv" download="espeed32-telemetry.csv">Export CSV</a>
+<a id="btn-telemetry-export-json" class="btn ota" href="/api/telemetry/export.json" download="espeed32-telemetry.json">Export JSON</a>
+</div>
+</div>
+<div class="telemetry-metrics">
+<div class="telemetry-metric"><span class="telemetry-metric-label">State</span><span id="telemetry-state" class="telemetry-metric-value">Waiting</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Samples</span><span id="telemetry-count" class="telemetry-metric-value">0</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Window</span><span id="telemetry-window" class="telemetry-metric-value">0.0 s</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Start Car</span><span id="telemetry-car" class="telemetry-metric-value">-</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Live Now</span><span id="telemetry-live" class="telemetry-metric-value">%T 0 / %O 0</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Rate</span><span id="telemetry-rate" class="telemetry-metric-value">20 ms</span></div>
+</div>
+<div class="telemetry-legend">
+<label class="trace-toggle"><input id="trace-trigger" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-trigger)"></span><span>Throttle %T</span></label>
+<label class="trace-toggle"><input id="trace-output" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-output)"></span><span>Output %O</span></label>
+<label class="trace-toggle"><input id="trace-brake" type="checkbox"><span class="trace-swatch" style="background:var(--trace-brake)"></span><span>Brake %</span></label>
+<label class="trace-toggle"><input id="trace-vin" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-vin)"></span><span>VIN</span></label>
+<label class="trace-toggle"><input id="trace-current" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-current)"></span><span>Current</span></label>
+</div>
+<div class="telemetry-plot-wrap">
+<canvas id="telemetry-canvas" width="960" height="320"></canvas>
+<div id="telemetry-empty" class="telemetry-empty">Start logging to see live traces here.</div>
+</div>
+<div id="tst" class="st"></div>
 </section>
 <section class="panel backup-panel">
 <h2>Config Backup &amp; Restore (.json)</h2>
@@ -797,7 +983,7 @@ form{margin:0}
 <div class="update-actions">
 <form id="sf">
 <input type="file" id="spiffs" accept=".bin">
-<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
+<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem (.bin)</button>
 </form>
 <button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release, Internet Required)</button>
 <p class="tiny" id="spiffs-auto-desc">Auto update requires internet on this device to download from GitHub, then uploads to the controller.</p>
@@ -831,6 +1017,18 @@ var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
 var infoLoadedFromApi=false;
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
+var telemetryStatus=null;
+var telemetrySamples=[];
+var telemetryEvents=[];
+var telemetryAfterSeq=0;
+var telemetrySessionId=0;
+var telemetryFetchBusy=false;
+var telemetryUiBusy=false;
+var telemetryPollTimer=null;
+var telemetryLastError='';
+var telemetryRedrawQueued=false;
+var telemetryConfigSnapshot=null;
+var usbCommandQueue=Promise.resolve();
 var latestReleaseTag='';
 var latestReleaseUrl='';
 var latestFirmwareBinUrl='';
@@ -844,6 +1042,60 @@ var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
 var BACKUP_SESSION_KEY='espeed32_backup_downloaded_v1';
 var UI_THEME_KEY='espeed32-ui-theme';
+var TELEMETRY_FIELDS={SEQ:0,TIME_MS:1,TRIGGER:2,OUTPUT:3,VIN_MV:4,CURRENT_MA:5,BRAKE:6,SENSI_HALF:7,CAR:8,RELEASE_MODE:9,FLAGS:10};
+var TELEMETRY_FLAG_BRAKE_BUTTON=0x01;
+var TELEMETRY_FLAG_TRIGGER_RELEASING=0x02;
+var TELEMETRY_FLAG_IN_RELEASE_ZONE=0x04;
+var TELEMETRY_FLAG_RELEASE_ACTIVE=0x08;
+var TELEMETRY_FLAG_CURRENT_SENSE=0x10;
+var TELEMETRY_EVENT_CAR_SELECT='car_select';
+var TELEMETRY_EVENT_CAR_PARAMS='car_params';
+var TELEMETRY_CHANGE_MIN_SPEED=0x0001;
+var TELEMETRY_CHANGE_BRAKE=0x0002;
+var TELEMETRY_CHANGE_MAX_SPEED=0x0004;
+var TELEMETRY_CHANGE_CURVE_INPUT=0x0008;
+var TELEMETRY_CHANGE_CURVE_DIFF=0x0010;
+var TELEMETRY_CHANGE_FADE=0x0020;
+var TELEMETRY_CHANGE_ANTI_SPIN=0x0040;
+var TELEMETRY_CHANGE_CAR_NAME=0x0080;
+var TELEMETRY_CHANGE_FREQ_PWM=0x0100;
+var TELEMETRY_CHANGE_BRAKE_BUTTON=0x0200;
+var TELEMETRY_CHANGE_RELEASE_MODE=0x0400;
+var TELEMETRY_CHANGE_RELEASE_ZONE=0x0800;
+var TELEMETRY_CHANGE_RELEASE_LEVEL=0x1000;
+var TELEMETRY_TRACE_DEFS=[
+  {id:'trace-trigger',label:'Throttle %T',band:'pct',index:TELEMETRY_FIELDS.TRIGGER,colorVar:'--trace-trigger'},
+  {id:'trace-output',label:'Output %O',band:'pct',index:TELEMETRY_FIELDS.OUTPUT,colorVar:'--trace-output'},
+  {id:'trace-brake',label:'Brake %',band:'pct',index:TELEMETRY_FIELDS.BRAKE,colorVar:'--trace-brake'},
+  {id:'trace-vin',label:'VIN',band:'vin',index:TELEMETRY_FIELDS.VIN_MV,colorVar:'--trace-vin'},
+  {id:'trace-current',label:'Current',band:'current',index:TELEMETRY_FIELDS.CURRENT_MA,colorVar:'--trace-current'}
+];
+
+function scheduleTelemetryPlotRedraw(){
+  if(typeof drawTelemetryPlot!=='function') return;
+  if(telemetryRedrawQueued) return;
+  telemetryRedrawQueued=true;
+
+  function run(){
+    telemetryRedrawQueued=false;
+    drawTelemetryPlot();
+  }
+
+  if(typeof window!=='undefined' && typeof window.requestAnimationFrame==='function'){
+    window.requestAnimationFrame(function(){
+      window.requestAnimationFrame(run);
+    });
+  }else{
+    setTimeout(run,0);
+  }
+}
+
+function withUsbCommand(fn){
+  var run=function(){ return Promise.resolve().then(fn); };
+  var task=usbCommandQueue.then(run,run);
+  usbCommandQueue=task.catch(function(){});
+  return task;
+}
 
 function initThemeControls(){
   var root=document.documentElement;
@@ -861,6 +1113,7 @@ function initThemeControls(){
   function apply(mode){
     if(mode==='light' || mode==='dark') root.setAttribute('data-theme',mode);
     else root.removeAttribute('data-theme');
+    scheduleTelemetryPlotRedraw();
   }
 
   apply(saved);
@@ -869,6 +1122,17 @@ function initThemeControls(){
     try{ localStorage.setItem(UI_THEME_KEY,select.value); }catch(_){}
     apply(select.value);
   });
+
+  if(typeof window!=='undefined' && typeof window.matchMedia==='function'){
+    var media=window.matchMedia('(prefers-color-scheme: dark)');
+    var onSystemThemeChange=function(){
+      if(select.value==='system'){
+        scheduleTelemetryPlotRedraw();
+      }
+    };
+    if(typeof media.addEventListener==='function') media.addEventListener('change',onSystemThemeChange);
+    else if(typeof media.addListener==='function') media.addListener(onSystemThemeChange);
+  }
 }
 
 function isLikelyDeviceHost(h){
@@ -1325,6 +1589,932 @@ async function updateDocsLinkState(){
   }
 }
 
+function telemetryUsesUsb(){
+  return !!(usb && usbReady);
+}
+
+function telemetryAvailable(){
+  return telemetryUsesUsb() || (!hostedMode && infoLoadedFromApi);
+}
+
+function telemetryUnavailableText(){
+  return 'Telemetry is available on the controller WiFi page or over USB WebSerial.';
+}
+
+async function telemetryFetchStatusTransport(){
+  if(telemetryUsesUsb()){
+    return await usbReadJsonResponse('TSTATUS',10000,40000);
+  }
+  var resp=await fetch('/api/telemetry/status',{cache:'no-store'});
+  if(!resp.ok) throw new Error('Telemetry unavailable (HTTP '+resp.status+')');
+  var data=await resp.json();
+  if(!data || !data.ok) throw new Error((data&&data.error)?data.error:'Telemetry fetch failed');
+  return data;
+}
+
+async function telemetryFetchLiveTransport(after,limit){
+  if(telemetryUsesUsb()){
+    var usbLimit=Math.min(Number(limit||256),96);
+    return await usbReadJsonResponse('TLIVE '+String(after||0)+' '+String(usbLimit),15000,120000);
+  }
+  var resp=await fetch('/api/telemetry/live?after='+encodeURIComponent(after||0)+'&limit='+encodeURIComponent(limit||256),{cache:'no-store'});
+  if(!resp.ok) throw new Error('Telemetry unavailable (HTTP '+resp.status+')');
+  var data=await resp.json();
+  if(!data || !data.ok) throw new Error((data&&data.error)?data.error:'Telemetry fetch failed');
+  return data;
+}
+
+async function telemetryPostTransport(action){
+  if(telemetryUsesUsb()){
+    return await usbReadJsonResponse(action,15000,40000);
+  }
+  var url='/api/telemetry/'+action.toLowerCase().slice(1);
+  var resp=await fetch(url,{method:'POST'});
+  var data=await resp.json();
+  if(!resp.ok || !data.ok) throw new Error((data&&data.error)?data.error:('HTTP '+resp.status));
+  return data;
+}
+
+async function telemetryLoadConfigSnapshot(){
+  if(telemetryConfigSnapshot) return telemetryConfigSnapshot;
+  if(telemetryUsesUsb()){
+    telemetryConfigSnapshot=await usbReadJsonResponse('TCONFIG',15000,120000);
+  }
+  return telemetryConfigSnapshot;
+}
+
+function telemetryGetReleaseModeLabel(mode){
+  if(Number(mode)===1) return 'QUICK';
+  if(Number(mode)===2) return 'DRAG';
+  return 'OFF';
+}
+
+function telemetryCsvEscape(value){
+  var text=String(value==null?'':value);
+  if(/[",\n\r]/.test(text)){
+    return '"'+text.replace(/"/g,'""')+'"';
+  }
+  return text;
+}
+
+function telemetryBuildTimestampForFileName(){
+  var iso=new Date().toISOString().replace(/\..*/,'');
+  return iso.slice(0,10)+'_'+iso.slice(11,19).replace(/:/g,'-');
+}
+
+function telemetryGetExportBaseName(){
+  var ts=telemetryBuildTimestampForFileName();
+  var version=(info.version && info.version!=='-')?info.version:'unknown';
+  var device=(info.deviceId && info.deviceId!=='----')?info.deviceId:'device';
+  return ts+'-espeed32_v'+version+'_'+device+'_telemetry';
+}
+
+function telemetryDownloadBlob(blob,fileName){
+  var a=document.createElement('a');
+  var href=URL.createObjectURL(blob);
+  a.href=href;
+  a.download=fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){
+    URL.revokeObjectURL(href);
+    a.remove();
+  },1000);
+}
+
+async function telemetryFetchExportBlob(format){
+  var url=(format==='csv')?'/api/telemetry/export.csv':'/api/telemetry/export.json';
+  var resp=await fetch(url,{cache:'no-store'});
+  if(!resp.ok){
+    var errText='';
+    try{ errText=await resp.text(); }catch(_){}
+    throw new Error(errText||('Telemetry export failed (HTTP '+resp.status+')'));
+  }
+  return await resp.blob();
+}
+
+async function telemetryCollectExportData(){
+  var snapshot=null;
+  if(telemetryUsesUsb()){
+    snapshot=await telemetryLoadConfigSnapshot();
+  }
+
+  var samples=[];
+  var events=[];
+  var restarts=0;
+
+  while(restarts<3){
+    var after=0;
+    var sessionId=0;
+    var restarted=false;
+    samples=[];
+    events=[];
+
+    for(var safety=0;safety<32;safety++){
+      var data=await telemetryFetchLiveTransport(after,256);
+      if(!data || !data.ok) throw new Error('Telemetry export failed');
+      if(!data.hasData) return {status:data,snapshot:snapshot,samples:[],events:[]};
+
+      if((sessionId && Number(data.sessionId||0)!==sessionId) || (data.truncated && after!==0)){
+        restarts++;
+        restarted=true;
+        break;
+      }
+
+      sessionId=Number(data.sessionId||0);
+      events=Array.isArray(data.events)?data.events:[];
+      if(Array.isArray(data.samples)){
+        data.samples.forEach(function(sample){
+          samples.push(sample);
+          after=Number(sample[TELEMETRY_FIELDS.SEQ]||after);
+        });
+      }
+
+      if(!data.hasMore){
+        return {status:data,snapshot:snapshot,samples:samples,events:events};
+      }
+    }
+
+    if(restarted){
+      continue;
+    }
+
+    throw new Error('Telemetry export exceeded expected batch count');
+  }
+
+  throw new Error('Telemetry export could not stabilize while logging. Stop logging and try again.');
+}
+
+function telemetryBuildCsvExport(samples,snapshot){
+  var out=['seq,t_ms,car_index,car_name,trigger_pct,output_pct,brake_pct,sensi_pct,vin_mV,current_mA,release_mode,brake_button,trigger_releasing,in_release_zone,release_active,current_sense'];
+
+  samples.forEach(function(sample){
+    var flags=Number(sample[TELEMETRY_FIELDS.FLAGS]||0);
+    var carIndex=Number(sample[TELEMETRY_FIELDS.CAR]||0);
+    var carName=telemetrySnapshotCarName(snapshot,carIndex);
+    out.push([
+      Number(sample[TELEMETRY_FIELDS.SEQ]||0),
+      Number(sample[TELEMETRY_FIELDS.TIME_MS]||0),
+      carIndex,
+      telemetryCsvEscape(carName),
+      Number(sample[TELEMETRY_FIELDS.TRIGGER]||0),
+      Number(sample[TELEMETRY_FIELDS.OUTPUT]||0),
+      Number(sample[TELEMETRY_FIELDS.BRAKE]||0),
+      telemetryCsvEscape((Number(sample[TELEMETRY_FIELDS.SENSI_HALF]||0)/2).toFixed(1)),
+      Number(sample[TELEMETRY_FIELDS.VIN_MV]||0),
+      Number(sample[TELEMETRY_FIELDS.CURRENT_MA]||0),
+      telemetryCsvEscape(telemetryGetReleaseModeLabel(sample[TELEMETRY_FIELDS.RELEASE_MODE]||0)),
+      (flags&TELEMETRY_FLAG_BRAKE_BUTTON)?1:0,
+      (flags&TELEMETRY_FLAG_TRIGGER_RELEASING)?1:0,
+      (flags&TELEMETRY_FLAG_IN_RELEASE_ZONE)?1:0,
+      (flags&TELEMETRY_FLAG_RELEASE_ACTIVE)?1:0,
+      (flags&TELEMETRY_FLAG_CURRENT_SENSE)?1:0
+    ].join(','));
+  });
+
+  return out.join('\n')+'\n';
+}
+
+function telemetryBuildJsonExport(samples,status,snapshot,events){
+  return {
+    ok:true,
+    format:'espeed32-telemetry-v1',
+    deviceId:info.deviceId||'',
+    firmware:info.version||'',
+    loggingActive:!!(status && status.loggingActive),
+    sampleRateMs:Number((status && status.sampleRateMs)||20),
+    capacity:Number((status && status.capacity)||0),
+    storedCount:Number((status && status.storedCount)||samples.length),
+    sessionId:Number((status && status.sessionId)||0),
+    sessionStartMs:Number((status && status.sessionStartMs)||0),
+    sessionStartCarIndex:Number((status && status.sessionStartCarIndex)||0),
+    configAtStart:snapshot||null,
+    eventsTruncated:!!(status && status.eventTruncated),
+    events:Array.isArray(events)?events:[],
+    samples:samples.map(function(sample){
+      return {
+        seq:Number(sample[TELEMETRY_FIELDS.SEQ]||0),
+        tMs:Number(sample[TELEMETRY_FIELDS.TIME_MS]||0),
+        triggerPct:Number(sample[TELEMETRY_FIELDS.TRIGGER]||0),
+        outputPct:Number(sample[TELEMETRY_FIELDS.OUTPUT]||0),
+        vinMv:Number(sample[TELEMETRY_FIELDS.VIN_MV]||0),
+        currentMa:Number(sample[TELEMETRY_FIELDS.CURRENT_MA]||0),
+        brakePct:Number(sample[TELEMETRY_FIELDS.BRAKE]||0),
+        sensiHalfPct:Number(sample[TELEMETRY_FIELDS.SENSI_HALF]||0),
+        carIndex:Number(sample[TELEMETRY_FIELDS.CAR]||0),
+        releaseMode:Number(sample[TELEMETRY_FIELDS.RELEASE_MODE]||0),
+        flags:Number(sample[TELEMETRY_FIELDS.FLAGS]||0)
+      };
+    })
+  };
+}
+
+async function telemetryExport(format){
+  if(!telemetryAvailable()){
+    ss('tst','err',telemetryUnavailableText());
+    return;
+  }
+
+  telemetryUiBusy=true;
+  updateTelemetryUiState();
+  stopTelemetryPolling();
+
+  try{
+    var baseName=telemetryGetExportBaseName();
+    var exportData=null;
+    if(telemetryUsesUsb()){
+      exportData=await telemetryCollectExportData();
+      if(!exportData.samples.length){
+        throw new Error('No telemetry data available');
+      }
+
+      if(format==='csv'){
+        telemetryDownloadBlob(
+          new Blob([telemetryBuildCsvExport(exportData.samples,exportData.snapshot)],{type:'text/csv;charset=utf-8'}),
+          baseName+'.csv'
+        );
+      }else{
+        telemetryDownloadBlob(
+          new Blob([JSON.stringify(telemetryBuildJsonExport(exportData.samples,exportData.status,exportData.snapshot,exportData.events),null,2)],{type:'application/json;charset=utf-8'}),
+          baseName+'.json'
+        );
+      }
+
+      telemetryStatus=exportData.status||telemetryStatus;
+      telemetryEvents=Array.isArray(exportData.events)?exportData.events:telemetryEvents;
+    }else{
+      telemetryDownloadBlob(await telemetryFetchExportBlob(format),baseName+(format==='csv'?'.csv':'.json'));
+    }
+    telemetryLastError='';
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    ss('tst','ok','Telemetry '+String(format||'').toUpperCase()+' exported');
+  }catch(e){
+    telemetryLastError=normalizeTelemetryError(e);
+    ss('tst','err',telemetryLastError);
+  }finally{
+    telemetryUiBusy=false;
+    updateTelemetryUiState();
+    startTelemetryPollingIfAvailable(false);
+  }
+}
+
+function normalizeTelemetryError(err){
+  var message=(err && err.message)?err.message:String(err||'');
+  if(!message) return 'Telemetry is unavailable on this page.';
+  if(message==='The string did not match the expected pattern.'){
+    return 'Telemetry is unavailable on this page.';
+  }
+  if(message.indexOf('Failed to fetch')!==-1){
+    return 'Telemetry is unavailable on this page.';
+  }
+  return message;
+}
+
+function stopTelemetryPolling(){
+  if(telemetryPollTimer){
+    clearInterval(telemetryPollTimer);
+    telemetryPollTimer=null;
+  }
+}
+
+function startTelemetryPollingIfAvailable(refreshNow){
+  stopTelemetryPolling();
+  if(!telemetryAvailable()) return;
+  if(refreshNow) syncTelemetryHistory(true,true);
+  telemetryPollTimer=setInterval(function(){ syncTelemetryHistory(false,true); },1000);
+}
+
+function setAnchorDisabled(id,disabled,href){
+  var el=document.getElementById(id);
+  if(!el) return;
+  if(disabled){
+    el.classList.add('disabled');
+    el.setAttribute('aria-disabled','true');
+  }else{
+    el.classList.remove('disabled');
+    el.removeAttribute('aria-disabled');
+    if(href) el.href=href;
+  }
+}
+
+function telemetryHalfPctToString(raw){
+  var n=Number(raw||0);
+  if(!isFinite(n)) n=0;
+  return (n/2).toFixed(1)+'%';
+}
+
+function formatTelemetryVoltage(mv){
+  var n=Number(mv||0);
+  if(!isFinite(n)) n=0;
+  return (n/1000).toFixed(1)+' V';
+}
+
+function formatTelemetryVoltageAxisLabel(mv){
+  var n=Number(mv||0);
+  if(!isFinite(n)) n=0;
+  return (n/1000).toFixed(1);
+}
+
+function formatTelemetryCurrent(ma,currentSense){
+  if(!currentSense) return 'N/A';
+  var n=Number(ma||0);
+  if(!isFinite(n)) n=0;
+  return (n/1000).toFixed(1)+' A';
+}
+
+function formatTelemetrySeconds(ms){
+  var n=Number(ms||0);
+  if(!isFinite(n) || n<0) n=0;
+  return (n/1000).toFixed(1)+' s';
+}
+
+function formatTelemetryPwmKhz(freqPwm100Hz){
+  var n=Number(freqPwm100Hz||0);
+  if(!isFinite(n)) n=0;
+  return (n/10).toFixed(1)+' kHz';
+}
+
+function telemetrySnapshotCarNames(snapshot){
+  return (snapshot && Array.isArray(snapshot.carNames))?snapshot.carNames:[];
+}
+
+function telemetrySnapshotCarName(snapshot,carIndex){
+  var names=telemetrySnapshotCarNames(snapshot);
+  return names[carIndex]||'';
+}
+
+function telemetryBuildEventDetailParts(event){
+  var car=event && event.carParams ? event.carParams : {};
+  var mask=Number(event && event.changedMask || 0);
+  var parts=[];
+  var releaseBits=TELEMETRY_CHANGE_RELEASE_MODE|TELEMETRY_CHANGE_RELEASE_ZONE|TELEMETRY_CHANGE_RELEASE_LEVEL;
+  if(mask&TELEMETRY_CHANGE_MIN_SPEED) parts.push('Sensi '+telemetryHalfPctToString(car.minSpeedHalfPct));
+  if(mask&TELEMETRY_CHANGE_BRAKE) parts.push('Brake '+String(Number(car.brake||0))+'%');
+  if(mask&TELEMETRY_CHANGE_MAX_SPEED) parts.push('Max '+String(Number(car.maxSpeed||0))+'%');
+  if(mask&TELEMETRY_CHANGE_CURVE_INPUT) parts.push('Curve in '+String(Number(car.curveInputPct||0))+'%');
+  if(mask&TELEMETRY_CHANGE_CURVE_DIFF) parts.push('Curve '+String(Number(car.curveDiffPct||0))+'%');
+  if(mask&TELEMETRY_CHANGE_FADE) parts.push('Fade '+String(Number(car.fade||0))+'%');
+  if(mask&TELEMETRY_CHANGE_ANTI_SPIN) parts.push('Anti '+String(Number(car.antiSpin||0))+' ms');
+  if(mask&TELEMETRY_CHANGE_CAR_NAME) parts.push('Name '+String(car.name||''));
+  if(mask&TELEMETRY_CHANGE_FREQ_PWM) parts.push('PWM '+formatTelemetryPwmKhz(car.freqPwm100Hz));
+  if(mask&TELEMETRY_CHANGE_BRAKE_BUTTON) parts.push('Alt '+String(Number(car.brakeButton||0))+'%');
+  if(mask&releaseBits){
+    parts.push('Rel '+telemetryGetReleaseModeLabel(car.releaseMode)+' '+String(Number(car.releaseZone||0))+'/'+String(Number(car.releaseLevel||0)));
+  }
+  return parts;
+}
+
+function telemetryBuildEventLabel(event){
+  if(!event) return '';
+  var car=event.carParams||{};
+  var carName=String(car.name||('CAR '+String(Number(event.carIndex||0))));
+  if(event.type===TELEMETRY_EVENT_CAR_SELECT){
+    return 'CAR '+carName;
+  }
+  var parts=telemetryBuildEventDetailParts(event);
+  if(!parts.length) return 'Params';
+  if(parts.length===1) return parts[0];
+  return parts.slice(0,2).join(' · ');
+}
+
+function updateTelemetryAvailabilityNote(){
+  var note=document.getElementById('telemetry-note');
+  if(!note) return;
+  if(telemetryUsesUsb()){
+    note.style.display='none';
+    note.textContent='';
+  }else if(hostedMode){
+    note.style.display='block';
+    note.textContent='Telemetry works on the controller WiFi page or over USB WebSerial, not as plain hosted mode alone.';
+  }else if(!infoLoadedFromApi){
+    note.style.display='block';
+    note.textContent='Telemetry becomes available when this UI is served by the controller WiFi API, or when USB WebSerial is connected.';
+  }else if(telemetryLastError){
+    note.style.display='block';
+    note.textContent=telemetryLastError;
+  }else{
+    note.style.display='none';
+    note.textContent='';
+  }
+}
+
+function telemetryShouldShowDetails(){
+  var status=telemetryStatus||{};
+  return !!(status.loggingActive || status.hasData || telemetrySamples.length);
+}
+
+function updateTelemetryLayout(){
+  var panel=document.querySelector('.telemetry-panel');
+  if(!panel) return;
+  var showDetails=telemetryShouldShowDetails();
+  panel.classList.toggle('telemetry-compact',!showDetails);
+  panel.classList.toggle('telemetry-unavailable',!telemetryAvailable() && !showDetails);
+}
+
+function updateTelemetryMetrics(){
+  var stateEl=document.getElementById('telemetry-state');
+  var countEl=document.getElementById('telemetry-count');
+  var windowEl=document.getElementById('telemetry-window');
+  var carEl=document.getElementById('telemetry-car');
+  var liveEl=document.getElementById('telemetry-live');
+  var rateEl=document.getElementById('telemetry-rate');
+  if(!stateEl || !countEl || !windowEl || !carEl || !liveEl || !rateEl) return;
+
+  if(!telemetryAvailable()){
+    stateEl.textContent='Connect';
+    countEl.textContent='-';
+    windowEl.textContent='-';
+    carEl.textContent='-';
+    liveEl.textContent='Open WiFi page or connect USB';
+    rateEl.textContent='20 ms';
+    return;
+  }
+
+  var status=telemetryStatus||{};
+  var stateText='Ready';
+  if(status.loggingActive) stateText='Logging';
+  else if(status.hasData) stateText='Stopped';
+  if(status.wrapped) stateText+=' (rolling)';
+  if(telemetryUiBusy) stateText+='...';
+  stateEl.textContent=stateText;
+
+  var stored=Number(status.storedCount||0);
+  var capacity=Number(status.capacity||0);
+  countEl.textContent=capacity?String(stored)+' / '+String(capacity):String(stored||0);
+
+  var windowMs=0;
+  if(telemetrySamples.length>1){
+    windowMs=Number(telemetrySamples[telemetrySamples.length-1][TELEMETRY_FIELDS.TIME_MS]||0)-Number(telemetrySamples[0][TELEMETRY_FIELDS.TIME_MS]||0);
+  }
+  windowEl.textContent=formatTelemetrySeconds(windowMs);
+  carEl.textContent=status.sessionStartCarName||'-';
+
+  var current=status.current||{};
+  liveEl.textContent='%T '+String(current.triggerPct||0)+' / %O '+String(current.outputPct||0)+' / '+formatTelemetryVoltage(current.vinMv)+' / '+formatTelemetryCurrent(current.currentMa,current.currentSense);
+  rateEl.textContent=String(status.sampleRateMs||20)+' ms';
+}
+
+function updateTelemetryUiState(){
+  var available=telemetryAvailable();
+  var status=telemetryStatus||{};
+  var hasData=!!status.hasData;
+  var logging=!!status.loggingActive;
+
+  setBtnDisabled('btn-telemetry-start',!available || telemetryUiBusy || logging);
+  setBtnDisabled('btn-telemetry-stop',!available || telemetryUiBusy || !logging);
+  setBtnDisabled('btn-telemetry-clear',!available || telemetryUiBusy || (!hasData && !logging));
+  setBtnDisabled('btn-telemetry-refresh',!available || telemetryUiBusy);
+
+  var startBtn=document.getElementById('btn-telemetry-start');
+  var stopBtn=document.getElementById('btn-telemetry-stop');
+  var clearBtn=document.getElementById('btn-telemetry-clear');
+  var refreshBtn=document.getElementById('btn-telemetry-refresh');
+  [startBtn,stopBtn,clearBtn,refreshBtn].forEach(function(btn){
+    if(!btn) return;
+    btn.classList.toggle('disabled',!!btn.disabled);
+  });
+
+  setAnchorDisabled('btn-telemetry-export-csv',!available || !hasData,telemetryUsesUsb()?'#':'/api/telemetry/export.csv');
+  setAnchorDisabled('btn-telemetry-export-json',!available || !hasData,telemetryUsesUsb()?'#':'/api/telemetry/export.json');
+  updateTelemetryAvailabilityNote();
+  updateTelemetryLayout();
+}
+
+function getTelemetryColor(varName,fallback){
+  var value=getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return value||fallback||'#ffffff';
+}
+
+function getSelectedTelemetryTraces(){
+  return TELEMETRY_TRACE_DEFS.filter(function(def){
+    var el=document.getElementById(def.id);
+    return !!(el && el.checked);
+  });
+}
+
+function getTelemetryBandRange(samples,index,fallbackMin,fallbackMax){
+  var min=Infinity;
+  var max=-Infinity;
+  samples.forEach(function(sample){
+    if(!sample) return;
+    var value=Number(sample[index]);
+    if(!isFinite(value)) return;
+    if(value<min) min=value;
+    if(value>max) max=value;
+  });
+  if(!isFinite(min) || !isFinite(max)){
+    return {min:fallbackMin,max:fallbackMax};
+  }
+  if(max===min){
+    if(max===0){
+      max=1;
+    }else{
+      var delta=Math.max(1,Math.abs(max)*0.1);
+      min=Math.max(0,min-delta);
+      max=max+delta;
+    }
+  }else{
+    var pad=(max-min)*0.12;
+    min=Math.max(0,min-pad);
+    max=max+pad;
+  }
+  return {min:min,max:max};
+}
+
+function drawTelemetryLine(ctx,samples,def,plotLeft,plotWidth,timeMin,timeMax,bandTop,bandHeight,range){
+  if(!samples.length) return;
+  var span=Math.max(1,timeMax-timeMin);
+  var color=getTelemetryColor(def.colorVar,'#ffffff');
+  ctx.beginPath();
+  var started=false;
+  for(var i=0;i<samples.length;i++){
+    var sample=samples[i];
+    var value=Number(sample[def.index]);
+    if(!isFinite(value)) continue;
+    var t=Number(sample[TELEMETRY_FIELDS.TIME_MS]||0);
+    var x=plotLeft+(((t-timeMin)/span)*plotWidth);
+    var norm=(value-range.min)/(range.max-range.min||1);
+    var y=bandTop+bandHeight-(norm*bandHeight);
+    if(!started){
+      ctx.moveTo(x,y);
+      started=true;
+    }else{
+      ctx.lineTo(x,y);
+    }
+  }
+  if(!started) return;
+  ctx.strokeStyle=color;
+  ctx.lineWidth=2;
+  ctx.lineJoin='round';
+  ctx.lineCap='round';
+  ctx.stroke();
+}
+
+function drawTelemetryBandFrame(ctx,title,plotLeft,plotWidth,bandTop,bandHeight,gridColor,axisColor,minLabel,maxLabel){
+  ctx.strokeStyle=gridColor;
+  ctx.lineWidth=1;
+  ctx.strokeRect(plotLeft,bandTop,plotWidth,bandHeight);
+
+  ctx.beginPath();
+  ctx.moveTo(plotLeft,bandTop+(bandHeight/2));
+  ctx.lineTo(plotLeft+plotWidth,bandTop+(bandHeight/2));
+  ctx.stroke();
+
+  ctx.save();
+  ctx.fillStyle=axisColor;
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  ctx.textAlign='left';
+  ctx.textBaseline='bottom';
+  ctx.fillText(title,plotLeft,bandTop-4);
+
+  ctx.textAlign='right';
+  ctx.textBaseline='top';
+  ctx.fillText(String(maxLabel),plotLeft-10,bandTop+2);
+  ctx.fillText(String(minLabel),plotLeft-10,bandTop+bandHeight-14);
+  ctx.restore();
+}
+
+function drawTelemetryEvents(ctx,plotLeft,plotWidth,timeMin,timeMax,plotTop,plotBottom){
+  if(!Array.isArray(telemetryEvents) || !telemetryEvents.length) return;
+
+  var span=Math.max(1,timeMax-timeMin);
+  var selectColor=getTelemetryColor('--trace-output','#ff9f43');
+  var changeColor=getTelemetryColor('--trace-brake','#ff6b6b');
+  var chipBg=getTelemetryColor('--telemetry-chip-bg','#eef4ff');
+  var chipBorder=getTelemetryColor('--telemetry-chip-border','#bfd0ea');
+  var chipText=getTelemetryColor('--telemetry-axis','#5b6d88');
+  var lastLabelRight=-Infinity;
+
+  ctx.save();
+  ctx.font='11px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+
+  telemetryEvents.forEach(function(event,idx){
+    if(!event) return;
+    var t=Number(event.tMs||0);
+    if(!isFinite(t) || t<timeMin || t>timeMax) return;
+
+    var x=plotLeft+(((t-timeMin)/span)*plotWidth);
+    var color=(event.type===TELEMETRY_EVENT_CAR_SELECT)?selectColor:changeColor;
+
+    ctx.save();
+    ctx.strokeStyle=color;
+    ctx.fillStyle=color;
+    ctx.globalAlpha=0.85;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(x,plotTop);
+    ctx.lineTo(x,plotBottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(x,plotTop+6,3,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    var label=telemetryBuildEventLabel(event);
+    if(!label) return;
+    if(label.length>28) label=label.slice(0,27)+'...';
+
+    var textWidth=ctx.measureText(label).width;
+    var boxWidth=textWidth+10;
+    var boxHeight=16;
+    var boxLeft=Math.max(plotLeft,Math.min(x+6,plotLeft+plotWidth-boxWidth));
+    var boxTop=plotTop+12+((idx%2)*18);
+
+    if(boxLeft<(lastLabelRight+10)) return;
+    lastLabelRight=boxLeft+boxWidth;
+
+    ctx.save();
+    ctx.globalAlpha=0.96;
+    ctx.fillStyle=chipBg;
+    ctx.strokeStyle=chipBorder;
+    ctx.lineWidth=1;
+    ctx.fillRect(boxLeft,boxTop,boxWidth,boxHeight);
+    ctx.strokeRect(boxLeft,boxTop,boxWidth,boxHeight);
+    ctx.fillStyle=chipText;
+    ctx.textAlign='left';
+    ctx.textBaseline='middle';
+    ctx.fillText(label,boxLeft+5,boxTop+(boxHeight/2)+0.5);
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+function drawTelemetryPlot(){
+  var canvas=document.getElementById('telemetry-canvas');
+  var empty=document.getElementById('telemetry-empty');
+  if(!canvas || !empty) return;
+
+  var selected=getSelectedTelemetryTraces();
+  if(!telemetrySamples.length){
+    empty.style.display='flex';
+    empty.textContent=telemetryAvailable()?'Start logging to see live traces here.':telemetryUnavailableText();
+    return;
+  }
+  if(!selected.length){
+    empty.style.display='flex';
+    empty.textContent='Select at least one trace to plot.';
+    return;
+  }
+  empty.style.display='none';
+
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  var width=Math.max(320,Math.round(rect.width||canvas.clientWidth||960));
+  var height=Math.max(280,Math.round(rect.height||320));
+  if(canvas.width!==Math.round(width*dpr) || canvas.height!==Math.round(height*dpr)){
+    canvas.width=Math.round(width*dpr);
+    canvas.height=Math.round(height*dpr);
+  }
+
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle=getTelemetryColor('--telemetry-plot-bg','#101820');
+  ctx.fillRect(0,0,width,height);
+
+  var timeMin=Number(telemetrySamples[0][TELEMETRY_FIELDS.TIME_MS]||0);
+  var timeMax=Number(telemetrySamples[telemetrySamples.length-1][TELEMETRY_FIELDS.TIME_MS]||0);
+  if(timeMax<=timeMin) timeMax=timeMin+1000;
+
+  var pctDefs=selected.filter(function(def){ return def.band==='pct'; });
+  var vinDefs=selected.filter(function(def){ return def.band==='vin'; });
+  var currentDefs=selected.filter(function(def){ return def.band==='current'; });
+
+  var axisColor=getTelemetryColor('--telemetry-axis','#76869d');
+  var gridColor=getTelemetryColor('--telemetry-grid','#2c3f5c');
+  var vinRange=getTelemetryBandRange(telemetrySamples,TELEMETRY_FIELDS.VIN_MV,0,1000);
+  var currentRange=getTelemetryBandRange(telemetrySamples,TELEMETRY_FIELDS.CURRENT_MA,0,1000);
+  var vinMinLabel=formatTelemetryVoltageAxisLabel(vinRange.min);
+  var vinMaxLabel=formatTelemetryVoltageAxisLabel(vinRange.max);
+  var currentMinLabel=String(Math.round(currentRange.min));
+  var currentMaxLabel=String(Math.round(currentRange.max));
+
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  var labelWidth=Math.max(
+    ctx.measureText('100').width,
+    ctx.measureText(vinMinLabel).width,
+    ctx.measureText(vinMaxLabel).width,
+    ctx.measureText(currentMinLabel).width,
+    ctx.measureText(currentMaxLabel).width
+  );
+
+  var plotLeft=Math.max(58,Math.ceil(labelWidth)+22);
+  var plotRight=18;
+  var top=20;
+  var bottom=28;
+  var gap=14;
+  var plotWidth=Math.max(10,width-plotLeft-plotRight);
+  var usableHeight=Math.max(120,height-top-bottom-(gap*2));
+  var pctHeight=Math.max(92,Math.round(usableHeight*0.46));
+  var vinHeight=Math.max(56,Math.round(usableHeight*0.22));
+  var currentHeight=Math.max(56,usableHeight-pctHeight-vinHeight);
+  var pctTop=top;
+  var vinTop=pctTop+pctHeight+gap;
+  var currentTop=vinTop+vinHeight+gap;
+
+  drawTelemetryBandFrame(ctx,'Throttle / Output / Brake (%)',plotLeft,plotWidth,pctTop,pctHeight,gridColor,axisColor,'0','100');
+  drawTelemetryBandFrame(ctx,'VIN (V)',plotLeft,plotWidth,vinTop,vinHeight,gridColor,axisColor,vinMinLabel,vinMaxLabel);
+  drawTelemetryBandFrame(ctx,'Current (mA)',plotLeft,plotWidth,currentTop,currentHeight,gridColor,axisColor,currentMinLabel,currentMaxLabel);
+
+  pctDefs.forEach(function(def){
+    drawTelemetryLine(ctx,telemetrySamples,def,plotLeft,plotWidth,timeMin,timeMax,pctTop,pctHeight,{min:0,max:100});
+  });
+  vinDefs.forEach(function(def){
+    drawTelemetryLine(ctx,telemetrySamples,def,plotLeft,plotWidth,timeMin,timeMax,vinTop,vinHeight,vinRange);
+  });
+  currentDefs.forEach(function(def){
+    drawTelemetryLine(ctx,telemetrySamples,def,plotLeft,plotWidth,timeMin,timeMax,currentTop,currentHeight,currentRange);
+  });
+
+  drawTelemetryEvents(ctx,plotLeft,plotWidth,timeMin,timeMax,pctTop,currentTop+currentHeight);
+
+  ctx.fillStyle=axisColor;
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  ctx.textBaseline='top';
+  ctx.textAlign='left';
+  ctx.fillText((timeMin/1000).toFixed(1)+' s',plotLeft,height-20);
+  ctx.textAlign='center';
+  ctx.fillText((((timeMin+timeMax)/2)/1000).toFixed(1)+' s',plotLeft+(plotWidth/2),height-20);
+  ctx.textAlign='right';
+  ctx.fillText((timeMax/1000).toFixed(1)+' s',plotLeft+plotWidth,height-20);
+}
+
+async function syncTelemetryHistory(reset,silent){
+  if(!telemetryAvailable()){
+    stopTelemetryPolling();
+    telemetryStatus=null;
+    telemetrySamples=[];
+    telemetryEvents=[];
+    telemetryAfterSeq=0;
+    telemetrySessionId=0;
+    telemetryLastError='';
+    updateTelemetryUiState();
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    return;
+  }
+  if(telemetryFetchBusy) return;
+
+  telemetryFetchBusy=true;
+  if(!silent) telemetryUiBusy=true;
+  updateTelemetryUiState();
+
+  try{
+    if(reset){
+      telemetrySamples=[];
+      telemetryEvents=[];
+      telemetryAfterSeq=0;
+      telemetrySessionId=0;
+    }
+
+    var safety=0;
+    while(safety<20){
+      var after=telemetryAfterSeq;
+      var data=await telemetryFetchLiveTransport(after,256);
+
+      if((telemetrySessionId && Number(data.sessionId||0)!==Number(telemetrySessionId)) || (data.truncated && after!==0)){
+        telemetrySamples=[];
+        telemetryAfterSeq=0;
+        telemetrySessionId=0;
+        safety++;
+        continue;
+      }
+
+      if(after===0){
+        telemetrySamples=[];
+      }
+
+      telemetryStatus=data;
+      telemetryEvents=Array.isArray(data.events)?data.events:[];
+      telemetrySessionId=Number(data.sessionId||0);
+      if(Array.isArray(data.samples)){
+        data.samples.forEach(function(sample){
+          telemetrySamples.push(sample);
+          telemetryAfterSeq=Number(sample[TELEMETRY_FIELDS.SEQ]||telemetryAfterSeq);
+        });
+      }
+
+      var maxKeep=Number(data.capacity||3000)+32;
+      if(telemetrySamples.length>maxKeep){
+        telemetrySamples=telemetrySamples.slice(telemetrySamples.length-maxKeep);
+      }
+
+      if(!data.hasMore) break;
+      safety++;
+    }
+
+    telemetryLastError='';
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    if(reset && !silent){
+      ss('tst','ok','Telemetry refreshed');
+    }
+  }catch(e){
+    telemetryLastError=normalizeTelemetryError(e);
+    if(!silent){
+      ss('tst','err',telemetryLastError);
+    }
+  }finally{
+    telemetryFetchBusy=false;
+    if(!silent) telemetryUiBusy=false;
+    updateTelemetryUiState();
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+  }
+}
+
+async function telemetryPostAction(url,successText,resetHistory){
+  if(!telemetryAvailable()){
+    ss('tst','err',telemetryUnavailableText());
+    return;
+  }
+  var hadUsbPolling=telemetryUsesUsb();
+  if(hadUsbPolling){
+    stopTelemetryPolling();
+  }
+  telemetryUiBusy=true;
+  updateTelemetryUiState();
+  try{
+    var data=await telemetryPostTransport(url);
+    telemetryStatus=data;
+    if(resetHistory){
+      telemetrySamples=[];
+      telemetryEvents=[];
+      telemetryAfterSeq=0;
+      telemetrySessionId=0;
+      telemetryConfigSnapshot=null;
+    }
+    telemetryLastError='';
+    updateTelemetryUiState();
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    await syncTelemetryHistory(!!resetHistory,true);
+    ss('tst','ok',successText||data.message||'Done');
+  }catch(e){
+    telemetryLastError=normalizeTelemetryError(e);
+    ss('tst','err',telemetryLastError);
+  }finally{
+    telemetryUiBusy=false;
+    updateTelemetryUiState();
+    if(hadUsbPolling){
+      startTelemetryPollingIfAvailable(false);
+    }
+  }
+}
+
+async function telemetryRefresh(){
+  await syncTelemetryHistory(true,false);
+}
+
+async function telemetryStart(){
+  await telemetryPostAction('TSTART','Telemetry logging started',true);
+}
+
+async function telemetryStop(){
+  await telemetryPostAction('TSTOP','Telemetry logging stopped',false);
+}
+
+async function telemetryClear(){
+  await telemetryPostAction('TCLEAR','Telemetry buffer cleared',true);
+}
+
+function initTelemetryUi(){
+  TELEMETRY_TRACE_DEFS.forEach(function(def){
+    var el=document.getElementById(def.id);
+    if(!el) return;
+    el.addEventListener('change',drawTelemetryPlot);
+  });
+  var exportCsv=document.getElementById('btn-telemetry-export-csv');
+  var exportJson=document.getElementById('btn-telemetry-export-json');
+  if(exportCsv){
+    exportCsv.addEventListener('click',function(e){
+      if(exportCsv.getAttribute('aria-disabled')==='true'){
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      telemetryExport('csv');
+    });
+  }
+  if(exportJson){
+    exportJson.addEventListener('click',function(e){
+      if(exportJson.getAttribute('aria-disabled')==='true'){
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      telemetryExport('json');
+    });
+  }
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  drawTelemetryPlot();
+  startTelemetryPollingIfAvailable(false);
+}
+
 function otaUpdateUnavailableReason(label){
   if(hostedMode){
     return label+' unavailable in hosted mode. Open controller WiFi page to upload.';
@@ -1459,19 +2649,27 @@ function setUsbReadyState(ready,msg){
   updateDocsLinkState();
   updateFirmwareUiState();
   updateReleaseInfoUi();
+  if(usbReady) startTelemetryPollingIfAvailable(true);
+  else if(infoLoadedFromApi) startTelemetryPollingIfAvailable(false);
+  else stopTelemetryPolling();
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  drawTelemetryPlot();
   if(msg){ss('ust',usbReady?'ok':'err',msg);}
 }
 
 async function probeUsbVersion(){
-  _b='';
-  await ws('VERSION\n');
-  var vr=await rl(2000);
-  var vp=vr.split(',');
-  if(vp.length!==2) throw new Error('No command reply');
-  return {
-    deviceId:vp[0]||'',
-    version:(vp[1]||'').replace('v','')
-  };
+  return withUsbCommand(async function(){
+    _b='';
+    await ws('VERSION\n');
+    var vr=await rl(2000);
+    var vp=vr.split(',');
+    if(vp.length!==2) throw new Error('No command reply');
+    return {
+      deviceId:vp[0]||'',
+      version:(vp[1]||'').replace('v','')
+    };
+  });
 }
 
 async function ensureUsbReady(silent){
@@ -1491,17 +2689,27 @@ async function ensureUsbReady(silent){
 }
 
 async function loadInfo(){
+  var apiOk=false;
   try{
     var r=await fetch('/api/info',{cache:'no-store'});
     if(r.ok){
       var j=await r.json();
       infoLoadedFromApi=true;
+      apiOk=true;
       if(j.deviceId)info.deviceId=j.deviceId;
       if(j.version)info.version=j.version;
       if(j.docsPath)info.docsPath=j.docsPath;
     }
   }catch(_){ }
   applyInfo();
+  if(apiOk){
+    startTelemetryPollingIfAvailable(true);
+  }else{
+    stopTelemetryPolling();
+  }
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  drawTelemetryPlot();
 }
 
 async function pump(){while(usb){try{var o=await _r.read();if(o.done)break;_b+=D.decode(o.value);}catch(_){break;}}}
@@ -1534,6 +2742,7 @@ async function ws(s){
 async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
   usb=false;
   usbReady=false;
+  telemetryConfigSnapshot=null;
   updateDocsLinkState();
   if(_r){try{await _r.cancel();}catch(_){}}
   _r=null;
@@ -1549,6 +2758,20 @@ async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
   }
   updateFirmwareUiState();
   updateReleaseInfoUi();
+  if(!infoLoadedFromApi){
+    stopTelemetryPolling();
+    telemetryStatus=null;
+    telemetrySamples=[];
+    telemetryEvents=[];
+    telemetryAfterSeq=0;
+    telemetrySessionId=0;
+    telemetryLastError='';
+  }else{
+    startTelemetryPollingIfAvailable(true);
+  }
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  drawTelemetryPlot();
   if(showStatus && statusMsg){ss('ust',statusType||'ok',statusMsg);}
 }
 
@@ -1605,10 +2828,7 @@ async function doBackup(statusId){
   }
   ss(statusId,'','Reading backup...');
   try{
-    if(!(await ensureUsbReady(false))) return;
-    _b='';
-    await ws('BACKUP\n');
-    var j=await rb(parseInt(await rl(),10));
+    var j=await usbReadTextResponse('BACKUP',15000,120000);
     var a2=document.createElement('a');
     a2.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));
     a2.download=fn;
@@ -1616,19 +2836,68 @@ async function doBackup(statusId){
     markBackupDownloadedThisSession();
     ss(statusId,'ok','Backup downloaded');
   }catch(e){
-    usbReady=false;
+    setUsbReadyState(false,'');
     ss(statusId,'err',e.message+' - retry USB connect');
   }
 }
 
-async function usbReadJsonResponse(cmd,waitMs){
+async function usbReadTextResponse(cmd,waitMs,maxLen){
   if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
-  _b='';
-  await ws(cmd+'\n');
-  var len=parseInt(await rl(waitMs||5000),10);
-  if(isNaN(len) || len<0 || len>20000) throw new Error('Invalid response length');
-  var data=await rb(len,Math.max(waitMs||5000,15000));
-  return JSON.parse(data);
+  return withUsbCommand(async function(){
+    _b='';
+    await ws(cmd+'\n');
+    var len=parseInt(await rl(waitMs||5000),10);
+    var hardLimit=maxLen||20000;
+    if(isNaN(len) || len<0 || len>hardLimit) throw new Error('Invalid response length');
+    return await rb(len,Math.max(waitMs||5000,15000));
+  });
+}
+
+async function usbReadJsonResponse(cmd,waitMs,maxLen){
+  return JSON.parse(await usbReadTextResponse(cmd,waitMs,maxLen||20000));
+}
+
+async function usbApplyEditorPayload(payloadText,saveAfter){
+  if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
+  return withUsbCommand(async function(){
+    var payloadBytes=E.encode(payloadText||'{}');
+    _b='';
+    await ws('APPLY\n'+payloadBytes.length+'\n');
+    var w=port.writable.getWriter();
+    try{await w.write(payloadBytes);}finally{w.releaseLock();}
+
+    var ack=await rl(10000);
+    if(ack!=='OK'){
+      if(ack.indexOf('ERR:')===0) throw new Error(ack.slice(4));
+      throw new Error('apply failed');
+    }
+    var outLen=parseInt(await rl(10000),10);
+    if(isNaN(outLen) || outLen<0 || outLen>20000) throw new Error('Invalid APPLY response');
+    var outState=await rb(outLen,15000);
+
+    if(saveAfter){
+      await ws('SAVE\n');
+      var saveResp=await rl(8000);
+      if(saveResp.indexOf('OK')!==0){
+        if(saveResp.indexOf('ERR:')===0) throw new Error(saveResp.slice(4));
+        throw new Error('save failed');
+      }
+    }
+
+    return JSON.parse(outState);
+  });
+}
+
+async function usbRestoreBackupJson(payloadText){
+  if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
+  return withUsbCommand(async function(){
+    var payloadBytes=E.encode(payloadText||'');
+    _b='';
+    await ws('RESTORE\n'+payloadBytes.length+'\n');
+    var w=port.writable.getWriter();
+    try{await w.write(payloadBytes);}finally{w.releaseLock();}
+    return await rl(20000);
+  });
 }
 
 function fieldId(prefix,id){return prefix+'_'+id;}
@@ -1861,36 +3130,11 @@ async function applyEditor(saveAfter){
     }
 
     if(usb){
-      if(!(await ensureUsbReady(false))) return;
-      var patch=JSON.stringify(payload);
-      var pb=E.encode(patch);
-      _b='';
-      await ws('APPLY\n'+pb.length+'\n');
-      var w=port.writable.getWriter();
-      try{await w.write(pb);}finally{w.releaseLock();}
-
-      var ack=await rl(10000);
-      if(ack!=='OK'){
-        if(ack.indexOf('ERR:')===0) throw new Error(ack.slice(4));
-        throw new Error('apply failed');
-      }
-      var outLen=parseInt(await rl(10000),10);
-      if(isNaN(outLen) || outLen<0 || outLen>20000) throw new Error('Invalid APPLY response');
-      var outState=await rb(outLen,15000);
-      state=JSON.parse(outState);
+      state=await usbApplyEditorPayload(JSON.stringify(payload),saveAfter);
       if(state && state.selectedCarNumber!=null && typeof payload.selectedCarNumber==='number'){
         editorCarIndex=parseInt(state.selectedCarNumber,10);
       }else{
         editorCarIndex=payload.carIndex;
-      }
-
-      if(saveAfter){
-        await ws('SAVE\n');
-        var saveResp=await rl(8000);
-        if(saveResp.indexOf('OK')!==0){
-          if(saveResp.indexOf('ERR:')===0) throw new Error(saveResp.slice(4));
-          throw new Error('save failed');
-        }
       }
     }else{
       var r=await fetch('/api/apply',{
@@ -1916,7 +3160,7 @@ async function applyEditor(saveAfter){
     renderEditor();
     ss('edst','ok',saveAfter?'Applied and saved to flash':'Applied live (RAM only)');
   }catch(e){
-    usbReady=false;
+    if(usb) setUsbReadyState(false,'');
     ss('edst','err','Apply failed: '+e.message);
   }
 }
@@ -2133,16 +3377,10 @@ document.getElementById('uf').onsubmit=async function(e){
     return;
   }
   try{
-    if(!(await ensureUsbReady(false))) return;
-    var j=await f.text(),b=E.encode(j);
-    _b='';
-    await ws('RESTORE\n'+b.length+'\n');
-    var w=port.writable.getWriter();
-    try{await w.write(b);}finally{w.releaseLock();}
-    var resp=await rl(20000);
+    var resp=await usbRestoreBackupJson(await f.text());
     ss('st',resp.indexOf('OK')===0?'ok':'err',resp);
   }catch(x){
-    usbReady=false;
+    setUsbReadyState(false,'');
     ss('st','err',x.message+' - retry USB connect');
   }
 };
@@ -2209,9 +3447,11 @@ updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
 updateDocsLinkState();
+initTelemetryUi();
 if(typeof window!=='undefined'){
   window.addEventListener('online',updateFirmwareUiState);
   window.addEventListener('offline',updateFirmwareUiState);
+  window.addEventListener('resize',drawTelemetryPlot);
 }
 loadInfo();
 loadLatestReleaseInfo();

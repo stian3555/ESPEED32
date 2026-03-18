@@ -642,6 +642,17 @@ form{margin:0}
   min-width:0;
   flex:1 1 170px;
 }
+.telemetry-config{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:flex-end;
+}
+.telemetry-config .row{
+  margin-bottom:0;
+  min-width:180px;
+  max-width:220px;
+}
 .telemetry-metrics{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
@@ -734,6 +745,22 @@ form{margin:0}
   gap:10px;
   margin-top:10px;
 }
+.lap-source-group,
+.lap-analysis-group{
+  display:grid;
+  gap:10px;
+  padding:10px;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:12px;
+  background:var(--telemetry-chip-bg);
+}
+.lap-group-title{
+  margin:0;
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
 .lap-actions{
   display:flex;
   flex-wrap:wrap;
@@ -775,6 +802,36 @@ form{margin:0}
   font-size:15px;
   font-weight:700;
   color:var(--heading);
+}
+.lap-highlight-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin:0 0 10px 0;
+}
+.lap-highlight-label{
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.lap-mini-toggle{
+  appearance:none;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:999px;
+  padding:5px 10px;
+  background:var(--telemetry-chip-bg);
+  color:var(--text-main);
+  font-size:12px;
+  font-weight:700;
+  line-height:1.1;
+  cursor:pointer;
+}
+.lap-mini-toggle[aria-pressed="true"]{
+  background:var(--heading);
+  border-color:var(--heading);
+  color:var(--panel);
 }
 .lap-legend{
   display:grid;
@@ -824,6 +881,17 @@ form{margin:0}
   display:block;
   margin-bottom:3px;
   color:var(--heading);
+}
+.lap-panel.lap-compact .lap-metrics,
+.lap-panel.lap-compact .lap-highlight-bar,
+.lap-panel.lap-compact .lap-legend,
+.lap-panel.lap-compact .lap-plot-wrap,
+.lap-panel.lap-compact .lap-times,
+.lap-panel.lap-compact .lap-analysis-group{
+  display:none;
+}
+.lap-panel.lap-compact .lap-toolbar{
+  margin-top:6px;
 }
 
 @media (min-width:760px){
@@ -1005,6 +1073,18 @@ form{margin:0}
 <a id="btn-telemetry-export-csv" class="btn dl" href="/api/telemetry/export.csv" download="espeed32-telemetry.csv">Export CSV</a>
 <a id="btn-telemetry-export-json" class="btn ota" href="/api/telemetry/export.json" download="espeed32-telemetry.json">Export JSON</a>
 </div>
+<div class="telemetry-config">
+<div class="row">
+<label for="telemetry-poll-interval">Live Polling</label>
+<select id="telemetry-poll-interval">
+<option value="250" selected>0.25 s</option>
+<option value="500">0.5 s</option>
+<option value="1000">1.0 s</option>
+<option value="2000">2.0 s</option>
+<option value="5000">5.0 s</option>
+</select>
+</div>
+</div>
 </div>
 <div class="telemetry-metrics">
 <div class="telemetry-metric"><span class="telemetry-metric-label">State</span><span id="telemetry-state" class="telemetry-metric-value">Waiting</span></div>
@@ -1029,19 +1109,27 @@ form{margin:0}
 </section>
 <section class="panel lap-panel">
 <h2>Lap Overlay</h2>
-<p class="tiny">Analyze exported telemetry JSON or the current telemetry buffer. This first version finds laps from the longest high-trigger straight and overlays traces by lap progress.</p>
+<p class="tiny">Analyze exported telemetry JSON or the current telemetry buffer. Finds laps from the longest high-throttle straight and overlays each lap by lap progress.</p>
 <div class="lap-toolbar">
+<div class="lap-source-group">
+<p class="lap-group-title">Data Source</p>
 <div class="lap-actions">
 <button id="btn-lap-current" class="btn aux" type="button" onclick="lapOverlayUseCurrentTelemetry()">Use Current Telemetry</button>
-<button id="btn-lap-recalc" class="btn doc" type="button" onclick="lapOverlayAnalyze(false)">Recalculate Laps</button>
-<button id="btn-lap-clear" class="btn dl" type="button" onclick="lapOverlayClear()">Clear</button>
 </div>
+<div class="row lap-file-row"><label for="lap-file">Import Telemetry JSON</label><input id="lap-file" type="file" accept=".json,application/json"></div>
+</div>
+<div class="lap-analysis-group">
+<p class="lap-group-title">Lap Detection</p>
 <div class="lap-config">
 <div class="row"><label for="lap-threshold">Trigger Threshold (%T)</label><input id="lap-threshold" type="number" min="60" max="100" step="1" value="92"></div>
 <div class="row"><label for="lap-hold">Min Straight Hold (ms)</label><input id="lap-hold" type="number" min="80" max="5000" step="10" value="250"></div>
-<div class="row"><label for="lap-min">Min Lap Time (ms)</label><input id="lap-min" type="number" min="500" max="30000" step="50" value="2500"></div>
+<div class="row"><label for="lap-min">Min Lap Time (ms)</label><input id="lap-min" type="number" min="500" max="30000" step="50" value="5000"></div>
 <div class="row"><label for="lap-match">Longest-Stretch Match (%)</label><input id="lap-match" type="number" min="40" max="100" step="1" value="75"></div>
-<div class="row"><label for="lap-file">Import Telemetry JSON</label><input id="lap-file" type="file" accept=".json,application/json"></div>
+</div>
+<div class="lap-actions">
+<button id="btn-lap-recalc" class="btn doc" type="button" onclick="lapOverlayAnalyze(false)">Recalculate Laps</button>
+<button id="btn-lap-clear" class="btn dl" type="button" onclick="lapOverlayClear()">Clear</button>
+</div>
 </div>
 </div>
 <div class="lap-metrics">
@@ -1051,11 +1139,15 @@ form{margin:0}
 <div class="lap-metric"><span class="lap-metric-label">Average</span><span id="lap-avg" class="lap-metric-value">-</span></div>
 <div class="lap-metric"><span class="lap-metric-label">Detector</span><span id="lap-detector" class="lap-metric-value">Longest straight</span></div>
 </div>
+<div class="lap-highlight-bar">
+<span class="lap-highlight-label">Highlight</span>
+<button id="lap-highlight-best" class="lap-mini-toggle" type="button" aria-pressed="true">Best</button>
+<button id="lap-highlight-last" class="lap-mini-toggle" type="button" aria-pressed="true">Last</button>
+</div>
 <div class="lap-legend">
 <label class="trace-toggle"><input id="lap-trace-trigger" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-trigger)"></span><span>Throttle %T</span></label>
 <label class="trace-toggle"><input id="lap-trace-output" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-output)"></span><span>Output %O</span></label>
 <label class="trace-toggle"><input id="lap-trace-brake" type="checkbox"><span class="trace-swatch" style="background:var(--trace-brake)"></span><span>Brake %</span></label>
-<label class="trace-toggle"><input id="lap-trace-vin" type="checkbox"><span class="trace-swatch" style="background:var(--trace-vin)"></span><span>VIN</span></label>
 <label class="trace-toggle"><input id="lap-trace-current" type="checkbox"><span class="trace-swatch" style="background:var(--trace-current)"></span><span>Current</span></label>
 </div>
 <div class="lap-plot-wrap">
@@ -1162,6 +1254,7 @@ var telemetrySessionId=0;
 var telemetryFetchBusy=false;
 var telemetryUiBusy=false;
 var telemetryPollTimer=null;
+var telemetryPollIntervalMs=250;
 var telemetryLastError='';
 var telemetryRedrawQueued=false;
 var telemetryConfigSnapshot=null;
@@ -1187,6 +1280,7 @@ var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
 var BACKUP_SESSION_KEY='espeed32_backup_downloaded_v1';
+var TELEMETRY_POLL_INTERVAL_KEY='espeed32_telemetry_poll_interval_v2';
 var UI_THEME_KEY='espeed32-ui-theme';
 var TELEMETRY_FIELDS={SEQ:0,TIME_MS:1,TRIGGER:2,OUTPUT:3,VIN_MV:4,CURRENT_MA:5,BRAKE:6,SENSI_HALF:7,CAR:8,RELEASE_MODE:9,FLAGS:10};
 var TELEMETRY_FLAG_BRAKE_BUTTON=0x01;
@@ -1220,7 +1314,6 @@ var LAP_TRACE_DEFS=[
   {id:'lap-trace-trigger',label:'Throttle %T',band:'pct',key:'triggerPct',colorVar:'--trace-trigger'},
   {id:'lap-trace-output',label:'Output %O',band:'pct',key:'outputPct',colorVar:'--trace-output'},
   {id:'lap-trace-brake',label:'Brake %',band:'pct',key:'brakePct',colorVar:'--trace-brake'},
-  {id:'lap-trace-vin',label:'VIN',band:'vin',key:'vinMv',colorVar:'--trace-vin'},
   {id:'lap-trace-current',label:'Current',band:'current',key:'currentMa',colorVar:'--trace-current'}
 ];
 
@@ -2032,11 +2125,40 @@ function stopTelemetryPolling(){
   }
 }
 
+function sanitizeTelemetryPollIntervalMs(raw){
+  var value=Number(raw||250);
+  var allowed=[250,500,1000,2000,5000];
+  return allowed.indexOf(value)!==-1 ? value : 250;
+}
+
+function loadTelemetryPollIntervalSetting(){
+  var saved=250;
+  try{
+    saved=sanitizeTelemetryPollIntervalMs(localStorage.getItem(TELEMETRY_POLL_INTERVAL_KEY));
+  }catch(_){
+    saved=250;
+  }
+  telemetryPollIntervalMs=saved;
+  var select=document.getElementById('telemetry-poll-interval');
+  if(select) select.value=String(saved);
+}
+
+function saveTelemetryPollIntervalSetting(value){
+  telemetryPollIntervalMs=sanitizeTelemetryPollIntervalMs(value);
+  try{
+    localStorage.setItem(TELEMETRY_POLL_INTERVAL_KEY,String(telemetryPollIntervalMs));
+  }catch(_){}
+}
+
+function formatTelemetryPollingIntervalLabel(ms){
+  return (Number(ms||250)/1000).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')+' s';
+}
+
 function startTelemetryPollingIfAvailable(refreshNow){
   stopTelemetryPolling();
   if(!telemetryAvailable()) return;
   if(refreshNow) syncTelemetryHistory(true,true);
-  telemetryPollTimer=setInterval(function(){ syncTelemetryHistory(false,true); },1000);
+  telemetryPollTimer=setInterval(function(){ syncTelemetryHistory(false,true); },telemetryPollIntervalMs);
 }
 
 function setAnchorDisabled(id,disabled,href){
@@ -2459,7 +2581,7 @@ function drawTelemetryPlot(){
   var plotRight=18;
   var top=20;
   var bottom=28;
-  var gap=14;
+  var gap=24;
   var plotWidth=Math.max(10,width-plotLeft-plotRight);
   var usableHeight=Math.max(120,height-top-bottom-(gap*2));
   var pctHeight=Math.max(92,Math.round(usableHeight*0.46));
@@ -2509,6 +2631,16 @@ function lapOverlayGetSelectedTraces(){
   });
 }
 
+function lapOverlayHighlightBestEnabled(){
+  var el=document.getElementById('lap-highlight-best');
+  return !el || el.getAttribute('aria-pressed')!=='false';
+}
+
+function lapOverlayHighlightLastEnabled(){
+  var el=document.getElementById('lap-highlight-last');
+  return !el || el.getAttribute('aria-pressed')!=='false';
+}
+
 function lapOverlayReadConfig(){
   function readNumber(id,fallback){
     var el=document.getElementById(id);
@@ -2518,7 +2650,7 @@ function lapOverlayReadConfig(){
   return {
     thresholdPct:Math.min(100,Math.max(60,readNumber('lap-threshold',92))),
     minHoldMs:Math.min(5000,Math.max(80,readNumber('lap-hold',250))),
-    minLapMs:Math.min(30000,Math.max(500,readNumber('lap-min',2500))),
+    minLapMs:Math.min(30000,Math.max(500,readNumber('lap-min',5000))),
     matchPct:Math.min(100,Math.max(40,readNumber('lap-match',75)))
   };
 }
@@ -2579,6 +2711,7 @@ function lapOverlayUpdateSummary(){
   var avgEl=document.getElementById('lap-avg');
   var detectorEl=document.getElementById('lap-detector');
   var timesEl=document.getElementById('lap-times');
+  updateLapOverlayLayout();
   if(!sourceEl || !countEl || !bestEl || !avgEl || !detectorEl || !timesEl) return;
 
   var cfg=lapOverlayReadConfig();
@@ -2607,6 +2740,12 @@ function lapOverlayUpdateSummary(){
     if(lap.durationMs===best.durationMs) label+=' (best)';
     return '<div class="lap-chip"><b>'+esc(label)+'</b><span>'+esc(formatLapDuration(lap.durationMs))+'</span></div>';
   }).join('');
+}
+
+function updateLapOverlayLayout(){
+  var panel=document.querySelector('.lap-panel');
+  if(!panel) return;
+  panel.classList.toggle('lap-compact',!lapOverlaySamples.length);
 }
 
 function lapOverlayRefreshFromCurrentTelemetry(silent){
@@ -2698,7 +2837,6 @@ function lapOverlayBuildLaps(samples,markers,cfg){
         triggerPct:sample.triggerPct,
         outputPct:sample.outputPct,
         brakePct:sample.brakePct,
-        vinMv:sample.vinMv,
         currentMa:sample.currentMa
       };
     });
@@ -2755,6 +2893,9 @@ async function lapOverlayUseCurrentTelemetry(){
     }catch(_){}
   }
   lapOverlayRefreshFromCurrentTelemetry(false);
+  if(telemetryAvailable()){
+    ss('lapst','ok','Using current telemetry buffer. Lap Overlay will update live while telemetry runs.');
+  }
 }
 
 async function lapOverlayImportFile(file){
@@ -2815,9 +2956,14 @@ function drawLapOverlayTrace(ctx,laps,def,plotLeft,plotWidth,bandTop,bandHeight,
   var bestLap=laps.reduce(function(best,lap){
     return (!best || lap.durationMs<best.durationMs)?lap:best;
   },null);
+  var lastLap=laps[laps.length-1]||null;
+  var highlightBest=lapOverlayHighlightBestEnabled();
+  var highlightLast=lapOverlayHighlightLastEnabled();
   laps.forEach(function(lap){
     var points=lap.points||[];
     if(points.length<2) return;
+    var isBest=(highlightBest && lap===bestLap);
+    var isLast=(highlightLast && lap===lastLap);
     ctx.save();
     ctx.beginPath();
     var started=false;
@@ -2836,8 +2982,9 @@ function drawLapOverlayTrace(ctx,laps,def,plotLeft,plotWidth,bandTop,bandHeight,
     });
     if(started){
       ctx.strokeStyle=getTelemetryColor(def.colorVar,'#ffffff');
-      ctx.lineWidth=(lap===bestLap)?2.4:1.4;
-      ctx.globalAlpha=(lap===bestLap)?0.95:Math.max(0.12,0.55/Math.max(1,laps.length-1));
+      if(isLast && !isBest) ctx.setLineDash([7,4]);
+      ctx.lineWidth=isBest?2.8:(isLast?2.2:1.4);
+      ctx.globalAlpha=isBest?0.98:(isLast?0.9:Math.max(0.12,0.55/Math.max(1,laps.length-1)));
       ctx.lineJoin='round';
       ctx.lineCap='round';
       ctx.stroke();
@@ -2888,18 +3035,13 @@ function drawLapOverlayPlot(){
 
   var axisColor=getTelemetryColor('--telemetry-axis','#76869d');
   var gridColor=getTelemetryColor('--telemetry-grid','#2c3f5c');
-  var vinRange=lapOverlayGetBandRange('vinMv',0,1000);
   var currentRange=lapOverlayGetBandRange('currentMa',0,1000);
-  var vinMinLabel=formatTelemetryVoltageAxisLabel(vinRange.min);
-  var vinMaxLabel=formatTelemetryVoltageAxisLabel(vinRange.max);
   var currentMinLabel=String(Math.round(currentRange.min));
   var currentMaxLabel=String(Math.round(currentRange.max));
 
   ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
   var labelWidth=Math.max(
     ctx.measureText('100').width,
-    ctx.measureText(vinMinLabel).width,
-    ctx.measureText(vinMaxLabel).width,
     ctx.measureText(currentMinLabel).width,
     ctx.measureText(currentMaxLabel).width
   );
@@ -2908,25 +3050,19 @@ function drawLapOverlayPlot(){
   var plotRight=18;
   var top=20;
   var bottom=28;
-  var gap=14;
+  var gap=24;
   var plotWidth=Math.max(10,width-plotLeft-plotRight);
-  var usableHeight=Math.max(120,height-top-bottom-(gap*2));
-  var pctHeight=Math.max(92,Math.round(usableHeight*0.46));
-  var vinHeight=Math.max(56,Math.round(usableHeight*0.22));
-  var currentHeight=Math.max(56,usableHeight-pctHeight-vinHeight);
+  var usableHeight=Math.max(120,height-top-bottom-gap);
+  var pctHeight=Math.max(120,Math.round(usableHeight*0.64));
+  var currentHeight=Math.max(72,usableHeight-pctHeight);
   var pctTop=top;
-  var vinTop=pctTop+pctHeight+gap;
-  var currentTop=vinTop+vinHeight+gap;
+  var currentTop=pctTop+pctHeight+gap;
 
   drawTelemetryBandFrame(ctx,'Lap Overlay: Throttle / Output / Brake (%)',plotLeft,plotWidth,pctTop,pctHeight,gridColor,axisColor,'0','100');
-  drawTelemetryBandFrame(ctx,'VIN (V)',plotLeft,plotWidth,vinTop,vinHeight,gridColor,axisColor,vinMinLabel,vinMaxLabel);
   drawTelemetryBandFrame(ctx,'Current (mA)',plotLeft,plotWidth,currentTop,currentHeight,gridColor,axisColor,currentMinLabel,currentMaxLabel);
 
   selected.filter(function(def){ return def.band==='pct'; }).forEach(function(def){
     drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,pctTop,pctHeight,{min:0,max:100});
-  });
-  selected.filter(function(def){ return def.band==='vin'; }).forEach(function(def){
-    drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,vinTop,vinHeight,vinRange);
   });
   selected.filter(function(def){ return def.band==='current'; }).forEach(function(def){
     drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,currentTop,currentHeight,currentRange);
@@ -2948,6 +3084,16 @@ function initLapOverlayUi(){
     var el=document.getElementById(def.id);
     if(!el) return;
     el.addEventListener('change',drawLapOverlayPlot);
+  });
+
+  ['lap-highlight-best','lap-highlight-last'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('click',function(){
+      var pressed=(el.getAttribute('aria-pressed')!=='false');
+      el.setAttribute('aria-pressed',pressed?'false':'true');
+      drawLapOverlayPlot();
+    });
   });
 
   ['lap-threshold','lap-hold','lap-min','lap-match'].forEach(function(id){
@@ -3127,11 +3273,20 @@ async function telemetryClear(){
 }
 
 function initTelemetryUi(){
+  loadTelemetryPollIntervalSetting();
   TELEMETRY_TRACE_DEFS.forEach(function(def){
     var el=document.getElementById(def.id);
     if(!el) return;
     el.addEventListener('change',drawTelemetryPlot);
   });
+  var pollSelect=document.getElementById('telemetry-poll-interval');
+  if(pollSelect){
+    pollSelect.addEventListener('change',function(){
+      saveTelemetryPollIntervalSetting(pollSelect.value);
+      if(telemetryAvailable()) startTelemetryPollingIfAvailable(false);
+      ss('tst','ok','Live polling set to '+formatTelemetryPollingIntervalLabel(telemetryPollIntervalMs));
+    });
+  }
   var exportCsv=document.getElementById('btn-telemetry-export-csv');
   var exportJson=document.getElementById('btn-telemetry-export-json');
   if(exportCsv){

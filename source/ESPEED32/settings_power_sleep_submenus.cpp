@@ -23,11 +23,11 @@ extern void saveEEPROM(StoredVar_type toSave);
 void showSleepSettings() {
   uint16_t lang = g_storedVar.language;
 
-  /* Labels [NOR, ENG, CS, ACD] */
-  const char* lblInterval[4] = {"INTERV.",  "INTERVAL", "INTERVAL", "INTERVAL"};
-  const char* lblNow[4]      = {"SOV NA",   "SLEEP NOW", "SLEEP NOW", "SLEEP NOW"};
-  const char* lblBack[4]     = {"TILBAKE",  "BACK",      "BACK",      "BACK"};
-  const char* lblOff[4]      = {"AV",       "OFF",       "OFF",       "OFF"};
+  /* Labels [NOR, ENG, CS, ACD, ESP, DEU, ITA] */
+  const char* lblInterval[7] = {"INTERV.", "INTERVAL", "INTERVAL", "INTERVAL", "INTERVALO", "INTERVAL", "INTERVAL"};
+  const char* lblNow[7]      = {"SOV NA",  "SLEEP NOW", "SLEEP NOW", "SLEEP NOW", "REPOSO YA", "JETZT RUH", "DORMI ORA"};
+  const char* lblBack[7]     = {"TILBAKE", "BACK",      "BACK",      "BACK",      "ATRAS",     "ZURUCK",   "INDIETRO"};
+  const char* lblOff[7]      = {"AV",      "OFF",       "OFF",       "OFF",       "OFF",       "AUS",      "OFF"};
 
   const uint8_t ITEM_NOW = 0;
   const uint8_t ITEM_INTERVAL = 1;
@@ -43,8 +43,8 @@ void showSleepSettings() {
   bool needRedraw = true;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+  resetUiEncoder(0);
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
@@ -55,7 +55,7 @@ void showSleepSettings() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -74,7 +74,7 @@ void showSleepSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -99,9 +99,9 @@ void showSleepSettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (editing) {
-        tmpTimeout = (uint16_t)g_rotaryEncoder.readEncoder();
+        tmpTimeout = (uint16_t)readUiEncoder();
       } else {
-        sel = (int8_t)g_rotaryEncoder.readEncoder();
+        sel = (int8_t)readUiEncoder();
       }
       needRedraw = true;
     }
@@ -115,15 +115,15 @@ void showSleepSettings() {
         saveEEPROM(g_storedVar);
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(ITEM_INTERVAL);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_INTERVAL);
       } else if (sel == ITEM_INTERVAL) {
         /* Enter interval editing */
         editing = true;
         tmpTimeout = g_storedVar.powerSaveTimeout;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, POWER_SAVE_TIMEOUT_MAX, false);
-        g_rotaryEncoder.reset(tmpTimeout);
+        setUiEncoderBoundaries(0, POWER_SAVE_TIMEOUT_MAX, false);
+        resetUiEncoder(tmpTimeout);
       } else if (sel == ITEM_NOW) {
         /* Sleep NOW */
         showPowerSave();
@@ -143,8 +143,8 @@ void showSleepSettings() {
       if (editing) {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(ITEM_INTERVAL);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_INTERVAL);
         needRedraw = true;
         delay(200);
       } else {
@@ -192,10 +192,10 @@ void showSleepSettings() {
 void showDeepSleepSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblInterval[4] = {"INTERV.",    "INTERVAL",   "INTERVAL",   "INTERVAL"};
-  const char* lblNow[4]      = {"SLUKK NA",   "SLEEP NOW",  "SLEEP NOW",  "SLEEP NOW"};
-  const char* lblBack[4]     = {"TILBAKE",    "BACK",       "BACK",       "BACK"};
-  const char* lblOff[4]      = {"AV",         "OFF",        "OFF",        "OFF"};
+  const char* lblInterval[7] = {"INTERV.",   "INTERVAL",  "INTERVAL",  "INTERVAL",  "INTERVALO", "INTERVAL", "INTERVAL"};
+  const char* lblNow[7]      = {"SLUKK NA",  "SLEEP NOW", "SLEEP NOW", "SLEEP NOW", "APAGA YA",  "AUS JETZT", "SPEGNI ORA"};
+  const char* lblBack[7]     = {"TILBAKE",   "BACK",      "BACK",      "BACK",      "ATRAS",     "ZURUCK",   "INDIETRO"};
+  const char* lblOff[7]      = {"AV",        "OFF",       "OFF",       "OFF",       "OFF",       "AUS",      "OFF"};
 
   const uint8_t ITEM_NOW = 0;
   const uint8_t ITEM_INTERVAL = 1;
@@ -208,8 +208,8 @@ void showDeepSleepSettings() {
   bool needRedraw = true;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+  resetUiEncoder(0);
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
@@ -220,7 +220,7 @@ void showDeepSleepSettings() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -239,7 +239,7 @@ void showDeepSleepSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -263,9 +263,9 @@ void showDeepSleepSettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (editing) {
-        tmpTimeout = (uint16_t)g_rotaryEncoder.readEncoder();
+        tmpTimeout = (uint16_t)readUiEncoder();
       } else {
-        sel = (int8_t)g_rotaryEncoder.readEncoder();
+        sel = (int8_t)readUiEncoder();
       }
       needRedraw = true;
     }
@@ -277,15 +277,15 @@ void showDeepSleepSettings() {
         saveEEPROM(g_storedVar);
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(ITEM_INTERVAL);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_INTERVAL);
       } else if (sel == ITEM_INTERVAL) {
         editing = true;
         tmpTimeout = g_storedVar.deepSleepTimeout;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
         /* 0=OFF, DEEP_SLEEP_TIMEOUT_MIN-DEEP_SLEEP_TIMEOUT_MAX; encode 0 as OFF */
-        g_rotaryEncoder.setBoundaries(0, DEEP_SLEEP_TIMEOUT_MAX, false);
-        g_rotaryEncoder.reset(tmpTimeout);
+        setUiEncoderBoundaries(0, DEEP_SLEEP_TIMEOUT_MAX, false);
+        resetUiEncoder(tmpTimeout);
       } else if (sel == ITEM_NOW) {
         /* Deep sleep NOW - never returns */
         showDeepSleep();
@@ -301,8 +301,8 @@ void showDeepSleepSettings() {
       if (editing) {
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(ITEM_INTERVAL);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_INTERVAL);
         needRedraw = true;
         delay(200);
       } else {

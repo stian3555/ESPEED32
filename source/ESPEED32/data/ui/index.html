@@ -4,10 +4,277 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32</title>
+<script>
+(function(){
+  try{
+    var key='espeed32-ui-theme';
+    var saved=localStorage.getItem(key);
+    if(saved==='light' || saved==='dark') document.documentElement.setAttribute('data-theme',saved);
+  }catch(_){}
+})();
+</script>
 <style>
 :root{
+  --bg-main:#eef3fb;
+  --bg-accent:#dbe7f8;
+  --bg-accent-2:#d8e2f6;
+  --bg-grad-1:#f9fbff;
+  --bg-grad-2:#edf4ff;
+  --bg-grad-3:#e6eefc;
+  --panel:#ffffff;
+  --panel-soft:#f4f8ff;
+  --panel-border:#bfd0ea;
+  --text-main:#172132;
+  --text-muted:#56647b;
+  --accent:#2f6fb3;
+  --warn:#a85f12;
+  --ok-bg:#e8f7ef;
+  --ok-border:#67b38d;
+  --ok-text:#1a6a4c;
+  --err-bg:#fdecef;
+  --err-border:#d68699;
+  --err-text:#9b334f;
+  --hero-grad-1:#f6f9ff;
+  --hero-grad-2:#e7effb;
+  --hero-shadow:0 12px 28px rgba(26,45,78,.12);
+  --title:#c43e5d;
+  --subtitle:#617492;
+  --version-note:#b46c1a;
+  --heading:#20314c;
+  --btn-dl-bg:#17518f;
+  --btn-ul-bg:#da4761;
+  --btn-ota-bg:#f39a24;
+  --btn-ota-fg:#0f0f0f;
+  --btn-usb-bg:#1acb9d;
+  --btn-usb-fg:#072017;
+  --btn-doc-bg:#2f8f2f;
+  --btn-aux-bg:#5877ab;
+  --btn-text:#ffffff;
+  --field-text:#26364f;
+  --field-border:#a8bbd9;
+  --field-bg:#f7faff;
+  --file-border:#9db2d8;
+  --file-bg:#f8fbff;
+  --card-border:#c4d3ea;
+  --card-text:#354764;
+  --card-text-soft:#495d7c;
+  --card-link:#2c78c2;
+  --tiny:#6e7f98;
+  --action-title:#3b76b8;
+  --action-note:#6b7d98;
+  --group-title:#2f86be;
+  --seg-border:#95abd0;
+  --seg-bg:#edf4ff;
+  --seg-text:#4c5f7d;
+  --seg-active-bg:#42639d;
+  --seg-active-border:#6d91d8;
+  --seg-active-text:#ffffff;
+  --subsection-border:#b7c7de;
+  --subsection-bg:#f7faff;
+  --subsection-summary:#3977b9;
+  --modal-backdrop:rgba(42,54,75,.42);
+  --modal-border:#d3b07a;
+  --modal-grad-1:#fff5e8;
+  --modal-grad-2:#f7eee2;
+  --modal-title:#9b5d12;
+  --modal-text:#415067;
+  --progress-border:#a9bddf;
+  --progress-bg:#f3f8ff;
+  --progress-head:#617594;
+  --progress-track:#d7e4f8;
+  --progress-fill-1:#f39a24;
+  --progress-fill-2:#ffd48c;
+  --theme-select-bg:#ffffff;
+  --theme-select-border:#b9c7dd;
+  --theme-select-text:#20314c;
+  --telemetry-plot-bg:#f7faff;
+  --telemetry-grid:#d8e3f4;
+  --telemetry-axis:#5b6d88;
+  --telemetry-chip-bg:#eef4ff;
+  --telemetry-chip-border:#bfd0ea;
+  --trace-trigger:#c84a5f;
+  --trace-output:#2f6fb3;
+  --trace-brake:#c27d18;
+  --trace-vin:#23846a;
+  --trace-current:#9b5431;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg-main:#0c1426;
+    --bg-accent:#1f345b;
+    --bg-accent-2:#203a62;
+    --bg-grad-1:#0b1222;
+    --bg-grad-2:#121f37;
+    --bg-grad-3:#0a1220;
+    --panel:#101b30;
+    --panel-soft:#0f1728;
+    --panel-border:#2f4468;
+    --text-main:#ebf2ff;
+    --text-muted:#b8c8e4;
+    --accent:#4fb3ff;
+    --warn:#ffae52;
+    --ok-bg:#0f2a22;
+    --ok-border:#1e8e6e;
+    --ok-text:#9bf7da;
+    --err-bg:#311a22;
+    --err-border:#b44b68;
+    --err-text:#ffd2da;
+    --hero-grad-1:#13203a;
+    --hero-grad-2:#0f1a2f;
+    --hero-shadow:0 12px 28px rgba(0,0,0,.24);
+    --title:#ff637f;
+    --subtitle:#9eb0d1;
+    --version-note:#ffca8a;
+    --heading:#d9e6ff;
+    --btn-dl-bg:#17518f;
+    --btn-ul-bg:#da4761;
+    --btn-ota-bg:#f39a24;
+    --btn-ota-fg:#0f0f0f;
+    --btn-usb-bg:#1acb9d;
+    --btn-usb-fg:#072017;
+    --btn-doc-bg:#2f8f2f;
+    --btn-aux-bg:#3f5b88;
+    --btn-text:#ffffff;
+    --field-text:#ebf2ff;
+    --field-border:#445778;
+    --field-bg:#0b0f18;
+    --file-border:#465a82;
+    --file-bg:#0b1222;
+    --card-border:#2f4161;
+    --card-text:#d7e1f4;
+    --card-text-soft:#c8d6ef;
+    --card-link:#7ed6ff;
+    --tiny:#9eb0ce;
+    --action-title:#9dd7ff;
+    --action-note:#9aa7c7;
+    --group-title:#8fd3ff;
+    --seg-border:#516185;
+    --seg-bg:#131d31;
+    --seg-text:#c2d3ef;
+    --seg-active-bg:#2c4e87;
+    --seg-active-border:#7aabff;
+    --seg-active-text:#ffffff;
+    --subsection-border:#31435f;
+    --subsection-bg:#0c1322;
+    --subsection-summary:#9dd7ff;
+    --modal-backdrop:rgba(5,10,18,.72);
+    --modal-border:#5a4726;
+    --modal-grad-1:#17131a;
+    --modal-grad-2:#101824;
+    --modal-title:#ffe0aa;
+    --modal-text:#d8e2f4;
+    --progress-border:#344a71;
+    --progress-bg:#0b1426;
+    --progress-head:#b7c8e8;
+    --progress-track:#1a2a46;
+    --progress-fill-1:#f39a24;
+    --progress-fill-2:#ffd48c;
+    --theme-select-bg:#101b30;
+    --theme-select-border:#40577f;
+    --theme-select-text:#ebf2ff;
+    --telemetry-plot-bg:#0d1526;
+    --telemetry-grid:#243858;
+    --telemetry-axis:#a9bad6;
+    --telemetry-chip-bg:#111d33;
+    --telemetry-chip-border:#304463;
+    --trace-trigger:#ff7b8d;
+    --trace-output:#70b9ff;
+    --trace-brake:#ffc55f;
+    --trace-vin:#53d0af;
+    --trace-current:#ff9770;
+  }
+}
+html[data-theme="light"]{
+  --bg-main:#eef3fb;
+  --bg-accent:#dbe7f8;
+  --bg-accent-2:#d8e2f6;
+  --bg-grad-1:#f9fbff;
+  --bg-grad-2:#edf4ff;
+  --bg-grad-3:#e6eefc;
+  --panel:#ffffff;
+  --panel-soft:#f4f8ff;
+  --panel-border:#bfd0ea;
+  --text-main:#172132;
+  --text-muted:#56647b;
+  --accent:#2f6fb3;
+  --warn:#a85f12;
+  --ok-bg:#e8f7ef;
+  --ok-border:#67b38d;
+  --ok-text:#1a6a4c;
+  --err-bg:#fdecef;
+  --err-border:#d68699;
+  --err-text:#9b334f;
+  --hero-grad-1:#f6f9ff;
+  --hero-grad-2:#e7effb;
+  --hero-shadow:0 12px 28px rgba(26,45,78,.12);
+  --title:#c43e5d;
+  --subtitle:#617492;
+  --version-note:#b46c1a;
+  --heading:#20314c;
+  --btn-dl-bg:#17518f;
+  --btn-ul-bg:#da4761;
+  --btn-ota-bg:#f39a24;
+  --btn-ota-fg:#0f0f0f;
+  --btn-usb-bg:#1acb9d;
+  --btn-usb-fg:#072017;
+  --btn-doc-bg:#2f8f2f;
+  --btn-aux-bg:#5877ab;
+  --btn-text:#ffffff;
+  --field-text:#26364f;
+  --field-border:#a8bbd9;
+  --field-bg:#f7faff;
+  --file-border:#9db2d8;
+  --file-bg:#f8fbff;
+  --card-border:#c4d3ea;
+  --card-text:#354764;
+  --card-text-soft:#495d7c;
+  --card-link:#2c78c2;
+  --tiny:#6e7f98;
+  --action-title:#3b76b8;
+  --action-note:#6b7d98;
+  --group-title:#2f86be;
+  --seg-border:#95abd0;
+  --seg-bg:#edf4ff;
+  --seg-text:#4c5f7d;
+  --seg-active-bg:#42639d;
+  --seg-active-border:#6d91d8;
+  --seg-active-text:#ffffff;
+  --subsection-border:#b7c7de;
+  --subsection-bg:#f7faff;
+  --subsection-summary:#3977b9;
+  --modal-backdrop:rgba(42,54,75,.42);
+  --modal-border:#d3b07a;
+  --modal-grad-1:#fff5e8;
+  --modal-grad-2:#f7eee2;
+  --modal-title:#9b5d12;
+  --modal-text:#415067;
+  --progress-border:#a9bddf;
+  --progress-bg:#f3f8ff;
+  --progress-head:#617594;
+  --progress-track:#d7e4f8;
+  --progress-fill-1:#f39a24;
+  --progress-fill-2:#ffd48c;
+  --theme-select-bg:#ffffff;
+  --theme-select-border:#b9c7dd;
+  --theme-select-text:#20314c;
+  --telemetry-plot-bg:#f7faff;
+  --telemetry-grid:#d8e3f4;
+  --telemetry-axis:#5b6d88;
+  --telemetry-chip-bg:#eef4ff;
+  --telemetry-chip-border:#bfd0ea;
+  --trace-trigger:#c84a5f;
+  --trace-output:#2f6fb3;
+  --trace-brake:#c27d18;
+  --trace-vin:#23846a;
+  --trace-current:#9b5431;
+}
+html[data-theme="dark"]{
   --bg-main:#0c1426;
   --bg-accent:#1f345b;
+  --bg-accent-2:#203a62;
+  --bg-grad-1:#0b1222;
+  --bg-grad-2:#121f37;
+  --bg-grad-3:#0a1220;
   --panel:#101b30;
   --panel-soft:#0f1728;
   --panel-border:#2f4468;
@@ -17,8 +284,73 @@
   --warn:#ffae52;
   --ok-bg:#0f2a22;
   --ok-border:#1e8e6e;
+  --ok-text:#9bf7da;
   --err-bg:#311a22;
   --err-border:#b44b68;
+  --err-text:#ffd2da;
+  --hero-grad-1:#13203a;
+  --hero-grad-2:#0f1a2f;
+  --hero-shadow:0 12px 28px rgba(0,0,0,.24);
+  --title:#ff637f;
+  --subtitle:#9eb0d1;
+  --version-note:#ffca8a;
+  --heading:#d9e6ff;
+  --btn-dl-bg:#17518f;
+  --btn-ul-bg:#da4761;
+  --btn-ota-bg:#f39a24;
+  --btn-ota-fg:#0f0f0f;
+  --btn-usb-bg:#1acb9d;
+  --btn-usb-fg:#072017;
+  --btn-doc-bg:#2f8f2f;
+  --btn-aux-bg:#3f5b88;
+  --btn-text:#ffffff;
+  --field-text:#ebf2ff;
+  --field-border:#445778;
+  --field-bg:#0b0f18;
+  --file-border:#465a82;
+  --file-bg:#0b1222;
+  --card-border:#2f4161;
+  --card-text:#d7e1f4;
+  --card-text-soft:#c8d6ef;
+  --card-link:#7ed6ff;
+  --tiny:#9eb0ce;
+  --action-title:#9dd7ff;
+  --action-note:#9aa7c7;
+  --group-title:#8fd3ff;
+  --seg-border:#516185;
+  --seg-bg:#131d31;
+  --seg-text:#c2d3ef;
+  --seg-active-bg:#2c4e87;
+  --seg-active-border:#7aabff;
+  --seg-active-text:#ffffff;
+  --subsection-border:#31435f;
+  --subsection-bg:#0c1322;
+  --subsection-summary:#9dd7ff;
+  --modal-backdrop:rgba(5,10,18,.72);
+  --modal-border:#5a4726;
+  --modal-grad-1:#17131a;
+  --modal-grad-2:#101824;
+  --modal-title:#ffe0aa;
+  --modal-text:#d8e2f4;
+  --progress-border:#344a71;
+  --progress-bg:#0b1426;
+  --progress-head:#b7c8e8;
+  --progress-track:#1a2a46;
+  --progress-fill-1:#f39a24;
+  --progress-fill-2:#ffd48c;
+  --theme-select-bg:#101b30;
+  --theme-select-border:#40577f;
+  --theme-select-text:#ebf2ff;
+  --telemetry-plot-bg:#0d1526;
+  --telemetry-grid:#243858;
+  --telemetry-axis:#a9bad6;
+  --telemetry-chip-bg:#111d33;
+  --telemetry-chip-border:#304463;
+  --trace-trigger:#ff7b8d;
+  --trace-output:#70b9ff;
+  --trace-brake:#ffc55f;
+  --trace-vin:#53d0af;
+  --trace-current:#ff9770;
 }
 *{box-sizing:border-box}
 body{
@@ -28,22 +360,32 @@ body{
   font-family:"Trebuchet MS","Avenir Next","Segoe UI",sans-serif;
   color:var(--text-main);
   background:
-    radial-gradient(980px 360px at 90% -10%,#1f345b 0,transparent 62%),
-    radial-gradient(760px 300px at -5% 0,#203a62 0,transparent 68%),
-    linear-gradient(155deg,#0b1222 0,#121f37 55%,#0a1220 100%);
+    radial-gradient(980px 360px at 90% -10%,var(--bg-accent) 0,transparent 62%),
+    radial-gradient(760px 300px at -5% 0,var(--bg-accent-2) 0,transparent 68%),
+    linear-gradient(155deg,var(--bg-grad-1) 0,var(--bg-grad-2) 55%,var(--bg-grad-3) 100%);
 }
 .page-shell{max-width:1220px;margin:0 auto}
 .hero{
   border:1px solid var(--panel-border);
   border-radius:16px;
   padding:16px 18px;
-  background:linear-gradient(160deg,#13203a 0,#0f1a2f 100%);
-  box-shadow:0 12px 28px rgba(0,0,0,.24);
+  background:linear-gradient(160deg,var(--hero-grad-1) 0,var(--hero-grad-2) 100%);
+  box-shadow:var(--hero-shadow);
   margin-bottom:14px;
 }
-h1{color:#ff637f;text-align:center;margin:0 0 4px 0;font-size:34px;letter-spacing:.4px}
-p.sub{text-align:center;color:#9eb0d1;margin:0;font-size:15px}
-#ver-note{color:#ffca8a}
+h1{color:var(--title);text-align:center;margin:0 0 4px 0;font-size:34px;letter-spacing:.4px}
+p.sub{text-align:center;color:var(--subtitle);margin:0;font-size:15px}
+#ver-note{color:var(--version-note)}
+.hero-tools{display:flex;justify-content:center;margin-top:12px}
+.theme-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.theme-tools label{font-size:13px;font-weight:700;color:var(--text-muted)}
+.theme-tools select{
+  padding:7px 9px;
+  border-radius:8px;
+  border:1px solid var(--theme-select-border);
+  background:var(--theme-select-bg);
+  color:var(--theme-select-text);
+}
 .layout-grid{
   display:grid;
   grid-template-columns:1fr;
@@ -68,7 +410,7 @@ p.sub{text-align:center;color:#9eb0d1;margin:0;font-size:15px}
   background:var(--panel);
   box-shadow:0 7px 20px rgba(0,0,0,.2);
 }
-h2{color:#d9e6ff;font-size:16px;margin:0 0 8px 0}
+h2{color:var(--heading);font-size:16px;margin:0 0 8px 0}
 .btn{
   display:inline-flex;
   align-items:center;
@@ -88,21 +430,21 @@ h2{color:#d9e6ff;font-size:16px;margin:0 0 8px 0}
 }
 .btn:hover{filter:brightness(1.07)}
 .btn:active{transform:translateY(1px)}
-.dl{background:#17518f;color:#fff}
-.ul{background:#da4761;color:#fff}
-.ota{background:#f39a24;color:#0f0f0f}
-.usb{background:#1acb9d;color:#072017}
-.doc{background:#2f8f2f;color:#fff}
-.aux{background:#3f5b88;color:#fff}
+.dl{background:var(--btn-dl-bg);color:var(--btn-text)}
+.ul{background:var(--btn-ul-bg);color:var(--btn-text)}
+.ota{background:var(--btn-ota-bg);color:var(--btn-ota-fg)}
+.usb{background:var(--btn-usb-bg);color:var(--btn-usb-fg)}
+.doc{background:var(--btn-doc-bg);color:var(--btn-text)}
+.aux{background:var(--btn-aux-bg);color:var(--btn-text)}
 input[type=file]{
   display:block;
   margin:8px 0 6px 0;
-  color:#dfe7f8;
+  color:var(--field-text);
   width:100%;
-  border:1px dashed #465a82;
+  border:1px dashed var(--file-border);
   border-radius:8px;
   padding:10px;
-  background:#0b1222;
+  background:var(--file-bg);
 }
 form{margin:0}
 .st{
@@ -115,36 +457,36 @@ form{margin:0}
   line-height:1.35;
   border:1px solid transparent;
 }
-.ok{background:var(--ok-bg);color:#9bf7da;border-color:var(--ok-border)}
-.err{background:var(--err-bg);color:#ffd2da;border-color:var(--err-border)}
+.ok{background:var(--ok-bg);color:var(--ok-text);border-color:var(--ok-border)}
+.err{background:var(--err-bg);color:var(--err-text);border-color:var(--err-border)}
 .warn{color:var(--warn);font-size:13px;line-height:1.35}
 #usbbar{display:block}
 #usb-note{margin-top:4px;margin-bottom:0}
 .card{
-  border:1px solid #2f4161;
+  border:1px solid var(--card-border);
   border-radius:10px;
   padding:10px;
   background:var(--panel-soft);
 }
-.about-card p{margin:6px 0;color:#d7e1f4;line-height:1.45}
+.about-card p{margin:6px 0;color:var(--card-text);line-height:1.45}
 .about-list{margin:8px 0 8px 18px;padding:0}
-.about-list li{margin:6px 0;color:#c8d6ef}
-.about-card a{color:#7ed6ff}
-.repo-card p{margin:6px 0;color:#d7e1f4;line-height:1.45}
-.repo-card a{color:#7ed6ff}
+.about-list li{margin:6px 0;color:var(--card-text-soft)}
+.about-card a{color:var(--card-link)}
+.repo-card p{margin:6px 0;color:var(--card-text);line-height:1.45}
+.repo-card a{color:var(--card-link)}
 .release-line{margin:3px 0}
 .release-list{margin:6px 0 6px 18px;padding:0}
-.release-list li{margin:4px 0;color:#d7deef}
+.release-list li{margin:4px 0;color:var(--card-text)}
 .release-note{margin:4px 0 0 0}
 .repo-card .tiny,
 .repo-card .release-line,
 .repo-card .release-list li,
 .repo-card .release-note{
   font-size:13px;
-  color:#d7e1f4;
+  color:var(--card-text);
   line-height:1.45;
 }
-.tiny{font-size:12px;color:#9eb0ce}
+.tiny{font-size:12px;color:var(--tiny)}
 .section-stack{
   display:grid;
   grid-template-columns:1fr;
@@ -152,55 +494,55 @@ form{margin:0}
   margin-top:10px;
 }
 .action-card{
-  border:1px solid #2f4161;
+  border:1px solid var(--card-border);
   border-radius:10px;
   padding:12px;
-  background:#0f1728;
+  background:var(--panel-soft);
   display:flex;
   flex-direction:column;
 }
 .action-title{
   font-size:12px;
   letter-spacing:.4px;
-  color:#9dd7ff;
+  color:var(--action-title);
   text-transform:uppercase;
   margin:0 0 6px 0;
 }
-.action-note{font-size:12px;color:#9aa7c7;margin:0 0 8px 0}
+.action-note{font-size:12px;color:var(--action-note);margin:0 0 8px 0}
 .action-card .btn{margin-top:auto}
 .editor-shell>.btn{max-width:430px}
 #editor-panel .btn{max-width:none}
 .editor-panel{display:none;margin-top:8px}
 .row{display:flex;flex-direction:column;margin-bottom:10px}
-.row label{font-size:13px;color:#b9c7de;margin-bottom:4px}
+.row label{font-size:13px;color:var(--text-muted);margin-bottom:4px}
 .row input,.row select{
   padding:8px;
   border-radius:6px;
-  border:1px solid #445778;
-  background:#0b0f18;
-  color:#ebf2ff;
+  border:1px solid var(--field-border);
+  background:var(--field-bg);
+  color:var(--field-text);
 }
-.group-title{font-size:14px;color:#8fd3ff;margin:6px 0}
+.group-title{font-size:14px;color:var(--group-title);margin:6px 0}
 .seg{display:flex;gap:8px;margin:0 0 10px 0}
 .segbtn{
   flex:1;
   padding:9px 8px;
   border-radius:7px;
-  border:1px solid #516185;
-  background:#131d31;
-  color:#c2d3ef;
+  border:1px solid var(--seg-border);
+  background:var(--seg-bg);
+  color:var(--seg-text);
   font-size:13px;
   cursor:pointer;
 }
-.segbtn.active{background:#2c4e87;color:#fff;border-color:#7aabff}
+.segbtn.active{background:var(--seg-active-bg);color:var(--seg-active-text);border-color:var(--seg-active-border)}
 .subsection{
-  border:1px solid #31435f;
+  border:1px solid var(--subsection-border);
   border-radius:8px;
   padding:8px 10px;
   margin:10px 0;
-  background:#0c1322;
+  background:var(--subsection-bg);
 }
-.subsection summary{cursor:pointer;color:#9dd7ff;font-size:13px;font-weight:600}
+.subsection summary{cursor:pointer;color:var(--subsection-summary);font-size:13px;font-weight:600}
 .subsection[open] summary{margin-bottom:8px}
 .btn.disabled{opacity:.55;pointer-events:none}
 .update-stack{display:grid;gap:12px}
@@ -215,26 +557,26 @@ form{margin:0}
   align-items:center;
   justify-content:center;
   padding:16px;
-  background:rgba(5,10,18,.72);
+  background:var(--modal-backdrop);
   z-index:1000;
 }
 .modal-backdrop.open{display:flex}
 .modal-card{
   width:min(100%,440px);
-  border:1px solid #5a4726;
+  border:1px solid var(--modal-border);
   border-radius:14px;
   padding:16px;
-  background:linear-gradient(180deg,#17131a 0,#101824 100%);
+  background:linear-gradient(180deg,var(--modal-grad-1) 0,var(--modal-grad-2) 100%);
   box-shadow:0 16px 44px rgba(0,0,0,.45);
 }
 .modal-card h3{
   margin:0 0 8px 0;
   font-size:17px;
-  color:#ffe0aa;
+  color:var(--modal-title);
 }
 .modal-card p{
   margin:0;
-  color:#d8e2f4;
+  color:var(--modal-text);
   font-size:14px;
   line-height:1.5;
 }
@@ -247,16 +589,16 @@ form{margin:0}
   display:none;
   margin-top:10px;
   padding:10px;
-  border:1px solid #344a71;
+  border:1px solid var(--progress-border);
   border-radius:8px;
-  background:#0b1426;
+  background:var(--progress-bg);
 }
 .progress-head{
   display:flex;
   justify-content:space-between;
   gap:10px;
   font-size:12px;
-  color:#b7c8e8;
+  color:var(--progress-head);
   margin-bottom:6px;
 }
 .progress-track{
@@ -264,13 +606,13 @@ form{margin:0}
   height:8px;
   border-radius:99px;
   overflow:hidden;
-  background:#1a2a46;
+  background:var(--progress-track);
 }
 .progress-fill{
   width:0;
   height:100%;
   border-radius:99px;
-  background:linear-gradient(90deg,#f39a24,#ffd48c);
+  background:linear-gradient(90deg,var(--progress-fill-1),var(--progress-fill-2));
   transition:width .2s ease;
 }
 .progress-wrap.indeterminate .progress-fill{
@@ -280,6 +622,276 @@ form{margin:0}
 @keyframes progressSlide{
   0%{transform:translateX(-120%)}
   100%{transform:translateX(240%)}
+}
+.telemetry-toolbar{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+.telemetry-panel.telemetry-compact .telemetry-toolbar{
+  margin-top:6px;
+}
+.telemetry-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.telemetry-actions .btn{
+  margin:0;
+  width:auto;
+  min-width:0;
+  flex:1 1 170px;
+}
+.telemetry-config{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:flex-end;
+}
+.telemetry-config .row{
+  margin-bottom:0;
+  min-width:180px;
+  max-width:220px;
+}
+.telemetry-metrics{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  margin:12px 0 10px 0;
+}
+.telemetry-metric{
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:10px;
+  padding:10px;
+  background:var(--telemetry-chip-bg);
+}
+.telemetry-metric-label{
+  display:block;
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.telemetry-metric-value{
+  display:block;
+  margin-top:5px;
+  font-size:15px;
+  font-weight:700;
+  color:var(--heading);
+}
+.telemetry-legend{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+  gap:8px;
+  margin:4px 0 10px 0;
+}
+.trace-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:9px;
+  padding:9px 10px;
+  background:var(--telemetry-chip-bg);
+  color:var(--text-main);
+  font-size:13px;
+}
+.trace-toggle input{margin:0}
+.trace-swatch{
+  width:12px;
+  height:12px;
+  border-radius:99px;
+  flex:0 0 auto;
+}
+.telemetry-plot-wrap{
+  position:relative;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:12px;
+  padding:10px;
+  background:var(--telemetry-plot-bg);
+}
+#telemetry-canvas{
+  display:block;
+  width:100%;
+  height:320px;
+}
+.telemetry-empty{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  text-align:center;
+  font-size:14px;
+  color:var(--text-muted);
+  pointer-events:none;
+}
+.telemetry-panel.telemetry-compact .telemetry-metrics,
+.telemetry-panel.telemetry-compact .telemetry-legend,
+.telemetry-panel.telemetry-compact .telemetry-plot-wrap,
+.telemetry-panel.telemetry-compact .telemetry-secondary-actions,
+.telemetry-panel.telemetry-compact #btn-telemetry-stop,
+.telemetry-panel.telemetry-compact #btn-telemetry-clear,
+.telemetry-panel.telemetry-compact #btn-telemetry-refresh,
+.telemetry-panel.telemetry-compact #tst{
+  display:none;
+}
+.telemetry-panel.telemetry-unavailable .telemetry-toolbar{
+  display:none;
+}
+.lap-toolbar{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+.lap-source-group,
+.lap-analysis-group{
+  display:grid;
+  gap:10px;
+  padding:10px;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:12px;
+  background:var(--telemetry-chip-bg);
+}
+.lap-group-title{
+  margin:0;
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.lap-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.lap-actions .btn{
+  margin:0;
+  width:auto;
+  min-width:0;
+  flex:1 1 180px;
+}
+.lap-config{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+}
+.lap-metrics{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:8px;
+  margin:12px 0 10px 0;
+}
+.lap-metric{
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:10px;
+  padding:10px;
+  background:var(--telemetry-chip-bg);
+}
+.lap-metric-label{
+  display:block;
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.lap-metric-value{
+  display:block;
+  margin-top:5px;
+  font-size:15px;
+  font-weight:700;
+  color:var(--heading);
+}
+.lap-highlight-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin:0 0 10px 0;
+}
+.lap-highlight-label{
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.lap-mini-toggle{
+  appearance:none;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:999px;
+  padding:5px 10px;
+  background:var(--telemetry-chip-bg);
+  color:var(--text-main);
+  font-size:12px;
+  font-weight:700;
+  line-height:1.1;
+  cursor:pointer;
+}
+.lap-mini-toggle[aria-pressed="true"]{
+  background:var(--heading);
+  border-color:var(--heading);
+  color:var(--panel);
+}
+.lap-legend{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+  gap:8px;
+  margin:4px 0 10px 0;
+}
+.lap-plot-wrap{
+  position:relative;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:12px;
+  padding:10px;
+  background:var(--telemetry-plot-bg);
+}
+#lap-canvas{
+  display:block;
+  width:100%;
+  height:340px;
+}
+.lap-empty{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  text-align:center;
+  font-size:14px;
+  color:var(--text-muted);
+  pointer-events:none;
+}
+.lap-times{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.lap-chip{
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:9px;
+  padding:8px 10px;
+  background:var(--telemetry-chip-bg);
+  color:var(--text-main);
+  font-size:12px;
+}
+.lap-chip b{
+  display:block;
+  margin-bottom:3px;
+  color:var(--heading);
+}
+.lap-panel.lap-compact .lap-metrics,
+.lap-panel.lap-compact .lap-highlight-bar,
+.lap-panel.lap-compact .lap-legend,
+.lap-panel.lap-compact .lap-plot-wrap,
+.lap-panel.lap-compact .lap-times,
+.lap-panel.lap-compact .lap-analysis-group{
+  display:none;
+}
+.lap-panel.lap-compact .lap-toolbar{
+  margin-top:6px;
 }
 
 @media (min-width:760px){
@@ -292,6 +904,8 @@ form{margin:0}
   }
   .about-panel,
   .repo-panel,
+  .telemetry-panel,
+  .lap-panel,
   .backup-panel,
   .guide-panel,
   .usb-panel,
@@ -309,6 +923,8 @@ form{margin:0}
     grid-template-areas:
       "about about about about about about about about repo repo repo repo"
       "guide guide guide guide guide guide usb usb usb usb usb usb"
+      "telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry"
+      "lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay"
       "backup backup backup backup backup backup backup backup backup backup backup backup"
       "updates updates updates updates updates updates updates updates updates updates updates updates"
       "editor editor editor editor editor editor editor editor editor editor editor editor";
@@ -319,6 +935,8 @@ form{margin:0}
   .repo-panel{grid-area:repo}
   .guide-panel{grid-area:guide}
   .usb-panel{grid-area:usb}
+  .telemetry-panel{grid-area:telemetry}
+  .lap-panel{grid-area:lapoverlay}
   .backup-panel{grid-area:backup}
   .editor-shell{grid-area:editor}
   .about-panel,
@@ -344,6 +962,7 @@ form{margin:0}
   .hero{padding:18px 22px}
   h1{font-size:36px}
   p.sub{font-size:15px}
+  .hero-tools{justify-content:flex-end}
   .btn{
     width:auto;
     min-width:220px;
@@ -394,6 +1013,16 @@ form{margin:0}
 <header class="hero">
 <h1>ESPEED32</h1>
 <p class="sub"><span id="devid">----</span> &middot; v<span id="ver">-</span><span id="ver-note"></span></p>
+<div class="hero-tools">
+<div class="theme-tools">
+<label for="theme-select">Theme</label>
+<select id="theme-select" aria-label="Theme">
+<option value="system">System</option>
+<option value="light">Light</option>
+<option value="dark">Dark</option>
+</select>
+</div>
+</div>
 </header>
 <main class="layout-grid">
 <section class="panel about-panel">
@@ -417,7 +1046,7 @@ form{margin:0}
 </section>
 <section class="panel guide-panel">
 <h2>User Guide</h2>
-<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide (NO / EN / ES / DE)</a>
+<a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide</a>
 <p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
 </section>
 <section class="panel usb-panel">
@@ -428,6 +1057,105 @@ form{margin:0}
 <div id="ust" class="st"></div>
 </div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor.</p>
+</section>
+<section class="panel telemetry-panel">
+<h2>Telemetry &amp; Logging</h2>
+<p class="tiny">Live logging works over controller WiFi or USB WebSerial, with local CSV/JSON export. Time runs left-to-right in seconds since session start.</p>
+<p id="telemetry-note" class="warn" style="display:none"></p>
+<div class="telemetry-toolbar">
+<div class="telemetry-actions telemetry-primary-actions">
+<button id="btn-telemetry-start" class="btn aux" type="button" onclick="telemetryStart()">Start New Logging Session</button>
+<button id="btn-telemetry-stop" class="btn ul" type="button" onclick="telemetryStop()">Stop Logging</button>
+<button id="btn-telemetry-clear" class="btn dl" type="button" onclick="telemetryClear()">Clear Buffer</button>
+<button id="btn-telemetry-refresh" class="btn doc" type="button" onclick="telemetryRefresh()">Refresh Status</button>
+</div>
+<div class="telemetry-actions telemetry-secondary-actions">
+<a id="btn-telemetry-export-csv" class="btn dl" href="/api/telemetry/export.csv" download="espeed32-telemetry.csv">Export CSV</a>
+<a id="btn-telemetry-export-json" class="btn ota" href="/api/telemetry/export.json" download="espeed32-telemetry.json">Export JSON</a>
+</div>
+<div class="telemetry-config">
+<div class="row">
+<label for="telemetry-poll-interval">Live Polling</label>
+<select id="telemetry-poll-interval">
+<option value="250" selected>0.25 s</option>
+<option value="500">0.5 s</option>
+<option value="1000">1.0 s</option>
+<option value="2000">2.0 s</option>
+<option value="5000">5.0 s</option>
+</select>
+</div>
+</div>
+</div>
+<div class="telemetry-metrics">
+<div class="telemetry-metric"><span class="telemetry-metric-label">State</span><span id="telemetry-state" class="telemetry-metric-value">Waiting</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Samples</span><span id="telemetry-count" class="telemetry-metric-value">0</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Window</span><span id="telemetry-window" class="telemetry-metric-value">0.0 s</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Start Car</span><span id="telemetry-car" class="telemetry-metric-value">-</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Live Now</span><span id="telemetry-live" class="telemetry-metric-value">%T 0 / %O 0</span></div>
+<div class="telemetry-metric"><span class="telemetry-metric-label">Rate</span><span id="telemetry-rate" class="telemetry-metric-value">20 ms</span></div>
+</div>
+<div class="telemetry-legend">
+<label class="trace-toggle"><input id="trace-trigger" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-trigger)"></span><span>Throttle %T</span></label>
+<label class="trace-toggle"><input id="trace-output" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-output)"></span><span>Output %O</span></label>
+<label class="trace-toggle"><input id="trace-brake" type="checkbox"><span class="trace-swatch" style="background:var(--trace-brake)"></span><span>Brake %</span></label>
+<label class="trace-toggle"><input id="trace-vin" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-vin)"></span><span>VIN</span></label>
+<label class="trace-toggle"><input id="trace-current" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-current)"></span><span>Current</span></label>
+</div>
+<div class="telemetry-plot-wrap">
+<canvas id="telemetry-canvas" width="960" height="320"></canvas>
+<div id="telemetry-empty" class="telemetry-empty">Start logging to see live traces here.</div>
+</div>
+<div id="tst" class="st"></div>
+</section>
+<section class="panel lap-panel">
+<h2>Lap Overlay</h2>
+<p class="tiny">Analyze exported telemetry JSON or the current telemetry buffer. Finds laps from the longest high-throttle straight and overlays each lap by lap progress.</p>
+<div class="lap-toolbar">
+<div class="lap-source-group">
+<p class="lap-group-title">Data Source</p>
+<div class="lap-actions">
+<button id="btn-lap-current" class="btn aux" type="button" onclick="lapOverlayUseCurrentTelemetry()">Use Current Telemetry</button>
+</div>
+<div class="row lap-file-row"><label for="lap-file">Import Telemetry JSON</label><input id="lap-file" type="file" accept=".json,application/json"></div>
+</div>
+<div class="lap-analysis-group">
+<p class="lap-group-title">Lap Detection</p>
+<div class="lap-config">
+<div class="row"><label for="lap-threshold">Trigger Threshold (%T)</label><input id="lap-threshold" type="number" min="60" max="100" step="1" value="92"></div>
+<div class="row"><label for="lap-hold">Min Straight Hold (ms)</label><input id="lap-hold" type="number" min="80" max="5000" step="10" value="250"></div>
+<div class="row"><label for="lap-min">Min Lap Time (ms)</label><input id="lap-min" type="number" min="500" max="30000" step="50" value="5000"></div>
+<div class="row"><label for="lap-match">Longest-Stretch Match (%)</label><input id="lap-match" type="number" min="40" max="100" step="1" value="75"></div>
+</div>
+<div class="lap-actions">
+<button id="btn-lap-recalc" class="btn doc" type="button" onclick="lapOverlayAnalyze(false)">Recalculate Laps</button>
+<button id="btn-lap-clear" class="btn dl" type="button" onclick="lapOverlayClear()">Clear</button>
+</div>
+</div>
+</div>
+<div class="lap-metrics">
+<div class="lap-metric"><span class="lap-metric-label">Source</span><span id="lap-source" class="lap-metric-value">None</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Detected Laps</span><span id="lap-count" class="lap-metric-value">0</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Best Lap</span><span id="lap-best" class="lap-metric-value">-</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Average</span><span id="lap-avg" class="lap-metric-value">-</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Detector</span><span id="lap-detector" class="lap-metric-value">Longest straight</span></div>
+</div>
+<div class="lap-highlight-bar">
+<span class="lap-highlight-label">Highlight</span>
+<button id="lap-highlight-best" class="lap-mini-toggle" type="button" aria-pressed="true">Best</button>
+<button id="lap-highlight-last" class="lap-mini-toggle" type="button" aria-pressed="true">Last</button>
+</div>
+<div class="lap-legend">
+<label class="trace-toggle"><input id="lap-trace-trigger" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-trigger)"></span><span>Throttle %T</span></label>
+<label class="trace-toggle"><input id="lap-trace-output" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-output)"></span><span>Output %O</span></label>
+<label class="trace-toggle"><input id="lap-trace-brake" type="checkbox"><span class="trace-swatch" style="background:var(--trace-brake)"></span><span>Brake %</span></label>
+<label class="trace-toggle"><input id="lap-trace-current" type="checkbox"><span class="trace-swatch" style="background:var(--trace-current)"></span><span>Current</span></label>
+</div>
+<div class="lap-plot-wrap">
+<canvas id="lap-canvas" width="960" height="340"></canvas>
+<div id="lap-empty" class="lap-empty">Import a telemetry JSON file or use the current telemetry buffer to build lap overlays.</div>
+</div>
+<div id="lap-times" class="lap-times"></div>
+<div id="lapst" class="st"></div>
 </section>
 <section class="panel backup-panel">
 <h2>Config Backup &amp; Restore (.json)</h2>
@@ -484,7 +1212,7 @@ form{margin:0}
 <div class="update-actions">
 <form id="sf">
 <input type="file" id="spiffs" accept=".bin">
-<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem</button>
+<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem (.bin)</button>
 </form>
 <button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release, Internet Required)</button>
 <p class="tiny" id="spiffs-auto-desc">Auto update requires internet on this device to download from GitHub, then uploads to the controller.</p>
@@ -515,8 +1243,31 @@ form{margin:0}
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
 var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
+var infoLoadedFromApi=false;
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
+var telemetryStatus=null;
+var telemetrySamples=[];
+var telemetryEvents=[];
+var telemetryAfterSeq=0;
+var telemetrySessionId=0;
+var telemetryFetchBusy=false;
+var telemetryUiBusy=false;
+var telemetryPollTimer=null;
+var telemetryPollIntervalMs=250;
+var telemetryLastError='';
+var telemetryRedrawQueued=false;
+var telemetryConfigSnapshot=null;
+var LAP_OVERLAY_SOURCE_NONE='none';
+var LAP_OVERLAY_SOURCE_CURRENT='current';
+var LAP_OVERLAY_SOURCE_IMPORT='import';
+var lapOverlaySourceKind=LAP_OVERLAY_SOURCE_NONE;
+var lapOverlaySourceName='';
+var lapOverlaySamples=[];
+var lapOverlayEvents=[];
+var lapOverlayLaps=[];
+var lapOverlayLastError='';
+var usbCommandQueue=Promise.resolve();
 var latestReleaseTag='';
 var latestReleaseUrl='';
 var latestFirmwareBinUrl='';
@@ -529,6 +1280,107 @@ var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
 var BACKUP_SESSION_KEY='espeed32_backup_downloaded_v1';
+var TELEMETRY_POLL_INTERVAL_KEY='espeed32_telemetry_poll_interval_v2';
+var UI_THEME_KEY='espeed32-ui-theme';
+var TELEMETRY_FIELDS={SEQ:0,TIME_MS:1,TRIGGER:2,OUTPUT:3,VIN_MV:4,CURRENT_MA:5,BRAKE:6,SENSI_HALF:7,CAR:8,RELEASE_MODE:9,FLAGS:10};
+var TELEMETRY_FLAG_BRAKE_BUTTON=0x01;
+var TELEMETRY_FLAG_TRIGGER_RELEASING=0x02;
+var TELEMETRY_FLAG_IN_RELEASE_ZONE=0x04;
+var TELEMETRY_FLAG_RELEASE_ACTIVE=0x08;
+var TELEMETRY_FLAG_CURRENT_SENSE=0x10;
+var TELEMETRY_EVENT_CAR_SELECT='car_select';
+var TELEMETRY_EVENT_CAR_PARAMS='car_params';
+var TELEMETRY_CHANGE_MIN_SPEED=0x0001;
+var TELEMETRY_CHANGE_BRAKE=0x0002;
+var TELEMETRY_CHANGE_MAX_SPEED=0x0004;
+var TELEMETRY_CHANGE_CURVE_INPUT=0x0008;
+var TELEMETRY_CHANGE_CURVE_DIFF=0x0010;
+var TELEMETRY_CHANGE_FADE=0x0020;
+var TELEMETRY_CHANGE_ANTI_SPIN=0x0040;
+var TELEMETRY_CHANGE_CAR_NAME=0x0080;
+var TELEMETRY_CHANGE_FREQ_PWM=0x0100;
+var TELEMETRY_CHANGE_BRAKE_BUTTON=0x0200;
+var TELEMETRY_CHANGE_RELEASE_MODE=0x0400;
+var TELEMETRY_CHANGE_RELEASE_ZONE=0x0800;
+var TELEMETRY_CHANGE_RELEASE_LEVEL=0x1000;
+var TELEMETRY_TRACE_DEFS=[
+  {id:'trace-trigger',label:'Throttle %T',band:'pct',index:TELEMETRY_FIELDS.TRIGGER,colorVar:'--trace-trigger'},
+  {id:'trace-output',label:'Output %O',band:'pct',index:TELEMETRY_FIELDS.OUTPUT,colorVar:'--trace-output'},
+  {id:'trace-brake',label:'Brake %',band:'pct',index:TELEMETRY_FIELDS.BRAKE,colorVar:'--trace-brake'},
+  {id:'trace-vin',label:'VIN',band:'vin',index:TELEMETRY_FIELDS.VIN_MV,colorVar:'--trace-vin'},
+  {id:'trace-current',label:'Current',band:'current',index:TELEMETRY_FIELDS.CURRENT_MA,colorVar:'--trace-current'}
+];
+var LAP_TRACE_DEFS=[
+  {id:'lap-trace-trigger',label:'Throttle %T',band:'pct',key:'triggerPct',colorVar:'--trace-trigger'},
+  {id:'lap-trace-output',label:'Output %O',band:'pct',key:'outputPct',colorVar:'--trace-output'},
+  {id:'lap-trace-brake',label:'Brake %',band:'pct',key:'brakePct',colorVar:'--trace-brake'},
+  {id:'lap-trace-current',label:'Current',band:'current',key:'currentMa',colorVar:'--trace-current'}
+];
+
+function scheduleTelemetryPlotRedraw(){
+  if(typeof drawTelemetryPlot!=='function' && typeof drawLapOverlayPlot!=='function') return;
+  if(telemetryRedrawQueued) return;
+  telemetryRedrawQueued=true;
+
+  function run(){
+    telemetryRedrawQueued=false;
+    if(typeof drawTelemetryPlot==='function') drawTelemetryPlot();
+    if(typeof drawLapOverlayPlot==='function') drawLapOverlayPlot();
+  }
+
+  if(typeof window!=='undefined' && typeof window.requestAnimationFrame==='function'){
+    window.requestAnimationFrame(function(){
+      window.requestAnimationFrame(run);
+    });
+  }else{
+    setTimeout(run,0);
+  }
+}
+
+function withUsbCommand(fn){
+  var run=function(){ return Promise.resolve().then(fn); };
+  var task=usbCommandQueue.then(run,run);
+  usbCommandQueue=task.catch(function(){});
+  return task;
+}
+
+function initThemeControls(){
+  var root=document.documentElement;
+  var select=document.getElementById('theme-select');
+  if(!select) return;
+
+  var saved='system';
+  try{
+    var raw=localStorage.getItem(UI_THEME_KEY);
+    if(raw==='light' || raw==='dark' || raw==='system') saved=raw;
+  }catch(_){}
+
+  select.value=saved;
+
+  function apply(mode){
+    if(mode==='light' || mode==='dark') root.setAttribute('data-theme',mode);
+    else root.removeAttribute('data-theme');
+    scheduleTelemetryPlotRedraw();
+  }
+
+  apply(saved);
+
+  select.addEventListener('change',function(){
+    try{ localStorage.setItem(UI_THEME_KEY,select.value); }catch(_){}
+    apply(select.value);
+  });
+
+  if(typeof window!=='undefined' && typeof window.matchMedia==='function'){
+    var media=window.matchMedia('(prefers-color-scheme: dark)');
+    var onSystemThemeChange=function(){
+      if(select.value==='system'){
+        scheduleTelemetryPlotRedraw();
+      }
+    };
+    if(typeof media.addEventListener==='function') media.addEventListener('change',onSystemThemeChange);
+    else if(typeof media.addListener==='function') media.addListener(onSystemThemeChange);
+  }
+}
 
 function isLikelyDeviceHost(h){
   return h==='192.168.4.1' || h==='localhost' || h==='127.0.0.1' || /\.local$/i.test(h||'');
@@ -854,10 +1706,77 @@ function applyInfo(){
 
 function hostedDocsPath(){
   var lang=((navigator && navigator.language) ? navigator.language : 'en').toLowerCase();
-  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/';
-  if(lang.indexOf('es')===0) return 'docs/es/';
-  if(lang.indexOf('de')===0) return 'docs/de/';
-  return 'docs/en/';
+  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/index.html';
+  if(lang.indexOf('es')===0) return 'docs/es/index.html';
+  if(lang.indexOf('de')===0) return 'docs/de/index.html';
+  if(lang.indexOf('it')===0) return 'docs/it/index.html';
+  return 'docs/en/index.html';
+}
+
+var docsLinkProbeSeq=0;
+
+function isUiSubdirPath(){
+  return /(?:^|\/)ui(?:\/|$)/i.test(location.pathname||'');
+}
+
+function buildDocsCandidates(){
+  var candidates=[];
+  var seen={};
+  var langPath=hostedDocsPath();
+
+  function push(href){
+    if(!href) return;
+    if(location.protocol==='file:' && href.charAt(0)==='/') return;
+    try{
+      var abs=new URL(href, location.href).href;
+      if(seen[abs]) return;
+      seen[abs]=true;
+      candidates.push({href:href,abs:abs});
+    }catch(_){}
+  }
+
+  if(!hostedMode && infoLoadedFromApi){
+    push(info.docsPath||'/docs');
+  }
+
+  if(isUiSubdirPath()) push('../'+langPath);
+  push(langPath);
+  if(location.protocol!=='file:') push('/'+langPath.replace(/^\/+/,''));
+
+  if(!hostedMode){
+    push('docs/');
+    if(location.protocol!=='file:') push('/docs');
+  }
+
+  return candidates;
+}
+
+async function probeDocsCandidates(candidates){
+  for(var i=0;i<candidates.length;i++){
+    try{
+      var res=await fetch(candidates[i].abs,{method:'GET',cache:'no-store'});
+      if(res.ok) return candidates[i];
+    }catch(_){}
+  }
+  return null;
+}
+
+function bestEffortLocalDocsCandidate(candidates){
+  if(!candidates || !candidates.length) return null;
+  for(var i=0;i<candidates.length;i++){
+    if(candidates[i].href.indexOf('../docs/')===0) return candidates[i];
+  }
+  for(var j=0;j<candidates.length;j++){
+    if(candidates[j].href.indexOf('docs/')===0) return candidates[j];
+  }
+  return candidates[0];
+}
+
+function disableDocsLink(link,note,message){
+  link.href='#';
+  link.classList.add('disabled');
+  link.setAttribute('aria-disabled','true');
+  note.textContent=message;
 }
 
 function setBtnDisabled(id,disabled){
@@ -872,31 +1791,1528 @@ function setEditorUiReady(ready){
   setBtnDisabled('btn-save',!ready);
 }
 
-function updateDocsLinkState(){
+async function updateDocsLinkState(){
   var link=document.getElementById('docs-link');
   var note=document.getElementById('docs-note');
   if(!link || !note) return;
+  var seq=++docsLinkProbeSeq;
 
   link.classList.remove('disabled');
   link.removeAttribute('aria-disabled');
   link.setAttribute('target','_blank');
   link.setAttribute('rel','noopener');
 
-  if(hostedMode && location.protocol==='file:'){
-    link.href='#';
-    link.classList.add('disabled');
-    link.setAttribute('aria-disabled','true');
-    note.textContent='Local file mode cannot resolve docs path. Open hosted page or use controller WiFi docs.';
+  if(!hostedMode && infoLoadedFromApi){
+    link.href=info.docsPath||'/docs';
+    note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
     return;
   }
 
-  if(hostedMode){
-    link.href=hostedDocsPath();
-    note.textContent='Hosted mode: docs open from this site.';
-  }else{
-    link.href=info.docsPath||'/docs';
-    note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
+  var candidates=buildDocsCandidates();
+  var found=await probeDocsCandidates(candidates);
+  if(seq!==docsLinkProbeSeq) return;
+
+  if(found){
+    link.href=found.href;
+    note.textContent=hostedMode
+      ? 'Hosted mode: docs were found on this site.'
+      : 'Docs were found on this site.';
+    return;
   }
+
+  if(location.protocol==='file:'){
+    var fallback=bestEffortLocalDocsCandidate(candidates);
+    if(fallback){
+      link.href=fallback.href;
+      note.textContent='Local file mode: trying docs relative to this UI copy.';
+      return;
+    }
+  }
+
+  if(hostedMode){
+    disableDocsLink(link,note,'Docs were not found on this hosted copy.');
+  }else{
+    disableDocsLink(link,note,'Docs were not found locally. Place the docs folder next to this UI copy or use controller WiFi docs.');
+  }
+}
+
+function telemetryUsesUsb(){
+  return !!(usb && usbReady);
+}
+
+function telemetryAvailable(){
+  return telemetryUsesUsb() || (!hostedMode && infoLoadedFromApi);
+}
+
+function telemetryUnavailableText(){
+  return 'Telemetry is available on the controller WiFi page or over USB WebSerial.';
+}
+
+async function telemetryFetchStatusTransport(){
+  if(telemetryUsesUsb()){
+    return await usbReadJsonResponse('TSTATUS',10000,40000);
+  }
+  var resp=await fetch('/api/telemetry/status',{cache:'no-store'});
+  if(!resp.ok) throw new Error('Telemetry unavailable (HTTP '+resp.status+')');
+  var data=await resp.json();
+  if(!data || !data.ok) throw new Error((data&&data.error)?data.error:'Telemetry fetch failed');
+  return data;
+}
+
+async function telemetryFetchLiveTransport(after,limit){
+  if(telemetryUsesUsb()){
+    var usbLimit=Math.min(Number(limit||256),96);
+    return await usbReadJsonResponse('TLIVE '+String(after||0)+' '+String(usbLimit),15000,120000);
+  }
+  var resp=await fetch('/api/telemetry/live?after='+encodeURIComponent(after||0)+'&limit='+encodeURIComponent(limit||256),{cache:'no-store'});
+  if(!resp.ok) throw new Error('Telemetry unavailable (HTTP '+resp.status+')');
+  var data=await resp.json();
+  if(!data || !data.ok) throw new Error((data&&data.error)?data.error:'Telemetry fetch failed');
+  return data;
+}
+
+async function telemetryPostTransport(action){
+  if(telemetryUsesUsb()){
+    return await usbReadJsonResponse(action,15000,40000);
+  }
+  var url='/api/telemetry/'+action.toLowerCase().slice(1);
+  var resp=await fetch(url,{method:'POST'});
+  var data=await resp.json();
+  if(!resp.ok || !data.ok) throw new Error((data&&data.error)?data.error:('HTTP '+resp.status));
+  return data;
+}
+
+async function telemetryLoadConfigSnapshot(){
+  if(telemetryConfigSnapshot) return telemetryConfigSnapshot;
+  if(telemetryUsesUsb()){
+    telemetryConfigSnapshot=await usbReadJsonResponse('TCONFIG',15000,120000);
+  }
+  return telemetryConfigSnapshot;
+}
+
+function telemetryGetReleaseModeLabel(mode){
+  if(Number(mode)===1) return 'QUICK';
+  if(Number(mode)===2) return 'DRAG';
+  return 'OFF';
+}
+
+function telemetryCsvEscape(value){
+  var text=String(value==null?'':value);
+  if(/[",\n\r]/.test(text)){
+    return '"'+text.replace(/"/g,'""')+'"';
+  }
+  return text;
+}
+
+function telemetryBuildTimestampForFileName(){
+  var iso=new Date().toISOString().replace(/\..*/,'');
+  return iso.slice(0,10)+'_'+iso.slice(11,19).replace(/:/g,'-');
+}
+
+function telemetryGetExportBaseName(){
+  var ts=telemetryBuildTimestampForFileName();
+  var version=(info.version && info.version!=='-')?info.version:'unknown';
+  var device=(info.deviceId && info.deviceId!=='----')?info.deviceId:'device';
+  return ts+'-espeed32_v'+version+'_'+device+'_telemetry';
+}
+
+function telemetryDownloadBlob(blob,fileName){
+  var a=document.createElement('a');
+  var href=URL.createObjectURL(blob);
+  a.href=href;
+  a.download=fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){
+    URL.revokeObjectURL(href);
+    a.remove();
+  },1000);
+}
+
+async function telemetryFetchExportBlob(format){
+  var url=(format==='csv')?'/api/telemetry/export.csv':'/api/telemetry/export.json';
+  var resp=await fetch(url,{cache:'no-store'});
+  if(!resp.ok){
+    var errText='';
+    try{ errText=await resp.text(); }catch(_){}
+    throw new Error(errText||('Telemetry export failed (HTTP '+resp.status+')'));
+  }
+  return await resp.blob();
+}
+
+async function telemetryCollectExportData(){
+  var snapshot=null;
+  if(telemetryUsesUsb()){
+    snapshot=await telemetryLoadConfigSnapshot();
+  }
+
+  var samples=[];
+  var events=[];
+  var restarts=0;
+
+  while(restarts<3){
+    var after=0;
+    var sessionId=0;
+    var restarted=false;
+    samples=[];
+    events=[];
+
+    for(var safety=0;safety<32;safety++){
+      var data=await telemetryFetchLiveTransport(after,256);
+      if(!data || !data.ok) throw new Error('Telemetry export failed');
+      if(!data.hasData) return {status:data,snapshot:snapshot,samples:[],events:[]};
+
+      if((sessionId && Number(data.sessionId||0)!==sessionId) || (data.truncated && after!==0)){
+        restarts++;
+        restarted=true;
+        break;
+      }
+
+      sessionId=Number(data.sessionId||0);
+      events=Array.isArray(data.events)?data.events:[];
+      if(Array.isArray(data.samples)){
+        data.samples.forEach(function(sample){
+          samples.push(sample);
+          after=Number(sample[TELEMETRY_FIELDS.SEQ]||after);
+        });
+      }
+
+      if(!data.hasMore){
+        return {status:data,snapshot:snapshot,samples:samples,events:events};
+      }
+    }
+
+    if(restarted){
+      continue;
+    }
+
+    throw new Error('Telemetry export exceeded expected batch count');
+  }
+
+  throw new Error('Telemetry export could not stabilize while logging. Stop logging and try again.');
+}
+
+function telemetryBuildCsvExport(samples,snapshot){
+  var out=['seq,t_ms,car_index,car_name,trigger_pct,output_pct,brake_pct,sensi_pct,vin_mV,current_mA,release_mode,brake_button,trigger_releasing,in_release_zone,release_active,current_sense'];
+
+  samples.forEach(function(sample){
+    var flags=Number(sample[TELEMETRY_FIELDS.FLAGS]||0);
+    var carIndex=Number(sample[TELEMETRY_FIELDS.CAR]||0);
+    var carName=telemetrySnapshotCarName(snapshot,carIndex);
+    out.push([
+      Number(sample[TELEMETRY_FIELDS.SEQ]||0),
+      Number(sample[TELEMETRY_FIELDS.TIME_MS]||0),
+      carIndex,
+      telemetryCsvEscape(carName),
+      Number(sample[TELEMETRY_FIELDS.TRIGGER]||0),
+      Number(sample[TELEMETRY_FIELDS.OUTPUT]||0),
+      Number(sample[TELEMETRY_FIELDS.BRAKE]||0),
+      telemetryCsvEscape((Number(sample[TELEMETRY_FIELDS.SENSI_HALF]||0)/2).toFixed(1)),
+      Number(sample[TELEMETRY_FIELDS.VIN_MV]||0),
+      Number(sample[TELEMETRY_FIELDS.CURRENT_MA]||0),
+      telemetryCsvEscape(telemetryGetReleaseModeLabel(sample[TELEMETRY_FIELDS.RELEASE_MODE]||0)),
+      (flags&TELEMETRY_FLAG_BRAKE_BUTTON)?1:0,
+      (flags&TELEMETRY_FLAG_TRIGGER_RELEASING)?1:0,
+      (flags&TELEMETRY_FLAG_IN_RELEASE_ZONE)?1:0,
+      (flags&TELEMETRY_FLAG_RELEASE_ACTIVE)?1:0,
+      (flags&TELEMETRY_FLAG_CURRENT_SENSE)?1:0
+    ].join(','));
+  });
+
+  return out.join('\n')+'\n';
+}
+
+function telemetryBuildJsonExport(samples,status,snapshot,events){
+  return {
+    ok:true,
+    format:'espeed32-telemetry-v1',
+    deviceId:info.deviceId||'',
+    firmware:info.version||'',
+    loggingActive:!!(status && status.loggingActive),
+    sampleRateMs:Number((status && status.sampleRateMs)||20),
+    capacity:Number((status && status.capacity)||0),
+    storedCount:Number((status && status.storedCount)||samples.length),
+    sessionId:Number((status && status.sessionId)||0),
+    sessionStartMs:Number((status && status.sessionStartMs)||0),
+    sessionStartCarIndex:Number((status && status.sessionStartCarIndex)||0),
+    configAtStart:snapshot||null,
+    eventsTruncated:!!(status && status.eventTruncated),
+    events:Array.isArray(events)?events:[],
+    samples:samples.map(function(sample){
+      return {
+        seq:Number(sample[TELEMETRY_FIELDS.SEQ]||0),
+        tMs:Number(sample[TELEMETRY_FIELDS.TIME_MS]||0),
+        triggerPct:Number(sample[TELEMETRY_FIELDS.TRIGGER]||0),
+        outputPct:Number(sample[TELEMETRY_FIELDS.OUTPUT]||0),
+        vinMv:Number(sample[TELEMETRY_FIELDS.VIN_MV]||0),
+        currentMa:Number(sample[TELEMETRY_FIELDS.CURRENT_MA]||0),
+        brakePct:Number(sample[TELEMETRY_FIELDS.BRAKE]||0),
+        sensiHalfPct:Number(sample[TELEMETRY_FIELDS.SENSI_HALF]||0),
+        carIndex:Number(sample[TELEMETRY_FIELDS.CAR]||0),
+        releaseMode:Number(sample[TELEMETRY_FIELDS.RELEASE_MODE]||0),
+        flags:Number(sample[TELEMETRY_FIELDS.FLAGS]||0)
+      };
+    })
+  };
+}
+
+async function telemetryExport(format){
+  if(!telemetryAvailable()){
+    ss('tst','err',telemetryUnavailableText());
+    return;
+  }
+
+  telemetryUiBusy=true;
+  updateTelemetryUiState();
+  stopTelemetryPolling();
+
+  try{
+    var baseName=telemetryGetExportBaseName();
+    var exportData=null;
+    if(telemetryUsesUsb()){
+      exportData=await telemetryCollectExportData();
+      if(!exportData.samples.length){
+        throw new Error('No telemetry data available');
+      }
+
+      if(format==='csv'){
+        telemetryDownloadBlob(
+          new Blob([telemetryBuildCsvExport(exportData.samples,exportData.snapshot)],{type:'text/csv;charset=utf-8'}),
+          baseName+'.csv'
+        );
+      }else{
+        telemetryDownloadBlob(
+          new Blob([JSON.stringify(telemetryBuildJsonExport(exportData.samples,exportData.status,exportData.snapshot,exportData.events),null,2)],{type:'application/json;charset=utf-8'}),
+          baseName+'.json'
+        );
+      }
+
+      telemetryStatus=exportData.status||telemetryStatus;
+      telemetryEvents=Array.isArray(exportData.events)?exportData.events:telemetryEvents;
+    }else{
+      telemetryDownloadBlob(await telemetryFetchExportBlob(format),baseName+(format==='csv'?'.csv':'.json'));
+    }
+    telemetryLastError='';
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    ss('tst','ok','Telemetry '+String(format||'').toUpperCase()+' exported');
+  }catch(e){
+    telemetryLastError=normalizeTelemetryError(e);
+    ss('tst','err',telemetryLastError);
+  }finally{
+    telemetryUiBusy=false;
+    updateTelemetryUiState();
+    startTelemetryPollingIfAvailable(false);
+  }
+}
+
+function normalizeTelemetryError(err){
+  var message=(err && err.message)?err.message:String(err||'');
+  if(!message) return 'Telemetry is unavailable on this page.';
+  if(message==='The string did not match the expected pattern.'){
+    return 'Telemetry is unavailable on this page.';
+  }
+  if(message.indexOf('Failed to fetch')!==-1){
+    return 'Telemetry is unavailable on this page.';
+  }
+  return message;
+}
+
+function stopTelemetryPolling(){
+  if(telemetryPollTimer){
+    clearInterval(telemetryPollTimer);
+    telemetryPollTimer=null;
+  }
+}
+
+function sanitizeTelemetryPollIntervalMs(raw){
+  var value=Number(raw||250);
+  var allowed=[250,500,1000,2000,5000];
+  return allowed.indexOf(value)!==-1 ? value : 250;
+}
+
+function loadTelemetryPollIntervalSetting(){
+  var saved=250;
+  try{
+    saved=sanitizeTelemetryPollIntervalMs(localStorage.getItem(TELEMETRY_POLL_INTERVAL_KEY));
+  }catch(_){
+    saved=250;
+  }
+  telemetryPollIntervalMs=saved;
+  var select=document.getElementById('telemetry-poll-interval');
+  if(select) select.value=String(saved);
+}
+
+function saveTelemetryPollIntervalSetting(value){
+  telemetryPollIntervalMs=sanitizeTelemetryPollIntervalMs(value);
+  try{
+    localStorage.setItem(TELEMETRY_POLL_INTERVAL_KEY,String(telemetryPollIntervalMs));
+  }catch(_){}
+}
+
+function formatTelemetryPollingIntervalLabel(ms){
+  return (Number(ms||250)/1000).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')+' s';
+}
+
+function startTelemetryPollingIfAvailable(refreshNow){
+  stopTelemetryPolling();
+  if(!telemetryAvailable()) return;
+  if(refreshNow) syncTelemetryHistory(true,true);
+  telemetryPollTimer=setInterval(function(){ syncTelemetryHistory(false,true); },telemetryPollIntervalMs);
+}
+
+function setAnchorDisabled(id,disabled,href){
+  var el=document.getElementById(id);
+  if(!el) return;
+  if(disabled){
+    el.classList.add('disabled');
+    el.setAttribute('aria-disabled','true');
+  }else{
+    el.classList.remove('disabled');
+    el.removeAttribute('aria-disabled');
+    if(href) el.href=href;
+  }
+}
+
+function telemetryHalfPctToString(raw){
+  var n=Number(raw||0);
+  if(!isFinite(n)) n=0;
+  return (n/2).toFixed(1)+'%';
+}
+
+function formatTelemetryVoltage(mv){
+  var n=Number(mv||0);
+  if(!isFinite(n)) n=0;
+  return (n/1000).toFixed(1)+' V';
+}
+
+function formatTelemetryVoltageAxisLabel(mv){
+  var n=Number(mv||0);
+  if(!isFinite(n)) n=0;
+  return (n/1000).toFixed(1);
+}
+
+function formatTelemetryCurrent(ma,currentSense){
+  if(!currentSense) return 'N/A';
+  var n=Number(ma||0);
+  if(!isFinite(n)) n=0;
+  return (n/1000).toFixed(1)+' A';
+}
+
+function formatTelemetrySeconds(ms){
+  var n=Number(ms||0);
+  if(!isFinite(n) || n<0) n=0;
+  return (n/1000).toFixed(1)+' s';
+}
+
+function formatTelemetryPwmKhz(freqPwm100Hz){
+  var n=Number(freqPwm100Hz||0);
+  if(!isFinite(n)) n=0;
+  return (n/10).toFixed(1)+' kHz';
+}
+
+function telemetrySnapshotCarNames(snapshot){
+  return (snapshot && Array.isArray(snapshot.carNames))?snapshot.carNames:[];
+}
+
+function telemetrySnapshotCarName(snapshot,carIndex){
+  var names=telemetrySnapshotCarNames(snapshot);
+  return names[carIndex]||'';
+}
+
+function telemetryBuildEventDetailParts(event){
+  var car=event && event.carParams ? event.carParams : {};
+  var mask=Number(event && event.changedMask || 0);
+  var parts=[];
+  var releaseBits=TELEMETRY_CHANGE_RELEASE_MODE|TELEMETRY_CHANGE_RELEASE_ZONE|TELEMETRY_CHANGE_RELEASE_LEVEL;
+  if(mask&TELEMETRY_CHANGE_MIN_SPEED) parts.push('Sensi '+telemetryHalfPctToString(car.minSpeedHalfPct));
+  if(mask&TELEMETRY_CHANGE_BRAKE) parts.push('Brake '+String(Number(car.brake||0))+'%');
+  if(mask&TELEMETRY_CHANGE_MAX_SPEED) parts.push('Max '+String(Number(car.maxSpeed||0))+'%');
+  if(mask&TELEMETRY_CHANGE_CURVE_INPUT) parts.push('Curve in '+String(Number(car.curveInputPct||0))+'%');
+  if(mask&TELEMETRY_CHANGE_CURVE_DIFF) parts.push('Curve '+String(Number(car.curveDiffPct||0))+'%');
+  if(mask&TELEMETRY_CHANGE_FADE) parts.push('Fade '+String(Number(car.fade||0))+'%');
+  if(mask&TELEMETRY_CHANGE_ANTI_SPIN) parts.push('Anti '+String(Number(car.antiSpin||0))+' ms');
+  if(mask&TELEMETRY_CHANGE_CAR_NAME) parts.push('Name '+String(car.name||''));
+  if(mask&TELEMETRY_CHANGE_FREQ_PWM) parts.push('PWM '+formatTelemetryPwmKhz(car.freqPwm100Hz));
+  if(mask&TELEMETRY_CHANGE_BRAKE_BUTTON) parts.push('Alt '+String(Number(car.brakeButton||0))+'%');
+  if(mask&releaseBits){
+    parts.push('Rel '+telemetryGetReleaseModeLabel(car.releaseMode)+' '+String(Number(car.releaseZone||0))+'/'+String(Number(car.releaseLevel||0)));
+  }
+  return parts;
+}
+
+function telemetryBuildEventLabel(event){
+  if(!event) return '';
+  var car=event.carParams||{};
+  var carName=String(car.name||('CAR '+String(Number(event.carIndex||0))));
+  if(event.type===TELEMETRY_EVENT_CAR_SELECT){
+    return 'CAR '+carName;
+  }
+  var parts=telemetryBuildEventDetailParts(event);
+  if(!parts.length) return 'Params';
+  if(parts.length===1) return parts[0];
+  return parts.slice(0,2).join(' · ');
+}
+
+function updateTelemetryAvailabilityNote(){
+  var note=document.getElementById('telemetry-note');
+  if(!note) return;
+  if(telemetryUsesUsb()){
+    note.style.display='none';
+    note.textContent='';
+  }else if(hostedMode){
+    note.style.display='block';
+    note.textContent='Telemetry works on the controller WiFi page or over USB WebSerial, not as plain hosted mode alone.';
+  }else if(!infoLoadedFromApi){
+    note.style.display='block';
+    note.textContent='Telemetry becomes available when this UI is served by the controller WiFi API, or when USB WebSerial is connected.';
+  }else if(telemetryLastError){
+    note.style.display='block';
+    note.textContent=telemetryLastError;
+  }else{
+    note.style.display='none';
+    note.textContent='';
+  }
+}
+
+function telemetryShouldShowDetails(){
+  var status=telemetryStatus||{};
+  return !!(status.loggingActive || status.hasData || telemetrySamples.length);
+}
+
+function updateTelemetryLayout(){
+  var panel=document.querySelector('.telemetry-panel');
+  if(!panel) return;
+  var showDetails=telemetryShouldShowDetails();
+  panel.classList.toggle('telemetry-compact',!showDetails);
+  panel.classList.toggle('telemetry-unavailable',!telemetryAvailable() && !showDetails);
+}
+
+function updateTelemetryMetrics(){
+  var stateEl=document.getElementById('telemetry-state');
+  var countEl=document.getElementById('telemetry-count');
+  var windowEl=document.getElementById('telemetry-window');
+  var carEl=document.getElementById('telemetry-car');
+  var liveEl=document.getElementById('telemetry-live');
+  var rateEl=document.getElementById('telemetry-rate');
+  if(!stateEl || !countEl || !windowEl || !carEl || !liveEl || !rateEl) return;
+
+  if(!telemetryAvailable()){
+    stateEl.textContent='Connect';
+    countEl.textContent='-';
+    windowEl.textContent='-';
+    carEl.textContent='-';
+    liveEl.textContent='Open WiFi page or connect USB';
+    rateEl.textContent='20 ms';
+    return;
+  }
+
+  var status=telemetryStatus||{};
+  var stateText='Ready';
+  if(status.loggingActive) stateText='Logging';
+  else if(status.hasData) stateText='Stopped';
+  if(status.wrapped) stateText+=' (rolling)';
+  if(telemetryUiBusy) stateText+='...';
+  stateEl.textContent=stateText;
+
+  var stored=Number(status.storedCount||0);
+  var capacity=Number(status.capacity||0);
+  countEl.textContent=capacity?String(stored)+' / '+String(capacity):String(stored||0);
+
+  var windowMs=0;
+  if(telemetrySamples.length>1){
+    windowMs=Number(telemetrySamples[telemetrySamples.length-1][TELEMETRY_FIELDS.TIME_MS]||0)-Number(telemetrySamples[0][TELEMETRY_FIELDS.TIME_MS]||0);
+  }
+  windowEl.textContent=formatTelemetrySeconds(windowMs);
+  carEl.textContent=status.sessionStartCarName||'-';
+
+  var current=status.current||{};
+  liveEl.textContent='%T '+String(current.triggerPct||0)+' / %O '+String(current.outputPct||0)+' / '+formatTelemetryVoltage(current.vinMv)+' / '+formatTelemetryCurrent(current.currentMa,current.currentSense);
+  rateEl.textContent=String(status.sampleRateMs||20)+' ms';
+}
+
+function updateTelemetryUiState(){
+  var available=telemetryAvailable();
+  var status=telemetryStatus||{};
+  var hasData=!!status.hasData;
+  var logging=!!status.loggingActive;
+
+  setBtnDisabled('btn-telemetry-start',!available || telemetryUiBusy || logging);
+  setBtnDisabled('btn-telemetry-stop',!available || telemetryUiBusy || !logging);
+  setBtnDisabled('btn-telemetry-clear',!available || telemetryUiBusy || (!hasData && !logging));
+  setBtnDisabled('btn-telemetry-refresh',!available || telemetryUiBusy);
+
+  var startBtn=document.getElementById('btn-telemetry-start');
+  var stopBtn=document.getElementById('btn-telemetry-stop');
+  var clearBtn=document.getElementById('btn-telemetry-clear');
+  var refreshBtn=document.getElementById('btn-telemetry-refresh');
+  [startBtn,stopBtn,clearBtn,refreshBtn].forEach(function(btn){
+    if(!btn) return;
+    btn.classList.toggle('disabled',!!btn.disabled);
+  });
+
+  setAnchorDisabled('btn-telemetry-export-csv',!available || !hasData,telemetryUsesUsb()?'#':'/api/telemetry/export.csv');
+  setAnchorDisabled('btn-telemetry-export-json',!available || !hasData,telemetryUsesUsb()?'#':'/api/telemetry/export.json');
+  updateTelemetryAvailabilityNote();
+  updateTelemetryLayout();
+}
+
+function getTelemetryColor(varName,fallback){
+  var value=getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return value||fallback||'#ffffff';
+}
+
+function getSelectedTelemetryTraces(){
+  return TELEMETRY_TRACE_DEFS.filter(function(def){
+    var el=document.getElementById(def.id);
+    return !!(el && el.checked);
+  });
+}
+
+function getTelemetryBandRange(samples,index,fallbackMin,fallbackMax){
+  var min=Infinity;
+  var max=-Infinity;
+  samples.forEach(function(sample){
+    if(!sample) return;
+    var value=Number(sample[index]);
+    if(!isFinite(value)) return;
+    if(value<min) min=value;
+    if(value>max) max=value;
+  });
+  if(!isFinite(min) || !isFinite(max)){
+    return {min:fallbackMin,max:fallbackMax};
+  }
+  if(max===min){
+    if(max===0){
+      max=1;
+    }else{
+      var delta=Math.max(1,Math.abs(max)*0.1);
+      min=Math.max(0,min-delta);
+      max=max+delta;
+    }
+  }else{
+    var pad=(max-min)*0.12;
+    min=Math.max(0,min-pad);
+    max=max+pad;
+  }
+  return {min:min,max:max};
+}
+
+function drawTelemetryLine(ctx,samples,def,plotLeft,plotWidth,timeMin,timeMax,bandTop,bandHeight,range){
+  if(!samples.length) return;
+  var span=Math.max(1,timeMax-timeMin);
+  var color=getTelemetryColor(def.colorVar,'#ffffff');
+  ctx.beginPath();
+  var started=false;
+  for(var i=0;i<samples.length;i++){
+    var sample=samples[i];
+    var value=Number(sample[def.index]);
+    if(!isFinite(value)) continue;
+    var t=Number(sample[TELEMETRY_FIELDS.TIME_MS]||0);
+    var x=plotLeft+(((t-timeMin)/span)*plotWidth);
+    var norm=(value-range.min)/(range.max-range.min||1);
+    var y=bandTop+bandHeight-(norm*bandHeight);
+    if(!started){
+      ctx.moveTo(x,y);
+      started=true;
+    }else{
+      ctx.lineTo(x,y);
+    }
+  }
+  if(!started) return;
+  ctx.strokeStyle=color;
+  ctx.lineWidth=2;
+  ctx.lineJoin='round';
+  ctx.lineCap='round';
+  ctx.stroke();
+}
+
+function drawTelemetryBandFrame(ctx,title,plotLeft,plotWidth,bandTop,bandHeight,gridColor,axisColor,minLabel,maxLabel){
+  ctx.strokeStyle=gridColor;
+  ctx.lineWidth=1;
+  ctx.strokeRect(plotLeft,bandTop,plotWidth,bandHeight);
+
+  ctx.beginPath();
+  ctx.moveTo(plotLeft,bandTop+(bandHeight/2));
+  ctx.lineTo(plotLeft+plotWidth,bandTop+(bandHeight/2));
+  ctx.stroke();
+
+  ctx.save();
+  ctx.fillStyle=axisColor;
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  ctx.textAlign='left';
+  ctx.textBaseline='bottom';
+  ctx.fillText(title,plotLeft,bandTop-4);
+
+  ctx.textAlign='right';
+  ctx.textBaseline='top';
+  ctx.fillText(String(maxLabel),plotLeft-10,bandTop+2);
+  ctx.fillText(String(minLabel),plotLeft-10,bandTop+bandHeight-14);
+  ctx.restore();
+}
+
+function drawTelemetryEvents(ctx,plotLeft,plotWidth,timeMin,timeMax,plotTop,plotBottom){
+  if(!Array.isArray(telemetryEvents) || !telemetryEvents.length) return;
+
+  var span=Math.max(1,timeMax-timeMin);
+  var selectColor=getTelemetryColor('--trace-output','#ff9f43');
+  var changeColor=getTelemetryColor('--trace-brake','#ff6b6b');
+  var chipBg=getTelemetryColor('--telemetry-chip-bg','#eef4ff');
+  var chipBorder=getTelemetryColor('--telemetry-chip-border','#bfd0ea');
+  var chipText=getTelemetryColor('--telemetry-axis','#5b6d88');
+  var lastLabelRight=-Infinity;
+
+  ctx.save();
+  ctx.font='11px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+
+  telemetryEvents.forEach(function(event,idx){
+    if(!event) return;
+    var t=Number(event.tMs||0);
+    if(!isFinite(t) || t<timeMin || t>timeMax) return;
+
+    var x=plotLeft+(((t-timeMin)/span)*plotWidth);
+    var color=(event.type===TELEMETRY_EVENT_CAR_SELECT)?selectColor:changeColor;
+
+    ctx.save();
+    ctx.strokeStyle=color;
+    ctx.fillStyle=color;
+    ctx.globalAlpha=0.85;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(x,plotTop);
+    ctx.lineTo(x,plotBottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(x,plotTop+6,3,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    var label=telemetryBuildEventLabel(event);
+    if(!label) return;
+    if(label.length>28) label=label.slice(0,27)+'...';
+
+    var textWidth=ctx.measureText(label).width;
+    var boxWidth=textWidth+10;
+    var boxHeight=16;
+    var boxLeft=Math.max(plotLeft,Math.min(x+6,plotLeft+plotWidth-boxWidth));
+    var boxTop=plotTop+12+((idx%2)*18);
+
+    if(boxLeft<(lastLabelRight+10)) return;
+    lastLabelRight=boxLeft+boxWidth;
+
+    ctx.save();
+    ctx.globalAlpha=0.96;
+    ctx.fillStyle=chipBg;
+    ctx.strokeStyle=chipBorder;
+    ctx.lineWidth=1;
+    ctx.fillRect(boxLeft,boxTop,boxWidth,boxHeight);
+    ctx.strokeRect(boxLeft,boxTop,boxWidth,boxHeight);
+    ctx.fillStyle=chipText;
+    ctx.textAlign='left';
+    ctx.textBaseline='middle';
+    ctx.fillText(label,boxLeft+5,boxTop+(boxHeight/2)+0.5);
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+function drawTelemetryPlot(){
+  var canvas=document.getElementById('telemetry-canvas');
+  var empty=document.getElementById('telemetry-empty');
+  if(!canvas || !empty) return;
+
+  var selected=getSelectedTelemetryTraces();
+  if(!telemetrySamples.length){
+    empty.style.display='flex';
+    empty.textContent=telemetryAvailable()?'Start logging to see live traces here.':telemetryUnavailableText();
+    return;
+  }
+  if(!selected.length){
+    empty.style.display='flex';
+    empty.textContent='Select at least one trace to plot.';
+    return;
+  }
+  empty.style.display='none';
+
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  var width=Math.max(320,Math.round(rect.width||canvas.clientWidth||960));
+  var height=Math.max(280,Math.round(rect.height||320));
+  if(canvas.width!==Math.round(width*dpr) || canvas.height!==Math.round(height*dpr)){
+    canvas.width=Math.round(width*dpr);
+    canvas.height=Math.round(height*dpr);
+  }
+
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle=getTelemetryColor('--telemetry-plot-bg','#101820');
+  ctx.fillRect(0,0,width,height);
+
+  var timeMin=Number(telemetrySamples[0][TELEMETRY_FIELDS.TIME_MS]||0);
+  var timeMax=Number(telemetrySamples[telemetrySamples.length-1][TELEMETRY_FIELDS.TIME_MS]||0);
+  if(timeMax<=timeMin) timeMax=timeMin+1000;
+
+  var pctDefs=selected.filter(function(def){ return def.band==='pct'; });
+  var vinDefs=selected.filter(function(def){ return def.band==='vin'; });
+  var currentDefs=selected.filter(function(def){ return def.band==='current'; });
+
+  var axisColor=getTelemetryColor('--telemetry-axis','#76869d');
+  var gridColor=getTelemetryColor('--telemetry-grid','#2c3f5c');
+  var vinRange=getTelemetryBandRange(telemetrySamples,TELEMETRY_FIELDS.VIN_MV,0,1000);
+  var currentRange=getTelemetryBandRange(telemetrySamples,TELEMETRY_FIELDS.CURRENT_MA,0,1000);
+  var vinMinLabel=formatTelemetryVoltageAxisLabel(vinRange.min);
+  var vinMaxLabel=formatTelemetryVoltageAxisLabel(vinRange.max);
+  var currentMinLabel=String(Math.round(currentRange.min));
+  var currentMaxLabel=String(Math.round(currentRange.max));
+
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  var labelWidth=Math.max(
+    ctx.measureText('100').width,
+    ctx.measureText(vinMinLabel).width,
+    ctx.measureText(vinMaxLabel).width,
+    ctx.measureText(currentMinLabel).width,
+    ctx.measureText(currentMaxLabel).width
+  );
+
+  var plotLeft=Math.max(58,Math.ceil(labelWidth)+22);
+  var plotRight=18;
+  var top=20;
+  var bottom=28;
+  var gap=24;
+  var plotWidth=Math.max(10,width-plotLeft-plotRight);
+  var usableHeight=Math.max(120,height-top-bottom-(gap*2));
+  var pctHeight=Math.max(92,Math.round(usableHeight*0.46));
+  var vinHeight=Math.max(56,Math.round(usableHeight*0.22));
+  var currentHeight=Math.max(56,usableHeight-pctHeight-vinHeight);
+  var pctTop=top;
+  var vinTop=pctTop+pctHeight+gap;
+  var currentTop=vinTop+vinHeight+gap;
+
+  drawTelemetryBandFrame(ctx,'Throttle / Output / Brake (%)',plotLeft,plotWidth,pctTop,pctHeight,gridColor,axisColor,'0','100');
+  drawTelemetryBandFrame(ctx,'VIN (V)',plotLeft,plotWidth,vinTop,vinHeight,gridColor,axisColor,vinMinLabel,vinMaxLabel);
+  drawTelemetryBandFrame(ctx,'Current (mA)',plotLeft,plotWidth,currentTop,currentHeight,gridColor,axisColor,currentMinLabel,currentMaxLabel);
+
+  pctDefs.forEach(function(def){
+    drawTelemetryLine(ctx,telemetrySamples,def,plotLeft,plotWidth,timeMin,timeMax,pctTop,pctHeight,{min:0,max:100});
+  });
+  vinDefs.forEach(function(def){
+    drawTelemetryLine(ctx,telemetrySamples,def,plotLeft,plotWidth,timeMin,timeMax,vinTop,vinHeight,vinRange);
+  });
+  currentDefs.forEach(function(def){
+    drawTelemetryLine(ctx,telemetrySamples,def,plotLeft,plotWidth,timeMin,timeMax,currentTop,currentHeight,currentRange);
+  });
+
+  drawTelemetryEvents(ctx,plotLeft,plotWidth,timeMin,timeMax,pctTop,currentTop+currentHeight);
+
+  ctx.fillStyle=axisColor;
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  ctx.textBaseline='top';
+  ctx.textAlign='left';
+  ctx.fillText((timeMin/1000).toFixed(1)+' s',plotLeft,height-20);
+  ctx.textAlign='center';
+  ctx.fillText((((timeMin+timeMax)/2)/1000).toFixed(1)+' s',plotLeft+(plotWidth/2),height-20);
+  ctx.textAlign='right';
+  ctx.fillText((timeMax/1000).toFixed(1)+' s',plotLeft+plotWidth,height-20);
+}
+
+function formatLapDuration(ms){
+  var n=Number(ms||0);
+  if(!isFinite(n) || n<=0) return '-';
+  return (n/1000).toFixed(3)+' s';
+}
+
+function lapOverlayGetSelectedTraces(){
+  return LAP_TRACE_DEFS.filter(function(def){
+    var el=document.getElementById(def.id);
+    return !!(el && el.checked);
+  });
+}
+
+function lapOverlayHighlightBestEnabled(){
+  var el=document.getElementById('lap-highlight-best');
+  return !el || el.getAttribute('aria-pressed')!=='false';
+}
+
+function lapOverlayHighlightLastEnabled(){
+  var el=document.getElementById('lap-highlight-last');
+  return !el || el.getAttribute('aria-pressed')!=='false';
+}
+
+function lapOverlayReadConfig(){
+  function readNumber(id,fallback){
+    var el=document.getElementById(id);
+    var n=Number(el && el.value!=null ? el.value : fallback);
+    return isFinite(n)?n:fallback;
+  }
+  return {
+    thresholdPct:Math.min(100,Math.max(60,readNumber('lap-threshold',92))),
+    minHoldMs:Math.min(5000,Math.max(80,readNumber('lap-hold',250))),
+    minLapMs:Math.min(30000,Math.max(500,readNumber('lap-min',5000))),
+    matchPct:Math.min(100,Math.max(40,readNumber('lap-match',75)))
+  };
+}
+
+function lapOverlayPickNumber(obj,keys,fallback){
+  for(var i=0;i<keys.length;i++){
+    var value=obj ? obj[keys[i]] : undefined;
+    if(value==null) continue;
+    var n=Number(value);
+    if(isFinite(n)) return n;
+  }
+  return Number(fallback||0);
+}
+
+function lapOverlayNormalizeSample(raw){
+  if(Array.isArray(raw)){
+    return {
+      seq:Number(raw[TELEMETRY_FIELDS.SEQ]||0),
+      tMs:Number(raw[TELEMETRY_FIELDS.TIME_MS]||0),
+      triggerPct:Number(raw[TELEMETRY_FIELDS.TRIGGER]||0),
+      outputPct:Number(raw[TELEMETRY_FIELDS.OUTPUT]||0),
+      vinMv:Number(raw[TELEMETRY_FIELDS.VIN_MV]||0),
+      currentMa:Number(raw[TELEMETRY_FIELDS.CURRENT_MA]||0),
+      brakePct:Number(raw[TELEMETRY_FIELDS.BRAKE]||0),
+      sensiHalfPct:Number(raw[TELEMETRY_FIELDS.SENSI_HALF]||0),
+      carIndex:Number(raw[TELEMETRY_FIELDS.CAR]||0),
+      releaseMode:Number(raw[TELEMETRY_FIELDS.RELEASE_MODE]||0),
+      flags:Number(raw[TELEMETRY_FIELDS.FLAGS]||0)
+    };
+  }
+  if(!raw || typeof raw!=='object') return null;
+  return {
+    seq:lapOverlayPickNumber(raw,['seq'],0),
+    tMs:lapOverlayPickNumber(raw,['tMs','t_ms','timeMs'],0),
+    triggerPct:lapOverlayPickNumber(raw,['triggerPct','trigger_pct'],0),
+    outputPct:lapOverlayPickNumber(raw,['outputPct','output_pct'],0),
+    vinMv:lapOverlayPickNumber(raw,['vinMv','vin_mV','vinMv'],0),
+    currentMa:lapOverlayPickNumber(raw,['currentMa','current_mA'],0),
+    brakePct:lapOverlayPickNumber(raw,['brakePct','brake_pct'],0),
+    sensiHalfPct:lapOverlayPickNumber(raw,['sensiHalfPct','sensi_halfPct'],0),
+    carIndex:lapOverlayPickNumber(raw,['carIndex','car_index'],0),
+    releaseMode:lapOverlayPickNumber(raw,['releaseMode','release_mode'],0),
+    flags:lapOverlayPickNumber(raw,['flags'],0)
+  };
+}
+
+function lapOverlayNormalizeSamples(rawSamples){
+  if(!Array.isArray(rawSamples)) return [];
+  return rawSamples.map(lapOverlayNormalizeSample).filter(function(sample){
+    return sample && isFinite(sample.tMs);
+  }).sort(function(a,b){ return a.tMs-b.tMs; });
+}
+
+function lapOverlayUpdateSummary(){
+  var sourceEl=document.getElementById('lap-source');
+  var countEl=document.getElementById('lap-count');
+  var bestEl=document.getElementById('lap-best');
+  var avgEl=document.getElementById('lap-avg');
+  var detectorEl=document.getElementById('lap-detector');
+  var timesEl=document.getElementById('lap-times');
+  updateLapOverlayLayout();
+  if(!sourceEl || !countEl || !bestEl || !avgEl || !detectorEl || !timesEl) return;
+
+  var cfg=lapOverlayReadConfig();
+  sourceEl.textContent=lapOverlaySourceName||'None';
+  countEl.textContent=String(lapOverlayLaps.length||0);
+  detectorEl.textContent='>='+String(Math.round(cfg.thresholdPct))+'%T for '+String(Math.round(cfg.minHoldMs))+' ms';
+
+  if(!lapOverlayLaps.length){
+    bestEl.textContent='-';
+    avgEl.textContent='-';
+    timesEl.innerHTML='';
+    return;
+  }
+
+  var best=lapOverlayLaps[0];
+  var total=0;
+  lapOverlayLaps.forEach(function(lap){
+    total+=lap.durationMs;
+    if(lap.durationMs<best.durationMs) best=lap;
+  });
+  bestEl.textContent=formatLapDuration(best.durationMs);
+  avgEl.textContent=formatLapDuration(total/lapOverlayLaps.length);
+
+  timesEl.innerHTML=lapOverlayLaps.map(function(lap){
+    var label='Lap '+String(lap.index);
+    if(lap.durationMs===best.durationMs) label+=' (best)';
+    return '<div class="lap-chip"><b>'+esc(label)+'</b><span>'+esc(formatLapDuration(lap.durationMs))+'</span></div>';
+  }).join('');
+}
+
+function updateLapOverlayLayout(){
+  var panel=document.querySelector('.lap-panel');
+  if(!panel) return;
+  panel.classList.toggle('lap-compact',!lapOverlaySamples.length);
+}
+
+function lapOverlayRefreshFromCurrentTelemetry(silent){
+  if(lapOverlaySourceKind!==LAP_OVERLAY_SOURCE_CURRENT) return;
+  lapOverlaySourceName='Current telemetry buffer';
+  if(!telemetrySamples.length){
+    lapOverlaySamples=[];
+    lapOverlayEvents=[];
+    lapOverlayLaps=[];
+    lapOverlayLastError='';
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent) ss('lapst','err','Current telemetry buffer is empty');
+    return;
+  }
+  lapOverlaySamples=lapOverlayNormalizeSamples(telemetrySamples);
+  lapOverlayEvents=Array.isArray(telemetryEvents)?telemetryEvents.slice():[];
+  lapOverlayAnalyze(!!silent);
+}
+
+function lapOverlayBuildSegments(samples,cfg){
+  var segments=[];
+  var startIdx=-1;
+
+  function pushSegment(endIdx){
+    if(startIdx<0 || endIdx<=startIdx) return;
+    var startSample=samples[startIdx];
+    var endSample=samples[endIdx];
+    var duration=endSample.tMs-startSample.tMs;
+    if(duration<cfg.minHoldMs) return;
+    segments.push({
+      startMs:startSample.tMs,
+      endMs:endSample.tMs,
+      midMs:startSample.tMs+(duration/2),
+      durationMs:duration
+    });
+  }
+
+  for(var i=0;i<samples.length;i++){
+    var active=Number(samples[i].triggerPct||0)>=cfg.thresholdPct;
+    if(active && startIdx<0){
+      startIdx=i;
+    }else if(!active && startIdx>=0){
+      pushSegment(i-1);
+      startIdx=-1;
+    }
+  }
+  if(startIdx>=0) pushSegment(samples.length-1);
+  return segments;
+}
+
+function lapOverlaySelectMarkers(segments,cfg){
+  if(!segments.length) return [];
+  var maxDuration=segments.reduce(function(max,seg){ return Math.max(max,seg.durationMs); },0);
+  var cutoff=maxDuration*(cfg.matchPct/100);
+  var preferred=segments.filter(function(seg){ return seg.durationMs>=cutoff; });
+  var source=preferred.length>=2?preferred:segments.slice().sort(function(a,b){ return b.durationMs-a.durationMs; });
+  if(source!==preferred) source=source.slice(0,Math.min(32,source.length)).sort(function(a,b){ return a.midMs-b.midMs; });
+
+  var markers=[];
+  source.forEach(function(seg){
+    if(!markers.length){
+      markers.push(seg);
+      return;
+    }
+    var last=markers[markers.length-1];
+    if((seg.midMs-last.midMs)>=cfg.minLapMs){
+      markers.push(seg);
+    }else if(seg.durationMs>last.durationMs){
+      markers[markers.length-1]=seg;
+    }
+  });
+  return markers.map(function(seg){ return seg.midMs; });
+}
+
+function lapOverlayBuildLaps(samples,markers,cfg){
+  var laps=[];
+  for(var i=0;i<markers.length-1;i++){
+    var startMs=markers[i];
+    var endMs=markers[i+1];
+    var duration=endMs-startMs;
+    if(duration<cfg.minLapMs) continue;
+    var points=samples.filter(function(sample){
+      return sample.tMs>=startMs && sample.tMs<=endMs;
+    }).map(function(sample){
+      return {
+        progress:(sample.tMs-startMs)/Math.max(1,duration),
+        tMs:sample.tMs,
+        triggerPct:sample.triggerPct,
+        outputPct:sample.outputPct,
+        brakePct:sample.brakePct,
+        currentMa:sample.currentMa
+      };
+    });
+    if(points.length<8) continue;
+    laps.push({
+      index:laps.length+1,
+      startMs:startMs,
+      endMs:endMs,
+      durationMs:duration,
+      points:points
+    });
+  }
+  return laps;
+}
+
+function lapOverlayAnalyze(silent){
+  if(!lapOverlaySamples.length){
+    lapOverlayLaps=[];
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent) ss('lapst','err','Load telemetry first');
+    return;
+  }
+
+  try{
+    var cfg=lapOverlayReadConfig();
+    var segments=lapOverlayBuildSegments(lapOverlaySamples,cfg);
+    var markers=lapOverlaySelectMarkers(segments,cfg);
+    lapOverlayLaps=lapOverlayBuildLaps(lapOverlaySamples,markers,cfg);
+    lapOverlayLastError='';
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent){
+      if(lapOverlayLaps.length){
+        ss('lapst','ok','Built '+lapOverlayLaps.length+' laps from '+markers.length+' markers');
+      }else{
+        ss('lapst','err','No complete laps detected. Try lower threshold or shorter minimum hold.');
+      }
+    }
+  }catch(e){
+    lapOverlayLaps=[];
+    lapOverlayLastError=(e&&e.message)?e.message:String(e||'Lap analysis failed');
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent) ss('lapst','err',lapOverlayLastError);
+  }
+}
+
+async function lapOverlayUseCurrentTelemetry(){
+  lapOverlaySourceKind=LAP_OVERLAY_SOURCE_CURRENT;
+  if(!telemetrySamples.length && telemetryAvailable()){
+    try{
+      await syncTelemetryHistory(true,true);
+    }catch(_){}
+  }
+  lapOverlayRefreshFromCurrentTelemetry(false);
+  if(telemetryAvailable()){
+    ss('lapst','ok','Using current telemetry buffer. Lap Overlay will update live while telemetry runs.');
+  }
+}
+
+async function lapOverlayImportFile(file){
+  if(!file) return;
+  var text=await file.text();
+  var json=JSON.parse(text);
+  var samples=lapOverlayNormalizeSamples(json && json.samples);
+  if(!samples.length){
+    throw new Error('No telemetry samples found in JSON');
+  }
+  lapOverlaySourceKind=LAP_OVERLAY_SOURCE_IMPORT;
+  lapOverlaySourceName=file.name||'Imported telemetry';
+  lapOverlaySamples=samples;
+  lapOverlayEvents=Array.isArray(json.events)?json.events:[];
+  lapOverlayAnalyze(false);
+}
+
+function lapOverlayClear(){
+  lapOverlaySourceKind=LAP_OVERLAY_SOURCE_NONE;
+  lapOverlaySourceName='';
+  lapOverlaySamples=[];
+  lapOverlayEvents=[];
+  lapOverlayLaps=[];
+  lapOverlayLastError='';
+  var input=document.getElementById('lap-file');
+  if(input) input.value='';
+  lapOverlayUpdateSummary();
+  drawLapOverlayPlot();
+  var status=document.getElementById('lapst');
+  if(status) status.style.display='none';
+}
+
+function lapOverlayGetBandRange(key,fallbackMin,fallbackMax){
+  var min=Infinity;
+  var max=-Infinity;
+  lapOverlayLaps.forEach(function(lap){
+    (lap.points||[]).forEach(function(point){
+      var value=Number(point[key]);
+      if(!isFinite(value)) return;
+      if(value<min) min=value;
+      if(value>max) max=value;
+    });
+  });
+  if(!isFinite(min) || !isFinite(max)) return {min:fallbackMin,max:fallbackMax};
+  if(max===min){
+    max=max===0?1:max*1.1;
+    min=Math.max(0,min-(Math.abs(max)*0.1));
+  }else{
+    var pad=(max-min)*0.12;
+    min=Math.max(0,min-pad);
+    max=max+pad;
+  }
+  return {min:min,max:max};
+}
+
+function drawLapOverlayTrace(ctx,laps,def,plotLeft,plotWidth,bandTop,bandHeight,range){
+  if(!laps.length) return;
+  var bestLap=laps.reduce(function(best,lap){
+    return (!best || lap.durationMs<best.durationMs)?lap:best;
+  },null);
+  var lastLap=laps[laps.length-1]||null;
+  var highlightBest=lapOverlayHighlightBestEnabled();
+  var highlightLast=lapOverlayHighlightLastEnabled();
+  laps.forEach(function(lap){
+    var points=lap.points||[];
+    if(points.length<2) return;
+    var isBest=(highlightBest && lap===bestLap);
+    var isLast=(highlightLast && lap===lastLap);
+    ctx.save();
+    ctx.beginPath();
+    var started=false;
+    points.forEach(function(point){
+      var value=Number(point[def.key]);
+      if(!isFinite(value)) return;
+      var x=plotLeft+(Math.max(0,Math.min(1,Number(point.progress||0)))*plotWidth);
+      var norm=(value-range.min)/(range.max-range.min||1);
+      var y=bandTop+bandHeight-(norm*bandHeight);
+      if(!started){
+        ctx.moveTo(x,y);
+        started=true;
+      }else{
+        ctx.lineTo(x,y);
+      }
+    });
+    if(started){
+      ctx.strokeStyle=getTelemetryColor(def.colorVar,'#ffffff');
+      if(isLast && !isBest) ctx.setLineDash([7,4]);
+      ctx.lineWidth=isBest?2.8:(isLast?2.2:1.4);
+      ctx.globalAlpha=isBest?0.98:(isLast?0.9:Math.max(0.12,0.55/Math.max(1,laps.length-1)));
+      ctx.lineJoin='round';
+      ctx.lineCap='round';
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
+
+function drawLapOverlayPlot(){
+  var canvas=document.getElementById('lap-canvas');
+  var empty=document.getElementById('lap-empty');
+  if(!canvas || !empty) return;
+
+  var selected=lapOverlayGetSelectedTraces();
+  if(!lapOverlaySamples.length){
+    empty.style.display='flex';
+    empty.textContent=(lapOverlaySourceKind===LAP_OVERLAY_SOURCE_CURRENT)?
+      'Current telemetry buffer is empty. Start logging first, then try Use Current Telemetry again.':
+      'Import a telemetry JSON file or use the current telemetry buffer to build lap overlays.';
+    return;
+  }
+  if(!lapOverlayLaps.length){
+    empty.style.display='flex';
+    empty.textContent=lapOverlayLastError||'No laps detected yet. Try lower threshold or shorter straight-hold time.';
+    return;
+  }
+  if(!selected.length){
+    empty.style.display='flex';
+    empty.textContent='Select at least one lap trace to plot.';
+    return;
+  }
+  empty.style.display='none';
+
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  var width=Math.max(320,Math.round(rect.width||canvas.clientWidth||960));
+  var height=Math.max(300,Math.round(rect.height||340));
+  if(canvas.width!==Math.round(width*dpr) || canvas.height!==Math.round(height*dpr)){
+    canvas.width=Math.round(width*dpr);
+    canvas.height=Math.round(height*dpr);
+  }
+
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle=getTelemetryColor('--telemetry-plot-bg','#101820');
+  ctx.fillRect(0,0,width,height);
+
+  var axisColor=getTelemetryColor('--telemetry-axis','#76869d');
+  var gridColor=getTelemetryColor('--telemetry-grid','#2c3f5c');
+  var currentRange=lapOverlayGetBandRange('currentMa',0,1000);
+  var currentMinLabel=String(Math.round(currentRange.min));
+  var currentMaxLabel=String(Math.round(currentRange.max));
+
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  var labelWidth=Math.max(
+    ctx.measureText('100').width,
+    ctx.measureText(currentMinLabel).width,
+    ctx.measureText(currentMaxLabel).width
+  );
+
+  var plotLeft=Math.max(58,Math.ceil(labelWidth)+22);
+  var plotRight=18;
+  var top=20;
+  var bottom=28;
+  var gap=24;
+  var plotWidth=Math.max(10,width-plotLeft-plotRight);
+  var usableHeight=Math.max(120,height-top-bottom-gap);
+  var pctHeight=Math.max(120,Math.round(usableHeight*0.64));
+  var currentHeight=Math.max(72,usableHeight-pctHeight);
+  var pctTop=top;
+  var currentTop=pctTop+pctHeight+gap;
+
+  drawTelemetryBandFrame(ctx,'Lap Overlay: Throttle / Output / Brake (%)',plotLeft,plotWidth,pctTop,pctHeight,gridColor,axisColor,'0','100');
+  drawTelemetryBandFrame(ctx,'Current (mA)',plotLeft,plotWidth,currentTop,currentHeight,gridColor,axisColor,currentMinLabel,currentMaxLabel);
+
+  selected.filter(function(def){ return def.band==='pct'; }).forEach(function(def){
+    drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,pctTop,pctHeight,{min:0,max:100});
+  });
+  selected.filter(function(def){ return def.band==='current'; }).forEach(function(def){
+    drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,currentTop,currentHeight,currentRange);
+  });
+
+  ctx.fillStyle=axisColor;
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  ctx.textBaseline='top';
+  ctx.textAlign='left';
+  ctx.fillText('0%',plotLeft,height-20);
+  ctx.textAlign='center';
+  ctx.fillText('50%',plotLeft+(plotWidth/2),height-20);
+  ctx.textAlign='right';
+  ctx.fillText('100%',plotLeft+plotWidth,height-20);
+}
+
+function initLapOverlayUi(){
+  LAP_TRACE_DEFS.forEach(function(def){
+    var el=document.getElementById(def.id);
+    if(!el) return;
+    el.addEventListener('change',drawLapOverlayPlot);
+  });
+
+  ['lap-highlight-best','lap-highlight-last'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('click',function(){
+      var pressed=(el.getAttribute('aria-pressed')!=='false');
+      el.setAttribute('aria-pressed',pressed?'false':'true');
+      drawLapOverlayPlot();
+    });
+  });
+
+  ['lap-threshold','lap-hold','lap-min','lap-match'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('change',function(){
+      lapOverlayUpdateSummary();
+      if(lapOverlaySamples.length) lapOverlayAnalyze(true);
+      else drawLapOverlayPlot();
+    });
+  });
+
+  var fileInput=document.getElementById('lap-file');
+  if(fileInput){
+    fileInput.addEventListener('change',async function(){
+      var file=fileInput.files && fileInput.files[0];
+      if(!file) return;
+      try{
+        await lapOverlayImportFile(file);
+      }catch(e){
+        lapOverlaySourceKind=LAP_OVERLAY_SOURCE_NONE;
+        lapOverlaySourceName='';
+        lapOverlaySamples=[];
+        lapOverlayEvents=[];
+        lapOverlayLaps=[];
+        lapOverlayLastError=(e&&e.message)?e.message:String(e||'Import failed');
+        lapOverlayUpdateSummary();
+        drawLapOverlayPlot();
+        ss('lapst','err',lapOverlayLastError);
+      }
+    });
+  }
+
+  lapOverlayUpdateSummary();
+  drawLapOverlayPlot();
+}
+
+async function syncTelemetryHistory(reset,silent){
+  if(!telemetryAvailable()){
+    stopTelemetryPolling();
+    telemetryStatus=null;
+    telemetrySamples=[];
+    telemetryEvents=[];
+    telemetryAfterSeq=0;
+    telemetrySessionId=0;
+    telemetryLastError='';
+    lapOverlayRefreshFromCurrentTelemetry(true);
+    updateTelemetryUiState();
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    return;
+  }
+  if(telemetryFetchBusy) return;
+
+  telemetryFetchBusy=true;
+  if(!silent) telemetryUiBusy=true;
+  updateTelemetryUiState();
+
+  try{
+    if(reset){
+      telemetrySamples=[];
+      telemetryEvents=[];
+      telemetryAfterSeq=0;
+      telemetrySessionId=0;
+    }
+
+    var safety=0;
+    while(safety<20){
+      var after=telemetryAfterSeq;
+      var data=await telemetryFetchLiveTransport(after,256);
+
+      if((telemetrySessionId && Number(data.sessionId||0)!==Number(telemetrySessionId)) || (data.truncated && after!==0)){
+        telemetrySamples=[];
+        telemetryAfterSeq=0;
+        telemetrySessionId=0;
+        safety++;
+        continue;
+      }
+
+      if(after===0){
+        telemetrySamples=[];
+      }
+
+      telemetryStatus=data;
+      telemetryEvents=Array.isArray(data.events)?data.events:[];
+      telemetrySessionId=Number(data.sessionId||0);
+      if(Array.isArray(data.samples)){
+        data.samples.forEach(function(sample){
+          telemetrySamples.push(sample);
+          telemetryAfterSeq=Number(sample[TELEMETRY_FIELDS.SEQ]||telemetryAfterSeq);
+        });
+      }
+
+      var maxKeep=Number(data.capacity||3000)+32;
+      if(telemetrySamples.length>maxKeep){
+        telemetrySamples=telemetrySamples.slice(telemetrySamples.length-maxKeep);
+      }
+
+      if(!data.hasMore) break;
+      safety++;
+    }
+
+    telemetryLastError='';
+    lapOverlayRefreshFromCurrentTelemetry(true);
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    if(reset && !silent){
+      ss('tst','ok','Telemetry refreshed');
+    }
+  }catch(e){
+    telemetryLastError=normalizeTelemetryError(e);
+    if(!silent){
+      ss('tst','err',telemetryLastError);
+    }
+  }finally{
+    telemetryFetchBusy=false;
+    if(!silent) telemetryUiBusy=false;
+    updateTelemetryUiState();
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+  }
+}
+
+async function telemetryPostAction(url,successText,resetHistory){
+  if(!telemetryAvailable()){
+    ss('tst','err',telemetryUnavailableText());
+    return;
+  }
+  var hadUsbPolling=telemetryUsesUsb();
+  if(hadUsbPolling){
+    stopTelemetryPolling();
+  }
+  telemetryUiBusy=true;
+  updateTelemetryUiState();
+  try{
+    var data=await telemetryPostTransport(url);
+    telemetryStatus=data;
+    if(resetHistory){
+      telemetrySamples=[];
+      telemetryEvents=[];
+      telemetryAfterSeq=0;
+      telemetrySessionId=0;
+      telemetryConfigSnapshot=null;
+    }
+    telemetryLastError='';
+    updateTelemetryUiState();
+    updateTelemetryMetrics();
+    drawTelemetryPlot();
+    await syncTelemetryHistory(!!resetHistory,true);
+    ss('tst','ok',successText||data.message||'Done');
+  }catch(e){
+    telemetryLastError=normalizeTelemetryError(e);
+    ss('tst','err',telemetryLastError);
+  }finally{
+    telemetryUiBusy=false;
+    updateTelemetryUiState();
+    if(hadUsbPolling){
+      startTelemetryPollingIfAvailable(false);
+    }
+  }
+}
+
+async function telemetryRefresh(){
+  await syncTelemetryHistory(true,false);
+}
+
+async function telemetryStart(){
+  await telemetryPostAction('TSTART','Telemetry logging started',true);
+}
+
+async function telemetryStop(){
+  await telemetryPostAction('TSTOP','Telemetry logging stopped',false);
+}
+
+async function telemetryClear(){
+  await telemetryPostAction('TCLEAR','Telemetry buffer cleared',true);
+}
+
+function initTelemetryUi(){
+  loadTelemetryPollIntervalSetting();
+  TELEMETRY_TRACE_DEFS.forEach(function(def){
+    var el=document.getElementById(def.id);
+    if(!el) return;
+    el.addEventListener('change',drawTelemetryPlot);
+  });
+  var pollSelect=document.getElementById('telemetry-poll-interval');
+  if(pollSelect){
+    pollSelect.addEventListener('change',function(){
+      saveTelemetryPollIntervalSetting(pollSelect.value);
+      if(telemetryAvailable()) startTelemetryPollingIfAvailable(false);
+      ss('tst','ok','Live polling set to '+formatTelemetryPollingIntervalLabel(telemetryPollIntervalMs));
+    });
+  }
+  var exportCsv=document.getElementById('btn-telemetry-export-csv');
+  var exportJson=document.getElementById('btn-telemetry-export-json');
+  if(exportCsv){
+    exportCsv.addEventListener('click',function(e){
+      if(exportCsv.getAttribute('aria-disabled')==='true'){
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      telemetryExport('csv');
+    });
+  }
+  if(exportJson){
+    exportJson.addEventListener('click',function(e){
+      if(exportJson.getAttribute('aria-disabled')==='true'){
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      telemetryExport('json');
+    });
+  }
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  drawTelemetryPlot();
+  startTelemetryPollingIfAvailable(false);
 }
 
 function otaUpdateUnavailableReason(label){
@@ -1033,19 +3449,27 @@ function setUsbReadyState(ready,msg){
   updateDocsLinkState();
   updateFirmwareUiState();
   updateReleaseInfoUi();
+  if(usbReady) startTelemetryPollingIfAvailable(true);
+  else if(infoLoadedFromApi) startTelemetryPollingIfAvailable(false);
+  else stopTelemetryPolling();
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  scheduleTelemetryPlotRedraw();
   if(msg){ss('ust',usbReady?'ok':'err',msg);}
 }
 
 async function probeUsbVersion(){
-  _b='';
-  await ws('VERSION\n');
-  var vr=await rl(2000);
-  var vp=vr.split(',');
-  if(vp.length!==2) throw new Error('No command reply');
-  return {
-    deviceId:vp[0]||'',
-    version:(vp[1]||'').replace('v','')
-  };
+  return withUsbCommand(async function(){
+    _b='';
+    await ws('VERSION\n');
+    var vr=await rl(2000);
+    var vp=vr.split(',');
+    if(vp.length!==2) throw new Error('No command reply');
+    return {
+      deviceId:vp[0]||'',
+      version:(vp[1]||'').replace('v','')
+    };
+  });
 }
 
 async function ensureUsbReady(silent){
@@ -1065,16 +3489,27 @@ async function ensureUsbReady(silent){
 }
 
 async function loadInfo(){
+  var apiOk=false;
   try{
     var r=await fetch('/api/info',{cache:'no-store'});
     if(r.ok){
       var j=await r.json();
+      infoLoadedFromApi=true;
+      apiOk=true;
       if(j.deviceId)info.deviceId=j.deviceId;
       if(j.version)info.version=j.version;
       if(j.docsPath)info.docsPath=j.docsPath;
     }
   }catch(_){ }
   applyInfo();
+  if(apiOk){
+    startTelemetryPollingIfAvailable(true);
+  }else{
+    stopTelemetryPolling();
+  }
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  scheduleTelemetryPlotRedraw();
 }
 
 async function pump(){while(usb){try{var o=await _r.read();if(o.done)break;_b+=D.decode(o.value);}catch(_){break;}}}
@@ -1107,6 +3542,7 @@ async function ws(s){
 async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
   usb=false;
   usbReady=false;
+  telemetryConfigSnapshot=null;
   updateDocsLinkState();
   if(_r){try{await _r.cancel();}catch(_){}}
   _r=null;
@@ -1122,6 +3558,21 @@ async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
   }
   updateFirmwareUiState();
   updateReleaseInfoUi();
+  if(!infoLoadedFromApi){
+    stopTelemetryPolling();
+    telemetryStatus=null;
+    telemetrySamples=[];
+    telemetryEvents=[];
+    telemetryAfterSeq=0;
+    telemetrySessionId=0;
+    telemetryLastError='';
+    lapOverlayRefreshFromCurrentTelemetry(true);
+  }else{
+    startTelemetryPollingIfAvailable(true);
+  }
+  updateTelemetryUiState();
+  updateTelemetryMetrics();
+  scheduleTelemetryPlotRedraw();
   if(showStatus && statusMsg){ss('ust',statusType||'ok',statusMsg);}
 }
 
@@ -1178,10 +3629,7 @@ async function doBackup(statusId){
   }
   ss(statusId,'','Reading backup...');
   try{
-    if(!(await ensureUsbReady(false))) return;
-    _b='';
-    await ws('BACKUP\n');
-    var j=await rb(parseInt(await rl(),10));
+    var j=await usbReadTextResponse('BACKUP',15000,120000);
     var a2=document.createElement('a');
     a2.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));
     a2.download=fn;
@@ -1189,19 +3637,68 @@ async function doBackup(statusId){
     markBackupDownloadedThisSession();
     ss(statusId,'ok','Backup downloaded');
   }catch(e){
-    usbReady=false;
+    setUsbReadyState(false,'');
     ss(statusId,'err',e.message+' - retry USB connect');
   }
 }
 
-async function usbReadJsonResponse(cmd,waitMs){
+async function usbReadTextResponse(cmd,waitMs,maxLen){
   if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
-  _b='';
-  await ws(cmd+'\n');
-  var len=parseInt(await rl(waitMs||5000),10);
-  if(isNaN(len) || len<0 || len>20000) throw new Error('Invalid response length');
-  var data=await rb(len,Math.max(waitMs||5000,15000));
-  return JSON.parse(data);
+  return withUsbCommand(async function(){
+    _b='';
+    await ws(cmd+'\n');
+    var len=parseInt(await rl(waitMs||5000),10);
+    var hardLimit=maxLen||20000;
+    if(isNaN(len) || len<0 || len>hardLimit) throw new Error('Invalid response length');
+    return await rb(len,Math.max(waitMs||5000,15000));
+  });
+}
+
+async function usbReadJsonResponse(cmd,waitMs,maxLen){
+  return JSON.parse(await usbReadTextResponse(cmd,waitMs,maxLen||20000));
+}
+
+async function usbApplyEditorPayload(payloadText,saveAfter){
+  if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
+  return withUsbCommand(async function(){
+    var payloadBytes=E.encode(payloadText||'{}');
+    _b='';
+    await ws('APPLY\n'+payloadBytes.length+'\n');
+    var w=port.writable.getWriter();
+    try{await w.write(payloadBytes);}finally{w.releaseLock();}
+
+    var ack=await rl(10000);
+    if(ack!=='OK'){
+      if(ack.indexOf('ERR:')===0) throw new Error(ack.slice(4));
+      throw new Error('apply failed');
+    }
+    var outLen=parseInt(await rl(10000),10);
+    if(isNaN(outLen) || outLen<0 || outLen>20000) throw new Error('Invalid APPLY response');
+    var outState=await rb(outLen,15000);
+
+    if(saveAfter){
+      await ws('SAVE\n');
+      var saveResp=await rl(8000);
+      if(saveResp.indexOf('OK')!==0){
+        if(saveResp.indexOf('ERR:')===0) throw new Error(saveResp.slice(4));
+        throw new Error('save failed');
+      }
+    }
+
+    return JSON.parse(outState);
+  });
+}
+
+async function usbRestoreBackupJson(payloadText){
+  if(!(await ensureUsbReady(true))) throw new Error('USB command channel not ready');
+  return withUsbCommand(async function(){
+    var payloadBytes=E.encode(payloadText||'');
+    _b='';
+    await ws('RESTORE\n'+payloadBytes.length+'\n');
+    var w=port.writable.getWriter();
+    try{await w.write(payloadBytes);}finally{w.releaseLock();}
+    return await rl(20000);
+  });
 }
 
 function fieldId(prefix,id){return prefix+'_'+id;}
@@ -1245,6 +3742,7 @@ function renderField(prefix,field,val){
 function categorizeGlobalField(id){
   if(id==='selectedCarNumber' || id==='viewMode' || id==='gridCarSelectEnabled' || id==='raceViewMode') return 'Race & Driving';
   if(id==='screensaverTimeout' || id==='powerSaveTimeout' || id==='deepSleepTimeout' || id==='startupDelay') return 'Power & Startup';
+  if(id==='antiSpinStep') return 'Race & Driving';
   if(id==='language' || id==='textCase' || id==='listFontSize') return 'Display & Language';
   if(id==='statusSlot0' || id==='statusSlot1' || id==='statusSlot2' || id==='statusSlot3') return 'Status Slots';
   if(id==='soundBoot' || id==='soundRace') return 'Sound';
@@ -1254,7 +3752,7 @@ function categorizeGlobalField(id){
 
 function categorizeCarField(id){
   if(id==='carName') return 'Profile';
-  if(id==='minSpeed' || id==='maxSpeed' || id==='curveDiff' || id==='antiSpin' || id==='freqPWM') return 'Throttle & Power';
+  if(id==='minSpeed' || id==='maxSpeed' || id==='curveDiff' || id==='fade' || id==='antiSpin' || id==='freqPWM') return 'Throttle & Power';
   if(id==='brake' || id==='brakeButton' || id==='quickBrakeEnabled' || id==='quickBrakeThreshold' || id==='quickBrakeStrength') return 'Braking';
   return 'Other';
 }
@@ -1433,36 +3931,11 @@ async function applyEditor(saveAfter){
     }
 
     if(usb){
-      if(!(await ensureUsbReady(false))) return;
-      var patch=JSON.stringify(payload);
-      var pb=E.encode(patch);
-      _b='';
-      await ws('APPLY\n'+pb.length+'\n');
-      var w=port.writable.getWriter();
-      try{await w.write(pb);}finally{w.releaseLock();}
-
-      var ack=await rl(10000);
-      if(ack!=='OK'){
-        if(ack.indexOf('ERR:')===0) throw new Error(ack.slice(4));
-        throw new Error('apply failed');
-      }
-      var outLen=parseInt(await rl(10000),10);
-      if(isNaN(outLen) || outLen<0 || outLen>20000) throw new Error('Invalid APPLY response');
-      var outState=await rb(outLen,15000);
-      state=JSON.parse(outState);
+      state=await usbApplyEditorPayload(JSON.stringify(payload),saveAfter);
       if(state && state.selectedCarNumber!=null && typeof payload.selectedCarNumber==='number'){
         editorCarIndex=parseInt(state.selectedCarNumber,10);
       }else{
         editorCarIndex=payload.carIndex;
-      }
-
-      if(saveAfter){
-        await ws('SAVE\n');
-        var saveResp=await rl(8000);
-        if(saveResp.indexOf('OK')!==0){
-          if(saveResp.indexOf('ERR:')===0) throw new Error(saveResp.slice(4));
-          throw new Error('save failed');
-        }
       }
     }else{
       var r=await fetch('/api/apply',{
@@ -1488,7 +3961,7 @@ async function applyEditor(saveAfter){
     renderEditor();
     ss('edst','ok',saveAfter?'Applied and saved to flash':'Applied live (RAM only)');
   }catch(e){
-    usbReady=false;
+    if(usb) setUsbReadyState(false,'');
     ss('edst','err','Apply failed: '+e.message);
   }
 }
@@ -1705,16 +4178,10 @@ document.getElementById('uf').onsubmit=async function(e){
     return;
   }
   try{
-    if(!(await ensureUsbReady(false))) return;
-    var j=await f.text(),b=E.encode(j);
-    _b='';
-    await ws('RESTORE\n'+b.length+'\n');
-    var w=port.writable.getWriter();
-    try{await w.write(b);}finally{w.releaseLock();}
-    var resp=await rl(20000);
+    var resp=await usbRestoreBackupJson(await f.text());
     ss('st',resp.indexOf('OK')===0?'ok':'err',resp);
   }catch(x){
-    usbReady=false;
+    setUsbReadyState(false,'');
     ss('st','err',x.message+' - retry USB connect');
   }
 };
@@ -1774,14 +4241,19 @@ document.getElementById('btn-fw-backup-modal-cancel').onclick=function(){
 };
 
 hostedMode=detectHostedMode();
+initThemeControls();
 loadBackupSessionState();
 applyHostedMode();
 updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
+updateDocsLinkState();
+initTelemetryUi();
+initLapOverlayUi();
 if(typeof window!=='undefined'){
   window.addEventListener('online',updateFirmwareUiState);
   window.addEventListener('offline',updateFirmwareUiState);
+  window.addEventListener('resize',scheduleTelemetryPlotRedraw);
 }
 loadInfo();
 loadLatestReleaseInfo();

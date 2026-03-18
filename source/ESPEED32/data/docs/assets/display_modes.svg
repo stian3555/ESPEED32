@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+  <title id="title">Display mode examples</title>
+  <desc id="desc">Mockups of the OLED showing list view and grid race view.</desc>
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: #202020; stroke: #5a5a5a; stroke-width: 8; rx: 32; ry: 32; }
+      .screen { fill: #050505; stroke: #666666; stroke-width: 2; rx: 14; ry: 14; }
+      .title { fill: #222222; font-family: Arial, Helvetica, sans-serif; font-size: 30px; font-weight: 700; }
+      .pixel { fill: #f5f5f5; font-family: "Courier New", Courier, monospace; font-size: 20px; }
+      .pixel-big { fill: #f5f5f5; font-family: "Courier New", Courier, monospace; font-size: 28px; font-weight: 700; text-anchor: middle; }
+      .pixel-dim { fill: #d0d0d0; font-family: "Courier New", Courier, monospace; font-size: 16px; text-anchor: middle; }
+      .inv { fill: #050505; }
+      .inv-bg { fill: #f5f5f5; rx: 4; ry: 4; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="460"/>
+
+  <text class="title" x="290" y="38" text-anchor="middle">LIST VIEW</text>
+  <text class="title" x="870" y="38" text-anchor="middle">GRID / RACE VIEW</text>
+
+  <g transform="translate(70,60)">
+    <rect class="frame" x="0" y="0" width="440" height="300"/>
+    <rect class="screen" x="34" y="32" width="372" height="236"/>
+    <rect class="inv-bg" x="50" y="48" width="340" height="24"/>
+    <text class="pixel inv" x="60" y="66">BRAKE</text>
+    <text class="pixel inv" x="382" y="66" text-anchor="end">95%</text>
+    <text class="pixel" x="50" y="96">SENSI</text>
+    <text class="pixel" x="382" y="96" text-anchor="end">30.0%</text>
+    <text class="pixel" x="50" y="124">ANTIS</text>
+    <text class="pixel" x="382" y="124" text-anchor="end">130ms</text>
+    <text class="pixel" x="50" y="152">CURVE</text>
+    <text class="pixel" x="382" y="152" text-anchor="end">30%</text>
+    <text class="pixel" x="50" y="180">FADE</text>
+    <text class="pixel" x="382" y="180" text-anchor="end">8%</text>
+    <text class="pixel" x="50" y="208">PWM_F</text>
+    <text class="pixel" x="382" y="208" text-anchor="end">4.0k</text>
+
+    <text class="pixel-dim" x="80.5" y="246">42%O</text>
+    <text class="pixel-dim" x="173.5" y="246">18%T</text>
+    <text class="pixel-dim" x="266.5" y="246">CAR1</text>
+    <text class="pixel-dim" x="359.5" y="246">12.4V</text>
+  </g>
+
+  <g transform="translate(650,60)">
+    <rect class="frame" x="0" y="0" width="440" height="300"/>
+    <rect class="screen" x="34" y="32" width="372" height="236"/>
+
+    <text class="pixel" x="127" y="62" text-anchor="middle">BRAKE</text>
+    <text class="pixel" x="313" y="62" text-anchor="middle">SENSI</text>
+    <text class="pixel-big" x="127" y="102">95%</text>
+    <text class="pixel-big" x="313" y="102">30.0%</text>
+
+    <text class="pixel" x="127" y="146" text-anchor="middle">ANTIS</text>
+    <text class="pixel" x="313" y="146" text-anchor="middle">CURVE</text>
+    <text class="pixel-big" x="127" y="186">130ms</text>
+    <text class="pixel-big" x="313" y="186">30%</text>
+
+    <text class="pixel-dim" x="80.5" y="246">42%O</text>
+    <text class="pixel-dim" x="173.5" y="246">18%T</text>
+    <text class="pixel-dim" x="266.5" y="246">CAR1</text>
+    <text class="pixel-dim" x="359.5" y="246">12.4V</text>
+  </g>
+</svg>

@@ -18,7 +18,19 @@ By keeping one canonical location, docs in Git and docs on device stay aligned.
 - `no/index.html` - full Norwegian user guide
 - `es/index.html` - full Spanish user guide
 - `de/index.html` - full German user guide
-- `assets/curve_examples.png` - curve graph from manuals
+- `it/index.html` - full Italian user guide
+- `assets/curve_examples.svg` - curve graph from manuals
+- `assets/adv_brake.svg` - Alt.Brake, QUICK, and DRAG concept graphs
+- `assets/fade_examples.svg` - fade off/on graph examples
+- `assets/fade_curve.svg` - combined fade and curve graph examples
+- `assets/limit_examples.svg` - limit and duty cap examples
+- `assets/pwm_part.svg` - 1 kHz vs 5 kHz at 50% duty under LIMIT 100
+- `assets/pwm_cap.svg` - 1 kHz vs 5 kHz at 70% duty under LIMIT 70
+- `assets/pwm_freq.svg` - PWM frequency examples
+- `assets/wifi_examples.svg` - controller OLED WiFi info and full-screen QR examples
+- `assets/display_modes.svg` - OLED list and grid view mockups
+- `assets/car_params.png` - wide browser screenshot of the Car Params editor
+- `assets/car_params_t.png` - taller browser screenshot of the Car Params editor
 - `assets/trig_cal.png` - trigger calibration figure
 
 Related SPIFFS content (outside this folder):
@@ -46,6 +58,7 @@ Firmware serves docs from:
 - `/docs/no`
 - `/docs/es`
 - `/docs/de`
+- `/docs/it`
 
 Routes are implemented in `source/ESPEED32/connectivity_portal.cpp`.
 
@@ -78,5 +91,5 @@ Notes for online UI publishing:
 
 Custom domain:
 
-- Add a `CNAME` file in repository root (example: `docs.yourdomain.com`).
+- Add a `.github/CNAME` file (example: `docs.yourdomain.com`).
 - The workflow copies it to the published artifact automatically.

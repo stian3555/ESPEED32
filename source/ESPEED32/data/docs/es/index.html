@@ -102,6 +102,7 @@ a.ghost{background:var(--ghost);color:var(--ink)}
 section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
 h2{margin:0 0 10px;font-size:20px}
 h3{margin:14px 0 8px;font-size:16px}
+h4{margin:12px 0 6px;font-size:15px}
 p{margin:8px 0;line-height:1.45}
 ul,ol{margin:8px 0 0 20px;padding:0}
 li{margin:4px 0;line-height:1.4}
@@ -121,6 +122,12 @@ th{background:var(--th-bg)}
 figure.doc-media{margin:10px 0 0}
 figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
 figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);overflow:hidden;padding:0 12px 12px}
+details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 38px 12px 12px;position:relative;background:var(--ghost);margin:0 -12px;border-bottom:1px solid var(--line)}
+details.doc-fold summary::-webkit-details-marker{display:none}
+details.doc-fold summary::after{content:'+';position:absolute;right:12px;top:10px;font-size:20px;color:var(--muted)}
+details.doc-fold[open] summary::after{content:'-'}
+details.doc-fold>:not(summary){margin-top:8px}
 @media (max-width:760px){
   h1{font-size:24px}
   table{font-size:13px}
@@ -133,11 +140,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h1>ESPEED32 Guia de Usuario</h1>
     <p class="lead">Guia practica para usar el controlador en pista: arranque, ajustes clave de conduccion, menus y backup/restore.</p>
     <nav class="top">
-      <a class="btn primary" href="../../">Abrir interfaz web del controlador</a>
-      <a class="btn ghost" href="../no/" data-doc-lang="no">Norsk</a>
-      <a class="btn ghost" href="../en/" data-doc-lang="en">English</a>
-      <a class="btn ghost" href="../es/" data-doc-lang="es">Espanol</a>
-      <a class="btn ghost" href="../de/" data-doc-lang="de">Deutsch</a>
+      <a class="btn primary" href="../../ui/index.html">Abrir interfaz web del controlador</a>
+      <a class="btn ghost" href="../no/index.html" data-doc-lang="no">Norsk</a>
+      <a class="btn ghost" href="../en/index.html" data-doc-lang="en">English</a>
+      <a class="btn ghost" href="../es/index.html" data-doc-lang="es">Espanol</a>
+      <a class="btn ghost" href="../de/index.html" data-doc-lang="de">Deutsch</a>
+      <a class="btn ghost" href="../it/index.html" data-doc-lang="it">Italiano</a>
     </nav>
     <div class="theme-tools">
       <label for="theme-select">Tema</label>
@@ -148,11 +156,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </select>
     </div>
     <ul class="sources">
-      <li>Fuente firmware: ESPEED32 v4.8 (<code>source/ESPEED32/</code>).</li>
+      <li>Fuente firmware: ESPEED32 (<code>source/ESPEED32/</code>).</li>
       <li>Manuales locales en el repo: Quick Start + Extended Guide (carpeta DOC, DOCX/PDF).</li>
       <li>Referencia ACD: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
       <li>Referencia CarSteen: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
     </ul>
+    <p class="small">La documentacion en <code>espeed32.com</code> siempre muestra la ultima version publicada. La copia guardada en el controlador sigue la version de firmware que realmente tiene instalada y se actualiza junto con ella.</p>
   </header>
 
   <section>
@@ -185,56 +194,28 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/trig_cal.png" alt="Calibracion del trigger">
       <figcaption>Calibracion: mueve el trigger por todo su recorrido varias veces para mapear bien 0-100%.</figcaption>
     </figure>
-  </section>
-
-  <section>
-    <h2>3. Clave en conduccion: BRAKE, B_BTN y Q-BRAKE</h2>
-    <h3>BRAKE</h3>
-    <p>Con trigger completamente suelto, el controlador aplica frenado normal usando el valor <code>BRAKE</code>.</p>
-    <h3>B_BTN (Brake Button)</h3>
+    <h3>Mecanica del trigger</h3>
     <ul>
-      <li><code>B_BTN</code> es un valor alternativo de freno (0-100%), no una reduccion relativa.</li>
-      <li>Solo se aplica cuando trigger = 0 y mantienes pulsado el boton de freno.</li>
-      <li>Si la barra de estado muestra OUTPUT, se ve <code>Bxxx%</code> mientras el boton esta pulsado.</li>
-      <li>Uso tipico: frenado temporal mas duro/suave en curvas sin tocar el setup base.</li>
-    </ul>
-    <h3>Q-BRAKE (Quick Brake)</h3>
-    <ul>
-      <li>Solo activo cuando <code>Q-BRAKE</code> esta en ON.</li>
-      <li>Funciona como zona de frenado pre-release: empieza a frenar antes de soltar el trigger del todo.</li>
-      <li>Con trigger por encima de 0 pero debajo del umbral, usa <code>Strength</code> como fuerza de freno.</li>
-      <li><code>Threshold</code>: 0-50%. <code>Strength</code>: 0-100%.</li>
-      <li>Uso practico: iniciar la frenada antes en la entrada de curva sin llegar primero a trigger cero.</li>
+      <li>El recorrido del trigger puede ajustarse mecanicamente con el tornillo de tope trasero.</li>
+      <li>El retorno depende de la precarga del muelle / tension de retorno; ajusta con cuidado el anclaje o el tensor del muelle.</li>
+      <li>Despues de cambiar recorrido o tension del muelle, o si el controlador ha sido abierto, recalibra el trigger antes de conducir.</li>
     </ul>
   </section>
 
   <section>
-    <h2>4. Parametros del menu principal</h2>
-    <table>
-      <thead>
-        <tr><th>Item</th><th>Rango</th><th>Default</th><th>Descripcion</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Frenado con trigger suelto.</td></tr>
-        <tr><td><code>SENSI</code></td><td>0-90 % (y &lt;= LIMIT)</td><td>20</td><td>Potencia minima al primer movimiento de trigger.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave.</td></tr>
-        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
-        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>Frecuencia PWM del motor.</td></tr>
-        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Valor alternativo de freno con boton de freno + trigger suelto.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + threshold/strength</td><td>OFF</td><td>Zona de frenado cerca de trigger suelto.</td></tr>
-        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Salida maxima del motor.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Vueltas, mejor vuelta e historial.</td></tr>
-        <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
-      </tbody>
-    </table>
-    <figure class="doc-media">
-      <img src="../assets/curve_examples.png" alt="Ejemplos de curva Linear, Soft y Hard">
-      <figcaption>Ejemplos CURVE del manual: Linear (50%), Soft (valor menor), Hard (valor mayor).</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <h2>5. Vista de carrera (LIST vs GRID)</h2>
+    <h2>3. Display, vista de carrera y ABOUT</h2>
+    <p class="small">Aqui se junta todo lo que ves en la OLED: idioma, estilo de etiquetas, vista de carrera, barra de estado e informacion del sistema.</p>
+    <h3>Idioma y display</h3>
+    <ul>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> elige entre etiquetas localizadas y los perfiles de nombres ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: interfaz localizada con los nombres estandar <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: nombres genericos (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
+      <li><code>CS</code>: estilo CarSteen (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: estilo ACD donde hay equivalencia directa (<code>SENSI</code> y <code>CHOKE</code> para LIMIT).</li>
+      <li><code>DISPLAY -&gt; CASE</code> decide si las etiquetas se muestran en <code>UPPER</code> o <code>Pascal</code>.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> cambia la vista de listas y menus entre <code>LARGE</code> y <code>small</code>.</li>
+    </ul>
+    <h3>Vista de carrera (LIST vs GRID)</h3>
     <ul>
       <li><span class="badge">LIST</span> menu clasico con todos los items.</li>
       <li><span class="badge">GRID</span> pantalla rapida para ajustar durante conduccion.</li>
@@ -243,13 +224,24 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>SIMPLE: BRAKE, SENSI (+ CAR si <code>RACESWP</code> esta ON).</li>
       <li>Pulsacion larga del encoder cambia LIST/GRID.</li>
     </ul>
+    <figure class="doc-media">
+      <img src="../assets/display_modes.svg" alt="Mockup OLED de vista list y vista grid race">
+      <figcaption>Ejemplo de pantalla: LIST muestra toda la pila del menu, mientras GRID mantiene visibles los parametros clave de carrera para cambios rapidos en pista.</figcaption>
+    </figure>
+    <h3>Barra de estado y ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 slots fijos. Cada slot puede mostrar <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> o vacio.</li>
+      <li>Cuando WiFi esta activo, la barra de estado muestra <code>WIFI</code>. Primero usa un slot libre; si no hay ninguno, el slot 4 se sobreescribe temporalmente.</li>
+      <li><code>ABOUT</code> muestra version de firmware/datos, sensor de trigger detectado, informacion del chip, flash/heap, direcciones MAC y fecha/hora de compilacion.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>6. Flujo del menu CAR</h2>
+    <h2>4. Menu CAR y Car Params</h2>
+    <p class="small">El menu <code>CAR</code> gestiona los perfiles de coche. Cada perfil guarda sus propios <code>Car Params</code>, es decir valores como <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>FRENO+</code> y <code>LIMIT</code>. Es el mismo grupo de parametros que reaparece despues en el <code>Advanced Config Editor</code>.</p>
     <ul>
       <li><code>SELECT</code>: elegir perfil activo (0-19).</li>
-      <li><code>RENAME</code>: editor de 4 caracteres (ASCII 32-122).</li>
+      <li><code>RENAME</code>: editor de 4 caracteres (ASCII 32-122). Ver <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">tabla ASCII</a>.</li>
       <li><code>RACESWP</code>: ON permite cambio de perfil directo desde GRID.</li>
       <li><code>COPY</code>: copiar de un perfil a otro o a todos.</li>
       <li><code>RESET</code>: reset de perfiles de coche (con confirmacion).</li>
@@ -257,13 +249,162 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>7. SETTINGS y consumo estimado</h2>
+    <h2>5. Parametros de conduccion</h2>
+    <p class="small">Esta seccion agrupa los parametros principales que definen la sensacion del controlador en pista.</p>
+    <h3>BRAKE y FRENO+</h3>
+    <h4>BRAKE</h4>
+    <p>Con trigger completamente suelto, el controlador aplica frenado normal usando el valor <code>BRAKE</code>.</p>
+    <p class="small"><code>FRENO+</code> en el menu principal abre el submenu de frenado avanzado. Alli ahora estan <code>Alt.Freno</code> y <code>Rel.Freno</code>.</p>
+    <h4>Freno alternativo (<code>Alt.Freno</code>)</h4>
+    <ul>
+      <li><code>Alt.Freno</code> significa freno alternativo, un valor de freno propio (0-100%), no una reduccion relativa.</li>
+      <li>Solo se aplica cuando trigger = 0 y mantienes pulsado el boton de freno.</li>
+      <li>Si la barra de estado muestra OUTPUT, se ve <code>Bxxx%</code> mientras el boton esta pulsado.</li>
+      <li>Uso tipico: frenado temporal mas duro o mas suave en curvas sin tocar el setup base.</li>
+      <li>Algunos pilotos prefieren <code>Alt.Freno</code> mas bajo que el <code>BRAKE</code> normal para un boton de freno mas suave, mientras otros lo prefieren mas alto para un golpe mas fuerte. Esa parte depende sobre todo del gusto del usuario y de la sensacion del coche.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/alt_brake.svg" alt="Graficas de concepto para Alt.Freno mas bajo que BRAKE y Alt.Freno mas alto que BRAKE">
+      <figcaption>Ejemplos de freno alternativo: <code>Alt.Freno</code> puede quedar temporalmente mas suave o mas fuerte que el BRAKE normal, segun la preferencia del piloto.</figcaption>
+    </figure>
+    <h4>Freno de liberacion (<code>Rel.Freno</code>)</h4>
+    <ul>
+      <li><code>Rel.Freno</code> es el ajuste de freno al soltar y tiene tres modos: <code>OFF</code>, <code>QUICK</code> y <code>DRAG</code>.</li>
+      <li><code>QUICK</code> es la antigua zona de frenado antes del release completo: por debajo de la <code>Zona</code> corta la traccion y aplica <code>Nivel</code> como fuerza de freno.</li>
+      <li><code>DRAG</code> solo actua mientras estas soltando el trigger. Mantiene la traccion activa y anade drag durante el movimiento de release, con sensacion mas suave que QUICK.</li>
+      <li><code>Zona</code> se usa solo en <code>QUICK</code>. En QUICK es una zona real de salida cero cerca del release del trigger.</li>
+      <li>Por eso con <code>QUICK</code> activo es normal ver algunos <code>%T</code> en pantalla mientras la salida sigue en <code>0%</code> hasta pasar la zona seleccionada.</li>
+      <li>Diferencia principal: <code>QUICK</code> hace un corte duro dentro de la zona, mientras <code>DRAG</code> mantiene el throttle activo y solo anade drag mientras el trigger va hacia el release.</li>
+      <li>Uso tipico de QUICK: pistas o coches que necesitan una frenada temprana muy clara. Ejemplo: <code>Zona</code> 6-10% y <code>Nivel</code> 70-100% para una frenada fuerte y repetible al empezar a soltar la ultima parte del trigger.</li>
+      <li>Uso tipico de DRAG: coches nerviosos que se sienten demasiado bruscos con QUICK. Ejemplo: <code>Nivel</code> 20-50% para anadir desaceleracion suave al soltar, sin sensacion de corte total a cero.</li>
+      <li><code>QUICK Zona</code>: 0-50%. <code>Nivel</code>: 0-100%.</li>
+      <li>Usa QUICK para una entrada de freno mas clara. Usa DRAG si quieres apoyo al soltar pero con sensacion mas suave.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/rel_brake.svg" alt="Graficas de concepto para QUICK y DRAG de Rel.Freno">
+      <figcaption>Ejemplos de freno al soltar: QUICK crea una zona de salida cero con frenada por debajo de la zona elegida, mientras DRAG anade un drag mas suave solo durante el movimiento de release.</figcaption>
+    </figure>
+    <h3>De CarSteen/ACD a ESPEED32</h3>
+    <table>
+      <thead>
+        <tr><th>Termino anterior</th><th>Equivalente en ESPEED32</th><th>Efecto practico</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Attack</td><td><code>SENSI</code></td><td>Cuanto golpea el coche en el primer movimiento util del trigger.</td></tr>
+        <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Limita el tope y controla lo suave que sube la potencia.</td></tr>
+        <tr><td>Profile</td><td><code>CURVE</code></td><td>Forma de la respuesta del trigger (mas agresiva antes o despues).</td></tr>
+        <tr><td>Brake</td><td><code>BRAKE</code> + <code>FRENO+</code></td><td>Freno base junto con freno de boton y freno al soltar dentro de su submenu.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Ejemplo de setup inicial "suave y controlado" de guias antiguas: prueba alrededor de <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, y ajusta desde ahi.</p>
+    <h3>Referencia rapida del menu principal</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Rango</th><th>Default</th><th>Descripcion</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Frenado con trigger suelto.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (y &lt;= LIMIT)</td><td>20</td><td>Potencia minima al primer movimiento de trigger.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave. El paso del encoder se ajusta globalmente en <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona de salida suave. 0 = desactivado / comportamiento antiguo. Por encima de 0, la primera parte del trigger sube de 0 a SENSI antes de que siga la CURVE normal.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>Frecuencia PWM del motor.</td></tr>
+        <tr><td><code>FRENO+ / Alt.Freno</code></td><td>0-100 %</td><td>50</td><td>Valor alternativo de freno con boton de freno + trigger suelto.</td></tr>
+        <tr><td><code>FRENO+ / Rel.Freno</code></td><td>OFF/QUICK(zona+nivel)/DRAG(nivel)</td><td>OFF</td><td>Ayuda de frenado al soltar trigger. QUICK usa zona a salida cero; DRAG anade drag sin zona.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Salida maxima del motor.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Vueltas, mejor vuelta e historial.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
+      </tbody>
+    </table>
+    <h3>FADE en la practica</h3>
+    <ul>
+      <li><code>FADE</code> crea una rampa suave <code>0 -&gt; SENSI</code> al inicio del recorrido del trigger.</li>
+      <li><code>FADE = 0%</code> lo desactiva y mantiene el tacto directo anterior.</li>
+      <li>Prueba <code>5-15%</code> si el coche pega un golpe demasiado brusco justo cuando empieza SENSI.</li>
+      <li>Puedes pensar en <code>FADE</code> como un primer punto extra en la grafica: solo cambia la parte baja, mientras <code>CURVE</code> sigue moldeando el resto.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/fade_examples.svg" alt="Ejemplo grafico de Fade off y Fade on">
+      <figcaption>Ejemplo de FADE: OFF mantiene el salto directo antiguo hasta SENSI, mientras ON anade una rampa suave antes de que siga la CURVE normal.</figcaption>
+    </figure>
+    <h3>Valores tipicos de partida</h3>
+    <p class="small">Son puntos de partida, no reglas fijas. Sirven para acercarte rapido y luego ajustar un parametro cada vez.</p>
+    <p class="small">Los valores correctos siguen dependiendo mucho del coche concreto, motor, neumaticos, grip de la pista y tambien de tu estilo personal de conduccion.</p>
+    <table>
+      <thead>
+        <tr><th>Setup</th><th>SENSI</th><th>BRAKE</th><th>ANTIS</th><th>CURVE</th><th>FADE</th><th>PWM_F</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1/32 equilibrado</td><td>28-35%</td><td>90-95%</td><td>40-90 ms</td><td>40-50%</td><td>0-6%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/32 poco grip</td><td>22-30%</td><td>90-95%</td><td>100-150 ms</td><td>30-45%</td><td>5-12%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 equilibrado</td><td>35-45%</td><td>95-100%</td><td>0-30 ms</td><td>50-60%</td><td>0-5%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 mucho grip</td><td>40-50%</td><td>95-100%</td><td>0-15 ms</td><td>55-70%</td><td>0-3%</td><td>4.0 kHz</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Para las primeras pruebas, deja <code>Rel.Freno</code> en <code>OFF</code>. Anade <code>QUICK</code> o <code>DRAG</code> solo cuando la base de gas y freno ya se sienta bien.</p>
+    <h3>Notas sobre linealidad</h3>
+    <ul>
+      <li><code>LIMIT</code>: limite lineal del output mandado en %. La velocidad maxima real en pista no sera perfectamente lineal.</li>
+      <li><code>BRAKE</code>: mando lineal de freno/drag en %. La sensacion real de frenado depende del motor, neumaticos y grip de la pista.</li>
+      <li><code>SENSI</code>: suelo minimo lineal de output en %, pero no es una ganancia lineal a lo largo de todo el recorrido porque <code>CURVE</code> modela el resto.</li>
+      <li><code>FADE</code>: lineal en % de recorrido del trigger. Solo trabaja al principio y luego deja el control a <code>CURVE</code>.</li>
+      <li><code>ANTIS</code>: es sobre todo un ajuste de tiempo en ms. Cuando anti-spin esta activo, un valor mayor da una rampa mas larga/suave, pero la sensacion total no es perfectamente lineal porque tambien cambia el umbral de bypass a baja velocidad.</li>
+    </ul>
+    <h3>Ejemplos de CURVE</h3>
+    <p class="small">Estas figuras muestran primero la forma de respuesta, antes de pasar a la frecuencia PWM y al limite de duty.</p>
+    <figure class="doc-media">
+      <img src="../assets/curve_examples.svg" alt="Ejemplos de curva Linear, Soft y Hard">
+      <figcaption>Ejemplos de CURVE: Linear (50%), Soft (valor menor) y Hard (valor mayor).</figcaption>
+    </figure>
+    <figure class="doc-media">
+      <img src="../assets/fade_curve.svg" alt="Ejemplo de Fade combinado con curva lineal y curva dura">
+      <figcaption>FADE junto con CURVE: FADE puede suavizar el inicio mientras el resto de la respuesta sigue lineal o se ajusta mas agresivo.</figcaption>
+    </figure>
+    <h3>LIMIT en la practica</h3>
+    <ul>
+      <li><code>LIMIT 100</code> permite al controlador llegar al duty completo cuando el trigger y la curva lo piden.</li>
+      <li><code>LIMIT 70</code> limita el duty maximo a aproximadamente 70%, incluso con el trigger a fondo.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/limit_examples.svg" alt="Ejemplos de LIMIT que muestran LIMIT 100 y LIMIT 70">
+      <figcaption>Ejemplos de LIMIT: LIMIT cambia el duty maximo que el controlador puede alcanzar.</figcaption>
+    </figure>
+    <h3>PWM_F en la practica</h3>
+    <ul>
+      <li><code>PWM_F</code> cambia la frecuencia de conmutacion, no el duty solicitado por si mismo.</li>
+      <li>Con <code>LIMIT 100</code>, el gatillo parcial todavia puede trabajar a duty parcial. Con <code>LIMIT 70</code>, el gatillo al fondo queda limitado cerca del 70%.</li>
+      <li>Con el mismo duty, <code>1 kHz</code> usa menos pulsos y mas anchos, mientras <code>5 kHz</code> usa mas pulsos y mas estrechos en la misma ventana de tiempo.</li>
+    </ul>
+    <h4>Escenario 1: gatillo parcial con LIMIT 100</h4>
+    <p class="small">Compara estas dos imagenes en horizontal. Las dos muestran el mismo nivel efectivo, 50% duty, asi que la diferencia es solo la densidad de pulsos. La linea discontinua marca el nivel medio o efectivo.</p>
+    <figure class="doc-media">
+      <img src="../assets/pwm_part.svg" alt="Ejemplos de PWM_F que comparan 1 kilohertz y 5 kilohertz con gatillo parcial y LIMIT 100">
+      <figcaption>Con 50% duty, <code>1 kHz</code> usa menos pulsos y mas anchos, mientras <code>5 kHz</code> usa mas pulsos y mas estrechos en la misma ventana.</figcaption>
+    </figure>
+    <h4>Escenario 2: gatillo a fondo con LIMIT 70</h4>
+    <p class="small">Compara tambien estas dos imagenes en horizontal. Las dos muestran gatillo a fondo, pero <code>LIMIT 70</code> mantiene el nivel efectivo en 70% duty. De nuevo, la linea discontinua marca el nivel medio o efectivo.</p>
+    <figure class="doc-media">
+      <img src="../assets/pwm_cap.svg" alt="Ejemplos de PWM_F que comparan 1 kilohertz y 5 kilohertz con gatillo a fondo y LIMIT 70">
+      <figcaption>Aqui el duty queda limitado a 70% en ambas imagenes. <code>PWM_F</code> cambia la frecuencia de los pulsos, no el limite en si.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>6. SETTINGS, POWER y consumo estimado</h2>
+    <p class="small"><code>SETTINGS</code> agrupa opciones globales del sistema que no pertenecen a un perfil de coche concreto.</p>
     <h3>Submenu POWER</h3>
     <ul>
       <li><code>SCRSV</code>: texto de screensaver, timeout y mostrar ahora.</li>
       <li><code>SLEEP</code>: sleep automatico + sleep manual (wake con encoder).</li>
       <li><code>DEEP SLEEP</code>: deep sleep automatico (0 o 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: retardo de bienvenida 0-990 ms.</li>
+      <li><code>VIN CAL</code>: mide el voltaje real con multimetro, ajusta ese valor en el controlador y pulsa para calibrar la escala ADC. Usalo solo si la lectura VIN se ve claramente desviada.</li>
+    </ul>
+    <h3>Elementos raiz de SETTINGS</h3>
+    <ul>
+      <li><code>STATS</code>: mostrar u ocultar STATS en el menu principal.</li>
+      <li><code>A STEP</code>: paso global del encoder para ANTIS, 1-50 ms (default 5 ms). ANTIS sigue siendo un parametro por perfil.</li>
+      <li><code>ENC INV</code>: invierte globalmente la direccion del encoder si el menu gira al reves.</li>
     </ul>
     <h3>Consumo estimado (electronica del controlador)</h3>
     <table>
@@ -279,36 +420,69 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td>DEEP SLEEP</td><td>10 mA (estimado)</td><td>Estado tipo apagado, wake por ciclo de alimentacion.</td></tr>
       </tbody>
     </table>
-    <p class="small">Valores estimados; dependen de tension, hardware y metodo de medicion. La carga del motor del coche no esta incluida.</p>
+    <p class="small">Valores estimados; dependen de tension, hardware y metodo de medicion. La carga del motor del coche no esta incluida. Estos valores se midieron en el lado de 5 V despues del convertidor step-down. Si mides en el lado de 12 V, la lectura de corriente sera distinta y no se puede comparar directamente, segun la relacion entre tension y corriente (U = R * I).</p>
+    <h3>Bateria interna (opcional)</h3>
+    <p>Algunas variantes de hardware pueden incluir una pequena bateria de litio de 1 celda para ajustes fuera de pista. Se carga cuando el controlador esta alimentado desde la pista o desde USB. Esta bateria esta pensada para cambios de menu, preparacion antes de la carrera, cambio de carril o para evitar retrasos si la pista aun no tiene alimentacion. No esta pensada para uso standalone prolongado.</p>
+    <p class="small">La autonomia de abajo significa uso del controlador sin estar conectado a la pista. La corriente de carga puede variar segun cargador y hardware, pero si la carga real esta cerca de 200 mA y el controlador consume alrededor de 100 mA, la autonomia fuera de pista suele quedar en torno al doble del tiempo de carga. El tiempo real de carga de litio aun asi suele ser un poco mayor que la cuenta ideal porque la fase final se vuelve mas lenta cerca del lleno.</p>
+    <table>
+      <thead>
+        <tr><th>Bateria</th><th>Tiempo tipico de carga</th><th>Autonomia tipica fuera de pista</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>aprox. 1.4-1.8 horas</td><td>aprox. 2.0-2.5 horas</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>aprox. 2.8-3.6 horas</td><td>aprox. 4.0-5.0 horas</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section>
-    <h2>8. Consejos de conduccion</h2>
+    <h2>7. Consejos de conduccion</h2>
     <ul>
       <li>Cambia un parametro por vez y prueba 5-10 vueltas antes del siguiente cambio.</li>
-      <li>Orden recomendado: <code>SENSI</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
+      <li>Orden recomendado: <code>SENSI</code>, <code>FADE</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
       <li>1/32 en pista deslizante: subir <code>ANTIS</code> (100-150 ms) y usar <code>CURVE</code> &lt; 50.</li>
       <li>1/24 con buen grip: <code>ANTIS</code> bajo (0-40 ms) y <code>CURVE</code> 50-70.</li>
-      <li>Usa <code>B_BTN</code> como ajuste temporal de curva, sin cambiar BRAKE base.</li>
-      <li>Usa <code>Q-BRAKE</code> con threshold bajo (5-12%) y strength medio (40-70%) para zonas tecnicas.</li>
+      <li>Usa <code>FRENO+ -> Alt.Freno</code> como ajuste temporal de frenada sin cambiar el BRAKE base.</li>
+      <li>Usa <code>FRENO+ -> Rel.Freno QUICK</code> con zona baja (5-12%) y nivel medio (40-70%) para frenada temprana mas clara. Prueba <code>DRAG</code> sobre 20-50% si quieres ayuda al soltar sin una zona a salida cero.</li>
+      <li>Si el coche golpea demasiado justo al empezar a actuar el trigger, manten <code>SENSI</code> donde te gusta y prueba un poco de <code>FADE</code> antes de bajar SENSI.</li>
     </ul>
   </section>
 
   <section>
-    <h2>9. WiFi/USB backup, restore y OTA</h2>
+    <h2>8. WiFi/USB backup, restore y OTA</h2>
     <h3>WiFi</h3>
     <ol>
       <li>Entrar en <code>SETTINGS -> WIFI</code> para abrir el submenu WiFi.</li>
       <li><code>START WIFI</code>/<code>STOP WIFI</code>: activa o detiene WiFi en segundo plano al instante.</li>
       <li><code>INFO PAGE</code>: abre la pagina WiFi y activa WiFi/AP automaticamente. Al salir de esa pagina, WiFi se apaga otra vez (si no habias activado antes el modo en segundo plano).</li>
+      <li><code>VER QR</code>: abre un QR WiFi a pantalla completa para conectar el movil o tablet directamente al AP.</li>
       <li><code>AUTO OFF</code>: define el timeout para WiFi en segundo plano (1-120 min, por defecto 5 min).</li>
       <li>Mientras WiFi esta activo: conectar a <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) y abrir la IP mostrada en OLED (normalmente <code>192.168.4.1</code>).</li>
-      <li>En la pagina de info puedes usar <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> y <code>/docs</code>.</li>
+      <li>En la pagina de info puedes usar <code>Backup</code>, <code>Restore</code>, el <code>Advanced Config Editor</code>, <code>Upload Firmware</code> y <code>/docs</code>.</li>
     </ol>
+    <figure class="doc-media">
+      <img src="../assets/wifi_examples.svg" alt="Ejemplo de pantalla OLED con info WiFi y QR a pantalla completa en el controlador">
+      <figcaption>Ejemplo WiFi: a la izquierda se ve INFO PAGE tal como aparece en el controlador, con SSID, password e IP del navegador. A la derecha se ve VER QR, donde el codigo QR ocupa todo el espacio posible para conectar rapido el movil o la tablet.</figcaption>
+    </figure>
+    <p class="small">WiFi aumenta el consumo de la electronica del controlador de unos 100 mA a unos 150 mA, es decir, alrededor de un 50% mas. En unidades con bateria, usa WiFi con moderacion y apagalo al terminar.</p>
     <p class="small">Barra de estado con WiFi activo: <code>WIFI</code> usa primero un slot vacio; si no hay slot libre, se muestra temporalmente en el slot 4 hasta que WiFi se detenga.</p>
+    <h3>Advanced Config Editor</h3>
+    <ul>
+      <li>El portal del navegador tambien incluye un <code>Advanced Config Editor</code> para ajustar el setup en vivo.</li>
+      <li><code>Global Config</code> edita ajustes globales del controlador. <code>Car Params</code> edita el perfil de coche seleccionado.</li>
+      <li>En <code>Car Params</code> puedes cargar y editar cualquier perfil directamente desde la lista desplegable, aunque otro perfil siga activo en el controlador.</li>
+      <li><code>Refresh from device</code> vuelve a leer los valores actuales desde el controlador.</li>
+      <li><code>Apply (RAM only)</code> te deja probar cambios en vivo sin escribir flash primero. Es ideal para experimentar en pista con freno, gas, anti-spin, curva, fade o release brake.</li>
+      <li><code>Apply + Save to flash</code> guarda esos mismos valores de forma permanente cuando ya te convencen.</li>
+      <li>En la pagina WiFi del controlador el editor funciona directamente en el navegador por WiFi. En <code>espeed32.com</code>, el mismo editor requiere USB/WebSerial.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/car_params.png" alt="Captura del Advanced Config Editor con Car Params, seleccion de perfil y campos editables de potencia y trigger">
+      <figcaption>Ejemplo del Advanced Config Editor: la captura muestra la pestaña <code>Car Params</code> con seleccion de perfil y ajustes del coche editables en vivo. La interfaz aparece en ingles aqui, pero el flujo de uso es el mismo en todos los manuales.</figcaption>
+    </figure>
     <h3>USB</h3>
     <ol>
-      <li>Entrar en <code>SETTINGS -> USB</code>.</li>
+      <li>Entrar en <code>SETTINGS -> USB INFO</code>.</li>
       <li>Usar Chrome/Edge (WebSerial).</li>
       <li>Backup/restore funciona por USB; OTA requiere modo WiFi.</li>
     </ol>
@@ -316,18 +490,20 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>10. Arbol de menu (mapa completo)</h2>
+    <h2>9. Arbol de menu (mapa completo)</h2>
 <pre>ROOT (Main Menu)
 |- BRAKE
 |- SENSI
 |- ANTIS
 |- CURVE (graph view)
+|- FADE (graph view)
 |- PWM_F
-|- B_BTN
-|- Q-BRAKE
-|  |- Enable (ON/OFF)
-|  |- Threshold (%)
-|  |- Strength (%)
+|- FRENO+
+|  |- Alt.Freno (%)
+|  |- Rel.Freno (OFF/QUICK/DRAG)
+|  |- Zona (%) [solo QUICK]
+|  |- Quick (%) [modo QUICK]
+|  |- Drag (%) [modo DRAG]
 |  `- Back
 |- LIMIT
 |- SETTINGS
@@ -347,10 +523,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
-|  |  |- LANGUAGE (NOR/ENG/CS/ACD)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
 |  |  |- STATUS BAR
@@ -364,12 +541,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- BOOT (ON/OFF)
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
+|  |- STATS (ON/OFF)
+|  |- A STEP (1-50 ms, default 5)
+|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
+|  |  |- VER QR
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
-|  |- USB
+|  |- USB INFO
 |  |- RESET
 |  |  |- CAR
 |  |  |- SETTINGS
@@ -418,6 +599,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
   else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
   else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+  else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
 
   var langLinks = document.querySelectorAll("a[data-doc-lang]");
   for (var i = 0; i < langLinks.length; i++) {

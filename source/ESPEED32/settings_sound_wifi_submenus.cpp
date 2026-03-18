@@ -3,12 +3,17 @@
 #include "slot_ESC.h"
 #include "ui_text_access.h"
 #include "connectivity_portal.h"
+#include "telemetry_logging.h"
 
 extern StoredVar_type g_storedVar;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern char msgStr[50];
+extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_encoderInvertEnabled;
+extern uint16_t g_adcVoltageRange_mV;
+extern uint16_t g_carSel;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
@@ -23,6 +28,73 @@ extern void startTimedWiFiPortal(uint16_t minutes);
 extern void stopTimedWiFiPortal();
 extern uint16_t getWiFiTimedMinutes();
 extern void setWiFiTimedMinutes(uint16_t minutes);
+extern void startTimedTelemetryLogging(uint16_t minutes);
+extern void stopTimedTelemetryLogging();
+extern uint16_t getTelemetryTimedMinutes();
+extern void setTelemetryTimedMinutes(uint16_t minutes);
+
+static void showWiFiLoggingStartFailed() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* title = "WiFi failed";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 8, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 8, 28, (char*)"Could not start", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 8, 36, (char*)"WiFi logging", FONT_6x8, OBD_BLACK, 1);
+  delay(1100);
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+static void showTelemetryLoggingStartFailed() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* title = "Log failed";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 8, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 8, 28, (char*)"Could not start", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 8, 36, (char*)"logging", FONT_6x8, OBD_BLACK, 1);
+  delay(1100);
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+static bool promptEnableWiFiForLogging() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* title = "WiFi req.";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 16, (char*)"Logging needs", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 24, (char*)"WiFi active.", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 40, (char*)"Click=start", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 48, (char*)"Brake=back", FONT_6x8, OBD_BLACK, 1);
+
+  while (true) {
+    serviceTimedWiFiPortal();
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      return true;
+    }
+
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+      return false;
+    }
+
+    if (checkRaceModeEscape()) {
+      requestEscapeToMain();
+      return false;
+    }
+
+    vTaskDelay(10);
+  }
+}
+
+static bool startTelemetryLoggingNow() {
+  if (!telemetryStartLogging(&g_storedVar,
+                             g_antiSpinStepMs,
+                             g_encoderInvertEnabled,
+                             g_adcVoltageRange_mV,
+                             (uint8_t)g_carSel)) {
+    showTelemetryLoggingStartFailed();
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * Sound settings submenu: BOOT (on/off), RACE (on/off), BACK.
@@ -37,8 +109,8 @@ void showSoundSettings() {
   obdFill(&g_obd, OBD_WHITE, 1);
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, SND_ITEMS, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, SND_ITEMS, false);
+  resetUiEncoder(1);
 
   uint8_t sel = 1;
   uint8_t prevSel = 0xFF;
@@ -54,7 +126,7 @@ void showSoundSettings() {
 
     /* Screensaver wake-up */
     if (ssActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != ssEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -74,7 +146,7 @@ void showSoundSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!ssActive) {
           ssActive = true;
-          ssEncoderPos = g_rotaryEncoder.readEncoder();
+          ssEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
@@ -89,7 +161,7 @@ void showSoundSettings() {
     /* Encoder movement */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      sel = (uint8_t)readUiEncoder();
       needRedraw = true;
     }
 
@@ -154,22 +226,24 @@ void showSoundSettings() {
 
 /**
  * WiFi submenu.
- * Items: START/STOP WIFI, INFO PAGE, AUTO OFF (minutes), BACK.
+ * Items: START/STOP WIFI, INFO PAGE, QR, AUTO OFF (minutes), BACK.
  * MINUTES is a runtime-only value used for timed background activation.
  */
 void showWiFiSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblOpen[4]    = {"INFO SIDE",   "INFO PAGE", "INFO PAGE", "INFO PAGE"};
-  const char* lblTimer[4]   = {"AUTO AV",     "AUTO OFF",  "AUTO OFF",  "AUTO OFF"};
-  const char* lblStartBg[4] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI"};
-  const char* lblStopBg[4]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI"};
+  const char* lblOpen[7]    = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
+  const char* lblQr[7]      = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
+  const char* lblTimer[7]   = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblStartBg[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
+  const char* lblStopBg[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_INFO = 1;
-  const uint8_t ITEM_TIMER = 2;
-  const uint8_t ITEM_BACK = 3;
-  const uint8_t NUM_ITEMS = 4;  /* 0=ACTIVE, 1=INFO, 2=MINUTES, 3=BACK */
+  const uint8_t ITEM_QR = 2;
+  const uint8_t ITEM_TIMER = 3;
+  const uint8_t ITEM_BACK = 4;
+  const uint8_t NUM_ITEMS = 5;  /* 0=ACTIVE, 1=INFO, 2=QR, 3=MINUTES, 4=BACK */
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
 
@@ -179,8 +253,8 @@ void showWiFiSettings() {
   bool needRedraw = true;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+  resetUiEncoder(0);
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
@@ -193,7 +267,7 @@ void showWiFiSettings() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -212,7 +286,7 @@ void showWiFiSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -236,9 +310,9 @@ void showWiFiSettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (editing) {
-        tmpMinutes = (uint16_t)g_rotaryEncoder.readEncoder();
+        tmpMinutes = (uint16_t)readUiEncoder();
       } else {
-        sel = (int8_t)g_rotaryEncoder.readEncoder();
+        sel = (int8_t)readUiEncoder();
       }
       needRedraw = true;
     }
@@ -249,8 +323,8 @@ void showWiFiSettings() {
         setWiFiTimedMinutes(tmpMinutes);
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-        g_rotaryEncoder.reset(ITEM_TIMER);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_TIMER);
       } else if (sel == ITEM_ACTIVE) {
         if (isWiFiPortalActive()) {
           stopTimedWiFiPortal();
@@ -261,12 +335,16 @@ void showWiFiSettings() {
         showWiFiPortalScreen();
         lastInteraction = millis();
         screensaverActive = false;
+      } else if (sel == ITEM_QR) {
+        showWiFiQrScreen();
+        lastInteraction = millis();
+        screensaverActive = false;
       } else if (sel == ITEM_TIMER) {
         editing = true;
         tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, 120, false);
-        g_rotaryEncoder.reset(tmpMinutes);
+        setUiEncoderBoundaries(1, 120, false);
+        resetUiEncoder(tmpMinutes);
       } else if (sel == ITEM_BACK) {
         break;
       }
@@ -284,8 +362,8 @@ void showWiFiSettings() {
         if (editing) {
           editing = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-          g_rotaryEncoder.reset(ITEM_TIMER);
+          setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+          resetUiEncoder(ITEM_TIMER);
           needRedraw = true;
         } else {
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
@@ -306,16 +384,209 @@ void showWiFiSettings() {
       bool s1 = (!editing && sel == ITEM_INFO);
       obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblOpen[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s2 = (!editing && sel == ITEM_TIMER);
-      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblTimer[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s2 = (!editing && sel == ITEM_QR);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblQr[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s3 = (!editing && sel == ITEM_TIMER);
+      obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)lblTimer[lang], menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
       char minutesStr[10];
       uint16_t shownMinutes = editing ? tmpMinutes : constrain(getWiFiTimedMinutes(), 1, 120);
       snprintf(minutesStr, sizeof(minutesStr), "%3dm", shownMinutes);
       uint8_t mx = OLED_WIDTH - (uint8_t)(strlen(minutesStr) * WIDTH8x8);
-      obdWriteString(&g_obd, 0, mx, 2 * lineH, minutesStr, menuFont, (s2 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, mx, 3 * lineH, minutesStr, menuFont, (s3 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s3 = (!editing && sel == ITEM_BACK);
-      obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)getBackLabel(lang), menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s4 = (!editing && sel == ITEM_BACK);
+      obdWriteString(&g_obd, 0, 0, 4 * lineH, (char*)getBackLabel(lang), menuFont, s4 ? OBD_WHITE : OBD_BLACK, 1);
+
+      needRedraw = false;
+    }
+
+    if (checkRaceModeEscape()) { requestEscapeToMain(); break; }
+    vTaskDelay(10);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+void showLoggingSettings() {
+  uint16_t lang = g_storedVar.language;
+
+  const char* lblTimer[7]     = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblStartNow[7]  = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA"};
+  const char* lblStopNow[7]   = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA"};
+
+  const uint8_t ITEM_ACTIVE = 0;
+  const uint8_t ITEM_TIMER = 1;
+  const uint8_t ITEM_BACK = 2;
+  const uint8_t NUM_ITEMS = 3;
+  const uint8_t menuFont = FONT_8x8;
+  const uint8_t lineH = HEIGHT8x8;
+
+  int8_t sel = 0;
+  bool editing = false;
+  uint16_t tmpMinutes = constrain(getTelemetryTimedMinutes(), 1, 120);
+  bool needRedraw = true;
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+  resetUiEncoder(0);
+
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = 0;
+
+  while (true) {
+    serviceTimedWiFiPortal();
+
+    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
+    bool wakeUp = false;
+
+    if (screensaverActive) {
+      uint16_t curPos = readUiEncoder();
+      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
+          curPos != screensaverEncoderPos ||
+          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+        wakeUp = true;
+        screensaverActive = false;
+        lastInteraction = millis();
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+    }
+
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = readUiEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (editing) {
+        tmpMinutes = (uint16_t)readUiEncoder();
+      } else {
+        sel = (int8_t)readUiEncoder();
+      }
+      needRedraw = true;
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      if (editing) {
+        setTelemetryTimedMinutes(tmpMinutes);
+        editing = false;
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+        resetUiEncoder(ITEM_TIMER);
+      } else if (sel == ITEM_ACTIVE) {
+        if (telemetryIsLoggingActive()) {
+          telemetryStopLogging();
+          stopTimedTelemetryLogging();
+        } else {
+          uint16_t loggingMinutes = constrain(getTelemetryTimedMinutes(), 1, 120);
+          bool startedWiFiForLogging = false;
+          if (!isWiFiPortalActive()) {
+            if (!promptEnableWiFiForLogging()) {
+              needRedraw = true;
+              delay(120);
+              continue;
+            }
+
+            startTimedWiFiPortal(loggingMinutes);
+            if (!isWiFiPortalActive()) {
+              showWiFiLoggingStartFailed();
+              needRedraw = true;
+              delay(120);
+              continue;
+            }
+            startedWiFiForLogging = true;
+          }
+          if (startTelemetryLoggingNow()) {
+            startTimedTelemetryLogging(loggingMinutes);
+            if (startedWiFiForLogging) {
+              showWiFiPortalScreen();
+              lastInteraction = millis();
+              screensaverActive = false;
+            }
+          }
+        }
+      } else if (sel == ITEM_TIMER) {
+        editing = true;
+        tmpMinutes = constrain(getTelemetryTimedMinutes(), 1, 120);
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        setUiEncoderBoundaries(1, 120, false);
+        resetUiEncoder(tmpMinutes);
+      } else if (sel == ITEM_BACK) {
+        break;
+      }
+      needRedraw = true;
+      delay(120);
+    }
+
+    static bool brakeBtnInLogging = false;
+    static uint32_t lastBrakeBtnLoggingTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
+      if (!brakeBtnInLogging && millis() - lastBrakeBtnLoggingTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInLogging = true;
+        lastBrakeBtnLoggingTime = millis();
+        if (editing) {
+          editing = false;
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+          resetUiEncoder(ITEM_TIMER);
+          needRedraw = true;
+        } else {
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+      }
+    } else {
+      brakeBtnInLogging = false;
+    }
+
+    if (needRedraw) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+
+      bool s0 = (!editing && sel == ITEM_ACTIVE);
+      const char* actionStr = telemetryIsLoggingActive() ? lblStopNow[lang] : lblStartNow[lang];
+      obdWriteString(&g_obd, 0, 0, 0 * lineH, (char*)actionStr, menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      sprintf(msgStr, "%3s", getOnOffLabel(lang, telemetryIsLoggingActive() ? 1 : 0));
+      uint8_t ax = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
+      obdWriteString(&g_obd, 0, ax, 0 * lineH, msgStr, menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s1 = (!editing && sel == ITEM_TIMER);
+      obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblTimer[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      char minutesStr[10];
+      uint16_t shownMinutes = editing ? tmpMinutes : constrain(getTelemetryTimedMinutes(), 1, 120);
+      snprintf(minutesStr, sizeof(minutesStr), "%3dm", shownMinutes);
+      uint8_t mx = OLED_WIDTH - (uint8_t)(strlen(minutesStr) * WIDTH8x8);
+      obdWriteString(&g_obd, 0, mx, 1 * lineH, minutesStr, menuFont, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+
+      bool s2 = (!editing && sel == ITEM_BACK);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)getBackLabel(lang), menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;
     }

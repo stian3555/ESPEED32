@@ -256,6 +256,19 @@ void HalfBridge::set_dk(uint16_t dk)
 }
 
 /**
+ * @brief       Sets the ADC voltage range used for diagnosis/current conversion
+ * @param[in]   adc_voltage_range_volts ADC full-scale range in volts
+ * @pre         None
+ */
+void HalfBridge::set_adc_voltage_range_volts(float adc_voltage_range_volts)
+{
+    if(adc_voltage_range_volts > 0.0f)
+    {
+        hw_conf.adc_voltage_range_volts = adc_voltage_range_volts;
+    }
+}
+
+/**
  * @brief       Gets load current in amperes
  * @return      Load current in amperes
  * @pre         begin()

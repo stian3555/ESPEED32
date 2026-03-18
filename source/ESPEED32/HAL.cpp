@@ -432,7 +432,7 @@ uint16_t HAL_ReadVoltageDivider(int analogInput, uint32_t rvfbl, uint32_t rvfbh)
   uint32_t adcRaw = analogRead(analogInput);
   
   /* Calculate voltage at ADC pin */
-  uint32_t voltage = (ACD_VOLTAGE_RANGE_MVOLTS * adcRaw) / ACD_RESOLUTION_STEPS;
+  uint32_t voltage = ((uint32_t)g_adcVoltageRange_mV * adcRaw) / ACD_RESOLUTION_STEPS;
   
   /* Calculate voltage applied to voltage divider */
   voltage = (voltage * (rvfbl + rvfbh)) / rvfbl;
@@ -462,7 +462,7 @@ bool HAL_HasMotorCurrentSense() {
  */
 uint16_t HAL_ConvertMotorCurrentAdcToMilliAmps(uint32_t adcRaw) {
   /* Calculate voltage at ADC pin */
-  uint32_t voltage_mV = (ACD_VOLTAGE_RANGE_MVOLTS * adcRaw) / ACD_RESOLUTION_STEPS;
+  uint32_t voltage_mV = ((uint32_t)g_adcVoltageRange_mV * adcRaw) / ACD_RESOLUTION_STEPS;
 
 #if CURRENT_SENSE_PROFILE == CURRENT_SENSE_PROFILE_BTN99X0
   /* Calculate motor current based on BTN9960LV IS characteristic and voltage divider

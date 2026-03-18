@@ -42,8 +42,8 @@ void showCarSelection() {
 
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
-  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  setUiEncoderBoundaries(0, CAR_MAX_COUNT - 1, false);
+  resetUiEncoder(g_storedVar.selectedCarNumber);
 
   /* Screensaver support */
   uint32_t lastInteraction = millis();
@@ -59,7 +59,7 @@ void showCarSelection() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -77,7 +77,7 @@ void showCarSelection() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -100,7 +100,7 @@ void showCarSelection() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      g_storedVar.selectedCarNumber = g_rotaryEncoder.readEncoder();
+      g_storedVar.selectedCarNumber = readUiEncoder();
     }
 
     /* If encoder move out of frame, adjust frame */
@@ -170,8 +170,8 @@ void showCopyCarSettings() {
 
   /* Set encoder to car selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT - 1, false);
-  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  setUiEncoderBoundaries(0, CAR_MAX_COUNT - 1, false);
+  resetUiEncoder(g_storedVar.selectedCarNumber);
   sourceCar = g_storedVar.selectedCarNumber;
 
   /* Select source car */
@@ -183,7 +183,7 @@ void showCopyCarSettings() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -201,7 +201,7 @@ void showCopyCarSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -223,7 +223,7 @@ void showCopyCarSettings() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      sourceCar = g_rotaryEncoder.readEncoder();
+      sourceCar = readUiEncoder();
     }
 
     /* If encoder move out of frame, adjust frame */
@@ -280,8 +280,8 @@ void showCopyCarSettings() {
   screensaverActive = false;
 
   /* Reset encoder for destination car selection (CAR_MAX_COUNT = ALL option) */
-  g_rotaryEncoder.setBoundaries(0, CAR_MAX_COUNT, false);  /* 0-19 = cars, 20 = ALL */
-  g_rotaryEncoder.reset(g_storedVar.selectedCarNumber);
+  setUiEncoderBoundaries(0, CAR_MAX_COUNT, false);  /* 0-19 = cars, 20 = ALL */
+  resetUiEncoder(g_storedVar.selectedCarNumber);
   destCar = g_storedVar.selectedCarNumber;
 
   /* Reset frame if needed */
@@ -300,7 +300,7 @@ void showCopyCarSettings() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -318,7 +318,7 @@ void showCopyCarSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -340,7 +340,7 @@ void showCopyCarSettings() {
     /* Get encoder value if changed */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      destCar = g_rotaryEncoder.readEncoder();
+      destCar = readUiEncoder();
     }
 
     /* If encoder move out of frame, adjust frame */
@@ -402,6 +402,7 @@ void showCopyCarSettings() {
         g_storedVar.carParam[i].maxSpeed = g_storedVar.carParam[sourceCar].maxSpeed;
         g_storedVar.carParam[i].throttleCurveVertex.inputThrottle = g_storedVar.carParam[sourceCar].throttleCurveVertex.inputThrottle;
         g_storedVar.carParam[i].throttleCurveVertex.curveSpeedDiff = g_storedVar.carParam[sourceCar].throttleCurveVertex.curveSpeedDiff;
+        g_storedVar.carParam[i].fade = g_storedVar.carParam[sourceCar].fade;
         g_storedVar.carParam[i].antiSpin = g_storedVar.carParam[sourceCar].antiSpin;
         g_storedVar.carParam[i].freqPWM = g_storedVar.carParam[sourceCar].freqPWM;
         g_storedVar.carParam[i].brakeButtonReduction = g_storedVar.carParam[sourceCar].brakeButtonReduction;
@@ -421,6 +422,7 @@ void showCopyCarSettings() {
     g_storedVar.carParam[destCar].maxSpeed = g_storedVar.carParam[sourceCar].maxSpeed;
     g_storedVar.carParam[destCar].throttleCurveVertex.inputThrottle = g_storedVar.carParam[sourceCar].throttleCurveVertex.inputThrottle;
     g_storedVar.carParam[destCar].throttleCurveVertex.curveSpeedDiff = g_storedVar.carParam[sourceCar].throttleCurveVertex.curveSpeedDiff;
+    g_storedVar.carParam[destCar].fade = g_storedVar.carParam[sourceCar].fade;
     g_storedVar.carParam[destCar].antiSpin = g_storedVar.carParam[sourceCar].antiSpin;
     g_storedVar.carParam[destCar].freqPWM = g_storedVar.carParam[sourceCar].freqPWM;
     g_storedVar.carParam[destCar].brakeButtonReduction = g_storedVar.carParam[sourceCar].brakeButtonReduction;
@@ -457,8 +459,8 @@ void showSelectRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 5, false); /* Boundaries are [0, 5] because there are six options */
-  g_rotaryEncoder.reset(selectedOption);
+  setUiEncoderBoundaries(0, 5, false); /* Boundaries are [0, 5] because there are six options */
+  resetUiEncoder(selectedOption);
 
   /* Setup scrolling frame - number of visible items depends on font size */
   const uint8_t totalOptions = 6;
@@ -484,7 +486,7 @@ void showSelectRenameCar() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -502,7 +504,7 @@ void showSelectRenameCar() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -526,8 +528,8 @@ void showSelectRenameCar() {
           /* Cancel RACESWP editing */
           isEditingRaceswp = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(0, 5, false);
-          g_rotaryEncoder.reset(selectedOption);
+          setUiEncoderBoundaries(0, 5, false);
+          resetUiEncoder(selectedOption);
         } else {
           /* Exit CAR menu completely */
           goto exitCarMenu;
@@ -541,10 +543,10 @@ void showSelectRenameCar() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (!isEditingRaceswp) {
-        selectedOption = g_rotaryEncoder.readEncoder();
+        selectedOption = readUiEncoder();
       } else {
         /* When editing RACESWP, encoder changes the value */
-        tempRaceswpValue = g_rotaryEncoder.readEncoder();
+        tempRaceswpValue = readUiEncoder();
       }
     }
 
@@ -634,8 +636,8 @@ void showSelectRenameCar() {
     /* First click on RACESWP: enter edit mode */
     isEditingRaceswp = true;
     g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-    g_rotaryEncoder.setBoundaries(0, 1, false);  /* 0=OFF, 1=ON */
-    g_rotaryEncoder.reset(tempRaceswpValue);
+    setUiEncoderBoundaries(0, 1, false);  /* 0=OFF, 1=ON */
+    resetUiEncoder(tempRaceswpValue);
     /* Wait for second click to confirm */
     while (!g_rotaryEncoder.isEncoderButtonClicked()) {
       /* Check for brake button to cancel editing */
@@ -644,13 +646,13 @@ void showSelectRenameCar() {
         /* Cancel editing - restore encoder for option selection */
         isEditingRaceswp = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, 5, false);
-        g_rotaryEncoder.reset(selectedOption);
+        setUiEncoderBoundaries(0, 5, false);
+        resetUiEncoder(selectedOption);
         obdFill(&g_obd, OBD_WHITE, 1);
         break;
       }
 
-      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? g_rotaryEncoder.readEncoder() : tempRaceswpValue;
+      tempRaceswpValue = g_rotaryEncoder.encoderChanged() ? readUiEncoder() : tempRaceswpValue;
 
       /* Redraw the RACESWP option with updated value */
       uint8_t optionScreenPos = CAR_OPTION_GRID_SEL - frameUpper;
@@ -701,16 +703,23 @@ void showSelectRenameCar() {
   else if (selectedOption == CAR_OPTION_RESET)
   {
     uint16_t lang = g_storedVar.language;
-    const char* carLabel = (lang == LANG_NOR) ? "ALLE BILER" : "ALL CARS";
+    const char* allCarsLabel[] = {
+      "ALLE BILER", "ALL CARS", "ALL CARS", "ALL CARS",
+      "TODOS AUTOS", "ALLE AUTOS", "TUTTE AUTO"
+    };
+    const char* doneText[] = {
+      "NULLSTILT!", "RESET DONE!", "RESET DONE!", "RESET DONE!",
+      "RESET OK!", "RESET OK!", "RESET OK!"
+    };
+    const char* carLabel = allCarsLabel[lang];
     bool confirmed = showResetConfirmDialog(carLabel);
     if (confirmed) {
       resetAllCarsToFactoryDefaults();
       saveEEPROM(g_storedVar);
       initMenuItems();
       obdFill(&g_obd, OBD_WHITE, 1);
-      const char* doneText = (lang == LANG_NOR) ? "NULLSTILT!" : "RESET DONE!";
-      int tw = strlen(doneText) * WIDTH12x16;
-      obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
+      int tw = strlen(doneText[lang]) * WIDTH12x16;
+      obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText[lang], FONT_12x16, OBD_BLACK, 1);
       delay(1500);
       obdFill(&g_obd, OBD_WHITE, 1);
     }
@@ -721,8 +730,8 @@ void showSelectRenameCar() {
 exitCarMenu:
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-  g_rotaryEncoder.reset(getMainMenuSelector());
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
   /* Clear screen */
   obdFill(&g_obd, OBD_WHITE, 1);
@@ -750,8 +759,8 @@ void showRenameCar() {
 
   /* Set encoder to selection parameter */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
-  g_rotaryEncoder.reset(selectedOption);
+  setUiEncoderBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
+  resetUiEncoder(selectedOption);
 
   /* Print "-RENAME THE CAR-"  and "-CLICK OK TO CONFIRM" */
   obdWriteString(&g_obd, 0, 16, 0, (char *)STR_RENAME_CAR[g_storedVar.language], FONT_6x8, OBD_WHITE, 1);
@@ -780,7 +789,7 @@ void showRenameCar() {
     /* Check for any wake-up input first (encoder, button, throttle) */
     bool wakeUpTriggered = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -807,7 +816,7 @@ void showRenameCar() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -832,11 +841,11 @@ void showRenameCar() {
       lastInteraction = millis();
       /* Change selectedOption if in RENAME_CAR_SELECT_OPTION_MODE */
       if (mode == RENAME_CAR_SELECT_OPTION_MODE) {
-        selectedOption = g_rotaryEncoder.readEncoder();
+        selectedOption = readUiEncoder();
       }
       /* Change selectedChar if in RENAME_CAR_SELECT_CHAR_MODE */
       if (mode == RENAME_CAR_SELECT_CHAR_MODE) {
-        selectedChar = g_rotaryEncoder.readEncoder();
+        selectedChar = readUiEncoder();
         tmpName[selectedOption] = (char)selectedChar; /* Change the value of the selected char in the temp name */
 
         /* Draw the upward and downward arrows on the selected char to indicate that it can be changed */
@@ -889,8 +898,8 @@ void showRenameCar() {
         /* switch mode */
         mode = RENAME_CAR_SELECT_CHAR_MODE;
         /* Reset encode */
-        g_rotaryEncoder.setBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
-        g_rotaryEncoder.reset((uint16_t)tmpName[selectedOption]);
+        setUiEncoderBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
+        resetUiEncoder((uint16_t)tmpName[selectedOption]);
         selectedChar = (uint16_t)tmpName[selectedOption];
       }
       /* If in RENAME_CAR_SELECT_CHAR_MODE */
@@ -898,8 +907,8 @@ void showRenameCar() {
         /* switch mode */
         mode = RENAME_CAR_SELECT_OPTION_MODE;
         /* Reset encode */
-        g_rotaryEncoder.setBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
-        g_rotaryEncoder.reset(selectedOption);
+        setUiEncoderBoundaries(0, CAR_NAME_MAX_SIZE - 1, false);
+        resetUiEncoder(selectedOption);
         /* Cancel the upward and downward arrows (draw them black) */
         for (uint8_t j = 0; j < 6; j++) {
           obdDrawLine(&g_obd, 1 + j + (selectedOption * 12), 14 - j, 11 - j + (selectedOption * 12), 14 - j, OBD_WHITE, 1);
@@ -915,32 +924,40 @@ void showRenameCar() {
 
 
 /**
- * Show the Throttle Curve selection screen. Shwon when the CURVE item is selected.
- * Draws the throttle curve graph as two segmented lines, that changes when the encoder is rotated (that is, the CURVE parameter is being changed).
- * The calculation for drawing the throttle curve are the same as the ones done in the throttleCurve function.
- * The CURVE parameter and the current trigger value are also displayed.
+ * Helpers for drawing the throttle-response graph used by CURVE and FADE.
  */
-void showCurveSelection()
-{
-  uint16_t throttleCurveVertexSpeedRaw;
-  uint16_t prevTrigger = g_escVar.outputSpeed_pct;
-  uint16_t inputThrottle = (g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle * 100) / THROTTLE_NORMALIZED;  //Take inputThrottle (from 0 to THROTTLE NORMALIZED) and convert it in a 0% to 100% value
-  uint16_t minSpeedPctX10 = sensiToPctX10(g_storedVar.carParam[g_carSel].minSpeed);
-  uint16_t minSpeedY = map(minSpeedPctX10, 0, 1000, 50, 0);
-  uint16_t maxSpeedY = map((uint16_t)g_storedVar.carParam[g_carSel].maxSpeed * 10, 0, 1000, 50, 0);
-  
-  /*The inputThrottle (X axis) (that ranges from 0 to THROTTLE_NORMALIZED) is converted to the 0-100 range, to simplify calculations.
-    The output speed (Y axis) is already expressed in the 0-100 range.
-    The origin OLED display screen, which is 128x64, is located on the top-left corner of the screen.
-    The origin of the graph is therefore shifted to the pixel (25, 50). Given that the screen heigth is only 64, the y values are also scaled to range from 0 to 50 (they are divided by 2).
-    The x pixel values increases from left to right, but the y pixel values increases from top to bottom, therefore every (x, y) value in the (throttle, speed) domain is converted in the pixel domain as:
-    x_pixel = (x_throttle + 25);
-    y_pixel = (50 - (y_speed / 2)); */
-  /* Clear screen and draw x and y axis */
+static uint16_t calcThrottleCurveVertexSpeedRaw(uint16_t minSpeedRaw, uint16_t maxSpeedRaw, uint16_t curveDiffPct) {
+  return (uint16_t)(minSpeedRaw + (((uint32_t)maxSpeedRaw - (uint32_t)minSpeedRaw) * (uint32_t)curveDiffPct) / 100U);
+}
+
+static uint8_t graphYFromPercentX10(uint16_t pctX10) {
+  return (uint8_t)map(pctX10, 0, 1000, 50, 0);
+}
+
+static uint8_t graphYFromSpeedRaw(uint16_t speedRaw) {
+  return graphYFromPercentX10((uint16_t)(speedRaw * 5U));
+}
+
+static uint8_t graphXFromThrottleNorm(uint16_t throttleNorm) {
+  uint16_t pct = (uint16_t)(((uint32_t)throttleNorm * 100U) / THROTTLE_NORMALIZED);
+  return (uint8_t)(25U + min((uint16_t)100U, pct));
+}
+
+static void drawThrottleResponseGraph(uint16_t curveDiffValue, uint16_t fadePctValue, uint16_t triggerPct, const char* valueText) {
+  uint16_t minSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed;
+  uint16_t maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
+  uint16_t minSpeedY = graphYFromPercentX10(sensiToPctX10(minSpeedRaw));
+  uint16_t maxSpeedY = graphYFromPercentX10((uint16_t)g_storedVar.carParam[g_carSel].maxSpeed * 10U);
+  uint16_t fadeThrottleNorm = fadePctToThrottleNorm(min((uint16_t)FADE_MAX_VALUE, fadePctValue));
+  uint16_t curveVertexInputNorm = curveVertexInputWithFade(fadeThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle);
+  uint16_t curveVertexSpeedRaw = calcThrottleCurveVertexSpeedRaw(minSpeedRaw, maxSpeedRaw, curveDiffValue);
+  uint8_t fadeX = graphXFromThrottleNorm(fadeThrottleNorm);
+  uint8_t curveX = graphXFromThrottleNorm(curveVertexInputNorm);
+  uint8_t curveY = graphYFromSpeedRaw(curveVertexSpeedRaw);
+
   obdFill(&g_obd, OBD_WHITE, 1);
   obdDrawLine(&g_obd, 25, 0, 25, 50, OBD_BLACK, 1);
   obdDrawLine(&g_obd, 25, 50, 125, 50, OBD_BLACK, 1);
-  /* Write the 100%, 0%, 50% and MIN and MAXpoints labels */
   obdWriteString(&g_obd, 0, 0, 0, (char *)"100%", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 0, 58, (char *)"  0%", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 104, 58, (char *)"100%", FONT_6x8, OBD_BLACK, 1);
@@ -948,39 +965,57 @@ void showCurveSelection()
   obdWriteString(&g_obd, 0, 28, maxSpeedY, (char *)"MAX", FONT_6x8, OBD_BLACK, 1);
   obdWriteString(&g_obd, 0, 64, 58, (char *)"50%", FONT_6x8, OBD_BLACK, 1);
 
-  /* Draw axis ticks at 50%, MIN SPEED and MAX speed points*/
   obdSetPixel(&g_obd, 24, minSpeedY, OBD_BLACK, 1);
   obdSetPixel(&g_obd, 23, minSpeedY, OBD_BLACK, 1);
-  obdSetPixel(&g_obd, 25 + inputThrottle, 51, OBD_BLACK, 1);
-  obdSetPixel(&g_obd, 25 + inputThrottle, 52, OBD_BLACK, 1);
+  obdSetPixel(&g_obd, 75, 51, OBD_BLACK, 1);
+  obdSetPixel(&g_obd, 75, 52, OBD_BLACK, 1);
   obdSetPixel(&g_obd, 26, maxSpeedY, OBD_BLACK, 1);
   obdSetPixel(&g_obd, 27, maxSpeedY, OBD_BLACK, 1);
+  obdSetPixel(&g_obd, curveX, 51, OBD_BLACK, 1);
+  obdSetPixel(&g_obd, curveX, 52, OBD_BLACK, 1);
 
-  /* Set encoder to curve parameters */
-  g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, false);
-  g_rotaryEncoder.reset(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+  if (fadePctValue > 0) {
+    obdSetPixel(&g_obd, fadeX, 51, OBD_BLACK, 1);
+    obdSetPixel(&g_obd, fadeX, 52, OBD_BLACK, 1);
+    if (fadePctValue >= 5 && fadeX > 28 && fadeX < 120) {
+      obdWriteString(&g_obd, 0, fadeX - 3, 58, (char *)"F", FONT_6x8, OBD_BLACK, 1);
+    }
+  }
 
-  /* Save original curve value for cancel */
+  if (fadePctValue > 0) {
+    obdDrawLine(&g_obd, 25, 50, fadeX, minSpeedY, OBD_BLACK, 1);
+    if (curveX > fadeX) {
+      obdDrawLine(&g_obd, fadeX, minSpeedY, curveX, curveY, OBD_BLACK, 1);
+    }
+  } else {
+    obdDrawLine(&g_obd, 25, minSpeedY, curveX, curveY, OBD_BLACK, 1);
+  }
+  obdDrawLine(&g_obd, curveX, curveY, 125, maxSpeedY, OBD_BLACK, 1);
+
+  obdWriteString(&g_obd, 0, OLED_WIDTH - 48, 34, (char *)valueText, FONT_12x16, OBD_BLACK, 1);
+  snprintf(msgStr, sizeof(msgStr), "%3d%%", triggerPct);
+  obdWriteString(&g_obd, 0, OLED_WIDTH - 32, 26, msgStr, FONT_8x8, OBD_BLACK, 1);
+}
+
+/**
+ * Show the Throttle Curve selection screen. Shwon when the CURVE item is selected.
+ * Draws the throttle curve graph as the actual live response, including FADE when enabled.
+ * The CURVE parameter and the current trigger value are also displayed.
+ */
+void showCurveSelection()
+{
+  uint16_t prevTrigger = g_escVar.outputSpeed_pct;
   uint16_t originalCurveValue = g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff;
   bool curveCanceled = false;
 
-  /* Calculate the output speed of the throttle curve vertex (as in throttleCurve() function)
-     This is calculated as the curveSpeedDiff (from 10% to 90%) percentage of the difference between minSpeed and maxSpeed */
-  throttleCurveVertexSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed + ((((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE) - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
-
-  /* Draw Line from MIN SPEED, to middle point */
-  obdDrawLine(&g_obd, 25, minSpeedY, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), OBD_BLACK, 1);
-  /* Draw Line from middle point to 100% */
-  obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_BLACK, 1);
-
-  /* Write the CURVE value */
-  sprintf(msgStr, "%3d%c", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff, '%');
-  obdWriteString(&g_obd, 0, OLED_WIDTH - 48, 34, msgStr, FONT_12x16, OBD_BLACK, 1);
-
-  /* Write the trigger value */
-  sprintf(msgStr, "%3d%c", prevTrigger, '%');
-  obdWriteString(&g_obd, 0, OLED_WIDTH - 32, 26, msgStr, FONT_8x8, OBD_BLACK, 1);
+  g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+  setUiEncoderBoundaries(THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE, THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE, false);
+  resetUiEncoder(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+  snprintf(msgStr, sizeof(msgStr), "%3d%%", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+  drawThrottleResponseGraph(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff,
+                            g_storedVar.carParam[g_carSel].fade,
+                            prevTrigger,
+                            msgStr);
 
   /* Exit curve function when encoder is clicked */
   while (!g_rotaryEncoder.isEncoderButtonClicked() && !curveCanceled)
@@ -1003,30 +1038,23 @@ void showCurveSelection()
     /* Write the trigger value only if it changed */
     if (g_escVar.outputSpeed_pct != prevTrigger)
     {
-      /* Update trigger */
       prevTrigger = g_escVar.outputSpeed_pct;
-
-      /* Write the trigger value */
-      sprintf(msgStr, "%3d%c", prevTrigger, '%');
-      obdWriteString(&g_obd, 0, OLED_WIDTH - 32, 26, msgStr, FONT_8x8, OBD_BLACK, 1);
+      snprintf(msgStr, sizeof(msgStr), "%3d%%", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+      drawThrottleResponseGraph(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff,
+                                g_storedVar.carParam[g_carSel].fade,
+                                prevTrigger,
+                                msgStr);
     }
 
-    /* Get encoder position if it was changed and correct the new lines*/
+    /* Get encoder position if it was changed and redraw the graph */
     if (g_rotaryEncoder.encoderChanged())
     {
-      /* Cancel the old lines (draw them in black) */
-      obdDrawLine(&g_obd, 25, minSpeedY, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), OBD_WHITE, 1);
-      obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_WHITE, 1);
-      
-      /* Update the speed coordinate of the vertex */
-      g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff = g_rotaryEncoder.readEncoder();
-      sprintf(msgStr, "%3d%c", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff, '%');
-      throttleCurveVertexSpeedRaw = g_storedVar.carParam[g_carSel].minSpeed + ((((uint32_t)g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE) - (uint32_t)g_storedVar.carParam[g_carSel].minSpeed) * ((uint32_t)g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff) / 100);
-      obdWriteString(&g_obd, 0, OLED_WIDTH - 48, 34, msgStr, FONT_12x16, OBD_BLACK, 1);
-      
-      /* Draw the new lines */
-      obdDrawLine(&g_obd, 25, minSpeedY, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), OBD_BLACK, 1);
-      obdDrawLine(&g_obd, 25 + inputThrottle, map((uint16_t)(throttleCurveVertexSpeedRaw * 5), 0, 1000, 50, 0), 125, maxSpeedY, OBD_BLACK, 1);
+      g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff = readUiEncoder();
+      snprintf(msgStr, sizeof(msgStr), "%3d%%", g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff);
+      drawThrottleResponseGraph(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff,
+                                g_storedVar.carParam[g_carSel].fade,
+                                prevTrigger,
+                                msgStr);
     }
     else
     {
@@ -1040,8 +1068,8 @@ void showCurveSelection()
 
   /* Reset encoder */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-  g_rotaryEncoder.reset(getMainMenuSelector());
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
   g_escVar.encoderPos = getMainMenuSelector();
 
   /* Only save if not canceled */
@@ -1052,4 +1080,76 @@ void showCurveSelection()
   obdFill(&g_obd, OBD_WHITE, 1);    /* Clear screen */
 
   return;
+}
+
+/**
+ * Show the FADE selection screen. FADE adds a soft 0->SENSI ramp before the normal curve starts.
+ */
+void showFadeSelection()
+{
+  uint16_t prevTrigger = g_escVar.outputSpeed_pct;
+  uint16_t originalFadeValue = g_storedVar.carParam[g_carSel].fade;
+  bool fadeCanceled = false;
+
+  g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+  setUiEncoderBoundaries(0, FADE_MAX_VALUE, false);
+  resetUiEncoder(g_storedVar.carParam[g_carSel].fade);
+  snprintf(msgStr, sizeof(msgStr), "%3d%%", g_storedVar.carParam[g_carSel].fade);
+  drawThrottleResponseGraph(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff,
+                            g_storedVar.carParam[g_carSel].fade,
+                            prevTrigger,
+                            msgStr);
+
+  while (!g_rotaryEncoder.isEncoderButtonClicked() && !fadeCanceled)
+  {
+    static bool brakeBtnInFade = false;
+    static uint32_t lastBrakeBtnFadeTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      if (!brakeBtnInFade && millis() - lastBrakeBtnFadeTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInFade = true;
+        lastBrakeBtnFadeTime = millis();
+        g_storedVar.carParam[g_carSel].fade = originalFadeValue;
+        fadeCanceled = true;
+      }
+    } else {
+      brakeBtnInFade = false;
+    }
+
+    if (g_escVar.outputSpeed_pct != prevTrigger)
+    {
+      prevTrigger = g_escVar.outputSpeed_pct;
+      snprintf(msgStr, sizeof(msgStr), "%3d%%", g_storedVar.carParam[g_carSel].fade);
+      drawThrottleResponseGraph(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff,
+                                g_storedVar.carParam[g_carSel].fade,
+                                prevTrigger,
+                                msgStr);
+    }
+
+    if (g_rotaryEncoder.encoderChanged())
+    {
+      g_storedVar.carParam[g_carSel].fade = readUiEncoder();
+      snprintf(msgStr, sizeof(msgStr), "%3d%%", g_storedVar.carParam[g_carSel].fade);
+      drawThrottleResponseGraph(g_storedVar.carParam[g_carSel].throttleCurveVertex.curveSpeedDiff,
+                                g_storedVar.carParam[g_carSel].fade,
+                                prevTrigger,
+                                msgStr);
+    }
+    else
+    {
+      vTaskDelay(10);
+    }
+
+    if (checkRaceModeEscape()) { requestEscapeToMain(); break; }
+  }
+
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
+  g_escVar.encoderPos = getMainMenuSelector();
+
+  if (!fadeCanceled && !isEscapeToMainRequested()) {
+    saveEEPROM(g_storedVar);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
 }

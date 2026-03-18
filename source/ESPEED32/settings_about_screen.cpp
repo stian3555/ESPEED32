@@ -105,8 +105,8 @@ void showAboutScreen() {
   uint16_t page = 0;
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, maxPage, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, maxPage, false);
+  resetUiEncoder(0);
 
   auto drawAbout = [&]() {
     obdFill(&g_obd, OBD_WHITE, 1);
@@ -145,7 +145,7 @@ void showAboutScreen() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -163,7 +163,7 @@ void showAboutScreen() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -184,7 +184,7 @@ void showAboutScreen() {
 
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      uint16_t newPage = g_rotaryEncoder.readEncoder();
+      uint16_t newPage = readUiEncoder();
       if (newPage != page) {
         page = newPage;
         drawAbout();
@@ -195,7 +195,7 @@ void showAboutScreen() {
       lastInteraction = millis();
       if (maxPage > 0 && page < maxPage) {
         page++;
-        g_rotaryEncoder.reset(page);
+        resetUiEncoder(page);
         drawAbout();
       } else {
         break;

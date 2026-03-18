@@ -288,7 +288,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
     const char* antisLabel = getRaceLabel(g_storedVar.language, 2);
     uint8_t labelWidth = strlen(antisLabel) * 6;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)antisLabel, FONT_6x8, colorAntis, 1);
-    /* Value - "255ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
+    /* Value - "999ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
     sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
     obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
     lastAntis = g_storedVar.carParam[g_carSel].antiSpin;
@@ -312,7 +312,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
 
 /**
  * @brief Show screensaver with branding
- * @details Displays personalized branding and optional LIMITER warning (full screen, no status line).
+ * @details Displays personalized branding only (full screen, no status line).
  *          Text is configurable on-device and via web UI.
  */
 void showScreensaver() {
@@ -333,11 +333,6 @@ void showScreensaver() {
   /* Display subtitle in smaller font centered below */
   obdWriteString(&g_obd, 0, line2_x, 34, g_storedVar.screensaverLine2, FONT_6x8, OBD_BLACK, 1);
 
-  /* Display LIMITER warning if active at same position as in menu */
-  if (g_storedVar.carParam[g_carSel].maxSpeed < MAX_SPEED_DEFAULT)
-  {
-    obdWriteString(&g_obd, 0, WIDTH8x8, 3 * HEIGHT12x16, (char *)STR_LIMITER[g_storedVar.language], FONT_8x8, OBD_WHITE, 1);
-  }
 }
 
 /**
@@ -469,7 +464,7 @@ void printMainMenu(MenuState_enum currMenuState)
 
   /* Check for any wake-up input (throttle, encoder change, or button press) */
   if (screensaverActive) {
-    uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+    uint16_t currentEncoderPos = readUiEncoder();
     if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
         currentEncoderPos != screensaverEncoderPos ||
         digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -490,7 +485,7 @@ void printMainMenu(MenuState_enum currMenuState)
     /* Timeout reached and throttle below threshold - show screensaver */
     if (!screensaverActive) {
       screensaverActive = true;
-      screensaverEncoderPos = g_rotaryEncoder.readEncoder();  /* Save position when entering screensaver */
+      screensaverEncoderPos = readUiEncoder();  /* Save position when entering screensaver */
       showScreensaver();
     }
     /* Auto power save: triggers after screensaverTimeout + powerSaveTimeout min of inactivity.
@@ -550,11 +545,7 @@ void printMainMenu(MenuState_enum currMenuState)
               sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
             }
           }
-          /* Special handling for QB item: display ON/OFF instead of 0/1 */
-          else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 6)) == 0) {
-            uint16_t enabled = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
-            sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, enabled ? 1 : 0));
-          } else {
+          else {
             /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
             sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[menuIndex].value), g_mainMenu.item[menuIndex].unit);
           }
@@ -584,7 +575,7 @@ void printMainMenu(MenuState_enum currMenuState)
           /* Special handling for LANG menu item */
           else if (strcmp(g_mainMenu.item[menuIndex].name, "LANG") == 0) {
             uint16_t language = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
-            const char* langLabel = (language <= LANG_ACD) ? LANG_LABELS[language] : LANG_LABELS[LANG_ENG];
+            const char* langLabel = (language <= LANG_MAX) ? LANG_LABELS[language] : LANG_LABELS[LANG_ENG];
             sprintf(msgStr, "%3s", langLabel);
           }
           else {

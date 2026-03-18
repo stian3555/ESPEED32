@@ -7,7 +7,7 @@ on:
     paths:
       - "source/ESPEED32/data/docs/**"
       - "source/ESPEED32/data/ui/**"
-      - "CNAME"
+      - ".github/CNAME"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -58,13 +58,13 @@ jobs:
 
           SITE_URL=""
 
-          # Optional custom domain: commit a CNAME file in repository root.
-          if [ -f CNAME ]; then
-            SITE_HOST="$(tr -d '[:space:]' < CNAME)"
+          # Optional custom domain: keep the CNAME source under .github/.
+          if [ -f .github/CNAME ]; then
+            SITE_HOST="$(tr -d '[:space:]' < .github/CNAME)"
             if [ -n "$SITE_HOST" ]; then
               SITE_URL="https://$SITE_HOST"
             fi
-            cp CNAME site/CNAME
+            cp .github/CNAME site/CNAME
           fi
 
           if [ -z "$SITE_URL" ]; then

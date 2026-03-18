@@ -23,6 +23,7 @@
 #include "ui_render.h"
 #include "task_control_loop.h"
 #include "ext_pot.h"
+#include "telemetry_logging.h"
 
 /* Version defined in slot_ESC.h */
 
@@ -62,14 +63,19 @@ uint16_t g_carSel;    /* Currently selected car model index */
 AiEsp32RotaryEncoder g_rotaryEncoder = AiEsp32RotaryEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_BUTTON_PIN, ENCODER_VCC_PIN, ENCODER_STEPS);
 
 uint8_t g_encoderMainSelector = 1;                    /* Main menu item selector */
-static uint8_t g_encoderSecondarySelector = 0;        /* Secondary value selector */
+static uint16_t g_encoderSecondarySelector = 0;       /* Secondary value selector */
 static uint16_t *g_encoderSelectedValuePtr = NULL;    /* Pointer to currently selected value */
 static uint16_t g_originalValueBeforeEdit = 0;        /* Store original value when entering VALUE_SELECTION (for cancel) */
 static bool g_isEditingCarSelection = false;          /* Flag to prevent g_carSel update during CAR edit */
+static bool g_antiSpinStepEditActive = false;         /* True while ANTIS uses stepped encoder editing */
+static uint16_t g_antiSpinEditLastEncoder = 0;        /* Raw encoder position used to detect ANTIS step changes */
 
 /* Stored Variables (EEPROM/Preferences) */
 StoredVar_type g_storedVar;
 uint16_t g_statsEnabled = STATS_ENABLED_DEFAULT;  /* Main menu STATS visibility: 0=hidden, 1=shown */
+uint16_t g_antiSpinStepMs = ANTISPIN_STEP_DEFAULT; /* Global encoder step when editing ANTIS */
+uint16_t g_encoderInvertEnabled = ENCODER_INVERT_DEFAULT; /* Global encoder direction: 0=default, 1=inverted */
+uint16_t g_adcVoltageRange_mV = ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS; /* Global ADC voltage scale used for VIN/current conversion */
 
 /* ESC Runtime Variables */
 ESC_type g_escVar {
@@ -112,8 +118,14 @@ static bool g_escapeToMain = false;    /* Set by any submenu long press → casc
 static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
+static uint16_t g_loggingTimedMinutes = 30;   /* Runtime-only default for timed telemetry logging */
+static bool g_loggingTimedActive = false;     /* True when logging should auto-stop on deadline */
+static uint32_t g_loggingTimedStopAtMs = 0;   /* millis() deadline for telemetry logging stop */
 static const char* PREF_KEY_SENSI_HALF = "sensi_half_v1"; /* migration marker for 0.5% SENSI storage */
 static const char* PREF_KEY_STATS_ENABLED = "stats_en_v1"; /* persistent STATS visibility toggle */
+static const char* PREF_KEY_ANTIS_STEP = "antis_step_v1";  /* persistent ANTIS encoder step */
+static const char* PREF_KEY_ENC_INVERT = "enc_inv_v1";     /* persistent encoder inversion toggle */
+static const char* PREF_KEY_ADC_RANGE = "adc_rng_mv_v1";   /* persistent ADC voltage calibration */
 static const char* PREF_KEY_EXT_POT1_TARGET = "ext_pot1_tgt";
 static const char* PREF_KEY_EXT_POT2_TARGET = "ext_pot2_tgt";
 static const char* PREF_KEY_EXT_POT_ENABLED_LEGACY = "ext_pot_en";
@@ -126,6 +138,73 @@ void serviceTimedWiFiPortal();
 void showPowerSave();
 void showPowerSave(uint32_t inactivityStartMs);
 void showDeepSleep();
+
+static long g_uiEncoderMin = 1;
+static long g_uiEncoderMax = MENU_ITEMS_COUNT;
+
+long readUiEncoder() {
+  long rawValue = g_rotaryEncoder.readEncoder();
+  if (!g_encoderInvertEnabled) {
+    return rawValue;
+  }
+  return (g_uiEncoderMin + g_uiEncoderMax) - rawValue;
+}
+
+void resetUiEncoder(long logicalValue) {
+  logicalValue = constrain(logicalValue, g_uiEncoderMin, g_uiEncoderMax);
+  long rawValue = g_encoderInvertEnabled ? ((g_uiEncoderMin + g_uiEncoderMax) - logicalValue) : logicalValue;
+  g_rotaryEncoder.reset(rawValue);
+}
+
+void setUiEncoderBoundaries(long minValue, long maxValue, bool circleValues) {
+  g_uiEncoderMin = minValue;
+  g_uiEncoderMax = maxValue;
+  g_rotaryEncoder.setBoundaries(minValue, maxValue, circleValues);
+}
+
+void applyEncoderInvertSetting(uint16_t enabled) {
+  uint16_t normalized = enabled ? 1 : 0;
+  if (g_encoderInvertEnabled == normalized) {
+    return;
+  }
+  long logicalValue = readUiEncoder();
+  g_encoderInvertEnabled = normalized;
+  resetUiEncoder(logicalValue);
+}
+
+static bool isAntiSpinEditTarget() {
+  return g_encoderSelectedValuePtr == &g_storedVar.carParam[g_carSel].antiSpin;
+}
+
+static void beginSteppedValueEdit() {
+  g_antiSpinStepEditActive = isAntiSpinEditTarget();
+  g_antiSpinEditLastEncoder = g_antiSpinStepEditActive ? *g_encoderSelectedValuePtr : 0;
+}
+
+static void endSteppedValueEdit() {
+  g_antiSpinStepEditActive = false;
+  g_antiSpinEditLastEncoder = 0;
+}
+
+static void applyValueEditFromEncoder(uint16_t encoderValue) {
+  if (g_encoderSelectedValuePtr == NULL) {
+    return;
+  }
+
+  if (!g_antiSpinStepEditActive || !isAntiSpinEditTarget()) {
+    *g_encoderSelectedValuePtr = encoderValue;
+    return;
+  }
+
+  int32_t deltaTicks = (int32_t)encoderValue - (int32_t)g_antiSpinEditLastEncoder;
+  if (deltaTicks == 0) {
+    return;
+  }
+
+  int32_t newValue = (int32_t)(*g_encoderSelectedValuePtr) + (deltaTicks * (int32_t)g_antiSpinStepMs);
+  *g_encoderSelectedValuePtr = (uint16_t)constrain(newValue, 0, ANTISPIN_MAX_VALUE);
+  g_antiSpinEditLastEncoder = encoderValue;
+}
 
 /**
  * @brief Detect long press on encoder button (shared across all submenus).
@@ -166,11 +245,11 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
     uint8_t gridItems = (g_storedVar.raceViewMode == RACE_VIEW_SIMPLE)
       ? (g_storedVar.gridCarSelectEnabled ? 3 : 2)
       : (g_storedVar.gridCarSelectEnabled ? 5 : 4);
-    g_rotaryEncoder.setBoundaries(1, gridItems, false);
+    setUiEncoderBoundaries(1, gridItems, false);
   } else {
-    g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
+    setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
   }
-  g_rotaryEncoder.reset(1);
+  resetUiEncoder(1);
   g_encoderMainSelector = 1;
   g_escVar.encoderPos = 1;
   lastLongPressTime = millis();
@@ -212,12 +291,21 @@ void resetEncoderForMainMenu() {
   if (g_encoderMainSelector < 1) g_encoderMainSelector = 1;
   if (g_encoderMainSelector > menuItems) g_encoderMainSelector = menuItems;
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, menuItems, false);
-  g_rotaryEncoder.reset(g_encoderMainSelector);
+  setUiEncoderBoundaries(1, menuItems, false);
+  resetUiEncoder(g_encoderMainSelector);
 }
 
 void serviceTimedWiFiPortal() {
   serviceConnectivityPortal();
+
+  if (g_loggingTimedActive) {
+    if (!telemetryIsLoggingActive() || !isWiFiPortalActive()) {
+      g_loggingTimedActive = false;
+    } else if ((int32_t)(millis() - g_loggingTimedStopAtMs) >= 0) {
+      telemetryStopLogging();
+      g_loggingTimedActive = false;
+    }
+  }
 
   if (!g_wifiTimedActive) {
     return;
@@ -231,6 +319,11 @@ void serviceTimedWiFiPortal() {
   if ((int32_t)(millis() - g_wifiTimedStopAtMs) >= 0) {
     if (isOtaInProgress()) {
       /* Keep portal alive during OTA and retry timed stop later. */
+      g_wifiTimedStopAtMs = millis() + 1000UL;
+      return;
+    }
+    if (telemetryIsLoggingActive()) {
+      /* Logging is WiFi-only, so keep the portal alive while telemetry is running. */
       g_wifiTimedStopAtMs = millis() + 1000UL;
       return;
     }
@@ -266,6 +359,30 @@ void setWiFiTimedMinutes(uint16_t minutes) {
   g_wifiTimedMinutes = constrain(minutes, 1, 120);
 }
 
+void startTimedTelemetryLogging(uint16_t minutes) {
+  g_loggingTimedMinutes = constrain(minutes, 1, 120);
+  g_loggingTimedActive = true;
+  g_loggingTimedStopAtMs = millis() + ((uint32_t)g_loggingTimedMinutes * 60000UL);
+  if (isWiFiPortalActive()) {
+    g_wifiTimedActive = true;
+    if ((int32_t)(g_loggingTimedStopAtMs - g_wifiTimedStopAtMs) > 0) {
+      g_wifiTimedStopAtMs = g_loggingTimedStopAtMs;
+    }
+  }
+}
+
+void stopTimedTelemetryLogging() {
+  g_loggingTimedActive = false;
+}
+
+uint16_t getTelemetryTimedMinutes() {
+  return g_loggingTimedMinutes;
+}
+
+void setTelemetryTimedMinutes(uint16_t minutes) {
+  g_loggingTimedMinutes = constrain(minutes, 1, 120);
+}
+
 /*********************************************************************************************************************/
 /*                                                Function Prototypes                                                */
 /*********************************************************************************************************************/
@@ -278,6 +395,10 @@ void startTimedWiFiPortal(uint16_t minutes);
 void stopTimedWiFiPortal();
 uint16_t getWiFiTimedMinutes();
 void setWiFiTimedMinutes(uint16_t minutes);
+void startTimedTelemetryLogging(uint16_t minutes);
+void stopTimedTelemetryLogging();
+uint16_t getTelemetryTimedMinutes();
+void setTelemetryTimedMinutes(uint16_t minutes);
 bool isEscapeToMainRequested();
 void setLastEncoderInteraction(uint32_t interactionMs);
 uint8_t getMainMenuSelector();
@@ -318,6 +439,11 @@ void setup() {
     2,           /* Priority */
     &Task2,      /* Task handle */
     1);          /* Core 1 */
+}
+
+void applyAdcVoltageRangeMilliVolts(uint16_t range_mV) {
+  g_adcVoltageRange_mV = constrain(range_mV, ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS);
+  HalfBridge_SetAdcVoltageRangeMilliVolts(g_adcVoltageRange_mV);
 }
 
 
@@ -363,6 +489,8 @@ void Task1code(void *pvParameters) {
           {
             g_pref.getBytes("user_param", &g_storedVar, sizeof(g_storedVar)); /* Get the value of the stored user_param */
             g_statsEnabled = g_pref.getUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT) ? 1 : 0;
+            g_encoderInvertEnabled = g_pref.getUChar(PREF_KEY_ENC_INVERT, ENCODER_INVERT_DEFAULT) ? 1 : 0;
+            applyAdcVoltageRangeMilliVolts(g_pref.getUShort(PREF_KEY_ADC_RANGE, ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS));
             if (g_pref.isKey(PREF_KEY_EXT_POT1_TARGET) || g_pref.isKey(PREF_KEY_EXT_POT2_TARGET)) {
               g_extPotTarget[0] = constrain(g_pref.getUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT),
                                             EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX);
@@ -379,6 +507,8 @@ void Task1code(void *pvParameters) {
             }
             sanitizeExtPotTargets(0);
             resetExtPotFilter();
+            g_antiSpinStepMs = constrain(g_pref.getUShort(PREF_KEY_ANTIS_STEP, ANTISPIN_STEP_DEFAULT),
+                                         ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX);
 
             /* One-time migration: old firmware stored SENSI in whole-percent units. */
             if (!g_pref.getBool(PREF_KEY_SENSI_HALF, false)) {
@@ -464,11 +594,15 @@ void Task1code(void *pvParameters) {
         g_pref.putUChar("stored_var_ver", STORED_VAR_VERSION);
         g_pref.putBool(PREF_KEY_SENSI_HALF, true);
         g_pref.putUChar(PREF_KEY_STATS_ENABLED, STATS_ENABLED_DEFAULT);
+        g_pref.putUShort(PREF_KEY_ANTIS_STEP, ANTISPIN_STEP_DEFAULT);
+        g_pref.putUChar(PREF_KEY_ENC_INVERT, ENCODER_INVERT_DEFAULT);
+        g_pref.putUShort(PREF_KEY_ADC_RANGE, ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT);
         g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT);
 
         initStoredVariables();  /* Initialize stored variables with default values */
         g_statsEnabled = STATS_ENABLED_DEFAULT;
+        applyAdcVoltageRangeMilliVolts(ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_extPotTarget[0] = EXT_POT1_TARGET_DEFAULT;
         g_extPotTarget[1] = EXT_POT2_TARGET_DEFAULT;
         resetExtPotFilter();
@@ -541,9 +675,9 @@ void Task1code(void *pvParameters) {
             } else {
               gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (optional) */
             }
-            g_rotaryEncoder.setBoundaries(1, gridItems, false);
+            setUiEncoderBoundaries(1, gridItems, false);
           } else {
-            g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);  /* Normal menu items */
+            setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);  /* Normal menu items */
           }
           encoderBoundariesSet = true;
         }
@@ -588,6 +722,7 @@ void Task1code(void *pvParameters) {
               *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
               g_encoderSelectedValuePtr = NULL;
             }
+            endSteppedValueEdit();
 
             menuState = ITEM_SELECTION;
             g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
@@ -598,8 +733,8 @@ void Task1code(void *pvParameters) {
             } else {
               gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;
             }
-            g_rotaryEncoder.setBoundaries(1, gridItems, false);
-            g_rotaryEncoder.reset(g_encoderMainSelector);
+            setUiEncoderBoundaries(1, gridItems, false);
+            resetUiEncoder(g_encoderMainSelector);
             g_escVar.encoderPos = g_encoderMainSelector;
             g_isEditingCarSelection = false;
             obdFill(&g_obd, OBD_WHITE, 1);
@@ -618,11 +753,12 @@ void Task1code(void *pvParameters) {
                 *g_encoderSelectedValuePtr = g_originalValueBeforeEdit;
                 g_encoderSelectedValuePtr = NULL;  /* Clear pointer after use */
               }
+              endSteppedValueEdit();
 
               menuState = ITEM_SELECTION;
               g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-              g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-              g_rotaryEncoder.reset(g_encoderMainSelector);
+              setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+              resetUiEncoder(g_encoderMainSelector);
               g_escVar.encoderPos = g_encoderMainSelector;
               /* Clear car editing flag */
               g_isEditingCarSelection = false;
@@ -656,7 +792,7 @@ void Task1code(void *pvParameters) {
         /* Get encoder position if it was changed*/
         if (g_rotaryEncoder.encoderChanged()) 
         {
-          g_escVar.encoderPos = g_rotaryEncoder.readEncoder();  /* Update the global ESC variable keeping track of the encoder value (position) */
+          g_escVar.encoderPos = readUiEncoder();  /* Update the logical encoder position used by the UI */
           g_lastEncoderInteraction = millis();  /* Update last encoder interaction */
         }
 
@@ -669,7 +805,7 @@ void Task1code(void *pvParameters) {
         {
           g_encoderSecondarySelector = g_escVar.encoderPos;         /* If in ITEM_SELECTION, update the encoder SecondaryEncoder with the encoder position */
           uint16_t prevLanguage = g_storedVar.language;             /* Store previous language for change detection */
-          *g_encoderSelectedValuePtr = g_encoderSecondarySelector;  /* Also update the value of the selected parameter */
+          applyValueEditFromEncoder(g_encoderSecondarySelector);    /* Update the selected parameter from encoder input */
 
           /* If language changed, reinitialize menu items with new language strings */
           if (g_storedVar.language != prevLanguage) {
@@ -912,10 +1048,14 @@ uint16_t throttleCurve2(uint16_t inputThrottleNorm )
   uint16_t outputSpeedRaw = 0;           /* Output speed in 0.5% units */
   uint16_t tmpMinSpeedRaw;               /* Minimum speed in 0.5% units */
   uint16_t maxSpeedRaw;                  /* Maximum speed in 0.5% units */
+  uint16_t fadeThrottleNorm;
+  uint16_t curveVertexInputNorm;
 
   /* dual throttle curve: When decelerating , if dragB is higher than 100%-minSpeed, then set a lower minSpeed on the curve to allow the desired drag brake to be applied*/
   tmpMinSpeedRaw = getEffectiveSensiRaw();
   maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
+  fadeThrottleNorm = fadePctToThrottleNorm(min((uint16_t)FADE_MAX_VALUE, g_storedVar.carParam[g_carSel].fade));
+  curveVertexInputNorm = curveVertexInputWithFade(fadeThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle);
 
   /* Calculate the output speed of the throttle curve vertex
      This is calculated as the curveSpeedDiff (from 10% to 90%) percentage of the difference between minSpeed and maxSpeed */
@@ -924,14 +1064,33 @@ uint16_t throttleCurve2(uint16_t inputThrottleNorm )
   if (inputThrottleNorm == 0)   /* If input throttle is 0 --> output speed is 0% */
   {
     outputSpeedRaw = 0;
-  } 
-  else if (inputThrottleNorm <= g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle) /* If the input throttle is less than the vertex point (fixed at 50%), than map the output speed from 0 to the throttleCurveVertexSpeed */
+  }
+  else if (fadeThrottleNorm > 0 && inputThrottleNorm <= fadeThrottleNorm)
   {
-    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, 0, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, tmpMinSpeedRaw, throttleCurveVertexSpeedRaw);
-  } 
-  else  /* If the input throttle is more than the vertex point (fixed at 50%), than map the output speed from throttleCurveVertexSpeed to the maxSpeed*/
+    /* FADE fills the gap between 0 output and SENSI over the first part of trigger travel. */
+    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, 0, fadeThrottleNorm, 0, tmpMinSpeedRaw);
+  }
+  else if (inputThrottleNorm <= curveVertexInputNorm)
   {
-    outputSpeedRaw = (uint16_t)map(inputThrottleNorm, g_storedVar.carParam[g_carSel].throttleCurveVertex.inputThrottle, THROTTLE_NORMALIZED, throttleCurveVertexSpeedRaw, maxSpeedRaw);
+    if (curveVertexInputNorm <= fadeThrottleNorm)
+    {
+      outputSpeedRaw = (uint16_t)throttleCurveVertexSpeedRaw;
+    }
+    else
+    {
+      outputSpeedRaw = (uint16_t)map(inputThrottleNorm, fadeThrottleNorm, curveVertexInputNorm, tmpMinSpeedRaw, throttleCurveVertexSpeedRaw);
+    }
+  }
+  else
+  {
+    if (curveVertexInputNorm >= THROTTLE_NORMALIZED)
+    {
+      outputSpeedRaw = maxSpeedRaw;
+    }
+    else
+    {
+      outputSpeedRaw = (uint16_t)map(inputThrottleNorm, curveVertexInputNorm, THROTTLE_NORMALIZED, throttleCurveVertexSpeedRaw, maxSpeedRaw);
+    }
   }
 
   outputSpeed = (outputSpeedRaw + 1U) / SENSI_SCALE;  /* round to nearest whole percent */
@@ -1044,10 +1203,11 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
         }
       }
 
-      g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
-      g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);
+      setUiEncoderBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
+      resetUiEncoder(*g_encoderSelectedValuePtr);
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;
       g_originalValueBeforeEdit = *g_encoderSelectedValuePtr;  /* Save original value for cancel */
+      beginSteppedValueEdit();
       return VALUE_SELECTION;
     }
     /* LIST mode handling */
@@ -1061,10 +1221,11 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
                                                                                                      value is a generic pointer to void, so cast to uint16_t pointer */
       selectedParamMaxValue = g_mainMenu.item[g_encoderMainSelector - 1].maxValue;                /* Set Max and Min boundaries according to the selected items max and min value */
       selectedParamMinValue = g_mainMenu.item[g_encoderMainSelector - 1].minValue;
-      g_rotaryEncoder.setBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
-      g_rotaryEncoder.reset(*g_encoderSelectedValuePtr);  /* Reset the encoder to the current value of the selected item */
+      setUiEncoderBoundaries(selectedParamMinValue, selectedParamMaxValue, false);
+      resetUiEncoder(*g_encoderSelectedValuePtr);  /* Reset the encoder to the current value of the selected item */
       g_escVar.encoderPos = *g_encoderSelectedValuePtr;   /* Set the encoderPos global variable to the current value of the selected item */
       g_originalValueBeforeEdit = *g_encoderSelectedValuePtr;  /* Save original value for cancel */
+      beginSteppedValueEdit();
       return VALUE_SELECTION;                             /* Return the VALUE_SELECTION state */
     }
     /* if an item has a callback, execute it, then return to ITEM SELECTION */
@@ -1076,6 +1237,7 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
   }
   else /* If the current state is VALUE_SELECTION */
   {
+    endSteppedValueEdit();
     g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);         /* Set the encoder acceleration to MENU_ACCELERATION */
 
     /* Set boundaries based on view mode */
@@ -1086,12 +1248,12 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
       } else {
         gridItems = g_storedVar.gridCarSelectEnabled ? 5 : 4;  /* FULL: BRAKE, SENSI, ANTIS, CURVE, CAR (optional) */
       }
-      g_rotaryEncoder.setBoundaries(1, gridItems, false);
+      setUiEncoderBoundaries(1, gridItems, false);
     } else {
-      g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);  /* Set the encoder boundaries to the menu boundaries */
+      setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);  /* Set the encoder boundaries to the menu boundaries */
     }
 
-    g_rotaryEncoder.reset(g_encoderMainSelector);               /* Reset the encoder value to g_encoderMainSelector, so that it doesn't change the selected item */
+    resetUiEncoder(g_encoderMainSelector);               /* Reset the encoder value to g_encoderMainSelector, so that it doesn't change the selected item */
     g_escVar.encoderPos = g_encoderMainSelector;
 
     g_isEditingCarSelection = false;  /* Clear flag - editing complete */
@@ -1165,6 +1327,9 @@ void saveEEPROM(StoredVar_type toSave) {
   g_pref.begin("stored_var", false);                      /* Open the "stored" namespace in read/write mode */
   g_pref.putBytes("user_param", &toSave, sizeof(toSave)); /* Put the value of the stored user_param */
   g_pref.putUChar(PREF_KEY_STATS_ENABLED, g_statsEnabled ? 1 : 0);
+  g_pref.putUShort(PREF_KEY_ANTIS_STEP, constrain(g_antiSpinStepMs, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX));
+  g_pref.putUChar(PREF_KEY_ENC_INVERT, g_encoderInvertEnabled ? 1 : 0);
+  g_pref.putUShort(PREF_KEY_ADC_RANGE, constrain(g_adcVoltageRange_mV, ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS));
   g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, constrain(g_extPotTarget[0], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, constrain(g_extPotTarget[1], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.end();                                           /* Close the namespace */

@@ -18,38 +18,105 @@ extern void showScreensaver();
 extern void saveEEPROM(StoredVar_type toSave);
 extern void resetEncoderForMainMenu();
 
-/**
- * Quick Brake submenu.
- * Opened by clicking the QB item in the main menu.
- * Items: QB (ON/OFF), QB_TH (threshold %), QB_ST (strength %), BACK.
- * The main menu still shows ON/OFF for the QB item at a glance.
- */
-void showQuickBrakeMenu() {
-  const uint8_t QB_ITEMS = 4;  /* QB, QB_TH, QB_ST, BACK */
-  uint8_t lang = g_storedVar.language;
+enum AdvancedBrakeRowType : uint8_t {
+  AB_ROW_BUTTON = 0,
+  AB_ROW_MODE = 1,
+  AB_ROW_ZONE = 2,
+  AB_ROW_LEVEL = 3,
+  AB_ROW_BACK = 4
+};
 
-  const char* rowNames[QB_ITEMS];
-  if (lang == LANG_NOR) {
-    rowNames[0] = "Aktiv";
-    rowNames[1] = "Terskel";
-    rowNames[2] = "Styrke";
-    rowNames[3] = "Tilbake";
-  } else {
-    rowNames[0] = "Enable";
-    rowNames[1] = "Threshold";
-    rowNames[2] = "Strength";
-    rowNames[3] = "Back";
+static uint8_t getAdvancedBrakeMenuItemCount(uint16_t mode) {
+  if (mode == RELEASE_BRAKE_OFF) {
+    return 3;
   }
+  if (mode == RELEASE_BRAKE_DRAG) {
+    return 4;
+  }
+  return 5;
+}
+
+static AdvancedBrakeRowType getAdvancedBrakeRowType(uint16_t mode, uint8_t visibleIndex) {
+  if (visibleIndex == 1) {
+    return AB_ROW_BUTTON;
+  }
+  if (visibleIndex == 2) {
+    return AB_ROW_MODE;
+  }
+  if (mode == RELEASE_BRAKE_OFF) {
+    return AB_ROW_BACK;
+  }
+  if (mode == RELEASE_BRAKE_DRAG) {
+    return (visibleIndex == 3) ? AB_ROW_LEVEL : AB_ROW_BACK;
+  }
+  if (visibleIndex == 3) {
+    return AB_ROW_ZONE;
+  }
+  if (visibleIndex == 4) {
+    return AB_ROW_LEVEL;
+  }
+  return AB_ROW_BACK;
+}
+
+static const char* getAdvancedBrakeRowLabel(uint8_t lang, uint16_t mode, AdvancedBrakeRowType rowType) {
+  static const char* BUTTON_LABELS[7] = {"Alt.brems", "Alt.Brake", "Alt.Brake", "Alt.Brake", "Alt.Freno", "Alt.Brems", "Alt.Freno"};
+  static const char* MODE_LABELS[7]   = {"Rel.brems", "Rel.Brake", "Rel.Brake", "Rel.Brake", "Rel.Freno", "Rel.Brems", "Rel.Freno"};
+  static const char* ZONE_LABELS[7]   = {"Sone", "Zone", "Zone", "Zone", "Zona", "Zone", "Zona"};
+  static const char* QUICK_LABELS[7]  = {"Quick", "Quick", "Quick", "Quick", "Quick", "Quick", "Quick"};
+  static const char* DRAG_LABELS[7]   = {"Drag", "Drag", "Drag", "Drag", "Drag", "Drag", "Drag"};
+
+  switch (rowType) {
+    case AB_ROW_BUTTON:
+      return BUTTON_LABELS[lang];
+    case AB_ROW_MODE:
+      return MODE_LABELS[lang];
+    case AB_ROW_ZONE:
+      return ZONE_LABELS[lang];
+    case AB_ROW_LEVEL:
+      return (mode == RELEASE_BRAKE_DRAG) ? DRAG_LABELS[lang] : QUICK_LABELS[lang];
+    case AB_ROW_BACK:
+    default:
+      return getBackLabel(lang);
+  }
+}
+
+static const char* getReleaseBrakeMenuModeValue(uint8_t lang, uint16_t mode) {
+  static const char* MODE_VALUES[7][3] = {
+    {"AV", "QUICK", "DRAG"},
+    {"OFF", "QUICK", "DRAG"},
+    {"OFF", "QUICK", "DRAG"},
+    {"OFF", "QUICK", "DRAG"},
+    {"OFF", "QUICK", "DRAG"},
+    {"AUS", "QUICK", "DRAG"},
+    {"OFF", "QUICK", "DRAG"}
+  };
+
+  if (mode > RELEASE_BRAKE_DRAG) {
+    mode = RELEASE_BRAKE_OFF;
+  }
+  return MODE_VALUES[lang][mode];
+}
+
+/**
+ * Advanced Brake submenu.
+ * Opened by clicking BRAKE+ in the main menu.
+ * Items: Alt.Brake, Rel.Brake mode, optional QUICK zone + level, DRAG level, BACK.
+ * QUICK cuts output to brake inside the configured zone. DRAG keeps output active
+ * and blends in drag while the trigger is moving toward release, with no zone.
+ */
+void showAdvancedBrakeMenu() {
+  uint8_t lang = g_storedVar.language;
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, QB_ITEMS, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, getAdvancedBrakeMenuItemCount(g_storedVar.carParam[g_carSel].quickBrakeEnabled), false);
+  resetUiEncoder(1);
 
   uint8_t sel          = 1;
   uint8_t prevSel      = 0xFF;
   MenuState_enum state = ITEM_SELECTION;
   uint16_t origValue   = 0;
+  AdvancedBrakeRowType editRowType = AB_ROW_BUTTON;
   bool forceRedraw     = true;
 
   uint32_t lastInteraction   = millis();
@@ -59,12 +126,25 @@ void showQuickBrakeMenu() {
   static bool brakeInQB = false;
   static uint32_t lastBrakeQB = 0;
 
+  auto currentMode = [&]() -> uint16_t {
+    return g_storedVar.carParam[g_carSel].quickBrakeEnabled;
+  };
+
+  auto refreshSelectionBounds = [&]() {
+    uint8_t visibleItems = getAdvancedBrakeMenuItemCount(currentMode());
+    if (sel > visibleItems) {
+      sel = visibleItems;
+    }
+    setUiEncoderBoundaries(1, visibleItems, false);
+    resetUiEncoder(sel);
+  };
+
   while (true) {
     /* Screensaver */
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
     if (screensaverActive) {
-      uint16_t ep = g_rotaryEncoder.readEncoder();
+      uint16_t ep = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           ep != screensaverEncPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -83,7 +163,7 @@ void showQuickBrakeMenu() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncPos = g_rotaryEncoder.readEncoder();
+          screensaverEncPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -103,13 +183,13 @@ void showQuickBrakeMenu() {
         lastBrakeQB = millis();
         if (state == VALUE_SELECTION) {
           /* Cancel: restore original value */
-          if (sel == 1) g_storedVar.carParam[g_carSel].quickBrakeEnabled = origValue;
-          else if (sel == 2) g_storedVar.carParam[g_carSel].quickBrakeThreshold = origValue;
-          else if (sel == 3) g_storedVar.carParam[g_carSel].quickBrakeStrength = origValue;
+          if (editRowType == AB_ROW_BUTTON) g_storedVar.carParam[g_carSel].brakeButtonReduction = origValue;
+          else if (editRowType == AB_ROW_MODE) g_storedVar.carParam[g_carSel].quickBrakeEnabled = origValue;
+          else if (editRowType == AB_ROW_ZONE) g_storedVar.carParam[g_carSel].quickBrakeThreshold = origValue;
+          else if (editRowType == AB_ROW_LEVEL) g_storedVar.carParam[g_carSel].quickBrakeStrength = origValue;
           state = ITEM_SELECTION;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, QB_ITEMS, false);
-          g_rotaryEncoder.reset(sel);
+          refreshSelectionBounds();
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSel     = 0xFF;
           forceRedraw = true;
@@ -125,15 +205,16 @@ void showQuickBrakeMenu() {
     /* Encoder scroll */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      uint16_t ep = (uint16_t)g_rotaryEncoder.readEncoder();
+      uint16_t ep = (uint16_t)readUiEncoder();
       if (state == ITEM_SELECTION) {
         sel = (uint8_t)ep;
         forceRedraw = true;
       } else {
         /* Live update while editing */
-        if (sel == 1) g_storedVar.carParam[g_carSel].quickBrakeEnabled = ep;
-        else if (sel == 2) g_storedVar.carParam[g_carSel].quickBrakeThreshold = ep;
-        else if (sel == 3) g_storedVar.carParam[g_carSel].quickBrakeStrength = ep;
+        if (editRowType == AB_ROW_BUTTON) g_storedVar.carParam[g_carSel].brakeButtonReduction = ep;
+        else if (editRowType == AB_ROW_MODE) g_storedVar.carParam[g_carSel].quickBrakeEnabled = ep;
+        else if (editRowType == AB_ROW_ZONE) g_storedVar.carParam[g_carSel].quickBrakeThreshold = ep;
+        else if (editRowType == AB_ROW_LEVEL) g_storedVar.carParam[g_carSel].quickBrakeStrength = ep;
         forceRedraw = true;
       }
     }
@@ -142,20 +223,23 @@ void showQuickBrakeMenu() {
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       lastInteraction = millis();
       if (state == ITEM_SELECTION) {
-        if (sel == QB_ITEMS) {
+        AdvancedBrakeRowType rowType = getAdvancedBrakeRowType(currentMode(), sel);
+        if (rowType == AB_ROW_BACK) {
           /* BACK */
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
           break;
         }
         /* Enter value edit */
         uint16_t minV = 0, maxV = 1, curV = 0;
-        if (sel == 1) { curV = g_storedVar.carParam[g_carSel].quickBrakeEnabled; minV = 0; maxV = 1; }
-        else if (sel == 2) { curV = g_storedVar.carParam[g_carSel].quickBrakeThreshold; minV = 0; maxV = QUICK_BRAKE_THRESHOLD_MAX; }
-        else if (sel == 3) { curV = g_storedVar.carParam[g_carSel].quickBrakeStrength; minV = 0; maxV = QUICK_BRAKE_STRENGTH_MAX; }
+        if (rowType == AB_ROW_BUTTON) { curV = g_storedVar.carParam[g_carSel].brakeButtonReduction; minV = 0; maxV = 100; }
+        else if (rowType == AB_ROW_MODE) { curV = g_storedVar.carParam[g_carSel].quickBrakeEnabled; minV = RELEASE_BRAKE_OFF; maxV = RELEASE_BRAKE_DRAG; }
+        else if (rowType == AB_ROW_ZONE) { curV = g_storedVar.carParam[g_carSel].quickBrakeThreshold; minV = 0; maxV = QUICK_BRAKE_THRESHOLD_MAX; }
+        else if (rowType == AB_ROW_LEVEL) { curV = g_storedVar.carParam[g_carSel].quickBrakeStrength; minV = 0; maxV = QUICK_BRAKE_STRENGTH_MAX; }
         origValue = curV;
+        editRowType = rowType;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(minV, maxV, false);
-        g_rotaryEncoder.reset(curV);
+        setUiEncoderBoundaries(minV, maxV, false);
+        resetUiEncoder(curV);
         state       = VALUE_SELECTION;
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel     = 0xFF;
@@ -165,8 +249,7 @@ void showQuickBrakeMenu() {
         saveEEPROM(g_storedVar);
         state = ITEM_SELECTION;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, QB_ITEMS, false);
-        g_rotaryEncoder.reset(sel);
+        refreshSelectionBounds();
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel     = 0xFF;
         forceRedraw = true;
@@ -177,23 +260,29 @@ void showQuickBrakeMenu() {
     if (forceRedraw || sel != prevSel) {
       forceRedraw = false;
       prevSel = sel;
+      uint16_t mode = currentMode();
+      uint8_t visibleItems = getAdvancedBrakeMenuItemCount(mode);
+      obdFill(&g_obd, OBD_WHITE, 1);
 
-      for (uint8_t idx = 0; idx < QB_ITEMS; idx++) {
+      for (uint8_t idx = 0; idx < visibleItems; idx++) {
         uint8_t yPx     = idx * HEIGHT8x8;
         bool isSelected = (sel == idx + 1);
         bool inEdit     = (state == VALUE_SELECTION && isSelected);
+        AdvancedBrakeRowType rowType = getAdvancedBrakeRowType(mode, idx + 1);
+        const char* rowName = getAdvancedBrakeRowLabel(lang, mode, rowType);
 
-        obdWriteString(&g_obd, 0, 0, yPx, (char *)rowNames[idx], FONT_8x8,
+        obdWriteString(&g_obd, 0, 0, yPx, (char *)rowName, FONT_8x8,
                        (isSelected && state == ITEM_SELECTION) ? OBD_WHITE : OBD_BLACK, 1);
 
         /* Value right-justified */
-        char vbuf[8];
-        if (idx == 0) {
-          uint16_t v = g_storedVar.carParam[g_carSel].quickBrakeEnabled;
-          snprintf(vbuf, sizeof(vbuf), "%3s", getOnOffLabel(lang, v ? 1 : 0));
-        } else if (idx == 1) {
+        char vbuf[12];
+        if (rowType == AB_ROW_BUTTON) {
+          snprintf(vbuf, sizeof(vbuf), "%3d%%", g_storedVar.carParam[g_carSel].brakeButtonReduction);
+        } else if (rowType == AB_ROW_MODE) {
+          snprintf(vbuf, sizeof(vbuf), "%s", getReleaseBrakeMenuModeValue(lang, mode));
+        } else if (rowType == AB_ROW_ZONE) {
           snprintf(vbuf, sizeof(vbuf), "%3d%%", g_storedVar.carParam[g_carSel].quickBrakeThreshold);
-        } else if (idx == 2) {
+        } else if (rowType == AB_ROW_LEVEL) {
           snprintf(vbuf, sizeof(vbuf), "%3d%%", g_storedVar.carParam[g_carSel].quickBrakeStrength);
         } else {
           vbuf[0] = '\0';
@@ -215,4 +304,8 @@ void showQuickBrakeMenu() {
   saveEEPROM(g_storedVar);
   obdFill(&g_obd, OBD_WHITE, 1);
   resetEncoderForMainMenu();
+}
+
+void showQuickBrakeMenu() {
+  showAdvancedBrakeMenu();
 }

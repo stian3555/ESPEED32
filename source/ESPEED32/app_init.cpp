@@ -10,6 +10,8 @@
 extern OBDISP g_obd;
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
+extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_encoderInvertEnabled;
 extern Menu_type g_mainMenu;
 extern Menu_type g_settingsMenu;
 extern Menu_type g_carMenu;
@@ -49,7 +51,7 @@ void initDisplayAndEncoder()
   /***** Encoder Setup *****/
   g_rotaryEncoder.begin();
   g_rotaryEncoder.setup(readEncoderISR);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false); /* minValue, maxValue, circleValues true|false (when max go to min and vice versa) */
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false); /* minValue, maxValue, circleValues true|false (when max go to min and vice versa) */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);        /* Larger number = more accelearation; 0 or 1 means disabled acceleration */
 }
 
@@ -70,6 +72,7 @@ void initStoredVariables() {
     g_storedVar.carParam[i].brake = BRAKE_DEFAULT;
     g_storedVar.carParam[i].maxSpeed = MAX_SPEED_DEFAULT;
     g_storedVar.carParam[i].throttleCurveVertex = { THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT, THROTTLE_CURVE_SPEED_DIFF_DEFAULT };
+    g_storedVar.carParam[i].fade = FADE_DEFAULT;
     g_storedVar.carParam[i].antiSpin = ANTISPIN_DEFAULT;
     g_storedVar.carParam[i].freqPWM = PWM_FREQ_DEFAULT;
     g_storedVar.carParam[i].carNumber = i;
@@ -107,6 +110,8 @@ void initStoredVariables() {
   g_storedVar.statusSlot[2] = STATUS_SLOT2_DEFAULT;
   g_storedVar.statusSlot[3] = STATUS_SLOT3_DEFAULT;
   g_statsEnabled = STATS_ENABLED_DEFAULT;
+  g_antiSpinStepMs = ANTISPIN_STEP_DEFAULT;
+  g_encoderInvertEnabled = ENCODER_INVERT_DEFAULT;
 }
 
 
@@ -156,7 +161,15 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE;
   g_mainMenu.item[i].callback = &showCurveSelection;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 4));  /* PWM_F */
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 4));  /* FADE */
+  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].fade;
+  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_mainMenu.item[i].unit, "%%");
+  g_mainMenu.item[i].maxValue = FADE_MAX_VALUE;
+  g_mainMenu.item[i].minValue = 0;
+  g_mainMenu.item[i].callback = &showFadeSelection;
+
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 5));  /* PWM_F */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].freqPWM;
   g_mainMenu.item[i].type = VALUE_TYPE_DECIMAL;
   sprintf(g_mainMenu.item[i].unit, "k");
@@ -165,21 +178,13 @@ void initMenuItems() {
   g_mainMenu.item[i].decimalPoint = 1;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 5));  /* B_BTN */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].brakeButtonReduction;
-  g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_mainMenu.item[i].unit, "%%");
-  g_mainMenu.item[i].maxValue = 100;
-  g_mainMenu.item[i].minValue = 0;
-  g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
-
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 6));  /* QB - Quick Brake submenu */
-  g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].quickBrakeEnabled;
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 6));  /* BRAKE+ submenu */
+  g_mainMenu.item[i].value = ITEM_NO_VALUE;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_mainMenu.item[i].unit, "");
-  g_mainMenu.item[i].maxValue = 1;
+  g_mainMenu.item[i].maxValue = 0;
   g_mainMenu.item[i].minValue = 0;
-  g_mainMenu.item[i].callback = &showQuickBrakeMenu;
+  g_mainMenu.item[i].callback = &showAdvancedBrakeMenu;
 
   sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 7));  /* LIMIT */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].maxSpeed;
@@ -270,7 +275,23 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* WIFI */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* A STEP */
+  g_settingsMenu.item[i].value = (void *)&g_antiSpinStepMs;
+  g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
+  sprintf(g_settingsMenu.item[i].unit, "ms");
+  g_settingsMenu.item[i].maxValue = ANTISPIN_STEP_MAX;
+  g_settingsMenu.item[i].minValue = ANTISPIN_STEP_MIN;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* ENC INV */
+  g_settingsMenu.item[i].value = (void *)&g_encoderInvertEnabled;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 1;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* WIFI */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -278,7 +299,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* USB */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* LOGGING */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* USB */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -286,7 +315,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* RESET */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 10));  /* RESET */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -294,7 +323,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* TEST */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 11));  /* TEST */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -302,7 +331,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* ABOUT/INFO */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 12));  /* ABOUT/INFO */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -310,7 +339,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 10));  /* BACK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 13));  /* BACK */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -335,7 +364,7 @@ void initDisplayMenuItems() {
   g_settingsMenu.item[i].value = (void *)&g_storedVar.language;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
-  g_settingsMenu.item[i].maxValue = LANG_ACD;
+  g_settingsMenu.item[i].maxValue = LANG_MAX;
   g_settingsMenu.item[i].minValue = LANG_NOR;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 

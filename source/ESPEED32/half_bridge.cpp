@@ -22,7 +22,7 @@ io_pins_t ioPins = {
 /* Hardware configuration for ADC diagnostic */
 hw_conf_t hwConf = {
   .sense_current_resistor_ohms = 2000,
-  .adc_voltage_range_volts = ACD_VOLTAGE_RANGE_MVOLTS / 1000.0,
+  .adc_voltage_range_volts = ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS / 1000.0,
   .adc_resolution_steps = ACD_RESOLUTION_STEPS
 };
 
@@ -58,6 +58,14 @@ void HalfBridge_SetPwmDrag(uint8_t duty_pct, uint8_t drag_pct) {
  */
 void HalfBridge_Enable() {
   halfBridge.enable();
+}
+
+/**
+ * @brief Update the ADC voltage range used by half-bridge diagnosis/current conversion
+ * @param range_mV ADC full-scale range in millivolts
+ */
+void HalfBridge_SetAdcVoltageRangeMilliVolts(uint16_t range_mV) {
+  halfBridge.set_adc_voltage_range_volts((float)range_mV / 1000.0f);
 }
 
 /**

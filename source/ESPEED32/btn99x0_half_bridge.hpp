@@ -41,6 +41,7 @@ namespace btn99x0
             /* Experimental value setting */
             void set_ktis(float ktis_amps_per_kelvin);
             void set_dk(uint16_t dk);
+            void set_adc_voltage_range_volts(float adc_voltage_range_volts);
 
             /* Diagnosis */
             double get_load_current_in_amps();

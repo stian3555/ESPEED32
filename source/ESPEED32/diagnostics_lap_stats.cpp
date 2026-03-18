@@ -29,8 +29,8 @@ void showLapStats() {
 
   /* Encoder for scrolling lap list (4 visible rows) */
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, 0, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, 0, false);
+  resetUiEncoder(0);
 
   int16_t scrollPos = 0;
   uint16_t prevLapCount = 0xFFFF;
@@ -55,7 +55,7 @@ void showLapStats() {
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
     if (screensaverActive) {
-      uint16_t currentEncoderPos = g_rotaryEncoder.readEncoder();
+      uint16_t currentEncoderPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           currentEncoderPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -73,7 +73,7 @@ void showLapStats() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -111,7 +111,7 @@ void showLapStats() {
         for (uint8_t i = 0; i < LAP_MAX_COUNT; i++) {
           g_escVar.lapTimes[i] = 0;
         }
-        g_rotaryEncoder.reset(0);
+        resetUiEncoder(0);
         needFullRedraw = true;
       }
     } else if (brakeInStats) {
@@ -128,11 +128,11 @@ void showLapStats() {
     uint16_t totalLaps = g_escVar.lapCount;
     uint16_t displayLaps = min((uint16_t)LAP_MAX_COUNT, totalLaps);
     if (displayLaps > 4) {
-      g_rotaryEncoder.setBoundaries(0, displayLaps - 4, false);
+      setUiEncoderBoundaries(0, displayLaps - 4, false);
     } else {
-      g_rotaryEncoder.setBoundaries(0, 0, false);
+      setUiEncoderBoundaries(0, 0, false);
     }
-    scrollPos = g_rotaryEncoder.readEncoder();
+    scrollPos = readUiEncoder();
 
     /* Redraw title if needed */
     if (needFullRedraw) {
@@ -227,6 +227,6 @@ void showLapStats() {
   /* Restore main menu encoder settings */
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, getMainMenuItemsCount(), false);
-  g_rotaryEncoder.reset(getMainMenuSelector());
+  setUiEncoderBoundaries(1, getMainMenuItemsCount(), false);
+  resetUiEncoder(getMainMenuSelector());
 }

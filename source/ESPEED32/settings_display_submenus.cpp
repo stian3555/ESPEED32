@@ -45,8 +45,8 @@ static void editScreensaverText(char* text, const char* title) {
   obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK", FONT_12x16, OBD_BLACK, 1);
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, TEXT_COLS, false);  /* 0..20 = chars, 21 = OK */
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, TEXT_COLS, false);  /* 0..20 = chars, 21 = OK */
+  resetUiEncoder(0);
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
@@ -57,7 +57,7 @@ static void editScreensaverText(char* text, const char* title) {
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
     if (screensaverActive) {
-      uint16_t ep = g_rotaryEncoder.readEncoder();
+      uint16_t ep = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           ep != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -76,7 +76,7 @@ static void editScreensaverText(char* text, const char* title) {
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         screensaverActive = true;
-        screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+        screensaverEncoderPos = readUiEncoder();
         showScreensaver();
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
           obdFill(&g_obd, OBD_WHITE, 1);
@@ -99,9 +99,9 @@ static void editScreensaverText(char* text, const char* title) {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (editMode == RENAME_CAR_SELECT_OPTION_MODE) {
-        cursorPos = (uint8_t)g_rotaryEncoder.readEncoder();
+        cursorPos = (uint8_t)readUiEncoder();
       } else {
-        tmpText[cursorPos] = (char)g_rotaryEncoder.readEncoder();
+        tmpText[cursorPos] = (char)readUiEncoder();
       }
     }
 
@@ -147,13 +147,13 @@ static void editScreensaverText(char* text, const char* title) {
       if (editMode == RENAME_CAR_SELECT_OPTION_MODE) {
         editMode = RENAME_CAR_SELECT_CHAR_MODE;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
-        g_rotaryEncoder.reset((uint8_t)tmpText[cursorPos]);
+        setUiEncoderBoundaries(RENAME_CAR_MIN_ASCII, RENAME_CAR_MAX_ASCII, false);
+        resetUiEncoder((uint8_t)tmpText[cursorPos]);
       } else {
         editMode = RENAME_CAR_SELECT_OPTION_MODE;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, TEXT_COLS, false);
-        g_rotaryEncoder.reset(cursorPos);
+        setUiEncoderBoundaries(0, TEXT_COLS, false);
+        resetUiEncoder(cursorPos);
       }
     }
 
@@ -172,23 +172,27 @@ void showScreensaverSettings() {
   const uint8_t SS_ITEMS = 5;
   uint8_t lang = g_storedVar.language;
 
-  const char* ssNames[SS_ITEMS];
-  if (lang == LANG_NOR) {
-    ssNames[0] = "NA";      ssNames[1] = "LINJE1";
-    ssNames[2] = "LINJE2";  ssNames[3] = "TID";
-    ssNames[4] = "TILBAKE";
-  } else {
-    ssNames[0] = "NOW";     ssNames[1] = "LINE1";
-    ssNames[2] = "LINE2";   ssNames[3] = "TIME";
-    ssNames[4] = "BACK";
-  }
-  const char* editorTitleL1 = (lang == LANG_NOR) ? "Linje 1" : "Line 1";
-  const char* editorTitleL2 = (lang == LANG_NOR) ? "Linje 2" : "Line 2";
+  const char* ssNamesByLang[7][SS_ITEMS] = {
+    {"NA", "LINJE1", "LINJE2", "TID", "TILBAKE"},
+    {"NOW", "LINE1", "LINE2", "TIME", "BACK"},
+    {"NOW", "LINE1", "LINE2", "TIME", "BACK"},
+    {"NOW", "LINE1", "LINE2", "TIME", "BACK"},
+    {"AHORA", "LINEA1", "LINEA2", "TIEMPO", "ATRAS"},
+    {"JETZT", "ZEILE1", "ZEILE2", "ZEIT", "ZURUCK"},
+    {"ORA", "RIGA1", "RIGA2", "TEMPO", "INDIETRO"}
+  };
+  const char* editorTitleL1ByLang[7] = {"Linje 1", "Line 1", "Line 1", "Line 1", "Linea 1", "Zeile 1", "Riga 1"};
+  const char* editorTitleL2ByLang[7] = {"Linje 2", "Line 2", "Line 2", "Line 2", "Linea 2", "Zeile 2", "Riga 2"};
+  const char* offLabelByLang[7] = {"AV", "OFF", "OFF", "OFF", "OFF", "AUS", "OFF"};
+
+  const char** ssNames = ssNamesByLang[lang];
+  const char* editorTitleL1 = editorTitleL1ByLang[lang];
+  const char* editorTitleL2 = editorTitleL2ByLang[lang];
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, SS_ITEMS, false);
+  resetUiEncoder(1);
 
   uint8_t sel = 1;
   uint8_t prevSel = 0xFF;
@@ -204,7 +208,7 @@ void showScreensaverSettings() {
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
     if (screensaverActive) {
-      uint16_t ep = g_rotaryEncoder.readEncoder();
+      uint16_t ep = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           ep != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -222,7 +226,7 @@ void showScreensaverSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -255,8 +259,8 @@ void showScreensaverSettings() {
           g_storedVar.screensaverTimeout = origTimeout;  /* Cancel - restore */
           inTimeEdit = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-          g_rotaryEncoder.reset(4);  /* Return to TIME item */
+          setUiEncoderBoundaries(1, SS_ITEMS, false);
+          resetUiEncoder(4);  /* Return to TIME item */
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSel = 0xFF;
         } else {
@@ -272,10 +276,10 @@ void showScreensaverSettings() {
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
       if (inTimeEdit) {
-        g_storedVar.screensaverTimeout = g_rotaryEncoder.readEncoder();
+        g_storedVar.screensaverTimeout = readUiEncoder();
         prevSel = 0xFF;  /* Redraw TIME row value */
       } else {
-        sel = (uint8_t)g_rotaryEncoder.readEncoder();
+        sel = (uint8_t)readUiEncoder();
       }
     }
 
@@ -302,7 +306,7 @@ void showScreensaverSettings() {
         } else if (idx == 3) {
           /* TIME: show current timeout, right-justified (4 chars × 6px = 24px from right) */
           if (g_storedVar.screensaverTimeout == 0) {
-            sprintf(msgStr, "%4s", (lang == LANG_NOR) ? "AV" : "OFF");
+            sprintf(msgStr, "%4s", offLabelByLang[lang]);
           } else {
             sprintf(msgStr, "%3ds", g_storedVar.screensaverTimeout);
           }
@@ -322,24 +326,24 @@ void showScreensaverSettings() {
         inTimeEdit = false;
         saveEEPROM(g_storedVar);
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-        g_rotaryEncoder.reset(sel);
+        setUiEncoderBoundaries(1, SS_ITEMS, false);
+        resetUiEncoder(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel = 0xFF;
       } else if (sel == 2) {
         editScreensaverText(g_storedVar.screensaverLine1, editorTitleL1);
         saveEEPROM(g_storedVar);
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-        g_rotaryEncoder.reset(sel);
+        setUiEncoderBoundaries(1, SS_ITEMS, false);
+        resetUiEncoder(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel = 0xFF;
       } else if (sel == 3) {
         editScreensaverText(g_storedVar.screensaverLine2, editorTitleL2);
         saveEEPROM(g_storedVar);
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, SS_ITEMS, false);
-        g_rotaryEncoder.reset(sel);
+        setUiEncoderBoundaries(1, SS_ITEMS, false);
+        resetUiEncoder(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel = 0xFF;
       } else if (sel == 4) {
@@ -347,12 +351,12 @@ void showScreensaverSettings() {
         inTimeEdit = true;
         origTimeout = g_storedVar.screensaverTimeout;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, SCREENSAVER_TIMEOUT_MAX, false);
-        g_rotaryEncoder.reset(g_storedVar.screensaverTimeout);
+        setUiEncoderBoundaries(0, SCREENSAVER_TIMEOUT_MAX, false);
+        resetUiEncoder(g_storedVar.screensaverTimeout);
       } else if (sel == 1) {
         /* NOW: activate screensaver immediately */
         screensaverActive = true;
-        screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+        screensaverEncoderPos = readUiEncoder();
         showScreensaver();
         lastInteraction = millis();
       } else if (sel == 5) {
@@ -386,39 +390,33 @@ void showStatusSettings() {
   uint8_t lang = g_storedVar.language;
 
   /* Row labels */
-  const char* rowNames[ST_ITEMS];
-  if (lang == LANG_NOR) {
-    rowNames[0] = "FELT 1"; rowNames[1] = "FELT 2";
-    rowNames[2] = "FELT 3"; rowNames[3] = "FELT 4";
-    rowNames[4] = "TILBAKE";
-  } else {
-    rowNames[0] = "SLOT 1"; rowNames[1] = "SLOT 2";
-    rowNames[2] = "SLOT 3"; rowNames[3] = "SLOT 4";
-    rowNames[4] = "BACK";
-  }
+  const char* rowNamesByLang[7][ST_ITEMS] = {
+    {"FELT 1", "FELT 2", "FELT 3", "FELT 4", "TILBAKE"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "BACK"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "BACK"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "BACK"},
+    {"CAMPO 1", "CAMPO 2", "CAMPO 3", "CAMPO 4", "ATRAS"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "ZURUCK"},
+    {"SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "INDIETRO"}
+  };
+  const char** rowNames = rowNamesByLang[lang];
 
   /* Content type labels (max 4 chars, shown right-justified in menu) */
-  const char* slotLabels[ST_SLOT_MAX + 1];
-  if (lang == LANG_NOR) {
-    slotLabels[STATUS_BLANK]    = "---";
-    slotLabels[STATUS_OUTPUT]   = "OUT%";
-    slotLabels[STATUS_THROTTLE] = "GASS";
-    slotLabels[STATUS_CAR]      = "BIL";
-    slotLabels[STATUS_CURRENT]  = "AMPE";
-    slotLabels[STATUS_VOLTAGE]  = "VOLT";
-  } else {
-    slotLabels[STATUS_BLANK]    = "---";
-    slotLabels[STATUS_OUTPUT]   = "OUT%";
-    slotLabels[STATUS_THROTTLE] = "THRO";
-    slotLabels[STATUS_CAR]      = "CAR";
-    slotLabels[STATUS_CURRENT]  = "CURR";
-    slotLabels[STATUS_VOLTAGE]  = "VOLT";
-  }
+  const char* slotLabelsByLang[7][ST_SLOT_MAX + 1] = {
+    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"}
+  };
+  const char** slotLabels = slotLabelsByLang[lang];
 
   obdFill(&g_obd, OBD_WHITE, 1);
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(1, ST_ITEMS, false);
-  g_rotaryEncoder.reset(1);
+  setUiEncoderBoundaries(1, ST_ITEMS, false);
+  resetUiEncoder(1);
 
   uint8_t sel          = 1;
   uint8_t prevSel      = 0xFF;
@@ -435,7 +433,7 @@ void showStatusSettings() {
     uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
     bool wakeUp = false;
     if (screensaverActive) {
-      uint16_t ep = g_rotaryEncoder.readEncoder();
+      uint16_t ep = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           ep != screensaverEncPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -454,7 +452,7 @@ void showStatusSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncPos = g_rotaryEncoder.readEncoder();
+          screensaverEncPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -479,8 +477,8 @@ void showStatusSettings() {
           g_storedVar.statusSlot[sel - 1] = origValue;
           state = ITEM_SELECTION;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          g_rotaryEncoder.setBoundaries(1, ST_ITEMS, false);
-          g_rotaryEncoder.reset(sel);
+          setUiEncoderBoundaries(1, ST_ITEMS, false);
+          resetUiEncoder(sel);
           obdFill(&g_obd, OBD_WHITE, 1);
           prevSel     = 0xFF;
           forceRedraw = true;
@@ -497,7 +495,7 @@ void showStatusSettings() {
     /* Encoder scroll */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      uint16_t ep = (uint16_t)g_rotaryEncoder.readEncoder();
+      uint16_t ep = (uint16_t)readUiEncoder();
       if (state == ITEM_SELECTION) {
         sel = (uint8_t)ep;
       } else {
@@ -547,8 +545,8 @@ void showStatusSettings() {
         /* Enter value selection for this slot */
         origValue = g_storedVar.statusSlot[sel - 1];
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(0, ST_SLOT_MAX, false);
-        g_rotaryEncoder.reset(origValue);
+        setUiEncoderBoundaries(0, ST_SLOT_MAX, false);
+        resetUiEncoder(origValue);
         state       = VALUE_SELECTION;
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel     = 0xFF;
@@ -558,8 +556,8 @@ void showStatusSettings() {
         saveEEPROM(g_storedVar);
         state = ITEM_SELECTION;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        g_rotaryEncoder.setBoundaries(1, ST_ITEMS, false);
-        g_rotaryEncoder.reset(sel);
+        setUiEncoderBoundaries(1, ST_ITEMS, false);
+        resetUiEncoder(sel);
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel     = 0xFF;
         forceRedraw = true;

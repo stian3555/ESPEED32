@@ -37,18 +37,21 @@ void showExtPotSettings() {
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
 
-  const char* itemLabels[4][NUM_ITEMS] = {
+  const char* itemLabels[7][NUM_ITEMS] = {
     {"POT 1", "POT 2", "TILBAKE"},
     {"POT 1", "POT 2", "BACK"},
     {"POT 1", "POT 2", "BACK"},
-    {"POT 1", "POT 2", "BACK"}
+    {"POT 1", "POT 2", "BACK"},
+    {"POT 1", "POT 2", "ATRAS"},
+    {"POT 1", "POT 2", "ZURUCK"},
+    {"POT 1", "POT 2", "INDIETRO"}
   };
 
   obdFill(&g_obd, OBD_WHITE, 1);
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  g_rotaryEncoder.setBoundaries(0, NUM_ITEMS - 1, false);
-  g_rotaryEncoder.reset(0);
+  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
+  resetUiEncoder(0);
 
   uint8_t sel = 0;
   bool needRedraw = true;
@@ -62,7 +65,7 @@ void showExtPotSettings() {
     bool wakeUp = false;
 
     if (screensaverActive) {
-      uint16_t curPos = g_rotaryEncoder.readEncoder();
+      uint16_t curPos = readUiEncoder();
       if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
           curPos != screensaverEncoderPos ||
           digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
@@ -81,7 +84,7 @@ void showExtPotSettings() {
       if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
         if (!screensaverActive) {
           screensaverActive = true;
-          screensaverEncoderPos = g_rotaryEncoder.readEncoder();
+          screensaverEncoderPos = readUiEncoder();
           showScreensaver();
         }
         if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
@@ -104,7 +107,7 @@ void showExtPotSettings() {
 
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();
-      sel = (uint8_t)g_rotaryEncoder.readEncoder();
+      sel = (uint8_t)readUiEncoder();
       needRedraw = true;
     }
 

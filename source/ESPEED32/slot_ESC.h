@@ -16,16 +16,16 @@
 /*********************************************************************************************************************/
 
 /* Firmware Version */
-#define SW_MAJOR_VERSION 5
-#define SW_MINOR_VERSION 3
+#define SW_MAJOR_VERSION 6
+#define SW_MINOR_VERSION 0
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 19 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. QB submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
-#define POWER_ITEMS_COUNT    5    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, BACK) */
+#define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. FADE, BRAKE+ submenu entry, STATS) */
+#define SETTINGS_ITEMS_COUNT 14   /* Number of items in settings menu (including BACK) */
+#define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
 #define POWER_SAVE_TIMEOUT_MAX     10   /* [min] Maximum auto power save delay */
@@ -53,6 +53,10 @@
 #define LANG_ENG            1     /* English language */
 #define LANG_CS             2     /* CarSteen terminology (English-based) */
 #define LANG_ACD            3     /* ACD terminology (English-based) */
+#define LANG_ESP            4     /* Spanish language */
+#define LANG_DEU            5     /* German language */
+#define LANG_ITA            6     /* Italian language */
+#define LANG_MAX            LANG_ITA
 #define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */
@@ -60,10 +64,13 @@
 #define MIN_SPEED_DEFAULT         40    /* [0.5%] 20.0% default sensitivity */
 #define BRAKE_DEFAULT             95    /* [%] Brake strength */
 #define ANTISPIN_DEFAULT          30    /* [ms] Anti-spin ramp time */
+#define ANTISPIN_STEP_DEFAULT      5    /* [ms] Default encoder step when editing ANTIS */
+#define ENCODER_INVERT_DEFAULT     0    /* Encoder rotation follows default hardware direction */
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
-#define PWM_FREQ_DEFAULT          30    /* [100*Hz] Motor PWM frequency (3.0 kHz) */
+#define FADE_DEFAULT              0     /* [%] Fade disabled by default for legacy behavior */
+#define PWM_FREQ_DEFAULT          40    /* [100*Hz] Motor PWM frequency (4.0 kHz) */
 #define BRAKE_BUTTON_REDUCTION_DEFAULT  50   /* [%] Brake reduction when button is pressed */
 #define QUICK_BRAKE_ENABLED_DEFAULT     0    /* Quick brake off by default */
 #define QUICK_BRAKE_THRESHOLD_DEFAULT   10   /* [%] Trigger position where quick brake engages */
@@ -76,10 +83,16 @@
 #define BRAKE_MAX_VALUE           100   /* [%] Maximum brake strength */
 #define THROTTLE_CURVE_SPEED_DIFF_MAX_VALUE  90   /* [%] Throttle curve max */
 #define THROTTLE_CURVE_SPEED_DIFF_MIN_VALUE  10   /* [%] Throttle curve min */
-#define ANTISPIN_MAX_VALUE        255   /* [ms] Maximum anti-spin time */
+#define FADE_MAX_VALUE            30    /* [%] Maximum trigger travel used for fade-in to SENSI */
+#define ANTISPIN_MAX_VALUE        999   /* [ms] Maximum anti-spin time */
+#define ANTISPIN_STEP_MIN           1   /* [ms] Minimum ANTIS encoder step */
+#define ANTISPIN_STEP_MAX          50   /* [ms] Maximum ANTIS encoder step */
 #define FREQ_MIN_VALUE            1000  /* [Hz] Minimum PWM frequency */
 #define QUICK_BRAKE_THRESHOLD_MAX 50    /* [%] Maximum quick brake threshold */
 #define QUICK_BRAKE_STRENGTH_MAX  100   /* [%] Maximum quick brake strength */
+#define RELEASE_BRAKE_OFF          0    /* Release brake disabled */
+#define RELEASE_BRAKE_QUICK        1    /* Release brake uses full quick-brake cut */
+#define RELEASE_BRAKE_DRAG         2    /* Release brake blends output with drag while releasing */
 #define MAX_UINT16                32767 /* Maximum 16-bit unsigned value */
 
 /* Display Font Sizes */
@@ -107,6 +120,9 @@
 /* Sound Configuration */
 #define SOUND_BOOT_DEFAULT  1  /* Boot sounds on by default (startup, calib, on, off) */
 #define SOUND_RACE_DEFAULT  1  /* Race mode toggle sound on by default */
+
+/* Shared runtime helpers */
+void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
 #define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
 #define STATS_ENABLED_DEFAULT    1  /* Show STATS menu item by default */
@@ -190,6 +206,12 @@ typedef enum {
   FAULT         /* Fault state (currently unused) */
 } StateMachine_enum;
 
+/* Shared UI encoder helpers: values are mirrored automatically when ENC INV is enabled. */
+long readUiEncoder();
+void resetUiEncoder(long logicalValue);
+void setUiEncoderBoundaries(long minValue, long maxValue, bool circleValues);
+void applyEncoderInvertSetting(uint16_t enabled);
+
 /**
  * @brief Menu navigation states
  */
@@ -228,14 +250,15 @@ typedef struct {
   uint16_t brake;                           /* [%] Brake strength (0-100%) */
   uint16_t maxSpeed;                        /* [%] Maximum motor speed (5-100%) */
   ThrottleCurveVertex_type throttleCurveVertex;  /* Throttle response curve */
-  uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-255ms) */
+  uint16_t fade;                            /* [%] Initial trigger zone that ramps from 0 to SENSI */
+  uint16_t antiSpin;                        /* [ms] Anti-spin ramp time (0-999ms) */
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */
   uint16_t brakeButtonReduction;            /* [%] Brake reduction when button pressed (0-100%) */
-  uint16_t quickBrakeEnabled;              /* 0=OFF, 1=ON */
-  uint16_t quickBrakeThreshold;            /* [%] Trigger position where quick brake engages */
-  uint16_t quickBrakeStrength;             /* [%] Brake force in quick brake zone */
+  uint16_t quickBrakeEnabled;              /* Release brake mode: OFF / QUICK / DRAG */
+  uint16_t quickBrakeThreshold;            /* [%] Release-brake zone near trigger release */
+  uint16_t quickBrakeStrength;             /* [%] Release-brake level (quick or drag) */
 } CarParam_type;
 
 /**
@@ -316,6 +339,22 @@ typedef struct {
 /* SENSI conversion helpers (stored in 0.5% units) */
 static inline uint16_t sensiToWholePctFloor(uint16_t sensiRaw) {
   return sensiRaw / SENSI_SCALE;
+}
+
+static inline uint16_t fadePctToThrottleNorm(uint16_t fadePct) {
+  if (fadePct >= 100U) {
+    return THROTTLE_NORMALIZED;
+  }
+  return (uint16_t)(((uint32_t)fadePct * (uint32_t)THROTTLE_NORMALIZED) / 100U);
+}
+
+static inline uint16_t curveVertexInputWithFade(uint16_t fadeThrottleNorm, uint16_t baseCurveInputNorm) {
+  if (fadeThrottleNorm >= THROTTLE_NORMALIZED) {
+    return THROTTLE_NORMALIZED;
+  }
+  return (uint16_t)(fadeThrottleNorm +
+                    (((uint32_t)(THROTTLE_NORMALIZED - fadeThrottleNorm) * (uint32_t)baseCurveInputNorm) /
+                     (uint32_t)THROTTLE_NORMALIZED));
 }
 
 static inline uint16_t sensiToWholePctCeil(uint16_t sensiRaw) {

@@ -40,6 +40,13 @@ const char* getOnOffLabel(uint8_t lang, uint8_t state) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? ON_OFF_LABELS_PASCAL[lang][state] : ON_OFF_LABELS[lang][state];
 }
 
+const char* getReleaseBrakeModeLabel(uint8_t lang, uint8_t mode) {
+  if (mode > RELEASE_BRAKE_DRAG) mode = RELEASE_BRAKE_OFF;
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL)
+    ? RELEASE_BRAKE_MODE_LABELS_PASCAL[lang][mode]
+    : RELEASE_BRAKE_MODE_LABELS[lang][mode];
+}
+
 const char* getBackLabel(uint8_t lang) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? BACK_LABELS_PASCAL[lang] : BACK_LABELS[lang];
 }

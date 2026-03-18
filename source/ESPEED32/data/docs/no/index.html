@@ -102,6 +102,7 @@ a.ghost{background:var(--ghost);color:var(--ink)}
 section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
 h2{margin:0 0 10px;font-size:20px}
 h3{margin:14px 0 8px;font-size:16px}
+h4{margin:12px 0 6px;font-size:15px}
 p{margin:8px 0;line-height:1.45}
 ul,ol{margin:8px 0 0 20px;padding:0}
 li{margin:4px 0;line-height:1.4}
@@ -121,6 +122,12 @@ th{background:var(--th-bg)}
 figure.doc-media{margin:10px 0 0}
 figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
 figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);overflow:hidden;padding:0 12px 12px}
+details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 38px 12px 12px;position:relative;background:var(--ghost);margin:0 -12px;border-bottom:1px solid var(--line)}
+details.doc-fold summary::-webkit-details-marker{display:none}
+details.doc-fold summary::after{content:'+';position:absolute;right:12px;top:10px;font-size:20px;color:var(--muted)}
+details.doc-fold[open] summary::after{content:'-'}
+details.doc-fold>:not(summary){margin-top:8px}
 @media (max-width:760px){
   h1{font-size:24px}
   table{font-size:13px}
@@ -133,11 +140,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h1>ESPEED32 Brukermanual</h1>
     <p class="lead">Brukerfokusert guide for bilbanekjøring: oppstart, viktige kjøreinnstillinger, menyer og backup/restore.</p>
     <nav class="top">
-      <a class="btn primary" href="../../">Åpne kontrollerens webgrensesnitt</a>
-      <a class="btn ghost" href="../no/" data-doc-lang="no">Norsk</a>
-      <a class="btn ghost" href="../en/" data-doc-lang="en">English</a>
-      <a class="btn ghost" href="../es/" data-doc-lang="es">Espanol</a>
-      <a class="btn ghost" href="../de/" data-doc-lang="de">Deutsch</a>
+      <a class="btn primary" href="../../ui/index.html">Åpne kontrollerens webgrensesnitt</a>
+      <a class="btn ghost" href="../no/index.html" data-doc-lang="no">Norsk</a>
+      <a class="btn ghost" href="../en/index.html" data-doc-lang="en">English</a>
+      <a class="btn ghost" href="../es/index.html" data-doc-lang="es">Espanol</a>
+      <a class="btn ghost" href="../de/index.html" data-doc-lang="de">Deutsch</a>
+      <a class="btn ghost" href="../it/index.html" data-doc-lang="it">Italiano</a>
     </nav>
     <div class="theme-tools">
       <label for="theme-select">Tema</label>
@@ -148,11 +156,12 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </select>
     </div>
     <ul class="sources">
-      <li>Firmware-kilde: ESPEED32 v4.8 (<code>source/ESPEED32/</code>).</li>
+      <li>Firmware-kilde: ESPEED32 (<code>source/ESPEED32/</code>).</li>
       <li>Lokale manualer i repo: Quick Start + Extended Guide (DOC-mappen, DOCX/PDF).</li>
       <li>ACD-referanse: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
       <li>CarSteen-referanse: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
     </ul>
+    <p class="small">Brukerdokumentasjonen på <code>espeed32.com</code> viser alltid siste publiserte versjon. Dokumentasjonen som ligger på kontrolleren følger firmwareversjonen som faktisk er installert, og oppdateres sammen med den.</p>
   </header>
 
   <section>
@@ -186,75 +195,28 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/trig_cal.png" alt="Trigger-kalibrering">
       <figcaption>Kalibrering: beveg trigger helt gjennom vandringen flere ganger for korrekt 0-100% mapping.</figcaption>
     </figure>
-  </section>
-
-  <section>
-    <h2>3. Viktig under kjøring: BRAKE, B_BTN og Q-BRAKE</h2>
-    <h3>BRAKE</h3>
-    <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
-    <h3>B_BTN (Brake Button)</h3>
+    <h3>Trigger-mekanikk</h3>
     <ul>
-      <li><code>B_BTN</code> er en alternativ bremseverdi (0-100%), ikke en relativ reduksjon.</li>
-      <li>Den brukes kun når trigger = 0 og du holder bremseknappen inne.</li>
-      <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
-      <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
-    </ul>
-    <h3>Q-BRAKE (Quick Brake)</h3>
-    <ul>
-      <li>Aktiveres bare hvis <code>Q-BRAKE</code> er ON.</li>
-      <li>Gir en pre-release bremsesone: brems starter mens triggeren er på vei ut, før den er helt sluppet.</li>
-      <li>Når trigger er over 0 men under terskelen, brukes <code>Strength</code> som bremsekraft.</li>
-      <li><code>Threshold</code> range: 0-50%. <code>Strength</code> range: 0-100%.</li>
-      <li>Praktisk bruk: få tidligere innbremsing ved trigger-slipp uten å måtte gå helt til null.</li>
+      <li>Trigger-vandring kan justeres mekanisk med stoppeskruen bak.</li>
+      <li>Returfølelse avhenger av fjærforspenning / return tension; juster fjærfeste eller strammer forsiktig.</li>
+      <li>Etter endring av trigger-vandring eller returfjær, eller hvis kontrolleren har vært åpnet, bør du kalibrere trigger på nytt før kjøring.</li>
     </ul>
   </section>
 
   <section>
-    <h2>4. Hovedparametere i Main Menu</h2>
-    <h3>Terminologi-profiler</h3>
+    <h2>3. Display, race view og ABOUT</h2>
+    <p class="small">Denne delen samler det du ser på OLED: språk, tekststil, racevisning, statuslinje og systeminfo.</p>
+    <h3>Språk og display</h3>
     <ul>
-      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/LIMIT</code>).</li>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> velger mellom lokaliserte etiketter og navneprofilene ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: lokalisert UI med standardnavnene <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
       <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
+      <li><code>DISPLAY -&gt; CASE</code> velger om etiketter vises i <code>UPPER</code> eller <code>Pascal</code>.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> velger mellom <code>LARGE</code> og <code>small</code> for liste- og menyvisning.</li>
     </ul>
-    <h3>Fra CarSteen/ACD-begreper til ESPEED32</h3>
-    <table>
-      <thead>
-        <tr><th>Gammelt begrep</th><th>ESPEED32-ekvivalent</th><th>Praktisk effekt</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Attack</td><td><code>SENSI</code></td><td>Hvor hardt bilen svarer ved første triggerbevegelse.</td></tr>
-        <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Begrenser toppnivå og styrer hvor mykt effekten bygges opp.</td></tr>
-        <tr><td>Profile</td><td><code>CURVE</code></td><td>Formen på gassresponsen (tidlig vs sen aggressivitet).</td></tr>
-        <tr><td>Brake</td><td><code>BRAKE</code> + <code>B_BTN</code> + <code>Q-BRAKE</code></td><td>Bremseeffekt ved slipp, midlertidig brems og tidlig bremsesone.</td></tr>
-      </tbody>
-    </table>
-    <p class="small">Typisk "myk og kontrollert" startoppsett (fra eldre guide): prøv rundt <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, og juster derfra.</p>
-    <table>
-      <thead>
-        <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
-        <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-255 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging.</td></tr>
-        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
-        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>3.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
-        <tr><td><code>B_BTN</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
-        <tr><td><code>Q-BRAKE</code></td><td>OFF/ON + terskel/styrke</td><td>OFF</td><td>Egen bremsesone nær trigger-slipp.</td></tr>
-        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
-        <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
-      </tbody>
-    </table>
-    <figure class="doc-media">
-      <img src="../assets/curve_examples.png" alt="Linear, Soft og Hard curve eksempler">
-      <figcaption>CURVE-eksempler fra manual: Linear (50%), Soft (lavere verdi), Hard (høyere verdi).</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <h2>5. Race view (LIST vs GRID)</h2>
+    <h3>Race view (LIST vs GRID)</h3>
     <ul>
       <li><span class="badge">LIST</span> klassisk menyvisning med alle hoveditems.</li>
       <li><span class="badge">GRID</span> race-skjerm for rask justering under kjøring.</li>
@@ -263,13 +225,24 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>SIMPLE grid: BRAKE, SENSI (+ CAR hvis <code>RACESWP</code> er ON).</li>
       <li>Langt trykk encoder veksler LIST/GRID.</li>
     </ul>
+    <figure class="doc-media">
+      <img src="../assets/display_modes.svg" alt="Mockup av OLED i list view og grid race view">
+      <figcaption>Display-eksempel: LIST-visning viser hele menyen, mens GRID-visning holder de viktigste race-parameterne synlige for raskere justering på banen.</figcaption>
+    </figure>
+    <h3>Statuslinje og ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt.</li>
+      <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
+      <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>6. CAR-meny i praksis</h2>
+    <h2>4. CAR-meny og Car Params</h2>
+    <p class="small"><code>CAR</code> styrer bilprofilene. Hver profil lagrer sine egne <code>Car Params</code>, altså kjøreverdier som <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>BREMS+</code> og <code>LIMIT</code>. Det er samme parametergruppe du møter igjen senere i <code>Advanced Config Editor</code>.</p>
     <ul>
       <li><code>SELECT</code>: velg aktiv bilprofil (0-19).</li>
-      <li><code>RENAME</code>: 4-tegns navn (ASCII 32-122), redigert tegn for tegn.</li>
+      <li><code>RENAME</code>: 4-tegns navn (ASCII 32-122), redigert tegn for tegn. Se <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">ASCII-tabell</a>.</li>
       <li><code>RACESWP</code>: ON gir mulighet for car-select direkte i GRID-view.</li>
       <li><code>COPY</code>: kopier fra en profil til en annen eller til ALL.</li>
       <li><code>RESET</code>: nullstill alle bilprofiler (krever bekreftelse).</li>
@@ -277,19 +250,174 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>7. SETTINGS og strømforbruk</h2>
+    <h2>5. Kjøreparametere</h2>
+    <p class="small">Denne seksjonen samler hovedparameterne du justerer for kjørefølelse. De mest detaljerte forklaringene ligger under sammenleggbare felt, slik at seksjonen blir lettere å skanne.</p>
+    <h3>BRAKE og BREMS+</h3>
+    <h4>BRAKE</h4>
+    <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
+    <p class="small"><code>BREMS+</code> i hovedmenyen åpner den avanserte bremsemenyen. Der finner du nå <code>Alt.brems</code> og <code>Rel.brems</code>.</p>
+    <h4>Alternativ brems (<code>Alt.brems</code>)</h4>
+    <ul>
+      <li><code>Alt.brems</code> betyr alternativ brems, altså en egen bremseverdi (0-100%), ikke en relativ reduksjon.</li>
+      <li>Den brukes kun når trigger = 0 og du holder bremseknappen inne.</li>
+      <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
+      <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
+      <li>Noen foretrekker <code>Alt.brems</code> lavere enn vanlig <code>BRAKE</code> for en mykere knappbrems, mens andre liker den høyere for et hardere bremseinnslag. Dette er i stor grad brukerpreferanse og bilfølelse.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/alt_brake.svg" alt="Konseptgrafer som viser Alt.brems lavere enn BRAKE og Alt.brems høyere enn BRAKE">
+      <figcaption>Eksempler på alternativ brems: <code>Alt.brems</code> kan midlertidig settes mykere eller hardere enn vanlig BRAKE, avhengig av hva føreren foretrekker.</figcaption>
+    </figure>
+    <h4>Release-brems (<code>Rel.brems</code>)</h4>
+    <ul>
+      <li><code>Rel.brems</code> betyr release-brems og har tre moduser: <code>OFF</code>, <code>QUICK</code> og <code>DRAG</code>.</li>
+      <li><code>QUICK</code> er den gamle pre-release bremsesonen: under valgt <code>Sone</code> kuttes driv og <code>Nivå</code> brukes som bremsekraft.</li>
+      <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren. Den lar vanlig gasskurve leve videre, blander inn drag under selve slippbevegelsen og føles mykere enn QUICK.</li>
+      <li><code>Sone</code> brukes bare av <code>QUICK</code>. I QUICK er dette en ekte null-output-sone når triggeren er nesten sluppet.</li>
+      <li>Det er derfor normalt at skjermen kan vise noen <code>%T</code> mens output fortsatt står på <code>0%</code> så lenge triggeren er innenfor valgt sone i <code>QUICK</code>.</li>
+      <li>Hovedforskjellen er at <code>QUICK</code> er et hardt kutt i sonen, mens <code>DRAG</code> lar vanlig gasskurve leve videre og bare blander inn drag mens triggeren er på vei ut.</li>
+      <li>Typisk bruk av QUICK: baner eller biler som trenger en tydelig tidlig brems. Eksempel: <code>Sone</code> 6-10% og <code>Nivå</code> 70-100% gir en klar og repeterbar brems idet du slipper siste del av triggeren.</li>
+      <li>Typisk bruk av DRAG: nervøse biler som blir for brutale med QUICK. Eksempel: <code>Nivå</code> 20-50% gir mykere retardasjon under trigger-slipp uten full nulling av output.</li>
+      <li><code>QUICK Sone</code>: 0-50%. <code>Nivå</code>: 0-100%.</li>
+      <li>Bruk QUICK for tydelig tidlig innbremsing. Bruk DRAG for en roligere og mer progressiv støtte ved trigger-slipp.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/rel_brake.svg" alt="Konseptgrafer som viser QUICK og DRAG for Rel.brems">
+      <figcaption>Eksempler på release-brems: QUICK lager en null-output-sone med bremsekraft under valgt sone, mens DRAG legger inn mykere release-drag bare under selve slippbevegelsen.</figcaption>
+    </figure>
+    <h3>Kort referanse for hovedmenyen</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Myk startsone. 0 = av / gammel oppføring. Over 0 rampes første del av triggeren fra 0 opp til SENSI før vanlig CURVE tar over.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
+        <tr><td><code>BREMS+ / Alt.brems</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
+        <tr><td><code>BREMS+ / Rel.brems</code></td><td>OFF/QUICK(sone+nivå)/DRAG(nivå)</td><td>OFF</td><td>Release-brems når trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
+      </tbody>
+    </table>
+    <h3>Typiske startverdier</h3>
+    <p class="small">Dette er startpunkter, ikke fasit. Bruk dem for å komme nær, og finjuster deretter en parameter om gangen.</p>
+    <p class="small">Riktige verdier avhenger fortsatt mye av selve bilen, motor, dekk, grep i banen og din personlige kjørestil.</p>
+    <table>
+      <thead>
+        <tr><th>Oppsett</th><th>SENSI</th><th>BRAKE</th><th>ANTIS</th><th>CURVE</th><th>FADE</th><th>PWM_F</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1/32 balansert</td><td>28-35%</td><td>90-95%</td><td>40-90 ms</td><td>40-50%</td><td>0-6%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/32 glatt bane</td><td>22-30%</td><td>90-95%</td><td>100-150 ms</td><td>30-45%</td><td>5-12%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 balansert</td><td>35-45%</td><td>95-100%</td><td>0-30 ms</td><td>50-60%</td><td>0-5%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 høyt grep</td><td>40-50%</td><td>95-100%</td><td>0-15 ms</td><td>55-70%</td><td>0-3%</td><td>4.0 kHz</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Til de første testene: la <code>Rel.brems</code> stå på <code>OFF</code>. Legg inn <code>QUICK</code> eller <code>DRAG</code> først etter at grunnoppsettet for gass og brems kjennes riktig.</p>
+    <details class="doc-fold">
+      <summary>Fra CarSteen/ACD-begreper til ESPEED32</summary>
+      <table>
+        <thead>
+          <tr><th>Gammelt begrep</th><th>ESPEED32-ekvivalent</th><th>Praktisk effekt</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Attack</td><td><code>SENSI</code></td><td>Hvor hardt bilen svarer ved første triggerbevegelse.</td></tr>
+          <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Begrenser toppnivå og styrer hvor mykt effekten bygges opp.</td></tr>
+          <tr><td>Profile</td><td><code>CURVE</code></td><td>Formen på gassresponsen (tidlig vs sen aggressivitet).</td></tr>
+          <tr><td>Brake</td><td><code>BRAKE</code> + <code>BREMS+</code></td><td>Grunnbrems sammen med bremseknapp og release-brems i egen undermeny.</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Typisk "myk og kontrollert" startoppsett (fra eldre guide): prøv rundt <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, og juster derfra.</p>
+    </details>
+    <details class="doc-fold">
+      <summary>FADE i praksis</summary>
+      <ul>
+        <li><code>FADE</code> lager en myk <code>0 -&gt; SENSI</code>-rampe helt i starten av triggeren.</li>
+        <li><code>FADE = 0%</code> betyr av og gir samme direkte respons som tidligere.</li>
+        <li>Prøv <code>5-15%</code> hvis bilen blir for brå akkurat idet SENSI begynner.</li>
+        <li>Tenk på <code>FADE</code> som et ekstra første punkt i grafen: den endrer bare bunnen, mens <code>CURVE</code> fortsatt former resten.</li>
+      </ul>
+      <figure class="doc-media">
+        <img src="../assets/fade_examples.svg" alt="Grafeksempel for Fade av og Fade på">
+        <figcaption>FADE-eksempel: AV beholder det gamle direkte spranget til SENSI, mens PÅ legger inn en myk startrampe før vanlig CURVE fortsetter.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>Notat om linearitet</summary>
+      <ul>
+        <li><code>LIMIT</code>: lineær begrensning i kommandert output %. Faktisk toppfart på banen blir ikke helt lineær.</li>
+        <li><code>BRAKE</code>: lineær bremse/drag-kommando i %. Faktisk bremsefølelse avhenger av motor, dekk og grep i banen.</li>
+        <li><code>SENSI</code>: lineært minimumsnivå for output i %, men ikke en lineær gain-knott gjennom hele trigger-vandringen siden <code>CURVE</code> former resten.</li>
+        <li><code>FADE</code>: lineær i % av trigger-vandringen. Den virker bare helt i starten og gir deretter kontrollen videre til <code>CURVE</code>.</li>
+        <li><code>ANTIS</code>: er hovedsakelig en tidsinnstilling i ms. Når antispinn er aktivt gir høyere verdi lengre/mykere rampe, men totalfølelsen er ikke helt lineær fordi lavfarts-bypass også flytter seg med innstillingen.</li>
+      </ul>
+    </details>
+    <details class="doc-fold">
+      <summary>Curve-eksempler</summary>
+      <p class="small">Disse figurene viser selve responsformen før vi går videre til PWM-frekvens og duty-begrensning.</p>
+      <figure class="doc-media">
+        <img src="../assets/curve_examples.svg" alt="Lineær, Soft og Hard curve-eksempler">
+        <figcaption>CURVE-eksempler: Lineær (50%), Soft (lavere verdi) og Hard (høyere verdi).</figcaption>
+      </figure>
+      <figure class="doc-media">
+        <img src="../assets/fade_curve.svg" alt="Eksempel som viser fade sammen med lineær og hard kurve">
+        <figcaption>FADE sammen med CURVE: FADE kan myke opp starten mens resten av responsen fortsatt er lineær eller satt opp skarpere.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>LIMIT i praksis</summary>
+      <ul>
+        <li><code>LIMIT 100</code> lar kontrolleren nå full duty når trigger og kurve ber om det.</li>
+        <li><code>LIMIT 70</code> begrenser maks duty til omtrent 70%, selv ved full trigger.</li>
+      </ul>
+      <figure class="doc-media">
+        <img src="../assets/limit_examples.svg" alt="LIMIT-eksempler som viser LIMIT 100 og LIMIT 70">
+        <figcaption>LIMIT-eksempler: LIMIT endrer maks duty kontrolleren får lov til å nå.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>PWM_F i praksis</summary>
+      <ul>
+        <li><code>PWM_F</code> endrer hvor ofte utgangen switcher, ikke duty-kravet i seg selv.</li>
+        <li>Med <code>LIMIT 100</code> kan delgass fortsatt kjøre på delvis duty. Med <code>LIMIT 70</code> topper full trigger ut nær 70% duty.</li>
+        <li>Ved samme duty bruker <code>1 kHz</code> færre og bredere pulser, mens <code>5 kHz</code> bruker flere og smalere pulser i samme tidsvindu.</li>
+      </ul>
+      <h4>Scenario 1: delgass under LIMIT 100</h4>
+      <p class="small">Sammenlign disse to bildene horisontalt. Begge viser samme effektive nivå, 50% duty, så forskjellen er bare hvor tett pulsene ligger. Den stiplede linjen markerer gjennomsnittlig eller effektivt nivå.</p>
+      <figure class="doc-media">
+        <img src="../assets/pwm_part.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved delgass og LIMIT 100">
+        <figcaption>Ved 50% duty gir <code>1 kHz</code> færre og bredere pulser, mens <code>5 kHz</code> gir flere og smalere pulser i samme tidsvindu.</figcaption>
+      </figure>
+      <h4>Scenario 2: full trigger under LIMIT 70</h4>
+      <p class="small">Sammenlign også disse to bildene horisontalt. Begge viser full trigger, men <code>LIMIT 70</code> holder det effektive nivået nede på 70% duty. Igjen er den stiplede linjen gjennomsnittlig eller effektivt nivå.</p>
+      <figure class="doc-media">
+        <img src="../assets/pwm_cap.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved full trigger og LIMIT 70">
+        <figcaption>Her er duty begrenset til 70% i begge bilder. <code>PWM_F</code> endrer hvor ofte det pulses, men ikke selve LIMIT-taket.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <section>
+    <h2>6. SETTINGS, POWER og strømforbruk</h2>
+    <p class="small"><code>SETTINGS</code> samler globale systeminnstillinger som ikke følger den enkelte bilprofilen.</p>
     <h3>POWER-undermeny</h3>
     <ul>
       <li><code>SCRSV</code>: screensaver-tekst (linje1/linje2), timeout og vis nå.</li>
       <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
       <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
+      <li><code>VIN CAL</code>: mål faktisk banespenning med multimeter, still inn den verdien på kontrolleren og trykk for å kalibrere ADC-skalaen. Bruk bare hvis VIN-visningen er merkbart feil.</li>
     </ul>
-    <h3>DISPLAY + ABOUT</h3>
+    <h3>SETTINGS-rotnivå</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt.</li>
-      <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
-      <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
+      <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen.</li>
+      <li><code>A STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
+      <li><code>ENC INV</code>: snur encoder-retningen globalt hvis menyen føles bakvendt.</li>
     </ul>
     <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
     <table>
@@ -305,38 +433,71 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td>DEEP SLEEP</td><td>10 mA (estimert)</td><td>Power-off lignende modus, vekkes med power-cycle.</td></tr>
       </tbody>
     </table>
-    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg.</p>
+    <p class="small">Tallene er anslag og vil variere med forsyningsspenning, hardware-variant og måleoppsett. Motorlast til bilen kommer i tillegg. Målingene her er gjort på 5 V-siden etter step-down-converteren. Hvis du måler på 12 V-siden i stedet, vil strømtallet bli annerledes og kan ikke sammenliknes direkte, ref. sammenhengen mellom spenning og strøm (U = R * I).</p>
+    <h3>Internt batteri (valgfritt)</h3>
+    <p>Noen hardware-varianter kan ha et lite 1-cells litiumbatteri for oppsett uten koblet bane. Det lades mens kontrolleren er koblet til banen eller til USB. Batteriet er tenkt for menyjustering, forberedelser før heat, filskifte eller for å unngå forsinkelse hvis banen ikke er oppe ennå. Det er ikke ment for langvarig standalone-bruk.</p>
+    <p class="small">Brukstid under betyr bruk av kontrolleren uten tilkoblet bane. Ladestrømmen kan variere med lader og hardware, men hvis ladingen ligger nær 200 mA og kontrolleren bruker rundt 100 mA, blir brukstiden uten bane ofte omtrent dobbelt så lang som ladetiden. Reell litium-lading tar likevel litt lenger tid enn enkel hoderegning fordi siste del av ladingen går saktere mot full batterispenning.</p>
+    <table>
+      <thead>
+        <tr><th>Batteri</th><th>Typisk ladetid</th><th>Typisk brukstid uten bane</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>ca. 1.4-1.8 timer</td><td>ca. 2.0-2.5 timer</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>ca. 2.8-3.6 timer</td><td>ca. 4.0-5.0 timer</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section>
-    <h2>8. Kjøretips</h2>
+    <h2>7. Kjøretips</h2>
     <ul>
       <li>Juster en parameter av gangen, og kjør 5-10 runder mellom hver endring.</li>
-      <li>Start med <code>SENSI</code>, deretter <code>BRAKE</code>, så <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
+      <li>Start med <code>SENSI</code>, deretter <code>FADE</code>, så <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
       <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
       <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
-      <li>Bruk <code>B_BTN</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
-      <li>Bruk <code>Q-BRAKE</code> lav terskel (5-12%) og moderat styrke (40-70%) for mer rolig inngang i tekniske partier.</li>
+      <li>Bruk <code>BREMS+ -> Alt.brems</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
+      <li>Bruk <code>BREMS+ -> Rel.brems QUICK</code> med lav sone (5-12%) og moderat nivå (40-70%) for tydelig tidligere brems. Prøv <code>DRAG</code> rundt 20-50% hvis du vil ha hjelp ved trigger-slipp uten null-output-sone.</li>
+      <li>Hvis bilen napper for hardt akkurat idet triggeren begynner å virke: behold <code>SENSI</code> og legg inn litt <code>FADE</code> før du senker SENSI.</li>
       <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
       <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
     </ul>
   </section>
 
   <section>
-    <h2>9. WiFi/USB backup, restore og OTA</h2>
+    <h2>8. WiFi/USB backup, restore og OTA</h2>
     <h3>WiFi</h3>
     <ol>
       <li>Gå til <code>SETTINGS -> WIFI</code> for undermenyen.</li>
       <li><code>START WIFI</code>/<code>STOPP WIFI</code>: starter eller stopper bakgrunns-WiFi med en gang.</li>
       <li><code>INFO SIDE</code>: åpner WiFi-siden direkte, og WiFi/AP startes automatisk. Når du går ut av infosiden stoppes WiFi igjen (med mindre du hadde aktivert bakgrunnsmodus først).</li>
+      <li><code>VIS QR</code>: åpner en fullskjerms WiFi-QR-kode slik at mobil/nettbrett kan koble seg direkte til AP-et.</li>
       <li><code>AUTO AV</code>: velg timeout for bakgrunns-WiFi (1-120 min, default 5 min).</li>
       <li>Mens WiFi er aktiv: koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>) og åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
-      <li>På infosiden kan du bruke <code>Backup</code>, <code>Restore</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
+      <li>På infosiden kan du bruke <code>Backup</code>, <code>Restore</code>, <code>Advanced Config Editor</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
     </ol>
+    <figure class="doc-media">
+      <img src="../assets/wifi_examples.svg" alt="Eksempel på WiFi info-side og fullskjerms QR-kode på kontrollerens OLED">
+      <figcaption>WiFi-eksempel: til venstre vises INFO SIDE slik den ser ut på kontrolleren, med SSID, passord og IP-adresse til nettleseren. Til høyre vises VIS QR, der QR-koden gjøres så stor som mulig for rask tilkobling med mobil eller nettbrett.</figcaption>
+    </figure>
+    <p class="small">WiFi øker strømforbruket til kontroller-elektronikken fra omtrent 100 mA til omtrent 150 mA, altså rundt 50% mer. På enheter med batteri bør WiFi brukes med varsomhet og slås av når du er ferdig.</p>
     <p class="small">Statuslinje ved aktiv WiFi: <code>WIFI</code> bruker første ledige felt. Hvis ingen felt er ledige, vises <code>WIFI</code> i felt 4 til WiFi stoppes.</p>
+    <h3>Advanced Config Editor</h3>
+    <ul>
+      <li>Nettleserportalen har også en <code>Advanced Config Editor</code> for live justering av oppsett.</li>
+      <li><code>Global Config</code> redigerer globale innstillinger. <code>Car Params</code> redigerer bilparametrene for valgt profil.</li>
+      <li>I <code>Car Params</code> kan du laste inn og redigere hvilken som helst bilprofil direkte fra nedtrekkslisten, selv om en annen profil er aktiv på kontrolleren.</li>
+      <li><code>Refresh from device</code> henter inn verdiene fra kontrolleren på nytt.</li>
+      <li><code>Apply (RAM only)</code> lar deg prøve endringer live uten å skrive til flash først. Det er spesielt nyttig når du vil teste brems, gass, antispinn, kurve, fade eller release-brems på banen.</li>
+      <li><code>Apply + Save to flash</code> lagrer de samme verdiene permanent når du er fornøyd med live-testen.</li>
+      <li>På kontrollerens WiFi-side fungerer editoren direkte i nettleseren over WiFi. På <code>espeed32.com</code> krever den i stedet USB/WebSerial.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/car_params.png" alt="Skjermbilde av Advanced Config Editor med Car Params, profilvalg og redigerbare bilparametere">
+      <figcaption>Eksempel på Advanced Config Editor: skjermbildet viser fanen <code>Car Params</code> med profilvalg og live-redigerbare bilinnstillinger. Selve editoren er vist på engelsk her, men arbeidsflyten er den samme i alle manualene.</figcaption>
+    </figure>
     <h3>USB</h3>
     <ol>
-      <li>Gå til <code>SETTINGS -> USB</code>.</li>
+      <li>Gå til <code>SETTINGS -> USB INFO</code>.</li>
       <li>Bruk Chrome/Edge (WebSerial).</li>
       <li>Backup/restore fungerer over USB; OTA krever WiFi-modus.</li>
     </ol>
@@ -344,18 +505,20 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>10. Meny-tre (full oversikt)</h2>
+    <h2>9. Meny-tre (full oversikt)</h2>
 <pre>ROOT (Main Menu)
 |- BRAKE
 |- SENSI
 |- ANTIS
 |- CURVE (grafvisning)
+|- FADE (grafvisning)
 |- PWM_F
-|- B_BTN
-|- Q-BRAKE
-|  |- Enable (ON/OFF)
-|  |- Threshold (%)
-|  |- Strength (%)
+|- BREMS+
+|  |- Alt.brems (%)
+|  |- Rel.brems (OFF/QUICK/DRAG)
+|  |- Sone (%) [kun QUICK]
+|  |- Quick (%) [QUICK-modus]
+|  |- Drag (%) [DRAG-modus]
 |  `- Back
 |- LIMIT
 |- SETTINGS
@@ -375,10 +538,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |  |- INTERVAL (0 eller 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
-|  |  |- LANGUAGE (NOR/ENG/CS/ACD)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
 |  |  |- STATUS BAR
@@ -392,12 +556,16 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |  |  |- BOOT (ON/OFF)
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
+|  |- STATS (ON/OFF)
+|  |- A STEP (1-50 ms, default 5)
+|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO SIDE
+|  |  |- VIS QR
 |  |  |- AUTO AV (1-120 min, default 5)
 |  |  `- BACK
-|  |- USB
+|  |- USB INFO
 |  |- RESET
 |  |  |- CAR
 |  |  |- SETTINGS
@@ -415,7 +583,6 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
    |- COPY
    |- RESET
    `- BACK</pre>
-    <p class="small">Merk: visningstekst kan vises i UPPER eller Pascal avhengig av <code>DISPLAY -> CASE</code>.</p>
   </section>
 
 </main>
@@ -447,6 +614,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
   else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
   else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+  else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
 
   var langLinks = document.querySelectorAll("a[data-doc-lang]");
   for (var i = 0; i < langLinks.length; i++) {

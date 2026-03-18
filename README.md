@@ -142,7 +142,7 @@ Please verify the actual board routing against:
 
 before soldering to spare pads or assuming a given pad name matches the expected ESP32 GPIO.
 
-## On-Device Documentation (NO/EN/ES/DE)
+## On-Device Documentation (NO/EN/ES/DE/IT)
 
 User documentation served by the controller lives in:
 
@@ -150,6 +150,7 @@ User documentation served by the controller lives in:
 - `source/ESPEED32/data/docs/no/index.html`
 - `source/ESPEED32/data/docs/es/index.html`
 - `source/ESPEED32/data/docs/de/index.html`
+- `source/ESPEED32/data/docs/it/index.html`
 - `source/ESPEED32/data/ui/index.html` (backup/restore web UI)
 
 Recommended location is exactly this path under `source/ESPEED32/data/docs/` (do not move to repo root),

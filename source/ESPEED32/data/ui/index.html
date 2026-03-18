@@ -828,6 +828,7 @@ form{margin:0}
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
 var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
+var infoLoadedFromApi=false;
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
 var latestReleaseTag='';
@@ -1194,11 +1195,77 @@ function applyInfo(){
 
 function hostedDocsPath(){
   var lang=((navigator && navigator.language) ? navigator.language : 'en').toLowerCase();
-  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/';
-  if(lang.indexOf('es')===0) return 'docs/es/';
-  if(lang.indexOf('de')===0) return 'docs/de/';
-  if(lang.indexOf('it')===0) return 'docs/it/';
-  return 'docs/en/';
+  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return 'docs/no/index.html';
+  if(lang.indexOf('es')===0) return 'docs/es/index.html';
+  if(lang.indexOf('de')===0) return 'docs/de/index.html';
+  if(lang.indexOf('it')===0) return 'docs/it/index.html';
+  return 'docs/en/index.html';
+}
+
+var docsLinkProbeSeq=0;
+
+function isUiSubdirPath(){
+  return /(?:^|\/)ui(?:\/|$)/i.test(location.pathname||'');
+}
+
+function buildDocsCandidates(){
+  var candidates=[];
+  var seen={};
+  var langPath=hostedDocsPath();
+
+  function push(href){
+    if(!href) return;
+    if(location.protocol==='file:' && href.charAt(0)==='/') return;
+    try{
+      var abs=new URL(href, location.href).href;
+      if(seen[abs]) return;
+      seen[abs]=true;
+      candidates.push({href:href,abs:abs});
+    }catch(_){}
+  }
+
+  if(!hostedMode && infoLoadedFromApi){
+    push(info.docsPath||'/docs');
+  }
+
+  if(isUiSubdirPath()) push('../'+langPath);
+  push(langPath);
+  if(location.protocol!=='file:') push('/'+langPath.replace(/^\/+/,''));
+
+  if(!hostedMode){
+    push('docs/');
+    if(location.protocol!=='file:') push('/docs');
+  }
+
+  return candidates;
+}
+
+async function probeDocsCandidates(candidates){
+  for(var i=0;i<candidates.length;i++){
+    try{
+      var res=await fetch(candidates[i].abs,{method:'GET',cache:'no-store'});
+      if(res.ok) return candidates[i];
+    }catch(_){}
+  }
+  return null;
+}
+
+function bestEffortLocalDocsCandidate(candidates){
+  if(!candidates || !candidates.length) return null;
+  for(var i=0;i<candidates.length;i++){
+    if(candidates[i].href.indexOf('../docs/')===0) return candidates[i];
+  }
+  for(var j=0;j<candidates.length;j++){
+    if(candidates[j].href.indexOf('docs/')===0) return candidates[j];
+  }
+  return candidates[0];
+}
+
+function disableDocsLink(link,note,message){
+  link.href='#';
+  link.classList.add('disabled');
+  link.setAttribute('aria-disabled','true');
+  note.textContent=message;
 }
 
 function setBtnDisabled(id,disabled){
@@ -1213,30 +1280,48 @@ function setEditorUiReady(ready){
   setBtnDisabled('btn-save',!ready);
 }
 
-function updateDocsLinkState(){
+async function updateDocsLinkState(){
   var link=document.getElementById('docs-link');
   var note=document.getElementById('docs-note');
   if(!link || !note) return;
+  var seq=++docsLinkProbeSeq;
 
   link.classList.remove('disabled');
   link.removeAttribute('aria-disabled');
   link.setAttribute('target','_blank');
   link.setAttribute('rel','noopener');
 
-  if(hostedMode && location.protocol==='file:'){
-    link.href='#';
-    link.classList.add('disabled');
-    link.setAttribute('aria-disabled','true');
-    note.textContent='Local file mode cannot resolve docs path. Open hosted page or use controller WiFi docs.';
+  if(!hostedMode && infoLoadedFromApi){
+    link.href=info.docsPath||'/docs';
+    note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
     return;
   }
 
+  var candidates=buildDocsCandidates();
+  var found=await probeDocsCandidates(candidates);
+  if(seq!==docsLinkProbeSeq) return;
+
+  if(found){
+    link.href=found.href;
+    note.textContent=hostedMode
+      ? 'Hosted mode: docs were found on this site.'
+      : 'Docs were found on this site.';
+    return;
+  }
+
+  if(location.protocol==='file:'){
+    var fallback=bestEffortLocalDocsCandidate(candidates);
+    if(fallback){
+      link.href=fallback.href;
+      note.textContent='Local file mode: trying docs relative to this UI copy.';
+      return;
+    }
+  }
+
   if(hostedMode){
-    link.href=hostedDocsPath();
-    note.textContent='Hosted mode: docs open from this site.';
+    disableDocsLink(link,note,'Docs were not found on this hosted copy.');
   }else{
-    link.href=info.docsPath||'/docs';
-    note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
+    disableDocsLink(link,note,'Docs were not found locally. Place the docs folder next to this UI copy or use controller WiFi docs.');
   }
 }
 
@@ -1410,6 +1495,7 @@ async function loadInfo(){
     var r=await fetch('/api/info',{cache:'no-store'});
     if(r.ok){
       var j=await r.json();
+      infoLoadedFromApi=true;
       if(j.deviceId)info.deviceId=j.deviceId;
       if(j.version)info.version=j.version;
       if(j.docsPath)info.docsPath=j.docsPath;
@@ -2122,6 +2208,7 @@ applyHostedMode();
 updateUsbUiState();
 setEditorUiReady(false);
 updateFirmwareUiState();
+updateDocsLinkState();
 if(typeof window!=='undefined'){
   window.addEventListener('online',updateFirmwareUiState);
   window.addEventListener('offline',updateFirmwareUiState);

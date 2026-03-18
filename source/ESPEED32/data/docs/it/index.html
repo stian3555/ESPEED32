@@ -102,6 +102,7 @@ a.ghost{background:var(--ghost);color:var(--ink)}
 section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
 h2{margin:0 0 10px;font-size:20px}
 h3{margin:14px 0 8px;font-size:16px}
+h4{margin:12px 0 6px;font-size:15px}
 p{margin:8px 0;line-height:1.45}
 ul,ol{margin:8px 0 0 20px;padding:0}
 li{margin:4px 0;line-height:1.4}
@@ -121,6 +122,12 @@ th{background:var(--th-bg)}
 figure.doc-media{margin:10px 0 0}
 figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
 figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--ghost);padding:0 12px 12px}
+details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 26px 8px 0;position:relative}
+details.doc-fold summary::-webkit-details-marker{display:none}
+details.doc-fold summary::after{content:'+';position:absolute;right:0;top:10px;font-size:20px;color:var(--muted)}
+details.doc-fold[open] summary::after{content:'-'}
+details.doc-fold>:not(summary){margin-top:8px}
 @media (max-width:760px){
   h1{font-size:24px}
   table{font-size:13px}
@@ -197,11 +204,59 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>3. Fondamentali in guida: BRAKE e FRENO+</h2>
-    <h3>BRAKE</h3>
+    <h2>3. Display, vista gara e ABOUT</h2>
+    <p class="small">Questa sezione raccoglie cio che vedi sull'OLED: lingua, stile etichette, vista gara, barra di stato e informazioni di sistema.</p>
+    <h3>Lingua e display</h3>
+    <ul>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> sceglie tra etichette localizzate e i profili di nomi ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: interfaccia localizzata con i nomi standard <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: nomi generici (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
+      <li><code>CS</code>: stile CarSteen (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: stile ACD dove esiste una corrispondenza diretta (<code>SENSI</code> e <code>CHOKE</code> per LIMIT).</li>
+      <li><code>DISPLAY -&gt; CASE</code> sceglie se mostrare le etichette in <code>UPPER</code> o <code>Pascal</code>.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> cambia la vista lista/menu tra <code>LARGE</code> e <code>small</code>.</li>
+    </ul>
+    <h3>Vista gara (LIST vs GRID)</h3>
+    <ul>
+      <li><span class="badge">LIST</span> vista classica con tutte le voci del menu principale.</li>
+      <li><span class="badge">GRID</span> schermata gara per modifiche rapide mentre guidi.</li>
+      <li><code>DISPLAY -> RACE MODE</code>: OFF / FULL / SIMPLE.</li>
+      <li>FULL: BRAKE, SENSI, ANTIS, CURVE (+ CAR se <code>RACESWP</code> e ON).</li>
+      <li>SIMPLE: BRAKE, SENSI (+ CAR se <code>RACESWP</code> e ON).</li>
+      <li>Una pressione lunga dell'encoder cambia LIST/GRID.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/display_modes.svg" alt="Mockup OLED per list view e grid race view">
+      <figcaption>Esempio display: LIST mostra tutta la pila menu, mentre GRID tiene visibili i parametri principali di gara per modifiche piu rapide in pista.</figcaption>
+    </figure>
+    <h3>Barra di stato e ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 slot fissi. Ogni slot puo mostrare <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> oppure vuoto.</li>
+      <li>Quando il WiFi e attivo, la barra di stato mostra <code>WIFI</code>. Usa il primo slot vuoto se disponibile; altrimenti sostituisce temporaneamente lo slot 4.</li>
+      <li><code>ABOUT</code> mostra versione firmware/dati, sensore trigger rilevato, dettagli chip, flash/heap, indirizzi MAC e data/ora build.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Menu CAR e Car Params</h2>
+    <p class="small">Il menu <code>CAR</code> gestisce i profili auto. Ogni profilo salva i propri <code>Car Params</code>, cioe valori come <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>FRENO+</code> e <code>LIMIT</code>. E' lo stesso gruppo di parametri che ritrovi piu avanti nell'<code>Advanced Config Editor</code>.</p>
+    <ul>
+      <li><code>SELECT</code>: scegli il profilo attivo (0-19).</li>
+      <li><code>RENAME</code>: editor nome a 4 caratteri (ASCII 32-122). Vedi <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">tabella ASCII</a>.</li>
+      <li><code>RACESWP</code>: ON permette di cambiare profilo direttamente dalla vista GRID.</li>
+      <li><code>COPY</code>: copia da un profilo a un altro o verso tutti i profili.</li>
+      <li><code>RESET</code>: ripristina tutti i profili auto con conferma.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Parametri di guida</h2>
+    <p class="small">Questa sezione raccoglie i parametri principali che definiscono la sensazione del controller in pista.</p>
+    <h3>BRAKE e FRENO+</h3>
+    <h4>BRAKE</h4>
     <p>Con il trigger completamente rilasciato, il controller applica la frenata normale usando il valore <code>BRAKE</code>.</p>
     <p class="small"><code>FRENO+</code> nel menu principale apre il sottomenu freni avanzati. Li ora trovi <code>Alt.Freno</code> e <code>Rel.Freno</code>.</p>
-    <h3>Freno alternativo (<code>Alt.Freno</code>)</h3>
+    <h4>Freno alternativo (<code>Alt.Freno</code>)</h4>
     <ul>
       <li><code>Alt.Freno</code> indica un valore di freno alternativo (0-100%), non una riduzione relativa.</li>
       <li>Si applica solo quando trigger = 0 e tieni premuto il pulsante freno.</li>
@@ -209,7 +264,11 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Uso tipico: frenata temporaneamente piu forte o piu dolce in ingresso curva senza cambiare il setup base.</li>
       <li>Alcuni piloti preferiscono <code>Alt.Freno</code> piu basso del normale <code>BRAKE</code> per un freno a pulsante piu dolce, mentre altri lo preferiscono piu alto per una frenata piu netta. Questa parte dipende soprattutto dalle preferenze del pilota e dalla sensazione dell'auto.</li>
     </ul>
-    <h3>Freno di rilascio (<code>Rel.Freno</code>)</h3>
+    <figure class="doc-media">
+      <img src="../assets/alt_brake_examples.svg" alt="Grafici concettuali per Alt.Freno piu basso di BRAKE e Alt.Freno piu alto di BRAKE">
+      <figcaption>Esempi di freno alternativo: <code>Alt.Freno</code> puo essere impostato temporaneamente piu dolce o piu forte del BRAKE normale, a seconda delle preferenze del pilota.</figcaption>
+    </figure>
+    <h4>Freno di rilascio (<code>Rel.Freno</code>)</h4>
     <ul>
       <li><code>Rel.Freno</code> indica il freno di rilascio e ha tre modi: <code>OFF</code>, <code>QUICK</code> e <code>DRAG</code>.</li>
       <li><code>QUICK</code> e la vecchia zona di frenata anticipata: sotto la <code>Zona</code> scelta il controller taglia la trazione e applica <code>Livello</code> come forza frenante.</li>
@@ -223,14 +282,9 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Usa QUICK per una frenata anticipata piu netta. Usa DRAG se vuoi un aiuto al rilascio piu progressivo.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_brake_examples.svg" alt="Grafici concettuali per Alt.Freno piu basso di BRAKE, Alt.Freno piu alto di BRAKE, oltre a QUICK e DRAG">
-      <figcaption>Esempi di freni avanzati: <code>Alt.Freno</code> puo essere impostato temporaneamente piu dolce o piu forte del BRAKE normale, a seconda delle preferenze del pilota. QUICK crea una zona a output zero con frenata sotto la zona scelta, mentre DRAG aggiunge un drag piu morbido solo durante il movimento di rilascio.</figcaption>
+      <img src="../assets/release_brake_examples.svg" alt="Grafici concettuali per QUICK e DRAG di Rel.Freno">
+      <figcaption>Esempi di freno di rilascio: QUICK crea una zona a output zero con frenata sotto la zona scelta, mentre DRAG aggiunge un drag piu morbido solo durante il movimento di rilascio.</figcaption>
     </figure>
-  </section>
-
-  <section>
-    <h2>4. Parametri di guida nel menu principale</h2>
-    <p class="small"><code>BRAKE</code> e <code>FRENO+</code> sono gia spiegati nella sezione 3. Qui trovi gli altri parametri di guida, insieme a una breve referenza dell'intero menu principale.</p>
     <h3>Da CarSteen/ACD a ESPEED32</h3>
     <table>
       <thead>
@@ -337,53 +391,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>5. Menu CAR e Car Params</h2>
-    <p class="small">Il menu <code>CAR</code> gestisce i profili auto. Ogni profilo salva i propri <code>Car Params</code>, cioe valori come <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>FRENO+</code> e <code>LIMIT</code>. E' lo stesso gruppo di parametri che ritrovi piu avanti nell'<code>Advanced Config Editor</code>.</p>
-    <ul>
-      <li><code>SELECT</code>: scegli il profilo attivo (0-19).</li>
-      <li><code>RENAME</code>: editor nome a 4 caratteri (ASCII 32-122). Vedi <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">tabella ASCII</a>.</li>
-      <li><code>RACESWP</code>: ON permette di cambiare profilo direttamente dalla vista GRID.</li>
-      <li><code>COPY</code>: copia da un profilo a un altro o verso tutti i profili.</li>
-      <li><code>RESET</code>: ripristina tutti i profili auto con conferma.</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>6. Display, vista gara e ABOUT</h2>
-    <p class="small">Questa sezione raccoglie cio che vedi sull'OLED: lingua, stile etichette, vista gara, barra di stato e informazioni di sistema.</p>
-    <h3>Lingua e display</h3>
-    <ul>
-      <li><code>DISPLAY -&gt; LANGUAGE</code> sceglie tra etichette localizzate e i profili di nomi ENG/CS/ACD.</li>
-      <li><code>NOR/ESP/DEU/ITA</code>: interfaccia localizzata con i nomi standard <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
-      <li><code>ENG</code>: nomi generici (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
-      <li><code>CS</code>: stile CarSteen (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
-      <li><code>ACD</code>: stile ACD dove esiste una corrispondenza diretta (<code>SENSI</code> e <code>CHOKE</code> per LIMIT).</li>
-      <li><code>DISPLAY -&gt; CASE</code> sceglie se mostrare le etichette in <code>UPPER</code> o <code>Pascal</code>.</li>
-      <li><code>DISPLAY -&gt; FONT SIZE</code> cambia la vista lista/menu tra <code>LARGE</code> e <code>small</code>.</li>
-    </ul>
-    <h3>Vista gara (LIST vs GRID)</h3>
-    <ul>
-      <li><span class="badge">LIST</span> vista classica con tutte le voci del menu principale.</li>
-      <li><span class="badge">GRID</span> schermata gara per modifiche rapide mentre guidi.</li>
-      <li><code>DISPLAY -> RACE MODE</code>: OFF / FULL / SIMPLE.</li>
-      <li>FULL: BRAKE, SENSI, ANTIS, CURVE (+ CAR se <code>RACESWP</code> e ON).</li>
-      <li>SIMPLE: BRAKE, SENSI (+ CAR se <code>RACESWP</code> e ON).</li>
-      <li>Una pressione lunga dell'encoder cambia LIST/GRID.</li>
-    </ul>
-    <figure class="doc-media">
-      <img src="../assets/display_modes.svg" alt="Mockup OLED per list view e grid race view">
-      <figcaption>Esempio display: LIST mostra tutta la pila menu, mentre GRID tiene visibili i parametri principali di gara per modifiche piu rapide in pista.</figcaption>
-    </figure>
-    <h3>Barra di stato e ABOUT</h3>
-    <ul>
-      <li><code>STATUS BAR</code>: 4 slot fissi. Ogni slot puo mostrare <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> oppure vuoto.</li>
-      <li>Quando il WiFi e attivo, la barra di stato mostra <code>WIFI</code>. Usa il primo slot vuoto se disponibile; altrimenti sostituisce temporaneamente lo slot 4.</li>
-      <li><code>ABOUT</code> mostra versione firmware/dati, sensore trigger rilevato, dettagli chip, flash/heap, indirizzi MAC e data/ora build.</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>7. SETTINGS, POWER e consumo stimato</h2>
+    <h2>6. SETTINGS, POWER e consumo stimato</h2>
     <p class="small"><code>SETTINGS</code> raccoglie le opzioni globali di sistema che non appartengono a un singolo profilo auto.</p>
     <h3>Sottomenu POWER</h3>
     <ul>
@@ -429,7 +437,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>8. Consigli di guida</h2>
+    <h2>7. Consigli di guida</h2>
     <ul>
       <li>Cambia un solo parametro alla volta e poi prova 5-10 giri prima del passo successivo.</li>
       <li>Ordine consigliato: <code>SENSI</code>, poi <code>FADE</code>, poi <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> e infine <code>PWM_F</code>.</li>
@@ -444,7 +452,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>9. WiFi/USB backup, restore e OTA</h2>
+    <h2>8. WiFi/USB backup, restore e OTA</h2>
     <h3>WiFi</h3>
     <ol>
       <li>Apri <code>SETTINGS -> WIFI</code> per entrare nel sottomenu WiFi.</li>
@@ -485,7 +493,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
   </section>
 
   <section>
-    <h2>10. Albero menu (mappa completa UI)</h2>
+    <h2>9. Albero menu (mappa completa UI)</h2>
 <pre>ROOT (Main Menu)
 |- BRAKE
 |- SENSI

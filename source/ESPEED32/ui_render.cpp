@@ -545,11 +545,7 @@ void printMainMenu(MenuState_enum currMenuState)
               sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
             }
           }
-          /* Special handling for release-brake item: display mode label instead of raw integer */
-          else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 7)) == 0) {
-            uint16_t mode = *(uint16_t *)(g_mainMenu.item[menuIndex].value);
-            snprintf(msgStr, sizeof(msgStr), "%3s", getReleaseBrakeModeLabel(g_storedVar.language, mode));
-          } else {
+          else {
             /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */
             sprintf(msgStr, "%3d%s", *(uint16_t *)(g_mainMenu.item[menuIndex].value), g_mainMenu.item[menuIndex].unit);
           }

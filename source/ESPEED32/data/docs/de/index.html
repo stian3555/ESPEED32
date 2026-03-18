@@ -199,18 +199,18 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>3. Wichtig beim Fahren: BRAKE und BREMSE+</h2>
     <h3>BRAKE</h3>
     <p>Bei komplett losgelassenem Trigger verwendet der Controller den normalen Bremswert <code>BRAKE</code>.</p>
-    <p class="small"><code>BREMSE+</code> im Hauptmenue oeffnet das erweiterte Brems-Untermenue. Dort findest du jetzt <code>Alt Brems</code> und <code>R-Brems</code>.</p>
-    <h3>Alt Brems (in BREMSE+)</h3>
+    <p class="small"><code>BREMSE+</code> im Hauptmenue oeffnet das erweiterte Brems-Untermenue. Dort findest du jetzt <code>Alt.Brems</code> und <code>Rel.Brems</code>.</p>
+    <h3>Alternative Bremse (<code>Alt.Brems</code>)</h3>
     <ul>
-      <li><code>Alt Brems</code> ist ein alternativer Bremswert (0-100%), keine relative Reduktion.</li>
+      <li><code>Alt.Brems</code> bedeutet alternative Bremse, also ein eigener Bremswert (0-100%), keine relative Reduktion.</li>
       <li>Er wird nur genutzt, wenn Trigger = 0 und der Bremsknopf gehalten wird.</li>
       <li>Wenn die Statuszeile OUTPUT anzeigt, erscheint <code>Bxxx%</code> solange der Knopf gehalten wird.</li>
       <li>Typischer Einsatz: temporaer haerteres/weicheres Einbremsen ohne Basis-Setup zu aendern.</li>
-      <li>Manche Fahrer moegen <code>Alt Brems</code> niedriger als den normalen <code>BRAKE</code>-Wert fuer eine weichere Tastenbremse, andere lieber hoeher fuer einen staerkeren Bremseinsatz. Das ist vor allem Geschmacks- und Fahrgefuehlssache.</li>
+      <li>Manche Fahrer moegen <code>Alt.Brems</code> niedriger als den normalen <code>BRAKE</code>-Wert fuer eine weichere Tastenbremse, andere lieber hoeher fuer einen staerkeren Bremseinsatz. Das ist vor allem Geschmacks- und Fahrgefuehlssache.</li>
     </ul>
-    <h3>R-Brems (in BREMSE+)</h3>
+    <h3>Release-Bremse (<code>Rel.Brems</code>)</h3>
     <ul>
-      <li><code>R-BRAKE</code> hat drei Modi: <code>OFF</code>, <code>QUICK</code> und <code>DRAG</code>.</li>
+      <li><code>Rel.Brems</code> ist die Release-Bremse und hat drei Modi: <code>OFF</code>, <code>QUICK</code> und <code>DRAG</code>.</li>
       <li><code>QUICK</code> ist die alte Pre-Release-Bremszone: unterhalb der gewaehlten <code>Zone</code> wird der Antrieb getrennt und <code>Stufe</code> als Bremskraft genutzt.</li>
       <li><code>DRAG</code> wirkt nur waehrend du den Trigger aktiv loest. Das Gas bleibt aktiv, Drag wird waehrend der Release-Bewegung hinzugemischt und fuehlt sich weicher an als QUICK.</li>
       <li><code>Zone</code> wird nur von <code>QUICK</code> benutzt. In QUICK ist sie eine echte Null-Output-Zone nahe dem Loslassen des Triggers.</li>
@@ -222,23 +222,28 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>QUICK fuer klaren fruehen Bremseinsatz. DRAG fuer sanftere Unterstuetzung beim Loslassen.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_brake_examples.svg" alt="Konzeptgrafiken fuer Alt Brems niedriger als BRAKE, Alt Brems hoeher als BRAKE sowie QUICK und DRAG">
-      <figcaption>Beispiele fuer erweitertes Bremsen: Alt Brems kann kurzzeitig weicher oder haerter als der normale BRAKE-Wert eingestellt werden, je nach Vorliebe des Fahrers. QUICK erzeugt unterhalb der gewaehlten Zone eine Null-Output-Zone mit Bremskraft, waehrend DRAG nur waehrend der Release-Bewegung weicheren Drag addiert.</figcaption>
+      <img src="../assets/advanced_brake_examples.svg" alt="Konzeptgrafiken fuer Alt.Brems niedriger als BRAKE, Alt.Brems hoeher als BRAKE sowie QUICK und DRAG">
+      <figcaption>Beispiele fuer erweitertes Bremsen: <code>Alt.Brems</code> kann kurzzeitig weicher oder haerter als der normale BRAKE-Wert eingestellt werden, je nach Vorliebe des Fahrers. QUICK erzeugt unterhalb der gewaehlten Zone eine Null-Output-Zone mit Bremskraft, waehrend DRAG nur waehrend der Release-Bewegung weicheren Drag addiert.</figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>4. Hauptparameter im Main Menu</h2>
-    <h3>Sprache und Anzeige</h3>
-    <ul>
-      <li><code>DISPLAY -&gt; LANGUAGE</code> waehlt zwischen lokalisierten Labels und den Namensprofilen ENG/CS/ACD.</li>
-      <li><code>NOR/ESP/DEU/ITA</code>: lokalisierte UI mit den Standardnamen <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
-      <li><code>ENG</code>: generische Namen (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
-      <li><code>CS</code>: CarSteen-Stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
-      <li><code>ACD</code>: ACD-Stil, wo es direkte Entsprechungen gibt (<code>SENSI</code> und <code>CHOKE</code> fuer LIMIT).</li>
-      <li><code>DISPLAY -&gt; CASE</code> waehlt, ob Labels in <code>UPPER</code> oder <code>Pascal</code> angezeigt werden.</li>
-      <li><code>DISPLAY -&gt; FONT SIZE</code> stellt die Listen- und Menueansicht auf <code>LARGE</code> oder <code>small</code>.</li>
-    </ul>
+    <h2>4. Fahrparameter im Main Menu</h2>
+    <p class="small"><code>BRAKE</code> und <code>BREMSE+</code> sind bereits in Abschnitt 3 erklaert. Hier sind die restlichen Fahrparameter zusammengefasst, plus eine kurze Referenz fuer das komplette Main Menu.</p>
+    <h3>Von CarSteen/ACD-Begriffen zu ESPEED32</h3>
+    <table>
+      <thead>
+        <tr><th>Alter Begriff</th><th>ESPEED32-Entsprechung</th><th>Praktischer Effekt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Attack</td><td><code>SENSI</code></td><td>Wie hart das Auto bei der ersten Triggerbewegung anspricht.</td></tr>
+        <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Begrenzt das Top-Ende und bestimmt, wie weich die Leistung aufgebaut wird.</td></tr>
+        <tr><td>Profile</td><td><code>CURVE</code></td><td>Form der Trigger-Kennlinie (frueh oder spaet aggressiv).</td></tr>
+        <tr><td>Brake</td><td><code>BRAKE</code> + <code>BREMSE+</code></td><td>Grundbremse zusammen mit Tastenbremse und Release-Bremse im eigenen Untermenue.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Typisches "weich und kontrolliert" Startsetup aus aelteren Guides: probiere etwa <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code> und arbeite dich von dort weiter.</p>
+    <h3>Kurzreferenz fuer das Hauptmenue</h3>
     <table>
       <thead>
         <tr><th>Item</th><th>Bereich</th><th>Default</th><th>Beschreibung</th></tr>
@@ -250,8 +255,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Sanfte Startzone. 0 = aus / altes Verhalten. Oberhalb von 0 laeuft der erste Triggerweg von 0 bis SENSI hoch, bevor die normale CURVE uebernimmt.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-Frequenz des Motors.</td></tr>
-        <tr><td><code>BREMSE+ / Alt Brems</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
-        <tr><td><code>BREMSE+ / R-Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
+        <tr><td><code>BREMSE+ / Alt.Brems</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
+        <tr><td><code>BREMSE+ / Rel.Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, Bestzeit, Verlauf.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
@@ -282,7 +287,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td>1/24 viel Grip</td><td>40-50%</td><td>95-100%</td><td>0-15 ms</td><td>55-70%</td><td>0-3%</td><td>4.0 kHz</td></tr>
       </tbody>
     </table>
-    <p class="small">Fuer die ersten Tests <code>R-BRAKE</code> auf <code>OFF</code> lassen. <code>QUICK</code> oder <code>DRAG</code> erst aktivieren, wenn das Grundsetup fuer Gas und Bremse schon passt.</p>
+    <p class="small">Fuer die ersten Tests <code>Rel.Brems</code> auf <code>OFF</code> lassen. <code>QUICK</code> oder <code>DRAG</code> erst aktivieren, wenn das Grundsetup fuer Gas und Bremse schon passt.</p>
     <h3>Hinweis zur Linearitaet</h3>
     <ul>
       <li><code>LIMIT</code>: lineare Begrenzung des angeforderten Outputs in %. Die reale Endgeschwindigkeit auf der Bahn ist nicht perfekt linear.</li>
@@ -316,14 +321,46 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Mit <code>LIMIT 100</code> kann Teillast weiterhin mit Teil-Duty laufen. Mit <code>LIMIT 70</code> endet Vollgas am Trigger bei etwa 70% Duty.</li>
       <li>Bei gleichem Duty nutzt <code>1 kHz</code> weniger und breitere Pulse, waehrend <code>5 kHz</code> mehr und schmalere Pulse im selben Zeitfenster nutzt.</li>
     </ul>
+    <h4>Szenario 1: Teillast unter LIMIT 100</h4>
+    <p class="small">Vergleiche diese beiden Bilder horizontal. Beide zeigen dasselbe effektive Niveau, also 50% Duty. Der Unterschied ist nur die Pulsdichte. Die gestrichelte Linie markiert das mittlere oder effektive Niveau.</p>
     <figure class="doc-media">
-      <img src="../assets/pwm_frequency_examples.svg" alt="PWM_F-Beispiele mit 1 Kilohertz und 5 Kilohertz bei limit 100 und limit 70">
-      <figcaption>PWM_F-Beispiele: oben ist ein Teillast-Fall mit 50% Duty unter LIMIT 100 zu sehen, unten der Volltrigger-Fall, bei dem LIMIT 70 den Duty auf 70% begrenzt. Die gestrichelte Linie markiert das mittlere oder effektive Niveau des gezeigten Duty-Werts.</figcaption>
+      <img src="../assets/pwm_frequency_partial_examples.svg" alt="PWM_F-Beispiele zum Vergleich von 1 Kilohertz und 5 Kilohertz bei Teillast mit LIMIT 100">
+      <figcaption>Bei 50% Duty nutzt <code>1 kHz</code> weniger und breitere Pulse, waehrend <code>5 kHz</code> mehr und schmalere Pulse im selben Zeitfenster nutzt.</figcaption>
+    </figure>
+    <h4>Szenario 2: Volltrigger unter LIMIT 70</h4>
+    <p class="small">Vergleiche auch diese beiden Bilder horizontal. Beide zeigen Volltrigger, aber <code>LIMIT 70</code> haelt das effektive Niveau bei 70% Duty. Auch hier markiert die gestrichelte Linie das mittlere oder effektive Niveau.</p>
+    <figure class="doc-media">
+      <img src="../assets/pwm_frequency_capped_examples.svg" alt="PWM_F-Beispiele zum Vergleich von 1 Kilohertz und 5 Kilohertz bei Volltrigger mit LIMIT 70">
+      <figcaption>Hier ist der Duty in beiden Bildern auf 70% begrenzt. <code>PWM_F</code> aendert, wie oft Pulse kommen, nicht das LIMIT selbst.</figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>5. Race View (LIST vs GRID)</h2>
+    <h2>5. CAR-Menue und Car Params</h2>
+    <p class="small">Das <code>CAR</code>-Menue verwaltet die Fahrzeugprofile. Jedes Profil speichert seine eigenen <code>Car Params</code>, also Werte wie <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>BREMSE+</code> und <code>LIMIT</code>. Genau diese Parametergruppe taucht spaeter auch im <code>Advanced Config Editor</code> wieder auf.</p>
+    <ul>
+      <li><code>SELECT</code>: aktives Profil waehlen (0-19).</li>
+      <li><code>RENAME</code>: 4-Zeichen Name (ASCII 32-122). Siehe <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">ASCII-Tabelle</a>.</li>
+      <li><code>RACESWP</code>: ON erlaubt Profilwechsel direkt im GRID.</li>
+      <li><code>COPY</code>: von einem Profil auf ein anderes oder auf alle kopieren.</li>
+      <li><code>RESET</code>: alle Fahrzeugprofile zuruecksetzen (mit Bestaetigung).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. Display, Race View und ABOUT</h2>
+    <p class="small">Hier ist alles gebuendelt, was du auf dem OLED siehst: Sprache, Beschriftung, Race-Ansicht, Statuszeile und Systeminfos.</p>
+    <h3>Sprache und Anzeige</h3>
+    <ul>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> waehlt zwischen lokalisierten Labels und den Namensprofilen ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: lokalisierte UI mit den Standardnamen <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: generische Namen (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
+      <li><code>CS</code>: CarSteen-Stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: ACD-Stil, wo es direkte Entsprechungen gibt (<code>SENSI</code> und <code>CHOKE</code> fuer LIMIT).</li>
+      <li><code>DISPLAY -&gt; CASE</code> waehlt, ob Labels in <code>UPPER</code> oder <code>Pascal</code> angezeigt werden.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> stellt die Listen- und Menueansicht auf <code>LARGE</code> oder <code>small</code>.</li>
+    </ul>
+    <h3>Race View (LIST vs GRID)</h3>
     <ul>
       <li><span class="badge">LIST</span> klassische Menueansicht.</li>
       <li><span class="badge">GRID</span> schnelle Rennansicht fuer On-Track Anpassungen.</li>
@@ -336,21 +373,17 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/display_modes.svg" alt="OLED Mockup fuer List View und Grid Race View">
       <figcaption>Display-Beispiel: LIST zeigt den kompletten Menue-Stack, waehrend GRID die wichtigsten Rennparameter fuer schnellere Bahn-Anpassungen sichtbar haelt.</figcaption>
     </figure>
-  </section>
-
-  <section>
-    <h2>6. CAR-Menue Ablauf</h2>
+    <h3>Statuszeile und ABOUT</h3>
     <ul>
-      <li><code>SELECT</code>: aktives Profil waehlen (0-19).</li>
-      <li><code>RENAME</code>: 4-Zeichen Name (ASCII 32-122).</li>
-      <li><code>RACESWP</code>: ON erlaubt Profilwechsel direkt im GRID.</li>
-      <li><code>COPY</code>: von einem Profil auf ein anderes oder auf alle kopieren.</li>
-      <li><code>RESET</code>: alle Fahrzeugprofile zuruecksetzen (mit Bestaetigung).</li>
+      <li><code>STATUS BAR</code>: 4 feste Slots. Jeder Slot kann <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> oder leer anzeigen.</li>
+      <li>Wenn WiFi aktiv ist, zeigt die Statuszeile <code>WIFI</code>. Zuerst wird ein freier Slot benutzt; wenn keiner frei ist, wird Slot 4 temporaer ueberschrieben.</li>
+      <li><code>ABOUT</code> zeigt Firmware-/Datenversion, erkannten Trigger-Sensor, Chip-Infos, Flash/Heap, MAC-Adressen und Build-Datum/-Zeit.</li>
     </ul>
   </section>
 
   <section>
-    <h2>7. SETTINGS und geschaetzter Stromverbrauch</h2>
+    <h2>7. SETTINGS, POWER und geschaetzter Stromverbrauch</h2>
+    <p class="small"><code>SETTINGS</code> sammelt globale Systemoptionen, die nicht an ein einzelnes Fahrzeugprofil gebunden sind.</p>
     <h3>POWER-Untermenue</h3>
     <ul>
       <li><code>SCRSV</code>: Screensaver Text, Timeout, Sofort-Anzeige.</li>
@@ -401,8 +434,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Empfohlene Reihenfolge: <code>SENSI</code>, <code>FADE</code>, <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>PWM_F</code>.</li>
       <li>1/32 auf rutschiger Bahn: hoeheres <code>ANTIS</code> (100-150 ms), <code>CURVE</code> &lt; 50.</li>
       <li>1/24 mit gutem Grip: niedrigeres <code>ANTIS</code> (0-40 ms), <code>CURVE</code> 50-70.</li>
-      <li><code>BREMSE+ -> Alt Brems</code> als temporaeres Kurvenwerkzeug nutzen, statt BRAKE-Grundwert laufend zu aendern.</li>
-      <li><code>BREMSE+ -> R-Brems QUICK</code> mit kleiner Zone (5-12%) und mittlerer Stufe (40-70%) fuer klarere fruehe Bremsung. <code>DRAG</code> um 20-50% probieren, wenn Release-Hilfe ohne Null-Output-Zone gewuenscht ist.</li>
+      <li><code>BREMSE+ -> Alt.Brems</code> als temporaeres Kurvenwerkzeug nutzen, statt BRAKE-Grundwert laufend zu aendern.</li>
+      <li><code>BREMSE+ -> Rel.Brems QUICK</code> mit kleiner Zone (5-12%) und mittlerer Stufe (40-70%) fuer klarere fruehe Bremsung. <code>DRAG</code> um 20-50% probieren, wenn Release-Hilfe ohne Null-Output-Zone gewuenscht ist.</li>
       <li>Wenn das Auto genau beim ersten wirksamen Triggerweg zu hart anschlaegt, lass <code>SENSI</code> stehen und probiere erst etwas <code>FADE</code>.</li>
     </ul>
   </section>
@@ -458,8 +491,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- FADE (graph view)
 |- PWM_F
 |- BREMSE+
-|  |- Alt Brems (%)
-|  |- R-Brems (OFF/QUICK/DRAG)
+|  |- Alt.Brems (%)
+|  |- Rel.Brems (OFF/QUICK/DRAG)
 |  |- Zone (%) [nur QUICK]
 |  |- Quick (%) [QUICK-Modus]
 |  |- Drag (%) [DRAG-Modus]

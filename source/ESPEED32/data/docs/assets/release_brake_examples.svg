@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="940" viewBox="0 0 1550 940" role="img" aria-labelledby="title desc">
-  <title id="title">Advanced brake examples</title>
-  <desc id="desc">Concept graphs for Alt.Brake set lower or higher than normal BRAKE, plus QUICK and DRAG advanced braking behavior.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="460" viewBox="0 0 1550 460" role="img" aria-labelledby="title desc">
+  <title id="title">Release brake examples</title>
+  <desc id="desc">Concept graphs for QUICK and DRAG advanced braking behavior.</desc>
   <defs>
     <style>
       .bg { fill: #ffffff; }
@@ -19,67 +19,9 @@
     </style>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1550" height="940"/>
+  <rect class="bg" x="0" y="0" width="1550" height="460"/>
 
   <g transform="translate(35,25)">
-    <rect class="panel" x="0" y="0" width="715" height="410"/>
-    <text class="title" x="36" y="48">Alt.Brake softer</text>
-    <text class="note" x="36" y="78">Alt.Brake lower than BRAKE</text>
-
-    <line class="grid" x1="110" y1="310" x2="650" y2="310"/>
-    <line class="grid" x1="110" y1="225" x2="650" y2="225"/>
-    <line class="grid" x1="110" y1="145" x2="650" y2="145"/>
-    <line class="axis" x1="110" y1="330" x2="110" y2="110"/>
-    <line class="axis" x1="110" y1="330" x2="650" y2="330"/>
-    <line class="ref" x1="110" y1="185" x2="650" y2="185"/>
-
-    <text class="label" x="42" y="122">100%</text>
-    <text class="label" x="54" y="193">BRAKE</text>
-    <text class="label" x="52" y="233">ALT BR</text>
-    <text class="label" x="72" y="338">0</text>
-    <text class="label" x="348" y="384">Time</text>
-    <text class="label" x="24" y="245" transform="rotate(-90 24 245)">Brake</text>
-
-    <path class="trace" d="M110 185 L235 185 L235 245 L385 245 L385 185 L650 185"/>
-    <path class="accent" d="M235 245 L385 245"/>
-    <circle class="accent-fill" cx="235" cy="245" r="6"/>
-    <circle class="accent-fill" cx="385" cy="245" r="6"/>
-    <text class="small" x="242" y="235">Alt.Brake held</text>
-    <text class="small" x="405" y="173">base BRAKE stays higher</text>
-    <text class="small" x="132" y="350">Some drivers prefer a softer temporary</text>
-    <text class="small" x="132" y="372">brake button feel.</text>
-  </g>
-
-  <g transform="translate(800,25)">
-    <rect class="panel" x="0" y="0" width="715" height="410"/>
-    <text class="title" x="36" y="48">Alt.Brake harder</text>
-    <text class="note" x="36" y="78">Alt.Brake higher than BRAKE</text>
-
-    <line class="grid" x1="110" y1="310" x2="650" y2="310"/>
-    <line class="grid" x1="110" y1="225" x2="650" y2="225"/>
-    <line class="grid" x1="110" y1="145" x2="650" y2="145"/>
-    <line class="axis" x1="110" y1="330" x2="110" y2="110"/>
-    <line class="axis" x1="110" y1="330" x2="650" y2="330"/>
-    <line class="ref" x1="110" y1="225" x2="650" y2="225"/>
-
-    <text class="label" x="42" y="122">100%</text>
-    <text class="label" x="54" y="233">BRAKE</text>
-    <text class="label" x="52" y="153">ALT BR</text>
-    <text class="label" x="72" y="338">0</text>
-    <text class="label" x="348" y="384">Time</text>
-    <text class="label" x="24" y="245" transform="rotate(-90 24 245)">Brake</text>
-
-    <path class="trace" d="M110 225 L235 225 L235 145 L385 145 L385 225 L650 225"/>
-    <path class="accent" d="M235 145 L385 145"/>
-    <circle class="accent-fill" cx="235" cy="145" r="6"/>
-    <circle class="accent-fill" cx="385" cy="145" r="6"/>
-    <text class="small" x="242" y="136">Alt.Brake held</text>
-    <text class="small" x="405" y="214">base BRAKE stays lower</text>
-    <text class="small" x="130" y="350">Others prefer a stronger temporary</text>
-    <text class="small" x="130" y="372">brake hit for corners.</text>
-  </g>
-
-  <g transform="translate(35,470)">
     <rect class="panel" x="0" y="0" width="715" height="410"/>
     <text class="title" x="36" y="48">QUICK</text>
     <text class="note" x="36" y="78">Zero-output zone near trigger release</text>
@@ -108,7 +50,7 @@
     <text class="small" x="292" y="198">drive resumes above zone</text>
   </g>
 
-  <g transform="translate(800,470)">
+  <g transform="translate(800,25)">
     <rect class="panel" x="0" y="0" width="715" height="410"/>
     <text class="title" x="36" y="48">DRAG</text>
     <text class="note" x="36" y="78">Adds release drag only while letting go</text>

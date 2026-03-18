@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="940" viewBox="0 0 1550 940" role="img" aria-labelledby="title desc">
-  <title id="title">Advanced brake examples</title>
-  <desc id="desc">Concept graphs for Alt.Brake set lower or higher than normal BRAKE, plus QUICK and DRAG advanced braking behavior.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="440" viewBox="0 0 1550 440" role="img" aria-labelledby="title desc">
+  <title id="title">Alt brake examples</title>
+  <desc id="desc">Concept graphs for Alt.Brake set lower or higher than normal BRAKE.</desc>
   <defs>
     <style>
       .bg { fill: #ffffff; }
@@ -15,14 +15,13 @@
       .accent { fill: none; stroke: #d94f04; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
       .accent-fill { fill: #d94f04; }
       .ref { fill: none; stroke: #777777; stroke-width: 3; stroke-dasharray: 10 8; }
-      .zone { fill: #f7efe7; stroke: none; }
     </style>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1550" height="940"/>
+  <rect class="bg" x="0" y="0" width="1550" height="440"/>
 
   <g transform="translate(35,25)">
-    <rect class="panel" x="0" y="0" width="715" height="410"/>
+    <rect class="panel" x="0" y="0" width="715" height="390"/>
     <text class="title" x="36" y="48">Alt.Brake softer</text>
     <text class="note" x="36" y="78">Alt.Brake lower than BRAKE</text>
 
@@ -51,7 +50,7 @@
   </g>
 
   <g transform="translate(800,25)">
-    <rect class="panel" x="0" y="0" width="715" height="410"/>
+    <rect class="panel" x="0" y="0" width="715" height="390"/>
     <text class="title" x="36" y="48">Alt.Brake harder</text>
     <text class="note" x="36" y="78">Alt.Brake higher than BRAKE</text>
 
@@ -77,60 +76,5 @@
     <text class="small" x="405" y="214">base BRAKE stays lower</text>
     <text class="small" x="130" y="350">Others prefer a stronger temporary</text>
     <text class="small" x="130" y="372">brake hit for corners.</text>
-  </g>
-
-  <g transform="translate(35,470)">
-    <rect class="panel" x="0" y="0" width="715" height="410"/>
-    <text class="title" x="36" y="48">QUICK</text>
-    <text class="note" x="36" y="78">Zero-output zone near trigger release</text>
-
-    <rect class="zone" x="110" y="110" width="165" height="220"/>
-    <line class="grid" x1="110" y1="310" x2="650" y2="310"/>
-    <line class="grid" x1="110" y1="225" x2="650" y2="225"/>
-    <line class="grid" x1="110" y1="145" x2="650" y2="145"/>
-    <line class="axis" x1="110" y1="330" x2="110" y2="110"/>
-    <line class="axis" x1="110" y1="330" x2="650" y2="330"/>
-
-    <text class="label" x="42" y="122">100%</text>
-    <text class="label" x="58" y="233">Brake</text>
-    <text class="label" x="60" y="318">0%</text>
-    <text class="label" x="348" y="390">Trigger</text>
-    <text class="label" x="24" y="248" transform="rotate(-90 24 248)">Action</text>
-    <text class="small" x="160" y="352">Zone</text>
-    <text class="small" x="510" y="352">normal throttle</text>
-
-    <path class="trace" d="M110 310 L275 310 L650 145"/>
-    <path class="accent" d="M110 225 L275 225"/>
-    <line class="ref" x1="275" y1="110" x2="275" y2="330"/>
-    <circle class="accent-fill" cx="275" cy="225" r="6"/>
-    <text class="small" x="132" y="214">Quick brake</text>
-    <text class="small" x="130" y="326">output stays 0</text>
-    <text class="small" x="292" y="198">drive resumes above zone</text>
-  </g>
-
-  <g transform="translate(800,470)">
-    <rect class="panel" x="0" y="0" width="715" height="410"/>
-    <text class="title" x="36" y="48">DRAG</text>
-    <text class="note" x="36" y="78">Adds release drag only while letting go</text>
-
-    <line class="grid" x1="110" y1="310" x2="650" y2="310"/>
-    <line class="grid" x1="110" y1="225" x2="650" y2="225"/>
-    <line class="grid" x1="110" y1="145" x2="650" y2="145"/>
-    <line class="axis" x1="110" y1="330" x2="110" y2="110"/>
-    <line class="axis" x1="110" y1="330" x2="650" y2="330"/>
-
-    <text class="label" x="42" y="122">100%</text>
-    <text class="label" x="58" y="233">Drag</text>
-    <text class="label" x="72" y="338">0</text>
-    <text class="label" x="348" y="390">Time</text>
-    <text class="label" x="24" y="245" transform="rotate(-90 24 245)">Effect</text>
-
-    <path class="trace" d="M110 145 L210 145 L305 190 L395 245 L490 292 L650 330"/>
-    <path class="accent" d="M205 330 L255 230 L380 230 L430 330"/>
-    <circle class="accent-fill" cx="255" cy="230" r="6"/>
-    <circle class="accent-fill" cx="380" cy="230" r="6"/>
-    <text class="small" x="128" y="136">throttle still follows trigger</text>
-    <text class="small" x="270" y="220">drag added on release</text>
-    <text class="small" x="140" y="352">No zero-output zone before trigger reaches 0.</text>
   </g>
 </svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1550" height="430" viewBox="0 0 1550 430" role="img" aria-labelledby="title desc">
+  <title id="title">PWM frequency partial-trigger examples</title>
+  <desc id="desc">Examples comparing 1 kilohertz and 5 kilohertz in a LIMIT 100 partial-trigger case at 50 percent duty. The dashed line marks the average or effective level for the shown duty.</desc>
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .panel { fill: #fcfcfc; stroke: #d2d2d2; stroke-width: 2; rx: 18; ry: 18; }
+      .axis { stroke: #171717; stroke-width: 4; }
+      .grid { stroke: #dfdfdf; stroke-width: 2; stroke-dasharray: 6 8; }
+      .label { fill: #171717; font-family: Arial, Helvetica, sans-serif; font-size: 27px; }
+      .title { fill: #171717; font-family: Arial, Helvetica, sans-serif; font-size: 35px; font-weight: 700; }
+      .note { fill: #555555; font-family: Arial, Helvetica, sans-serif; font-size: 21px; }
+      .pulse-label { fill: #171717; font-family: Arial, Helvetica, sans-serif; font-size: 20px; }
+      .legend-label { fill: #555555; font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
+      .wave { fill: none; stroke: #111111; stroke-width: 7; stroke-linecap: square; stroke-linejoin: miter; }
+      .accent { fill: none; stroke: #d94f04; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+      .duty { stroke: #767676; stroke-width: 3; stroke-dasharray: 10 8; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1550" height="430"/>
+
+  <g transform="translate(35,25)">
+    <rect class="panel" x="0" y="0" width="715" height="360"/>
+    <text class="title" x="36" y="48">1 kHz, LIMIT 100</text>
+    <text class="note" x="36" y="78">Partial trigger, 50% duty</text>
+    <line class="duty" x1="430" y1="102" x2="500" y2="102"/>
+    <text class="legend-label" x="510" y="108">avg / effective level</text>
+
+    <line class="grid" x1="110" y1="295" x2="655" y2="295"/>
+    <line class="grid" x1="110" y1="205" x2="655" y2="205"/>
+    <line class="axis" x1="110" y1="310" x2="110" y2="90"/>
+    <line class="axis" x1="110" y1="310" x2="655" y2="310"/>
+    <line class="duty" x1="110" y1="205" x2="655" y2="205"/>
+
+    <text class="label" x="42" y="118">100%</text>
+    <text class="label" x="58" y="213">50%</text>
+    <text class="label" x="80" y="318">0</text>
+    <text class="label" x="360" y="350">Time</text>
+    <text class="label" x="24" y="220" transform="rotate(-90 24 220)">Voltage</text>
+
+    <path class="wave" d="M110 310 L130 310 L130 120 L205 120 L205 310 L280 310 L280 120 L355 120 L355 310 L430 310 L430 120 L505 120 L505 310 L580 310 L580 120 L655 120"/>
+
+    <path class="accent" d="M130 105 L235 105"/>
+    <path class="accent" d="M205 105 L280 105"/>
+    <text class="pulse-label" x="150" y="98">ON</text>
+    <text class="pulse-label" x="225" y="98">OFF</text>
+  </g>
+
+  <g transform="translate(800,25)">
+    <rect class="panel" x="0" y="0" width="715" height="360"/>
+    <text class="title" x="36" y="48">5 kHz, LIMIT 100</text>
+    <text class="note" x="36" y="78">Partial trigger, 50% duty</text>
+    <line class="duty" x1="430" y1="102" x2="500" y2="102"/>
+    <text class="legend-label" x="510" y="108">avg / effective level</text>
+
+    <line class="grid" x1="110" y1="295" x2="655" y2="295"/>
+    <line class="grid" x1="110" y1="205" x2="655" y2="205"/>
+    <line class="axis" x1="110" y1="310" x2="110" y2="90"/>
+    <line class="axis" x1="110" y1="310" x2="655" y2="310"/>
+    <line class="duty" x1="110" y1="205" x2="655" y2="205"/>
+
+    <text class="label" x="42" y="118">100%</text>
+    <text class="label" x="58" y="213">50%</text>
+    <text class="label" x="80" y="318">0</text>
+    <text class="label" x="360" y="350">Time</text>
+    <text class="label" x="24" y="220" transform="rotate(-90 24 220)">Voltage</text>
+
+    <path class="wave" d="M110 310 L122 310 L122 120 L146 120 L146 310 L170 310 L170 120 L194 120 L194 310 L218 310 L218 120 L242 120 L242 310 L266 310 L266 120 L290 120 L290 310 L314 310 L314 120 L338 120 L338 310 L362 310 L362 120 L386 120 L386 310 L410 310 L410 120 L434 120 L434 310 L458 310 L458 120 L482 120 L482 310 L506 310 L506 120 L530 120 L530 310 L554 310 L554 120 L578 120 L578 310 L602 310 L602 120 L626 120 L626 310 L650 310 L650 120 L655 120"/>
+
+    <path class="accent" d="M122 105 L146 105"/>
+    <path class="accent" d="M146 105 L170 105"/>
+    <text class="pulse-label" x="124" y="98">ON</text>
+    <text class="pulse-label" x="149" y="98">OFF</text>
+  </g>
+</svg>

@@ -200,18 +200,22 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
     <h2>3. Viktig under kjøring: BRAKE og BREMS+</h2>
     <h3>BRAKE</h3>
     <p>Når trigger er helt sluppet, bruker kontrolleren <code>BRAKE</code>-verdien som vanlig bremseeffekt.</p>
-    <p class="small"><code>BREMS+</code> i hovedmenyen åpner den avanserte bremsemenyen. Der finner du nå <code>Alt brems</code> og <code>R-Brems</code>.</p>
-    <h3>Alt brems (inne i BREMS+)</h3>
+    <p class="small"><code>BREMS+</code> i hovedmenyen åpner den avanserte bremsemenyen. Der finner du nå <code>Alt.brems</code> og <code>Rel.brems</code>.</p>
+    <h3>Alternativ brems (<code>Alt.brems</code>)</h3>
     <ul>
-      <li><code>Alt brems</code> er en alternativ bremseverdi (0-100%), ikke en relativ reduksjon.</li>
+      <li><code>Alt.brems</code> betyr alternativ brems, altså en egen bremseverdi (0-100%), ikke en relativ reduksjon.</li>
       <li>Den brukes kun når trigger = 0 og du holder bremseknappen inne.</li>
       <li>Hvis statuslinjen viser OUTPUT-slot, ser du <code>Bxxx%</code> mens knappen holdes.</li>
       <li>Typisk bruk: ekstra hard eller myk brems inn i spesifikke svinger uten å endre grunninnstilling.</li>
-      <li>Noen foretrekker <code>Alt brems</code> lavere enn vanlig <code>BRAKE</code> for en mykere knappbrems, mens andre liker den høyere for et hardere bremseinnslag. Dette er i stor grad brukerpreferanse og bilfølelse.</li>
+      <li>Noen foretrekker <code>Alt.brems</code> lavere enn vanlig <code>BRAKE</code> for en mykere knappbrems, mens andre liker den høyere for et hardere bremseinnslag. Dette er i stor grad brukerpreferanse og bilfølelse.</li>
     </ul>
-    <h3>R-Brems (inne i BREMS+)</h3>
+    <figure class="doc-media">
+      <img src="../assets/alt_brake_examples.svg" alt="Konseptgrafer som viser Alt.brems lavere enn BRAKE og Alt.brems høyere enn BRAKE">
+      <figcaption>Eksempler på alternativ brems: <code>Alt.brems</code> kan midlertidig settes mykere eller hardere enn vanlig BRAKE, avhengig av hva føreren foretrekker.</figcaption>
+    </figure>
+    <h3>Release-brems (<code>Rel.brems</code>)</h3>
     <ul>
-      <li><code>R-BRAKE</code> har tre moduser: <code>OFF</code>, <code>QUICK</code> og <code>DRAG</code>.</li>
+      <li><code>Rel.brems</code> betyr release-brems og har tre moduser: <code>OFF</code>, <code>QUICK</code> og <code>DRAG</code>.</li>
       <li><code>QUICK</code> er den gamle pre-release bremsesonen: under valgt <code>Sone</code> kuttes driv og <code>Nivå</code> brukes som bremsekraft.</li>
       <li><code>DRAG</code> virker bare mens du faktisk slipper triggeren. Den lar vanlig gasskurve leve videre, blander inn drag under selve slippbevegelsen og føles mykere enn QUICK.</li>
       <li><code>Sone</code> brukes bare av <code>QUICK</code>. I QUICK er dette en ekte null-output-sone når triggeren er nesten sluppet.</li>
@@ -223,23 +227,14 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Bruk QUICK for tydelig tidlig innbremsing. Bruk DRAG for en roligere og mer progressiv støtte ved trigger-slipp.</li>
     </ul>
     <figure class="doc-media">
-      <img src="../assets/advanced_brake_examples.svg" alt="Konseptgrafer som viser Alt brems lavere enn BRAKE, Alt brems høyere enn BRAKE, samt QUICK og DRAG">
-      <figcaption>Eksempler på avansert brems: Alt brems kan midlertidig settes mykere eller hardere enn vanlig BRAKE, avhengig av hva føreren foretrekker. QUICK lager en null-output-sone med bremsekraft under valgt sone, mens DRAG legger inn mykere release-drag bare under selve slippbevegelsen.</figcaption>
+      <img src="../assets/release_brake_examples.svg" alt="Konseptgrafer som viser QUICK og DRAG for Rel.brems">
+      <figcaption>Eksempler på release-brems: QUICK lager en null-output-sone med bremsekraft under valgt sone, mens DRAG legger inn mykere release-drag bare under selve slippbevegelsen.</figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>4. Hovedparametere i Main Menu</h2>
-    <h3>Språk og visning</h3>
-    <ul>
-      <li><code>DISPLAY -&gt; LANGUAGE</code> velger mellom lokaliserte etiketter og navneprofilene ENG/CS/ACD.</li>
-      <li><code>NOR/ESP/DEU/ITA</code>: lokalisert UI med standardnavnene <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
-      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
-      <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
-      <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
-      <li><code>DISPLAY -&gt; CASE</code> velger om etiketter vises i <code>UPPER</code> eller <code>Pascal</code>.</li>
-      <li><code>DISPLAY -&gt; FONT SIZE</code> velger mellom <code>LARGE</code> og <code>small</code> for liste- og menyvisning.</li>
-    </ul>
+    <h2>4. Kjøreparametere i Main Menu</h2>
+    <p class="small"><code>BRAKE</code> og <code>BREMS+</code> er forklart i punkt 3. Her samles resten av kjøreparameterne, pluss en kort referanse for hele hovedmenyen.</p>
     <h3>Fra CarSteen/ACD-begreper til ESPEED32</h3>
     <table>
       <thead>
@@ -253,6 +248,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       </tbody>
     </table>
     <p class="small">Typisk "myk og kontrollert" startoppsett (fra eldre guide): prøv rundt <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code>, og juster derfra.</p>
+    <h3>Kort referanse for hovedmenyen</h3>
     <table>
       <thead>
         <tr><th>Item</th><th>Range</th><th>Default</th><th>Forklaring</th></tr>
@@ -264,8 +260,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Myk startsone. 0 = av / gammel oppføring. Over 0 rampes første del av triggeren fra 0 opp til SENSI før vanlig CURVE tar over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
-        <tr><td><code>BREMS+ / Alt brems</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
-        <tr><td><code>BREMS+ / R-Brems</code></td><td>OFF/QUICK(sone+nivå)/DRAG(nivå)</td><td>OFF</td><td>Release-brake når trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
+        <tr><td><code>BREMS+ / Alt.brems</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
+        <tr><td><code>BREMS+ / Rel.brems</code></td><td>OFF/QUICK(sone+nivå)/DRAG(nivå)</td><td>OFF</td><td>Release-brems når trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
@@ -296,7 +292,7 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
         <tr><td>1/24 høyt grep</td><td>40-50%</td><td>95-100%</td><td>0-15 ms</td><td>55-70%</td><td>0-3%</td><td>4.0 kHz</td></tr>
       </tbody>
     </table>
-    <p class="small">Til de første testene: la <code>R-BRAKE</code> stå på <code>OFF</code>. Legg inn <code>QUICK</code> eller <code>DRAG</code> først etter at grunnoppsettet for gass og brems kjennes riktig.</p>
+    <p class="small">Til de første testene: la <code>Rel.brems</code> stå på <code>OFF</code>. Legg inn <code>QUICK</code> eller <code>DRAG</code> først etter at grunnoppsettet for gass og brems kjennes riktig.</p>
     <h3>Notat om linearitet</h3>
     <ul>
       <li><code>LIMIT</code>: lineær begrensning i kommandert output %. Faktisk toppfart på banen blir ikke helt lineær.</li>
@@ -330,14 +326,46 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Med <code>LIMIT 100</code> kan delgass fortsatt kjøre på delvis duty. Med <code>LIMIT 70</code> topper full trigger ut nær 70% duty.</li>
       <li>Ved samme duty bruker <code>1 kHz</code> færre og bredere pulser, mens <code>5 kHz</code> bruker flere og smalere pulser i samme tidsvindu.</li>
     </ul>
+    <h4>Scenario 1: delgass under LIMIT 100</h4>
+    <p class="small">Sammenlign disse to bildene horisontalt. Begge viser samme effektive nivå, 50% duty, så forskjellen er bare hvor tett pulsene ligger. Den stiplede linjen markerer gjennomsnittlig eller effektivt nivå.</p>
     <figure class="doc-media">
-      <img src="../assets/pwm_frequency_examples.svg" alt="PWM_F-eksempler som viser 1 kilohertz og 5 kilohertz med limit 100 og limit 70">
-      <figcaption>PWM_F-eksempler: øverste rad viser et delgass-tilfelle med 50% duty under LIMIT 100, mens nederste rad viser full trigger der LIMIT 70 kapper duty til 70%. Den stiplede linjen markerer gjennomsnittlig eller effektivt nivå for dutyen som vises.</figcaption>
+      <img src="../assets/pwm_frequency_partial_examples.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved delgass og LIMIT 100">
+      <figcaption>Ved 50% duty gir <code>1 kHz</code> færre og bredere pulser, mens <code>5 kHz</code> gir flere og smalere pulser i samme tidsvindu.</figcaption>
+    </figure>
+    <h4>Scenario 2: full trigger under LIMIT 70</h4>
+    <p class="small">Sammenlign også disse to bildene horisontalt. Begge viser full trigger, men <code>LIMIT 70</code> holder det effektive nivået nede på 70% duty. Igjen er den stiplede linjen gjennomsnittlig eller effektivt nivå.</p>
+    <figure class="doc-media">
+      <img src="../assets/pwm_frequency_capped_examples.svg" alt="PWM_F-eksempler som sammenligner 1 kilohertz og 5 kilohertz ved full trigger og LIMIT 70">
+      <figcaption>Her er duty begrenset til 70% i begge bilder. <code>PWM_F</code> endrer hvor ofte det pulses, men ikke selve LIMIT-taket.</figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>5. Race view (LIST vs GRID)</h2>
+    <h2>5. CAR-meny og Car Params</h2>
+    <p class="small"><code>CAR</code> styrer bilprofilene. Hver profil lagrer sine egne <code>Car Params</code>, altså kjøreverdier som <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>BREMS+</code> og <code>LIMIT</code>. Det er samme parametergruppe du møter igjen senere i <code>Advanced Config Editor</code>.</p>
+    <ul>
+      <li><code>SELECT</code>: velg aktiv bilprofil (0-19).</li>
+      <li><code>RENAME</code>: 4-tegns navn (ASCII 32-122), redigert tegn for tegn. Se <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">ASCII-tabell</a>.</li>
+      <li><code>RACESWP</code>: ON gir mulighet for car-select direkte i GRID-view.</li>
+      <li><code>COPY</code>: kopier fra en profil til en annen eller til ALL.</li>
+      <li><code>RESET</code>: nullstill alle bilprofiler (krever bekreftelse).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. Display, race view og ABOUT</h2>
+    <p class="small">Denne delen samler det du ser på OLED: språk, tekststil, racevisning, statuslinje og systeminfo.</p>
+    <h3>Språk og display</h3>
+    <ul>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> velger mellom lokaliserte etiketter og navneprofilene ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA</code>: lokalisert UI med standardnavnene <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: generiske navn (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
+      <li><code>CS</code>: CarSteen-stil (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
+      <li><code>DISPLAY -&gt; CASE</code> velger om etiketter vises i <code>UPPER</code> eller <code>Pascal</code>.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> velger mellom <code>LARGE</code> og <code>small</code> for liste- og menyvisning.</li>
+    </ul>
+    <h3>Race view (LIST vs GRID)</h3>
     <ul>
       <li><span class="badge">LIST</span> klassisk menyvisning med alle hoveditems.</li>
       <li><span class="badge">GRID</span> race-skjerm for rask justering under kjøring.</li>
@@ -350,21 +378,17 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <img src="../assets/display_modes.svg" alt="Mockup av OLED i list view og grid race view">
       <figcaption>Display-eksempel: LIST-visning viser hele menyen, mens GRID-visning holder de viktigste race-parameterne synlige for raskere justering på banen.</figcaption>
     </figure>
-  </section>
-
-  <section>
-    <h2>6. CAR-meny i praksis</h2>
+    <h3>Statuslinje og ABOUT</h3>
     <ul>
-      <li><code>SELECT</code>: velg aktiv bilprofil (0-19).</li>
-      <li><code>RENAME</code>: 4-tegns navn (ASCII 32-122), redigert tegn for tegn.</li>
-      <li><code>RACESWP</code>: ON gir mulighet for car-select direkte i GRID-view.</li>
-      <li><code>COPY</code>: kopier fra en profil til en annen eller til ALL.</li>
-      <li><code>RESET</code>: nullstill alle bilprofiler (krever bekreftelse).</li>
+      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt.</li>
+      <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
+      <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
     </ul>
   </section>
 
   <section>
-    <h2>7. SETTINGS og strømforbruk</h2>
+    <h2>7. SETTINGS, POWER og strømforbruk</h2>
+    <p class="small"><code>SETTINGS</code> samler globale systeminnstillinger som ikke følger den enkelte bilprofilen.</p>
     <h3>POWER-undermeny</h3>
     <ul>
       <li><code>SCRSV</code>: screensaver-tekst (linje1/linje2), timeout og vis nå.</li>
@@ -378,12 +402,6 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen.</li>
       <li><code>A STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
       <li><code>ENC INV</code>: snur encoder-retningen globalt hvis menyen føles bakvendt.</li>
-    </ul>
-    <h3>DISPLAY + ABOUT</h3>
-    <ul>
-      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt.</li>
-      <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
-      <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
     </ul>
     <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
     <table>
@@ -421,8 +439,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
       <li>Start med <code>SENSI</code>, deretter <code>FADE</code>, så <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> og til slutt <code>PWM_F</code>.</li>
       <li>1/32-biler på glatt bane: prøv høyere <code>ANTIS</code> (ca. 100-150 ms) og mykere <code>CURVE</code> (&lt;50).</li>
       <li>1/24-biler på bane med godt grep: ofte lav <code>ANTIS</code> (0-40 ms) og mer direkte <code>CURVE</code> (50-70).</li>
-      <li>Bruk <code>BREMS+ -> Alt brems</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
-      <li>Bruk <code>BREMS+ -> R-Brems QUICK</code> med lav sone (5-12%) og moderat nivå (40-70%) for tydelig tidligere brems. Prøv <code>DRAG</code> rundt 20-50% hvis du vil ha hjelp ved trigger-slipp uten null-output-sone.</li>
+      <li>Bruk <code>BREMS+ -> Alt.brems</code> som midlertidig sving-verktøy, i stedet for å endre BRAKE mellom heat.</li>
+      <li>Bruk <code>BREMS+ -> Rel.brems QUICK</code> med lav sone (5-12%) og moderat nivå (40-70%) for tydelig tidligere brems. Prøv <code>DRAG</code> rundt 20-50% hvis du vil ha hjelp ved trigger-slipp uten null-output-sone.</li>
       <li>Hvis bilen napper for hardt akkurat idet triggeren begynner å virke: behold <code>SENSI</code> og legg inn litt <code>FADE</code> før du senker SENSI.</li>
       <li>Hvis bilen spinner ut tidlig i triggeren: senk <code>SENSI</code> eller øk <code>ANTIS</code>.</li>
       <li>Hvis bilen føles treg ut av sving: øk <code>SENSI</code> litt eller reduser <code>ANTIS</code>.</li>
@@ -480,8 +498,8 @@ figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
 |- FADE (grafvisning)
 |- PWM_F
 |- BREMS+
-|  |- Alt brems (%)
-|  |- R-Brems (OFF/QUICK/DRAG)
+|  |- Alt.brems (%)
+|  |- Rel.brems (OFF/QUICK/DRAG)
 |  |- Sone (%) [kun QUICK]
 |  |- Quick (%) [QUICK-modus]
 |  |- Drag (%) [DRAG-modus]

@@ -729,6 +729,102 @@ form{margin:0}
 .telemetry-panel.telemetry-unavailable .telemetry-toolbar{
   display:none;
 }
+.lap-toolbar{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+.lap-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.lap-actions .btn{
+  margin:0;
+  width:auto;
+  min-width:0;
+  flex:1 1 180px;
+}
+.lap-config{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+}
+.lap-metrics{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:8px;
+  margin:12px 0 10px 0;
+}
+.lap-metric{
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:10px;
+  padding:10px;
+  background:var(--telemetry-chip-bg);
+}
+.lap-metric-label{
+  display:block;
+  font-size:11px;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+.lap-metric-value{
+  display:block;
+  margin-top:5px;
+  font-size:15px;
+  font-weight:700;
+  color:var(--heading);
+}
+.lap-legend{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+  gap:8px;
+  margin:4px 0 10px 0;
+}
+.lap-plot-wrap{
+  position:relative;
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:12px;
+  padding:10px;
+  background:var(--telemetry-plot-bg);
+}
+#lap-canvas{
+  display:block;
+  width:100%;
+  height:340px;
+}
+.lap-empty{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  text-align:center;
+  font-size:14px;
+  color:var(--text-muted);
+  pointer-events:none;
+}
+.lap-times{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.lap-chip{
+  border:1px solid var(--telemetry-chip-border);
+  border-radius:9px;
+  padding:8px 10px;
+  background:var(--telemetry-chip-bg);
+  color:var(--text-main);
+  font-size:12px;
+}
+.lap-chip b{
+  display:block;
+  margin-bottom:3px;
+  color:var(--heading);
+}
 
 @media (min-width:760px){
   body{padding:18px 18px 32px}
@@ -741,6 +837,7 @@ form{margin:0}
   .about-panel,
   .repo-panel,
   .telemetry-panel,
+  .lap-panel,
   .backup-panel,
   .guide-panel,
   .usb-panel,
@@ -759,6 +856,7 @@ form{margin:0}
       "about about about about about about about about repo repo repo repo"
       "guide guide guide guide guide guide usb usb usb usb usb usb"
       "telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry"
+      "lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay"
       "backup backup backup backup backup backup backup backup backup backup backup backup"
       "updates updates updates updates updates updates updates updates updates updates updates updates"
       "editor editor editor editor editor editor editor editor editor editor editor editor";
@@ -770,6 +868,7 @@ form{margin:0}
   .guide-panel{grid-area:guide}
   .usb-panel{grid-area:usb}
   .telemetry-panel{grid-area:telemetry}
+  .lap-panel{grid-area:lapoverlay}
   .backup-panel{grid-area:backup}
   .editor-shell{grid-area:editor}
   .about-panel,
@@ -928,6 +1027,44 @@ form{margin:0}
 </div>
 <div id="tst" class="st"></div>
 </section>
+<section class="panel lap-panel">
+<h2>Lap Overlay</h2>
+<p class="tiny">Analyze exported telemetry JSON or the current telemetry buffer. This first version finds laps from the longest high-trigger straight and overlays traces by lap progress.</p>
+<div class="lap-toolbar">
+<div class="lap-actions">
+<button id="btn-lap-current" class="btn aux" type="button" onclick="lapOverlayUseCurrentTelemetry()">Use Current Telemetry</button>
+<button id="btn-lap-recalc" class="btn doc" type="button" onclick="lapOverlayAnalyze(false)">Recalculate Laps</button>
+<button id="btn-lap-clear" class="btn dl" type="button" onclick="lapOverlayClear()">Clear</button>
+</div>
+<div class="lap-config">
+<div class="row"><label for="lap-threshold">Trigger Threshold (%T)</label><input id="lap-threshold" type="number" min="60" max="100" step="1" value="92"></div>
+<div class="row"><label for="lap-hold">Min Straight Hold (ms)</label><input id="lap-hold" type="number" min="80" max="5000" step="10" value="250"></div>
+<div class="row"><label for="lap-min">Min Lap Time (ms)</label><input id="lap-min" type="number" min="500" max="30000" step="50" value="2500"></div>
+<div class="row"><label for="lap-match">Longest-Stretch Match (%)</label><input id="lap-match" type="number" min="40" max="100" step="1" value="75"></div>
+<div class="row"><label for="lap-file">Import Telemetry JSON</label><input id="lap-file" type="file" accept=".json,application/json"></div>
+</div>
+</div>
+<div class="lap-metrics">
+<div class="lap-metric"><span class="lap-metric-label">Source</span><span id="lap-source" class="lap-metric-value">None</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Detected Laps</span><span id="lap-count" class="lap-metric-value">0</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Best Lap</span><span id="lap-best" class="lap-metric-value">-</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Average</span><span id="lap-avg" class="lap-metric-value">-</span></div>
+<div class="lap-metric"><span class="lap-metric-label">Detector</span><span id="lap-detector" class="lap-metric-value">Longest straight</span></div>
+</div>
+<div class="lap-legend">
+<label class="trace-toggle"><input id="lap-trace-trigger" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-trigger)"></span><span>Throttle %T</span></label>
+<label class="trace-toggle"><input id="lap-trace-output" type="checkbox" checked><span class="trace-swatch" style="background:var(--trace-output)"></span><span>Output %O</span></label>
+<label class="trace-toggle"><input id="lap-trace-brake" type="checkbox"><span class="trace-swatch" style="background:var(--trace-brake)"></span><span>Brake %</span></label>
+<label class="trace-toggle"><input id="lap-trace-vin" type="checkbox"><span class="trace-swatch" style="background:var(--trace-vin)"></span><span>VIN</span></label>
+<label class="trace-toggle"><input id="lap-trace-current" type="checkbox"><span class="trace-swatch" style="background:var(--trace-current)"></span><span>Current</span></label>
+</div>
+<div class="lap-plot-wrap">
+<canvas id="lap-canvas" width="960" height="340"></canvas>
+<div id="lap-empty" class="lap-empty">Import a telemetry JSON file or use the current telemetry buffer to build lap overlays.</div>
+</div>
+<div id="lap-times" class="lap-times"></div>
+<div id="lapst" class="st"></div>
+</section>
 <section class="panel backup-panel">
 <h2>Config Backup &amp; Restore (.json)</h2>
 <div class="section-stack">
@@ -1028,6 +1165,15 @@ var telemetryPollTimer=null;
 var telemetryLastError='';
 var telemetryRedrawQueued=false;
 var telemetryConfigSnapshot=null;
+var LAP_OVERLAY_SOURCE_NONE='none';
+var LAP_OVERLAY_SOURCE_CURRENT='current';
+var LAP_OVERLAY_SOURCE_IMPORT='import';
+var lapOverlaySourceKind=LAP_OVERLAY_SOURCE_NONE;
+var lapOverlaySourceName='';
+var lapOverlaySamples=[];
+var lapOverlayEvents=[];
+var lapOverlayLaps=[];
+var lapOverlayLastError='';
 var usbCommandQueue=Promise.resolve();
 var latestReleaseTag='';
 var latestReleaseUrl='';
@@ -1070,15 +1216,23 @@ var TELEMETRY_TRACE_DEFS=[
   {id:'trace-vin',label:'VIN',band:'vin',index:TELEMETRY_FIELDS.VIN_MV,colorVar:'--trace-vin'},
   {id:'trace-current',label:'Current',band:'current',index:TELEMETRY_FIELDS.CURRENT_MA,colorVar:'--trace-current'}
 ];
+var LAP_TRACE_DEFS=[
+  {id:'lap-trace-trigger',label:'Throttle %T',band:'pct',key:'triggerPct',colorVar:'--trace-trigger'},
+  {id:'lap-trace-output',label:'Output %O',band:'pct',key:'outputPct',colorVar:'--trace-output'},
+  {id:'lap-trace-brake',label:'Brake %',band:'pct',key:'brakePct',colorVar:'--trace-brake'},
+  {id:'lap-trace-vin',label:'VIN',band:'vin',key:'vinMv',colorVar:'--trace-vin'},
+  {id:'lap-trace-current',label:'Current',band:'current',key:'currentMa',colorVar:'--trace-current'}
+];
 
 function scheduleTelemetryPlotRedraw(){
-  if(typeof drawTelemetryPlot!=='function') return;
+  if(typeof drawTelemetryPlot!=='function' && typeof drawLapOverlayPlot!=='function') return;
   if(telemetryRedrawQueued) return;
   telemetryRedrawQueued=true;
 
   function run(){
     telemetryRedrawQueued=false;
-    drawTelemetryPlot();
+    if(typeof drawTelemetryPlot==='function') drawTelemetryPlot();
+    if(typeof drawLapOverlayPlot==='function') drawLapOverlayPlot();
   }
 
   if(typeof window!=='undefined' && typeof window.requestAnimationFrame==='function'){
@@ -2342,6 +2496,495 @@ function drawTelemetryPlot(){
   ctx.fillText((timeMax/1000).toFixed(1)+' s',plotLeft+plotWidth,height-20);
 }
 
+function formatLapDuration(ms){
+  var n=Number(ms||0);
+  if(!isFinite(n) || n<=0) return '-';
+  return (n/1000).toFixed(3)+' s';
+}
+
+function lapOverlayGetSelectedTraces(){
+  return LAP_TRACE_DEFS.filter(function(def){
+    var el=document.getElementById(def.id);
+    return !!(el && el.checked);
+  });
+}
+
+function lapOverlayReadConfig(){
+  function readNumber(id,fallback){
+    var el=document.getElementById(id);
+    var n=Number(el && el.value!=null ? el.value : fallback);
+    return isFinite(n)?n:fallback;
+  }
+  return {
+    thresholdPct:Math.min(100,Math.max(60,readNumber('lap-threshold',92))),
+    minHoldMs:Math.min(5000,Math.max(80,readNumber('lap-hold',250))),
+    minLapMs:Math.min(30000,Math.max(500,readNumber('lap-min',2500))),
+    matchPct:Math.min(100,Math.max(40,readNumber('lap-match',75)))
+  };
+}
+
+function lapOverlayPickNumber(obj,keys,fallback){
+  for(var i=0;i<keys.length;i++){
+    var value=obj ? obj[keys[i]] : undefined;
+    if(value==null) continue;
+    var n=Number(value);
+    if(isFinite(n)) return n;
+  }
+  return Number(fallback||0);
+}
+
+function lapOverlayNormalizeSample(raw){
+  if(Array.isArray(raw)){
+    return {
+      seq:Number(raw[TELEMETRY_FIELDS.SEQ]||0),
+      tMs:Number(raw[TELEMETRY_FIELDS.TIME_MS]||0),
+      triggerPct:Number(raw[TELEMETRY_FIELDS.TRIGGER]||0),
+      outputPct:Number(raw[TELEMETRY_FIELDS.OUTPUT]||0),
+      vinMv:Number(raw[TELEMETRY_FIELDS.VIN_MV]||0),
+      currentMa:Number(raw[TELEMETRY_FIELDS.CURRENT_MA]||0),
+      brakePct:Number(raw[TELEMETRY_FIELDS.BRAKE]||0),
+      sensiHalfPct:Number(raw[TELEMETRY_FIELDS.SENSI_HALF]||0),
+      carIndex:Number(raw[TELEMETRY_FIELDS.CAR]||0),
+      releaseMode:Number(raw[TELEMETRY_FIELDS.RELEASE_MODE]||0),
+      flags:Number(raw[TELEMETRY_FIELDS.FLAGS]||0)
+    };
+  }
+  if(!raw || typeof raw!=='object') return null;
+  return {
+    seq:lapOverlayPickNumber(raw,['seq'],0),
+    tMs:lapOverlayPickNumber(raw,['tMs','t_ms','timeMs'],0),
+    triggerPct:lapOverlayPickNumber(raw,['triggerPct','trigger_pct'],0),
+    outputPct:lapOverlayPickNumber(raw,['outputPct','output_pct'],0),
+    vinMv:lapOverlayPickNumber(raw,['vinMv','vin_mV','vinMv'],0),
+    currentMa:lapOverlayPickNumber(raw,['currentMa','current_mA'],0),
+    brakePct:lapOverlayPickNumber(raw,['brakePct','brake_pct'],0),
+    sensiHalfPct:lapOverlayPickNumber(raw,['sensiHalfPct','sensi_halfPct'],0),
+    carIndex:lapOverlayPickNumber(raw,['carIndex','car_index'],0),
+    releaseMode:lapOverlayPickNumber(raw,['releaseMode','release_mode'],0),
+    flags:lapOverlayPickNumber(raw,['flags'],0)
+  };
+}
+
+function lapOverlayNormalizeSamples(rawSamples){
+  if(!Array.isArray(rawSamples)) return [];
+  return rawSamples.map(lapOverlayNormalizeSample).filter(function(sample){
+    return sample && isFinite(sample.tMs);
+  }).sort(function(a,b){ return a.tMs-b.tMs; });
+}
+
+function lapOverlayUpdateSummary(){
+  var sourceEl=document.getElementById('lap-source');
+  var countEl=document.getElementById('lap-count');
+  var bestEl=document.getElementById('lap-best');
+  var avgEl=document.getElementById('lap-avg');
+  var detectorEl=document.getElementById('lap-detector');
+  var timesEl=document.getElementById('lap-times');
+  if(!sourceEl || !countEl || !bestEl || !avgEl || !detectorEl || !timesEl) return;
+
+  var cfg=lapOverlayReadConfig();
+  sourceEl.textContent=lapOverlaySourceName||'None';
+  countEl.textContent=String(lapOverlayLaps.length||0);
+  detectorEl.textContent='>='+String(Math.round(cfg.thresholdPct))+'%T for '+String(Math.round(cfg.minHoldMs))+' ms';
+
+  if(!lapOverlayLaps.length){
+    bestEl.textContent='-';
+    avgEl.textContent='-';
+    timesEl.innerHTML='';
+    return;
+  }
+
+  var best=lapOverlayLaps[0];
+  var total=0;
+  lapOverlayLaps.forEach(function(lap){
+    total+=lap.durationMs;
+    if(lap.durationMs<best.durationMs) best=lap;
+  });
+  bestEl.textContent=formatLapDuration(best.durationMs);
+  avgEl.textContent=formatLapDuration(total/lapOverlayLaps.length);
+
+  timesEl.innerHTML=lapOverlayLaps.map(function(lap){
+    var label='Lap '+String(lap.index);
+    if(lap.durationMs===best.durationMs) label+=' (best)';
+    return '<div class="lap-chip"><b>'+esc(label)+'</b><span>'+esc(formatLapDuration(lap.durationMs))+'</span></div>';
+  }).join('');
+}
+
+function lapOverlayRefreshFromCurrentTelemetry(silent){
+  if(lapOverlaySourceKind!==LAP_OVERLAY_SOURCE_CURRENT) return;
+  lapOverlaySourceName='Current telemetry buffer';
+  if(!telemetrySamples.length){
+    lapOverlaySamples=[];
+    lapOverlayEvents=[];
+    lapOverlayLaps=[];
+    lapOverlayLastError='';
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent) ss('lapst','err','Current telemetry buffer is empty');
+    return;
+  }
+  lapOverlaySamples=lapOverlayNormalizeSamples(telemetrySamples);
+  lapOverlayEvents=Array.isArray(telemetryEvents)?telemetryEvents.slice():[];
+  lapOverlayAnalyze(!!silent);
+}
+
+function lapOverlayBuildSegments(samples,cfg){
+  var segments=[];
+  var startIdx=-1;
+
+  function pushSegment(endIdx){
+    if(startIdx<0 || endIdx<=startIdx) return;
+    var startSample=samples[startIdx];
+    var endSample=samples[endIdx];
+    var duration=endSample.tMs-startSample.tMs;
+    if(duration<cfg.minHoldMs) return;
+    segments.push({
+      startMs:startSample.tMs,
+      endMs:endSample.tMs,
+      midMs:startSample.tMs+(duration/2),
+      durationMs:duration
+    });
+  }
+
+  for(var i=0;i<samples.length;i++){
+    var active=Number(samples[i].triggerPct||0)>=cfg.thresholdPct;
+    if(active && startIdx<0){
+      startIdx=i;
+    }else if(!active && startIdx>=0){
+      pushSegment(i-1);
+      startIdx=-1;
+    }
+  }
+  if(startIdx>=0) pushSegment(samples.length-1);
+  return segments;
+}
+
+function lapOverlaySelectMarkers(segments,cfg){
+  if(!segments.length) return [];
+  var maxDuration=segments.reduce(function(max,seg){ return Math.max(max,seg.durationMs); },0);
+  var cutoff=maxDuration*(cfg.matchPct/100);
+  var preferred=segments.filter(function(seg){ return seg.durationMs>=cutoff; });
+  var source=preferred.length>=2?preferred:segments.slice().sort(function(a,b){ return b.durationMs-a.durationMs; });
+  if(source!==preferred) source=source.slice(0,Math.min(32,source.length)).sort(function(a,b){ return a.midMs-b.midMs; });
+
+  var markers=[];
+  source.forEach(function(seg){
+    if(!markers.length){
+      markers.push(seg);
+      return;
+    }
+    var last=markers[markers.length-1];
+    if((seg.midMs-last.midMs)>=cfg.minLapMs){
+      markers.push(seg);
+    }else if(seg.durationMs>last.durationMs){
+      markers[markers.length-1]=seg;
+    }
+  });
+  return markers.map(function(seg){ return seg.midMs; });
+}
+
+function lapOverlayBuildLaps(samples,markers,cfg){
+  var laps=[];
+  for(var i=0;i<markers.length-1;i++){
+    var startMs=markers[i];
+    var endMs=markers[i+1];
+    var duration=endMs-startMs;
+    if(duration<cfg.minLapMs) continue;
+    var points=samples.filter(function(sample){
+      return sample.tMs>=startMs && sample.tMs<=endMs;
+    }).map(function(sample){
+      return {
+        progress:(sample.tMs-startMs)/Math.max(1,duration),
+        tMs:sample.tMs,
+        triggerPct:sample.triggerPct,
+        outputPct:sample.outputPct,
+        brakePct:sample.brakePct,
+        vinMv:sample.vinMv,
+        currentMa:sample.currentMa
+      };
+    });
+    if(points.length<8) continue;
+    laps.push({
+      index:laps.length+1,
+      startMs:startMs,
+      endMs:endMs,
+      durationMs:duration,
+      points:points
+    });
+  }
+  return laps;
+}
+
+function lapOverlayAnalyze(silent){
+  if(!lapOverlaySamples.length){
+    lapOverlayLaps=[];
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent) ss('lapst','err','Load telemetry first');
+    return;
+  }
+
+  try{
+    var cfg=lapOverlayReadConfig();
+    var segments=lapOverlayBuildSegments(lapOverlaySamples,cfg);
+    var markers=lapOverlaySelectMarkers(segments,cfg);
+    lapOverlayLaps=lapOverlayBuildLaps(lapOverlaySamples,markers,cfg);
+    lapOverlayLastError='';
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent){
+      if(lapOverlayLaps.length){
+        ss('lapst','ok','Built '+lapOverlayLaps.length+' laps from '+markers.length+' markers');
+      }else{
+        ss('lapst','err','No complete laps detected. Try lower threshold or shorter minimum hold.');
+      }
+    }
+  }catch(e){
+    lapOverlayLaps=[];
+    lapOverlayLastError=(e&&e.message)?e.message:String(e||'Lap analysis failed');
+    lapOverlayUpdateSummary();
+    drawLapOverlayPlot();
+    if(!silent) ss('lapst','err',lapOverlayLastError);
+  }
+}
+
+async function lapOverlayUseCurrentTelemetry(){
+  lapOverlaySourceKind=LAP_OVERLAY_SOURCE_CURRENT;
+  if(!telemetrySamples.length && telemetryAvailable()){
+    try{
+      await syncTelemetryHistory(true,true);
+    }catch(_){}
+  }
+  lapOverlayRefreshFromCurrentTelemetry(false);
+}
+
+async function lapOverlayImportFile(file){
+  if(!file) return;
+  var text=await file.text();
+  var json=JSON.parse(text);
+  var samples=lapOverlayNormalizeSamples(json && json.samples);
+  if(!samples.length){
+    throw new Error('No telemetry samples found in JSON');
+  }
+  lapOverlaySourceKind=LAP_OVERLAY_SOURCE_IMPORT;
+  lapOverlaySourceName=file.name||'Imported telemetry';
+  lapOverlaySamples=samples;
+  lapOverlayEvents=Array.isArray(json.events)?json.events:[];
+  lapOverlayAnalyze(false);
+}
+
+function lapOverlayClear(){
+  lapOverlaySourceKind=LAP_OVERLAY_SOURCE_NONE;
+  lapOverlaySourceName='';
+  lapOverlaySamples=[];
+  lapOverlayEvents=[];
+  lapOverlayLaps=[];
+  lapOverlayLastError='';
+  var input=document.getElementById('lap-file');
+  if(input) input.value='';
+  lapOverlayUpdateSummary();
+  drawLapOverlayPlot();
+  var status=document.getElementById('lapst');
+  if(status) status.style.display='none';
+}
+
+function lapOverlayGetBandRange(key,fallbackMin,fallbackMax){
+  var min=Infinity;
+  var max=-Infinity;
+  lapOverlayLaps.forEach(function(lap){
+    (lap.points||[]).forEach(function(point){
+      var value=Number(point[key]);
+      if(!isFinite(value)) return;
+      if(value<min) min=value;
+      if(value>max) max=value;
+    });
+  });
+  if(!isFinite(min) || !isFinite(max)) return {min:fallbackMin,max:fallbackMax};
+  if(max===min){
+    max=max===0?1:max*1.1;
+    min=Math.max(0,min-(Math.abs(max)*0.1));
+  }else{
+    var pad=(max-min)*0.12;
+    min=Math.max(0,min-pad);
+    max=max+pad;
+  }
+  return {min:min,max:max};
+}
+
+function drawLapOverlayTrace(ctx,laps,def,plotLeft,plotWidth,bandTop,bandHeight,range){
+  if(!laps.length) return;
+  var bestLap=laps.reduce(function(best,lap){
+    return (!best || lap.durationMs<best.durationMs)?lap:best;
+  },null);
+  laps.forEach(function(lap){
+    var points=lap.points||[];
+    if(points.length<2) return;
+    ctx.save();
+    ctx.beginPath();
+    var started=false;
+    points.forEach(function(point){
+      var value=Number(point[def.key]);
+      if(!isFinite(value)) return;
+      var x=plotLeft+(Math.max(0,Math.min(1,Number(point.progress||0)))*plotWidth);
+      var norm=(value-range.min)/(range.max-range.min||1);
+      var y=bandTop+bandHeight-(norm*bandHeight);
+      if(!started){
+        ctx.moveTo(x,y);
+        started=true;
+      }else{
+        ctx.lineTo(x,y);
+      }
+    });
+    if(started){
+      ctx.strokeStyle=getTelemetryColor(def.colorVar,'#ffffff');
+      ctx.lineWidth=(lap===bestLap)?2.4:1.4;
+      ctx.globalAlpha=(lap===bestLap)?0.95:Math.max(0.12,0.55/Math.max(1,laps.length-1));
+      ctx.lineJoin='round';
+      ctx.lineCap='round';
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
+
+function drawLapOverlayPlot(){
+  var canvas=document.getElementById('lap-canvas');
+  var empty=document.getElementById('lap-empty');
+  if(!canvas || !empty) return;
+
+  var selected=lapOverlayGetSelectedTraces();
+  if(!lapOverlaySamples.length){
+    empty.style.display='flex';
+    empty.textContent=(lapOverlaySourceKind===LAP_OVERLAY_SOURCE_CURRENT)?
+      'Current telemetry buffer is empty. Start logging first, then try Use Current Telemetry again.':
+      'Import a telemetry JSON file or use the current telemetry buffer to build lap overlays.';
+    return;
+  }
+  if(!lapOverlayLaps.length){
+    empty.style.display='flex';
+    empty.textContent=lapOverlayLastError||'No laps detected yet. Try lower threshold or shorter straight-hold time.';
+    return;
+  }
+  if(!selected.length){
+    empty.style.display='flex';
+    empty.textContent='Select at least one lap trace to plot.';
+    return;
+  }
+  empty.style.display='none';
+
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  var width=Math.max(320,Math.round(rect.width||canvas.clientWidth||960));
+  var height=Math.max(300,Math.round(rect.height||340));
+  if(canvas.width!==Math.round(width*dpr) || canvas.height!==Math.round(height*dpr)){
+    canvas.width=Math.round(width*dpr);
+    canvas.height=Math.round(height*dpr);
+  }
+
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle=getTelemetryColor('--telemetry-plot-bg','#101820');
+  ctx.fillRect(0,0,width,height);
+
+  var axisColor=getTelemetryColor('--telemetry-axis','#76869d');
+  var gridColor=getTelemetryColor('--telemetry-grid','#2c3f5c');
+  var vinRange=lapOverlayGetBandRange('vinMv',0,1000);
+  var currentRange=lapOverlayGetBandRange('currentMa',0,1000);
+  var vinMinLabel=formatTelemetryVoltageAxisLabel(vinRange.min);
+  var vinMaxLabel=formatTelemetryVoltageAxisLabel(vinRange.max);
+  var currentMinLabel=String(Math.round(currentRange.min));
+  var currentMaxLabel=String(Math.round(currentRange.max));
+
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  var labelWidth=Math.max(
+    ctx.measureText('100').width,
+    ctx.measureText(vinMinLabel).width,
+    ctx.measureText(vinMaxLabel).width,
+    ctx.measureText(currentMinLabel).width,
+    ctx.measureText(currentMaxLabel).width
+  );
+
+  var plotLeft=Math.max(58,Math.ceil(labelWidth)+22);
+  var plotRight=18;
+  var top=20;
+  var bottom=28;
+  var gap=14;
+  var plotWidth=Math.max(10,width-plotLeft-plotRight);
+  var usableHeight=Math.max(120,height-top-bottom-(gap*2));
+  var pctHeight=Math.max(92,Math.round(usableHeight*0.46));
+  var vinHeight=Math.max(56,Math.round(usableHeight*0.22));
+  var currentHeight=Math.max(56,usableHeight-pctHeight-vinHeight);
+  var pctTop=top;
+  var vinTop=pctTop+pctHeight+gap;
+  var currentTop=vinTop+vinHeight+gap;
+
+  drawTelemetryBandFrame(ctx,'Lap Overlay: Throttle / Output / Brake (%)',plotLeft,plotWidth,pctTop,pctHeight,gridColor,axisColor,'0','100');
+  drawTelemetryBandFrame(ctx,'VIN (V)',plotLeft,plotWidth,vinTop,vinHeight,gridColor,axisColor,vinMinLabel,vinMaxLabel);
+  drawTelemetryBandFrame(ctx,'Current (mA)',plotLeft,plotWidth,currentTop,currentHeight,gridColor,axisColor,currentMinLabel,currentMaxLabel);
+
+  selected.filter(function(def){ return def.band==='pct'; }).forEach(function(def){
+    drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,pctTop,pctHeight,{min:0,max:100});
+  });
+  selected.filter(function(def){ return def.band==='vin'; }).forEach(function(def){
+    drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,vinTop,vinHeight,vinRange);
+  });
+  selected.filter(function(def){ return def.band==='current'; }).forEach(function(def){
+    drawLapOverlayTrace(ctx,lapOverlayLaps,def,plotLeft,plotWidth,currentTop,currentHeight,currentRange);
+  });
+
+  ctx.fillStyle=axisColor;
+  ctx.font='12px "Trebuchet MS","Avenir Next","Segoe UI",sans-serif';
+  ctx.textBaseline='top';
+  ctx.textAlign='left';
+  ctx.fillText('0%',plotLeft,height-20);
+  ctx.textAlign='center';
+  ctx.fillText('50%',plotLeft+(plotWidth/2),height-20);
+  ctx.textAlign='right';
+  ctx.fillText('100%',plotLeft+plotWidth,height-20);
+}
+
+function initLapOverlayUi(){
+  LAP_TRACE_DEFS.forEach(function(def){
+    var el=document.getElementById(def.id);
+    if(!el) return;
+    el.addEventListener('change',drawLapOverlayPlot);
+  });
+
+  ['lap-threshold','lap-hold','lap-min','lap-match'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('change',function(){
+      lapOverlayUpdateSummary();
+      if(lapOverlaySamples.length) lapOverlayAnalyze(true);
+      else drawLapOverlayPlot();
+    });
+  });
+
+  var fileInput=document.getElementById('lap-file');
+  if(fileInput){
+    fileInput.addEventListener('change',async function(){
+      var file=fileInput.files && fileInput.files[0];
+      if(!file) return;
+      try{
+        await lapOverlayImportFile(file);
+      }catch(e){
+        lapOverlaySourceKind=LAP_OVERLAY_SOURCE_NONE;
+        lapOverlaySourceName='';
+        lapOverlaySamples=[];
+        lapOverlayEvents=[];
+        lapOverlayLaps=[];
+        lapOverlayLastError=(e&&e.message)?e.message:String(e||'Import failed');
+        lapOverlayUpdateSummary();
+        drawLapOverlayPlot();
+        ss('lapst','err',lapOverlayLastError);
+      }
+    });
+  }
+
+  lapOverlayUpdateSummary();
+  drawLapOverlayPlot();
+}
+
 async function syncTelemetryHistory(reset,silent){
   if(!telemetryAvailable()){
     stopTelemetryPolling();
@@ -2351,6 +2994,7 @@ async function syncTelemetryHistory(reset,silent){
     telemetryAfterSeq=0;
     telemetrySessionId=0;
     telemetryLastError='';
+    lapOverlayRefreshFromCurrentTelemetry(true);
     updateTelemetryUiState();
     updateTelemetryMetrics();
     drawTelemetryPlot();
@@ -2407,6 +3051,7 @@ async function syncTelemetryHistory(reset,silent){
     }
 
     telemetryLastError='';
+    lapOverlayRefreshFromCurrentTelemetry(true);
     updateTelemetryMetrics();
     drawTelemetryPlot();
     if(reset && !silent){
@@ -2654,7 +3299,7 @@ function setUsbReadyState(ready,msg){
   else stopTelemetryPolling();
   updateTelemetryUiState();
   updateTelemetryMetrics();
-  drawTelemetryPlot();
+  scheduleTelemetryPlotRedraw();
   if(msg){ss('ust',usbReady?'ok':'err',msg);}
 }
 
@@ -2709,7 +3354,7 @@ async function loadInfo(){
   }
   updateTelemetryUiState();
   updateTelemetryMetrics();
-  drawTelemetryPlot();
+  scheduleTelemetryPlotRedraw();
 }
 
 async function pump(){while(usb){try{var o=await _r.read();if(o.done)break;_b+=D.decode(o.value);}catch(_){break;}}}
@@ -2766,12 +3411,13 @@ async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
     telemetryAfterSeq=0;
     telemetrySessionId=0;
     telemetryLastError='';
+    lapOverlayRefreshFromCurrentTelemetry(true);
   }else{
     startTelemetryPollingIfAvailable(true);
   }
   updateTelemetryUiState();
   updateTelemetryMetrics();
-  drawTelemetryPlot();
+  scheduleTelemetryPlotRedraw();
   if(showStatus && statusMsg){ss('ust',statusType||'ok',statusMsg);}
 }
 
@@ -3448,10 +4094,11 @@ setEditorUiReady(false);
 updateFirmwareUiState();
 updateDocsLinkState();
 initTelemetryUi();
+initLapOverlayUi();
 if(typeof window!=='undefined'){
   window.addEventListener('online',updateFirmwareUiState);
   window.addEventListener('offline',updateFirmwareUiState);
-  window.addEventListener('resize',drawTelemetryPlot);
+  window.addEventListener('resize',scheduleTelemetryPlotRedraw);
 }
 loadInfo();
 loadLatestReleaseInfo();

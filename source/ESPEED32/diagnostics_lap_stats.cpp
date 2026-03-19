@@ -11,6 +11,7 @@ extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern char msgStr[50];
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -43,7 +44,7 @@ void showLapStats() {
   /* Screensaver support */
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   /* Title - y=0 (pixel row 0), FONT_8x8 = 8px tall */
   const char* title = "Stats";
@@ -51,26 +52,16 @@ void showLapStats() {
   obdWriteString(&g_obd, 0, (OLED_WIDTH - titleWidth) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
 
   while (true) {
-    /* Screensaver handling */
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-    if (screensaverActive) {
-      uint16_t currentEncoderPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          currentEncoderPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needFullRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needFullRedraw = true;
     }
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();

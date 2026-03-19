@@ -13,6 +13,7 @@ extern Menu_type g_settingsMenu;
 extern char msgStr[50];
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -25,7 +26,7 @@ extern void initSettingsMenuItems();
 extern void initDisplayMenuItems();
 
 /**
- * Display settings submenu: VIEW, LANG, CASE, FSIZE, STATUS, BACK.
+ * Display settings submenu: VIEW, LANG, CASE, FSIZE, ANTIS.STEP, STATUS, BACK.
  * Handles value editing for display-related parameters.
  */
 void showDisplaySettings() {
@@ -53,29 +54,18 @@ void showDisplaySettings() {
   uint16_t tempFontSize = g_storedVar.listFontSize;
   bool isEditingFontSize = false;
 
-  uint8_t visibleLines = DISPLAY_ITEMS_COUNT;  /* All items fit on screen with FONT_8x8 */
+  uint8_t visibleLines = (DISPLAY_ITEMS_COUNT > 5) ? 5 : DISPLAY_ITEMS_COUNT;  /* Compact scrollable list. */
   uint16_t frameUpper = 1;
   uint16_t frameLower = visibleLines;
 
   uint32_t lastInteraction = millis();
   bool ssActive = false;
-  uint16_t ssEncoderPos = 0;
+  uint16_t ssEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    /* Screensaver wake-up */
-    if (ssActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != ssEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        ssActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &ssActive, &ssEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
@@ -83,7 +73,7 @@ void showDisplaySettings() {
     /* Screensaver timeout */
     if (!wakeUp && !ssActive && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!ssActive) {
           ssActive = true;
           ssEncoderPos = readUiEncoder();
@@ -97,6 +87,14 @@ void showDisplaySettings() {
       }
     }
 
+    if (!wakeUp && ssActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+      }
+      delay(10);
+      continue;
+    }
+
     /* Encoder button click */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       lastInteraction = millis();
@@ -104,7 +102,7 @@ void showDisplaySettings() {
         if (sel == DISPLAY_ITEMS_COUNT) {  /* BACK */
           break;
         }
-        /* STATUS submenu (item 5, index 4, sel = DISPLAY_ITEMS_COUNT - 1) */
+        /* STATUS submenu lives right before BACK. */
         if (sel == DISPLAY_ITEMS_COUNT - 1) {
           showStatusSettings();
           if (isEscapeToMainRequested()) break;
@@ -163,7 +161,7 @@ void showDisplaySettings() {
           prevLanguage = g_storedVar.language;
           prevTextCase = g_storedVar.textCase;
           prevFontSize = g_storedVar.listFontSize;
-          /* visibleLines stays DISPLAY_ITEMS_COUNT - submenu always uses FONT_8x8 */
+          /* visibleLines stays fixed - submenu always uses FONT_8x8 */
           frameUpper = 1;
           frameLower = visibleLines;
           obdFill(&g_obd, OBD_WHITE, 1);
@@ -263,6 +261,8 @@ void showDisplaySettings() {
         } else if (itemIdx == 3) {  /* FSIZE */
           uint16_t dispFS = (isEditingFontSize && isValueSel) ? tempFontSize : value;
           sprintf(msgStr, "%5s", FONT_SIZE_LABELS[g_storedVar.language][dispFS]);
+        } else if (g_settingsMenu.item[itemIdx].unit[0] != '\0') {
+          snprintf(msgStr, sizeof(msgStr), "%2d %s", value, g_settingsMenu.item[itemIdx].unit);
         } else {
           sprintf(msgStr, "%3d", value);
         }

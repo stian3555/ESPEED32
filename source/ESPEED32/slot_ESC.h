@@ -17,17 +17,18 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 6
-#define SW_MINOR_VERSION 0
+#define SW_MINOR_VERSION 1
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    11    /* Number of items in main menu (incl. FADE, BRAKE+ submenu entry, STATS) */
-#define SETTINGS_ITEMS_COUNT 14   /* Number of items in settings menu (including BACK) */
-#define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
-#define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
-#define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
+#define MENU_ITEMS_COUNT    11    /* Number of possible items in main menu (including optional STATS and CAR) */
+#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
+#define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL., BACK) */
+#define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTIS.STEP, STATUS, BACK) */
+#define HARDWARE_ITEMS_COUNT 5    /* Number of items in hardware submenu (ENC INV, EXT POT, TRIGGER, TEST, BACK) */
+#define POWER_SAVE_TIMEOUT_DEFAULT 5    /* [min] Default auto power save delay (0=manual only) */
 #define POWER_SAVE_TIMEOUT_MAX     10   /* [min] Maximum auto power save delay */
 #define DEEP_SLEEP_TIMEOUT_DEFAULT 10   /* [min] Default auto deep sleep delay (0=manual only) */
 #define DEEP_SLEEP_TIMEOUT_MAX     30   /* [min] Maximum auto deep sleep delay */
@@ -114,7 +115,8 @@
 
 /* Button Press Timing */
 #define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
-#define BUTTON_DEBOUNCE_AFTER_LONG_MS  1500  /* [ms] Debounce time after long press before accepting short press */
+#define BUTTON_DEBOUNCE_AFTER_LONG_MS   200  /* [ms] Require release plus short debounce after a long press */
+#define BUTTON_CLICK_MIN_MS           30  /* [ms] Minimum hold time to treat a press/release as a real click */
 #define BUTTON_SHORT_PRESS_DEBOUNCE_MS  200  /* [ms] Minimum time between button presses */
 
 /* Sound Configuration */
@@ -125,7 +127,7 @@
 void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
 #define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
-#define STATS_ENABLED_DEFAULT    1  /* Show STATS menu item by default */
+#define STATS_ENABLED_DEFAULT    0  /* Hide STATS menu item by default */
 #define EXT_POT_COUNT            2  /* Two optional external ADC pots: GPIO35 and GPIO15 */
 #define EXT_POT_TARGET_OFF       0
 #define EXT_POT_TARGET_BRAKE     1
@@ -175,8 +177,13 @@ void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define STATUS_OUTPUT   1   /* Motor output % (5 chars, e.g. " 75%O") */
 #define STATUS_THROTTLE 2   /* Trigger input % (5 chars, e.g. " 75%T") */
 #define STATUS_CAR      3   /* Car name (5 chars, e.g. "CAR1 ") */
-#define STATUS_CURRENT  4   /* Motor current (5 chars, e.g. " 1.5A" / " N/A ") */
+#define STATUS_CURRENT  4   /* Hybrid motor current (5 chars, e.g. "850mA" / "2.7A ") */
 #define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
+#define STATUS_CURRENT_MA  6   /* Legacy stored value; normalized to STATUS_CURRENT */
+
+static inline uint16_t normalizeStatusSlotValue(uint16_t slotValue) {
+  return (slotValue == STATUS_CURRENT_MA) ? STATUS_CURRENT : slotValue;
+}
 /* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
 #define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
 #define STATUS_SLOT1_DEFAULT STATUS_THROTTLE
@@ -255,7 +262,7 @@ typedef struct {
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */
-  uint16_t brakeButtonReduction;            /* [%] Brake reduction when button pressed (0-100%) */
+  uint16_t brakeButtonReduction;            /* [%] Alternate brake value when button pressed (0-100%) */
   uint16_t quickBrakeEnabled;              /* Release brake mode: OFF / QUICK / DRAG */
   uint16_t quickBrakeThreshold;            /* [%] Release-brake zone near trigger release */
   uint16_t quickBrakeStrength;             /* [%] Release-brake level (quick or drag) */

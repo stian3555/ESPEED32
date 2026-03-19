@@ -34,6 +34,11 @@ static String buildTelemetryStatusPayload(const char* message);
 static String buildTelemetryLivePayload(uint32_t afterSeq, size_t limit);
 static String buildTelemetryConfigSnapshotJson();
 static void sendSerialLengthPrefixedPayload(const String& payload);
+static const char* getBackupReleaseModeName(uint16_t mode);
+
+static uint16_t normalizeStatusSlotForUi(uint16_t slotValue) {
+  return normalizeStatusSlotValue(slotValue);
+}
 
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
 static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
@@ -154,10 +159,12 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
     sprintf(buf, "      \"fade\": %u,\n", c.fade);                       json += buf;
     sprintf(buf, "      \"antiSpin\": %u,\n", c.antiSpin);               json += buf;
     sprintf(buf, "      \"freqPWM\": %u,\n", c.freqPWM);                 json += buf;
-    sprintf(buf, "      \"brakeButton\": %u,\n", c.brakeButtonReduction);  json += buf;
-    sprintf(buf, "      \"quickBrakeEnabled\": %u,\n", c.quickBrakeEnabled);   json += buf;
-    sprintf(buf, "      \"quickBrakeThreshold\": %u,\n", c.quickBrakeThreshold); json += buf;
-    sprintf(buf, "      \"quickBrakeStrength\": %u\n", c.quickBrakeStrength);  json += buf;
+    sprintf(buf, "      \"altBrake\": %u,\n", c.brakeButtonReduction);  json += buf;
+    json += "      \"releaseMode\": \"";
+    json += getBackupReleaseModeName(c.quickBrakeEnabled);
+    json += "\",\n";
+    sprintf(buf, "      \"releaseZone\": %u,\n", c.quickBrakeThreshold); json += buf;
+    sprintf(buf, "      \"releaseLevel\": %u\n", c.quickBrakeStrength);  json += buf;
     json += "    }";
     if (i < CAR_MAX_COUNT - 1) json += ",";
     json += "\n";
@@ -263,6 +270,61 @@ static bool parseJsonStr(const String& json, const char* key, char* outStr, int 
   if (len >= maxLen) len = maxLen - 1;
   json.substring(qStart + 1, qStart + 1 + len).toCharArray(outStr, maxLen);
   return true;
+}
+
+static bool jsonHasKey(const String& json, const char* key) {
+  String search = String("\"") + key + "\"";
+  return json.indexOf(search) >= 0;
+}
+
+static bool parseJsonIntAlias(const String& json, const char* primaryKey, const char* legacyKey, int32_t& outVal) {
+  if (jsonHasKey(json, primaryKey)) return parseJsonInt(json, primaryKey, outVal);
+  return parseJsonInt(json, legacyKey, outVal);
+}
+
+static const char* getBackupReleaseModeName(uint16_t mode) {
+  switch (mode) {
+    case RELEASE_BRAKE_QUICK: return "QUICK";
+    case RELEASE_BRAKE_DRAG:  return "DRAG";
+    case RELEASE_BRAKE_OFF:
+    default:                  return "OFF";
+  }
+}
+
+static bool parseJsonReleaseMode(const String& json, const char* key, uint16_t* outMode) {
+  if (outMode == nullptr) return false;
+
+  int32_t v = 0;
+  if (parseJsonInt(json, key, v)) {
+    if (v < RELEASE_BRAKE_OFF || v > RELEASE_BRAKE_DRAG) return false;
+    *outMode = (uint16_t)v;
+    return true;
+  }
+
+  char modeStr[16];
+  if (!parseJsonStr(json, key, modeStr, sizeof(modeStr))) return false;
+
+  String mode = modeStr;
+  mode.trim();
+  if (mode.equalsIgnoreCase("OFF")) {
+    *outMode = RELEASE_BRAKE_OFF;
+    return true;
+  }
+  if (mode.equalsIgnoreCase("QUICK") || mode.equalsIgnoreCase("QCK")) {
+    *outMode = RELEASE_BRAKE_QUICK;
+    return true;
+  }
+  if (mode.equalsIgnoreCase("DRAG") || mode.equalsIgnoreCase("DRG")) {
+    *outMode = RELEASE_BRAKE_DRAG;
+    return true;
+  }
+
+  return false;
+}
+
+static bool parseJsonReleaseModeAlias(const String& json, const char* primaryKey, const char* legacyKey, uint16_t* outMode) {
+  if (jsonHasKey(json, primaryKey)) return parseJsonReleaseMode(json, primaryKey, outMode);
+  return parseJsonReleaseMode(json, legacyKey, outMode);
 }
 
 
@@ -417,18 +479,36 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
     }
     c.freqPWM = v;
 
-    if (!parseJsonInt(carJson, "brakeButton", v) || !inRange(v, 0, 100)) {
-      *errorMsg = "Error: invalid brakeButton in car " + String(i); return false;
+    if (!parseJsonIntAlias(carJson, "altBrake", "brakeButton", v) || !inRange(v, 0, 100)) {
+      *errorMsg = "Error: invalid altBrake in car " + String(i); return false;
     }
     c.brakeButtonReduction = v;
 
     /* Release-brake fields — optional for backwards compatibility with older backups */
-    if (parseJsonInt(carJson, "quickBrakeEnabled", v) && inRange(v, RELEASE_BRAKE_OFF, RELEASE_BRAKE_DRAG))
-      c.quickBrakeEnabled = v;
-    if (parseJsonInt(carJson, "quickBrakeThreshold", v) && inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX))
+    uint16_t releaseMode = c.quickBrakeEnabled;
+    if (parseJsonReleaseModeAlias(carJson, "releaseMode", "quickBrakeEnabled", &releaseMode)) {
+      c.quickBrakeEnabled = releaseMode;
+    } else if (jsonHasKey(carJson, "releaseMode") || jsonHasKey(carJson, "quickBrakeEnabled")) {
+      *errorMsg = "Error: invalid releaseMode in car " + String(i); return false;
+    }
+
+    if (parseJsonIntAlias(carJson, "releaseZone", "quickBrakeThreshold", v)) {
+      if (!inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) {
+        *errorMsg = "Error: invalid releaseZone in car " + String(i); return false;
+      }
       c.quickBrakeThreshold = v;
-    if (parseJsonInt(carJson, "quickBrakeStrength", v) && inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX))
+    } else if (jsonHasKey(carJson, "releaseZone") || jsonHasKey(carJson, "quickBrakeThreshold")) {
+      *errorMsg = "Error: invalid releaseZone in car " + String(i); return false;
+    }
+
+    if (parseJsonIntAlias(carJson, "releaseLevel", "quickBrakeStrength", v)) {
+      if (!inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) {
+        *errorMsg = "Error: invalid releaseLevel in car " + String(i); return false;
+      }
       c.quickBrakeStrength = v;
+    } else if (jsonHasKey(carJson, "releaseLevel") || jsonHasKey(carJson, "quickBrakeStrength")) {
+      *errorMsg = "Error: invalid releaseLevel in car " + String(i); return false;
+    }
   }
 
   return true;
@@ -567,13 +647,13 @@ static String buildSchemaJson() {
                         "[{\"value\":0,\"label\":\"LARGE\"},{\"value\":1,\"label\":\"small\"}]");
   appendSchemaIntField(json, first, "startupDelay", "Startup Delay", STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, 1, "x10ms");
   appendSchemaEnumField(json, first, "statusSlot0", "Status Slot 1",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot1", "Status Slot 2",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot2", "Status Slot 3",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot3", "Status Slot 4",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURRENT\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaStringField(json, first, "screensaverLine1", "Screensaver Line 1", SCREENSAVER_TEXT_MAX - 1);
   appendSchemaStringField(json, first, "screensaverLine2", "Screensaver Line 2", SCREENSAVER_TEXT_MAX - 1);
   json += "],";
@@ -637,10 +717,10 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"textCase\":%u,", g_storedVar.textCase); json += buf;
   snprintf(buf, sizeof(buf), "\"listFontSize\":%u,", g_storedVar.listFontSize); json += buf;
   snprintf(buf, sizeof(buf), "\"startupDelay\":%u,", g_storedVar.startupDelay); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot0\":%u,", g_storedVar.statusSlot[0]); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot1\":%u,", g_storedVar.statusSlot[1]); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot2\":%u,", g_storedVar.statusSlot[2]); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot3\":%u,", g_storedVar.statusSlot[3]); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot0\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[0])); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot1\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[1])); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot2\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[2])); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot3\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[3])); json += buf;
   json += "\"screensaverLine1\":\"";
   appendJsonEscaped(json, g_storedVar.screensaverLine1);
   json += "\",\"screensaverLine2\":\"";
@@ -751,18 +831,22 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     updated.startupDelay = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot0", v)) {
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
     if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot0"; return false; }
     updated.statusSlot[0] = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot1", v)) {
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
     if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot1"; return false; }
     updated.statusSlot[1] = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot2", v)) {
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
     if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot2"; return false; }
     updated.statusSlot[2] = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot3", v)) {
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
     if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot3"; return false; }
     updated.statusSlot[3] = (uint16_t)v;
   }
@@ -817,20 +901,29 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     if (!inRange(v, FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100)) { *errorMsg = "Error: invalid freqPWM"; return false; }
     car.freqPWM = (uint16_t)v;
   }
-  if (parseJsonInt(json, "brakeButton", v)) {
-    if (!inRange(v, 0, 100)) { *errorMsg = "Error: invalid brakeButton"; return false; }
+  if (jsonHasKey(json, "altBrake") || jsonHasKey(json, "brakeButton")) {
+    if (!parseJsonIntAlias(json, "altBrake", "brakeButton", v) || !inRange(v, 0, 100)) {
+      *errorMsg = "Error: invalid altBrake"; return false;
+    }
     car.brakeButtonReduction = (uint16_t)v;
   }
-  if (parseJsonInt(json, "quickBrakeEnabled", v)) {
-    if (!inRange(v, RELEASE_BRAKE_OFF, RELEASE_BRAKE_DRAG)) { *errorMsg = "Error: invalid quickBrakeEnabled"; return false; }
-    car.quickBrakeEnabled = (uint16_t)v;
+  if (jsonHasKey(json, "releaseMode") || jsonHasKey(json, "quickBrakeEnabled")) {
+    uint16_t releaseMode = car.quickBrakeEnabled;
+    if (!parseJsonReleaseModeAlias(json, "releaseMode", "quickBrakeEnabled", &releaseMode)) {
+      *errorMsg = "Error: invalid releaseMode"; return false;
+    }
+    car.quickBrakeEnabled = releaseMode;
   }
-  if (parseJsonInt(json, "quickBrakeThreshold", v)) {
-    if (!inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) { *errorMsg = "Error: invalid quickBrakeThreshold"; return false; }
+  if (jsonHasKey(json, "releaseZone") || jsonHasKey(json, "quickBrakeThreshold")) {
+    if (!parseJsonIntAlias(json, "releaseZone", "quickBrakeThreshold", v) || !inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) {
+      *errorMsg = "Error: invalid releaseZone"; return false;
+    }
     car.quickBrakeThreshold = (uint16_t)v;
   }
-  if (parseJsonInt(json, "quickBrakeStrength", v)) {
-    if (!inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) { *errorMsg = "Error: invalid quickBrakeStrength"; return false; }
+  if (jsonHasKey(json, "releaseLevel") || jsonHasKey(json, "quickBrakeStrength")) {
+    if (!parseJsonIntAlias(json, "releaseLevel", "quickBrakeStrength", v) || !inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) {
+      *errorMsg = "Error: invalid releaseLevel"; return false;
+    }
     car.quickBrakeStrength = (uint16_t)v;
   }
 
@@ -1310,7 +1403,7 @@ static String buildTelemetryConfigSummaryJsonFromSnapshot(const TelemetryConfigS
     if (i > 0) {
       json += ",";
     }
-    json += String(snapshot.storedVar.statusSlot[i]);
+    json += String(normalizeStatusSlotForUi(snapshot.storedVar.statusSlot[i]));
   }
   json += "],\"carNames\":";
   appendTelemetryCarNamesJson(json, snapshot.storedVar);
@@ -1399,7 +1492,7 @@ static void appendTelemetryStatusFields(String& json, const TelemetryStatus& sta
   json += ",\"statusSlots\":[";
   for (uint8_t i = 0; i < STATUS_SLOTS; i++) {
     if (i > 0) json += ",";
-    json += String(g_storedVar.statusSlot[i]);
+    json += String(normalizeStatusSlotForUi(g_storedVar.statusSlot[i]));
   }
   json += "]}";
 }

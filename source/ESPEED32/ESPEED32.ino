@@ -2,6 +2,7 @@
 /*                                                   Includes                                                        */
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
+#include "HAL.h"
 #include "ui_strings.h"
 #include "ui_text_access.h"
 #include "connectivity_portal.h"
@@ -115,6 +116,8 @@ uint32_t g_lastEncoderInteraction = 0;         /* Timestamp of last encoder inte
 static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
 bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 static bool g_escapeToMain = false;    /* Set by any submenu long press → cascade-breaks to RUNNING for race mode toggle */
+static bool g_raceToggleReleaseGuardActive = false;  /* Swallow release click after race-mode long press. */
+static uint32_t g_raceToggleReleaseAtMs = 0;  /* Release timestamp used to re-arm short presses after race toggle. */
 static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
@@ -253,10 +256,42 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
   g_encoderMainSelector = 1;
   g_escVar.encoderPos = 1;
   lastLongPressTime = millis();
+  g_raceToggleReleaseGuardActive = true;
+  g_raceToggleReleaseAtMs = 0;
   saveEEPROM(g_storedVar);
   if (g_storedVar.soundRace) keySound();
   g_lastEncoderInteraction = millis();
-  g_rotaryEncoder.isEncoderButtonClicked();  /* consume any pending click */
+}
+
+/**
+ * @brief Hold off short-press handling until the encoder button is released after a race-mode long press.
+ * @details RUNNING uses raw press/release detection, so we only need to wait for a clean release
+ *          plus a short debounce window before re-arming short clicks.
+ * @param encoderButtonPressed Current raw encoder button state.
+ * @return true while short presses should remain blocked.
+ */
+static bool serviceRaceModeToggleReleaseGuard(bool encoderButtonPressed) {
+  if (!g_raceToggleReleaseGuardActive) {
+    return false;
+  }
+
+  if (encoderButtonPressed) {
+    g_raceToggleReleaseAtMs = 0;
+    return true;
+  }
+
+  if (g_raceToggleReleaseAtMs == 0) {
+    g_raceToggleReleaseAtMs = millis();
+    return true;
+  }
+
+  if ((uint32_t)(millis() - g_raceToggleReleaseAtMs) < BUTTON_DEBOUNCE_AFTER_LONG_MS) {
+    return true;
+  }
+
+  g_raceToggleReleaseGuardActive = false;
+  g_raceToggleReleaseAtMs = 0;
+  return false;
 }
 
 void requestEscapeToMain() {
@@ -299,7 +334,7 @@ void serviceTimedWiFiPortal() {
   serviceConnectivityPortal();
 
   if (g_loggingTimedActive) {
-    if (!telemetryIsLoggingActive() || !isWiFiPortalActive()) {
+    if (!telemetryIsLoggingActive()) {
       g_loggingTimedActive = false;
     } else if ((int32_t)(millis() - g_loggingTimedStopAtMs) >= 0) {
       telemetryStopLogging();
@@ -323,7 +358,7 @@ void serviceTimedWiFiPortal() {
       return;
     }
     if (telemetryIsLoggingActive()) {
-      /* Logging is WiFi-only, so keep the portal alive while telemetry is running. */
+      /* Keep WiFi available while telemetry is being logged over the portal. */
       g_wifiTimedStopAtMs = millis() + 1000UL;
       return;
     }
@@ -363,12 +398,6 @@ void startTimedTelemetryLogging(uint16_t minutes) {
   g_loggingTimedMinutes = constrain(minutes, 1, 120);
   g_loggingTimedActive = true;
   g_loggingTimedStopAtMs = millis() + ((uint32_t)g_loggingTimedMinutes * 60000UL);
-  if (isWiFiPortalActive()) {
-    g_wifiTimedActive = true;
-    if ((int32_t)(g_loggingTimedStopAtMs - g_wifiTimedStopAtMs) > 0) {
-      g_wifiTimedStopAtMs = g_loggingTimedStopAtMs;
-    }
-  }
 }
 
 void stopTimedTelemetryLogging() {
@@ -599,6 +628,7 @@ void Task1code(void *pvParameters) {
         g_pref.putUShort(PREF_KEY_ADC_RANGE, ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT);
         g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT);
+        HAL_ResetTriggerSensorConfig();
 
         initStoredVariables();  /* Initialize stored variables with default values */
         g_statsEnabled = STATS_ENABLED_DEFAULT;
@@ -658,7 +688,7 @@ void Task1code(void *pvParameters) {
         break;
 
 
-      case RUNNING: /* when the global variable State is in RUNNING the Task2 will elaborate the trigger to produce the PWM out */
+      case RUNNING: { /* when the global variable State is in RUNNING the Task2 will elaborate the trigger to produce the PWM out */
 
         /* Set encoder boundaries based on view mode (on first entry) */
         static bool encoderBoundariesSet = false;
@@ -684,27 +714,56 @@ void Task1code(void *pvParameters) {
 
         /* Handle race mode toggle: either from a submenu escape or direct long press */
         static uint32_t lastLongPressTime = 0;
+        static uint32_t buttonPressStartTime = 0;
+        static uint32_t lastShortPressTime = 0;
+        static bool buttonWasPressed = false;
+        static bool buttonLongPressHandled = false;
+        bool encoderButtonPressed = (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED);
+        bool raceToggleReleaseGuardActive = serviceRaceModeToggleReleaseGuard(encoderButtonPressed);
+        bool encoderShortClick = false;
 
         if (g_escapeToMain) {
           /* Return from submenu long press → toggle race mode immediately */
           g_escapeToMain = false;
           applyRaceModeToggle(menuState, lastLongPressTime);
-        } else {
-          /* Direct long press detection in RUNNING */
-          static uint32_t buttonPressStartTime = 0;
-          static bool buttonWasPressed = false;
-          if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+          raceToggleReleaseGuardActive = true;
+          buttonPressStartTime = 0;
+          lastShortPressTime = 0;
+          buttonWasPressed = false;
+          buttonLongPressHandled = true;
+        } else if (!raceToggleReleaseGuardActive) {
+          /* Direct press/release handling in RUNNING, independent of the encoder library click timeout logic. */
+          if (encoderButtonPressed) {
             if (!buttonWasPressed) {
               buttonPressStartTime = millis();
               buttonWasPressed = true;
+              buttonLongPressHandled = false;
             }
-            if (millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
+            if (!buttonLongPressHandled &&
+                millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
                 millis() - lastLongPressTime > BUTTON_LONG_PRESS_MS) {
               applyRaceModeToggle(menuState, lastLongPressTime);
+              raceToggleReleaseGuardActive = true;
+              buttonLongPressHandled = true;
             }
-          } else {
+          } else if (buttonWasPressed) {
+            uint32_t pressDuration = millis() - buttonPressStartTime;
             buttonWasPressed = false;
+            buttonPressStartTime = 0;
+
+            if (!buttonLongPressHandled &&
+                pressDuration >= BUTTON_CLICK_MIN_MS &&
+                (lastShortPressTime == 0 || millis() - lastShortPressTime >= BUTTON_SHORT_PRESS_DEBOUNCE_MS)) {
+              encoderShortClick = true;
+              lastShortPressTime = millis();
+            }
+
+            buttonLongPressHandled = false;
           }
+        } else {
+          buttonPressStartTime = 0;
+          buttonWasPressed = false;
+          buttonLongPressHandled = false;
         }
 
         /* Check for brake button press - acts as "back" in edit mode */
@@ -775,9 +834,7 @@ void Task1code(void *pvParameters) {
         }
 
         /* Change menu state if encoder button is clicked (short press) */
-        /* Only process if sufficient time has passed since last long press */
-        if ((lastLongPressTime == 0 || millis() - lastLongPressTime > BUTTON_DEBOUNCE_AFTER_LONG_MS) &&
-            g_rotaryEncoder.isEncoderButtonClicked())
+        if (encoderShortClick)
         {
           /* If screensaver is active (timeout exceeded), just wake up - don't process menu action */
           if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
@@ -830,6 +887,7 @@ void Task1code(void *pvParameters) {
         else
           digitalWrite(LED_BUILTIN, 0);
         break;
+      }
 
 
       case FAULT:

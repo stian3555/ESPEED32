@@ -35,6 +35,8 @@ jobs:
           rm -rf site
           mkdir -p site/docs site/ui
 
+          cp source/ESPEED32/data/favicon.svg site/favicon.svg
+
           # Publish docs at /docs/
           cp -R source/ESPEED32/data/docs/. site/docs/
           # Keep /docs/ valid on GitHub Pages (docs folder has no own index by default)
@@ -45,6 +47,7 @@ jobs:
             <meta charset="utf-8">
             <meta http-equiv="refresh" content="0;url=./en/">
             <title>ESPEED32 Docs</title>
+            <link rel="icon" href="../favicon.svg" type="image/svg+xml">
           </head>
           <body>
             <p>Redirecting to <a href="./en/">documentation</a>...</p>

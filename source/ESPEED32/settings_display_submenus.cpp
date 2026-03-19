@@ -1,6 +1,7 @@
 #include "settings_display_submenus.h"
 #include <Arduino.h>
 #include "slot_ESC.h"
+#include "ui_text_access.h"
 
 extern StoredVar_type g_storedVar;
 extern ESC_type g_escVar;
@@ -9,6 +10,7 @@ extern char msgStr[50];
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -16,6 +18,34 @@ extern void requestEscapeToMain();
 extern void showScreensaver();
 extern void displayStatusLine();
 extern void saveEEPROM(StoredVar_type toSave);
+
+static void formatConfiguredMenuLabel(const char* source, char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+  buffer[0] = '\0';
+  if (source == nullptr) return;
+
+  if (g_storedVar.textCase != TEXT_CASE_PASCAL) {
+    snprintf(buffer, bufferSize, "%s", source);
+    return;
+  }
+
+  size_t out = 0;
+  bool newWord = true;
+  for (size_t i = 0; source[i] != '\0' && out + 1 < bufferSize; i++) {
+    char c = source[i];
+    if (c >= 'A' && c <= 'Z') {
+      buffer[out++] = newWord ? c : (char)(c - 'A' + 'a');
+      newWord = false;
+    } else if (c >= 'a' && c <= 'z') {
+      buffer[out++] = newWord ? (char)(c - 'a' + 'A') : c;
+      newWord = false;
+    } else {
+      buffer[out++] = c;
+      newWord = (c == ' ' || c == '/' || c == '=' || c == '-');
+    }
+  }
+  buffer[out] = '\0';
+}
 
 /**
  * Character-by-character text editor for screensaver lines.
@@ -50,31 +80,21 @@ static void editScreensaverText(char* text, const char* title) {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    /* Screensaver handling */
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-    if (screensaverActive) {
-      uint16_t ep = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          ep != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        obdWriteString(&g_obd, 0, (OLED_WIDTH - titleW) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
-        obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK", FONT_12x16, OBD_BLACK, 1);
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, (OLED_WIDTH - titleW) / 2, 0, (char *)title, FONT_8x8, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, OLED_WIDTH - 24, 48, (char *)"OK", FONT_12x16, OBD_BLACK, 1);
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         screensaverActive = true;
         screensaverEncoderPos = readUiEncoder();
         showScreensaver();
@@ -183,8 +203,6 @@ void showScreensaverSettings() {
   };
   const char* editorTitleL1ByLang[7] = {"Linje 1", "Line 1", "Line 1", "Line 1", "Linea 1", "Zeile 1", "Riga 1"};
   const char* editorTitleL2ByLang[7] = {"Linje 2", "Line 2", "Line 2", "Line 2", "Linea 2", "Zeile 2", "Riga 2"};
-  const char* offLabelByLang[7] = {"AV", "OFF", "OFF", "OFF", "OFF", "AUS", "OFF"};
-
   const char** ssNames = ssNamesByLang[lang];
   const char* editorTitleL1 = editorTitleL1ByLang[lang];
   const char* editorTitleL2 = editorTitleL2ByLang[lang];
@@ -201,29 +219,19 @@ void showScreensaverSettings() {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    /* Screensaver handling */
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-    if (screensaverActive) {
-      uint16_t ep = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          ep != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        prevSel = 0xFF;  /* Force redraw */
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      prevSel = 0xFF;  /* Force redraw */
     }
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();
@@ -291,7 +299,10 @@ void showScreensaverSettings() {
         bool isEditingThis = (inTimeEdit && idx == 3);  /* TIME row */
 
         /* Item name */
-        obdWriteString(&g_obd, 0, 0, yPx, (char *)ssNames[idx], FONT_8x8,
+        char rowLabel[16];
+        const char* rawLabel = (idx == 4) ? getBackLabel(lang) : ssNames[idx];
+        formatConfiguredMenuLabel(rawLabel, rowLabel, sizeof(rowLabel));
+        obdWriteString(&g_obd, 0, 0, yPx, rowLabel, FONT_8x8,
                        (isSelected || isEditingThis) ? OBD_WHITE : OBD_BLACK, 1);
 
         /* Value on right side in FONT_6x8 */
@@ -306,7 +317,7 @@ void showScreensaverSettings() {
         } else if (idx == 3) {
           /* TIME: show current timeout, right-justified (4 chars × 6px = 24px from right) */
           if (g_storedVar.screensaverTimeout == 0) {
-            sprintf(msgStr, "%4s", offLabelByLang[lang]);
+            sprintf(msgStr, "%4s", getOnOffLabel(lang, 0));
           } else {
             sprintf(msgStr, "%3ds", g_storedVar.screensaverTimeout);
           }
@@ -386,6 +397,8 @@ void showStatusSettings() {
   const uint8_t ST_ITEMS    = STATUS_SLOTS + 1;
   /* Slot content range: STATUS_BLANK..STATUS_VOLTAGE */
   const uint8_t ST_SLOT_MAX = STATUS_VOLTAGE;
+  const uint8_t ST_LABEL_CHARS = 4;
+  const uint8_t ST_LABEL_PIXELS = ST_LABEL_CHARS * 6;
 
   uint8_t lang = g_storedVar.language;
 
@@ -401,7 +414,7 @@ void showStatusSettings() {
   };
   const char** rowNames = rowNamesByLang[lang];
 
-  /* Content type labels (max 4 chars, shown right-justified in menu) */
+  /* Content type labels shown right-justified in menu. */
   const char* slotLabelsByLang[7][ST_SLOT_MAX + 1] = {
     {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT"},
     {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
@@ -426,30 +439,20 @@ void showStatusSettings() {
 
   uint32_t lastInteraction   = millis();
   bool screensaverActive     = false;
-  uint16_t screensaverEncPos = 0;
+  uint16_t screensaverEncPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    /* Screensaver handling */
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-    if (screensaverActive) {
-      uint16_t ep = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          ep != screensaverEncPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        prevSel     = 0xFF;
-        forceRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      prevSel     = 0xFF;
+      forceRedraw = true;
     }
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncPos = readUiEncoder();
@@ -516,13 +519,13 @@ void showStatusSettings() {
         obdWriteString(&g_obd, 0, 0, yPx, (char *)rowNames[idx], FONT_8x8,
                        (isSelected && state == ITEM_SELECTION) ? OBD_WHITE : OBD_BLACK, 1);
 
-        /* Value label right-justified (4 chars x 6px = 24px from right edge) */
+        /* Value label right-justified in a wider field for longer slot names. */
         if (idx < STATUS_SLOTS) {
-          uint16_t v = g_storedVar.statusSlot[idx];
+          uint16_t v = normalizeStatusSlotValue(g_storedVar.statusSlot[idx]);
           const char* lbl = (v <= ST_SLOT_MAX) ? slotLabels[v] : "???";
-          char vbuf[5];
-          snprintf(vbuf, sizeof(vbuf), "%4s", lbl);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - 24, yPx, vbuf, FONT_6x8,
+          char vbuf[ST_LABEL_CHARS + 1];
+          snprintf(vbuf, sizeof(vbuf), "%*s", ST_LABEL_CHARS, lbl);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - ST_LABEL_PIXELS, yPx, vbuf, FONT_6x8,
                          inEdit ? OBD_WHITE : OBD_BLACK, 1);
         }
       }
@@ -543,7 +546,8 @@ void showStatusSettings() {
           break;
         }
         /* Enter value selection for this slot */
-        origValue = g_storedVar.statusSlot[sel - 1];
+        origValue = normalizeStatusSlotValue(g_storedVar.statusSlot[sel - 1]);
+        g_storedVar.statusSlot[sel - 1] = origValue;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
         setUiEncoderBoundaries(0, ST_SLOT_MAX, false);
         resetUiEncoder(origValue);

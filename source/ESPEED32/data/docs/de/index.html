@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32 Benutzerhandbuch (DE)</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <style>
 :root{
   --bg:#f3f1eb;
@@ -214,6 +215,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>ACD</code>: ACD-Stil, wo es direkte Entsprechungen gibt (<code>SENSI</code> und <code>CHOKE</code> fuer LIMIT).</li>
       <li><code>DISPLAY -&gt; CASE</code> waehlt, ob Labels in <code>UPPER</code> oder <code>Pascal</code> angezeigt werden.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> stellt die Listen- und Menueansicht auf <code>LARGE</code> oder <code>small</code>.</li>
+      <li><code>ANZEIGE -&gt; ANTIS.STEP</code> setzt den globalen Encoder-Schritt fuer den <code>ANTIS</code>-Wert.</li>
     </ul>
     <h3>Race View (LIST vs GRID)</h3>
     <ul>
@@ -230,7 +232,7 @@ details.doc-fold>:not(summary){margin-top:8px}
     </figure>
     <h3>Statuszeile und ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 feste Slots. Jeder Slot kann <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> oder leer anzeigen.</li>
+      <li><code>STATUS BAR</code>: 4 feste Slots. Jeder Slot kann <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> oder leer anzeigen. <code>CURR</code> zeigt mA unter 1000 und A darueber.</li>
       <li>Wenn WiFi aktiv ist, zeigt die Statuszeile <code>WIFI</code>. Zuerst wird ein freier Slot benutzt; wenn keiner frei ist, wird Slot 4 temporaer ueberschrieben.</li>
       <li><code>ABOUT</code> zeigt Firmware-/Datenversion, erkannten Trigger-Sensor, Chip-Infos, Flash/Heap, MAC-Adressen und Build-Datum/-Zeit.</li>
     </ul>
@@ -292,14 +294,14 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A STEP</code> eingestellt.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>ANZEIGE -&gt; ANTIS.STEP</code> eingestellt.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Sanfte Startzone. 0 = aus / altes Verhalten. Oberhalb von 0 laeuft der erste Triggerweg von 0 bis SENSI hoch, bevor die normale CURVE uebernimmt.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-Frequenz des Motors.</td></tr>
         <tr><td><code>BREMSE+ / Alt.Brems</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
         <tr><td><code>BREMSE+ / Rel.Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, Bestzeit, Verlauf.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, beste Runde und scrollbare Historie.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
@@ -410,13 +412,21 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>SLEEP</code>: Auto-Sleep + manueller Sleep (Wake ueber Encoder-Knopf).</li>
       <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: Startverzoegerung 0-990 ms.</li>
-      <li><code>VIN CAL</code>: echte Bahnspannung mit Multimeter messen, diesen Wert am Controller einstellen und zur ADC-Kalibrierung bestaetigen. Nur benutzen, wenn die VIN-Anzeige merklich danebenliegt.</li>
+      <li><code>VIN CAL.</code>: echte Bahnspannung mit Multimeter messen, diesen Wert am Controller einstellen und zur ADC-Kalibrierung bestaetigen. Nur benutzen, wenn die VIN-Anzeige merklich danebenliegt.</li>
     </ul>
     <h3>SETTINGS-Hauptebene</h3>
     <ul>
-      <li><code>STATS</code>: STATS-Eintrag im Hauptmenue ein- oder ausblenden.</li>
-      <li><code>A STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
+      <li><code>HARDWARE</code>: Encoder-Richtung, externe Pot-Overrides, Trigger-Sensor-Info/Override und Selbsttest.</li>
+      <li><code>STATS</code>: zeigt oder versteckt den STATS-Eintrag im Hauptmenue. Standard AUS.</li>
+      <li><code>WIFI</code>: Hintergrund-WiFi, Infoseite, QR-Code und WiFi-Auto-Aus.</li>
+      <li><code>LOGGING</code>: lokale Telemetrie-Aufzeichnung mit Start/Stopp und eigenem Auto-Aus (Standard 30 min).</li>
+    </ul>
+    <h3>HARDWARE-Untermenue</h3>
+    <ul>
       <li><code>ENC INV</code>: Encoder-Richtung global umkehren, falls sich das Menue verkehrt anfuehlt.</li>
+      <li><code>EXT POT</code>: <code>POT 1</code> und <code>POT 2</code> als Live-Override fuer <code>AUS</code>, <code>BREMSE</code> oder <code>SENSI</code> zuweisen.</li>
+      <li><code>TRIGGER</code>: zeigt Sensorfamilie und aktiven Typ. In <code>TLE493D</code>-Builds laesst sich <code>TYPE</code> auch zwischen <code>AUTO</code>, <code>W2B6</code>, <code>W2B6_A0</code> und <code>P3B6</code> umschalten.</li>
+      <li><code>TEST</code>: startet den 9-Schritt-Selbsttest fuer OLED, Taster, Trigger und Ausgaenge.</li>
     </ul>
     <h3>Geschaetzter Stromverbrauch (Controller-Elektronik)</h3>
     <table>
@@ -461,7 +471,15 @@ details.doc-fold>:not(summary){margin-top:8px}
   </section>
 
   <section>
-    <h2>8. WiFi/USB Backup, Restore und OTA</h2>
+    <h2>8. Logging, WiFi/USB Backup, Restore und OTA</h2>
+    <h3>Logging</h3>
+    <ol>
+      <li><code>SETTINGS -> LOGGING</code> oeffnen.</li>
+      <li><code>START NOW</code>/<code>STOP NOW</code>: startet oder stoppt lokale Telemetrie-Aufzeichnung sofort.</li>
+      <li><code>AUTO OFF</code>: Timeout fuer Logging setzen (1-120 min, Standard 30 min).</li>
+      <li>Logging selbst braucht kein WiFi. Du kannst WiFi aus lassen und spaeter USB/WebSerial nutzen, oder WiFi separat fuer Live-Webansicht starten.</li>
+      <li>Wenn WiFi beim Start des Loggings bereits aktiv ist, bleibt WiFi waehrend des Loggings an.</li>
+    </ol>
     <h3>WiFi</h3>
     <ol>
       <li><code>SETTINGS -> WIFI</code> oeffnen, um ins WiFi-Untermenue zu gehen.</li>
@@ -535,13 +553,14 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
-|  |  |- VIN CAL
+|  |  |- VIN CAL.
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2
@@ -553,14 +572,29 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- BOOT (ON/OFF)
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
-|  |- STATS (ON/OFF)
-|  |- A STEP (1-50 ms, default 5)
-|  |- ENC INV (ON/OFF)
+|  |- HARDWARE
+|  |  |- ENC INV (ON/OFF)
+|  |  |- EXT POT
+|  |  |  |- POT 1 (AUS/BREMSE/SENSI)
+|  |  |  |- POT 2 (AUS/BREMSE/SENSI)
+|  |  |  `- BACK
+|  |  |- TRIGGER
+|  |  |  |- FAMILIE
+|  |  |  |- AKTIV
+|  |  |  |- TYPE (AUTO/W2B6/W2B6_A0/P3B6) [nur TLE493D]
+|  |  |  `- BACK
+|  |  |- TEST (Self-Test, 9 steps)
+|  |  `- BACK
+|  |- STATS (AUS/EIN, Standard AUS)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
 |  |  |- QR CODE
 |  |  |- AUTO OFF (1-120 min, default 5)
+|  |  `- BACK
+|  |- LOGGING
+|  |  |- START/STOP NOW
+|  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
 |  |- USB INFO
 |  |- RESET
@@ -569,10 +603,9 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- CALIBRATION
 |  |  |- EVERYTHING
 |  |  `- BACK
-|  |- TEST (Self-Test, 9 steps)
 |  |- ABOUT
 |  `- BACK
-|- STATS
+|- STATS [wenn aktiviert]
 `- CAR
    |- SELECT
    |- RENAME

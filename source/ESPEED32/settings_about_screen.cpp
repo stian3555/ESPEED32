@@ -10,6 +10,7 @@ extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern void showScreensaver();
 
@@ -138,29 +139,19 @@ void showAboutScreen() {
   bool aboutBtnHeld = false;
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    if (screensaverActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        drawAbout();
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      drawAbout();
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();

@@ -5,11 +5,44 @@
 
 extern TaskHandle_t Task2;
 extern StoredVar_type g_storedVar;
+extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern uint32_t g_lastEncoderInteraction;
 
 extern void stopTimedWiFiPortal();
+
+/**
+ * @brief Count live controller input as user activity for idle timers.
+ * @details Any trigger movement above deadband, brake-button press, or encoder move
+ *          resets the inactivity timer. If screensaver is already active, the same
+ *          inputs wake it and let the caller redraw the current menu.
+ */
+bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos) {
+  if (lastInteraction == NULL || lastEncoderPos == NULL) return false;
+
+  uint16_t currentEncoderPos = (uint16_t)readUiEncoder();
+  bool encoderMoved = (currentEncoderPos != *lastEncoderPos);
+  bool buttonPressed = (digitalRead(BUTT_PIN) == BUTTON_PRESSED);
+  bool triggerActive = (g_escVar.trigger_norm > 0);
+
+  *lastEncoderPos = currentEncoderPos;
+
+  if (!encoderMoved && !buttonPressed && !triggerActive) {
+    return false;
+  }
+
+  uint32_t now = millis();
+  *lastInteraction = now;
+  g_lastEncoderInteraction = now;
+
+  if (screensaverActive != NULL && *screensaverActive) {
+    *screensaverActive = false;
+    return true;
+  }
+
+  return false;
+}
 
 bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive) {
   if (lastInteraction == NULL) return false;

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32 Brukermanual (NO)</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <style>
 :root{
   --bg:#f3f1eb;
@@ -215,6 +216,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
       <li><code>DISPLAY -&gt; CASE</code> velger om etiketter vises i <code>UPPER</code> eller <code>Pascal</code>.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> velger mellom <code>LARGE</code> og <code>small</code> for liste- og menyvisning.</li>
+      <li><code>SKJERM -&gt; ANTIS.STEP</code> setter globalt encoder-steg for <code>ANTIS</code>-verdien.</li>
     </ul>
     <h3>Race view (LIST vs GRID)</h3>
     <ul>
@@ -231,7 +233,7 @@ details.doc-fold>:not(summary){margin-top:8px}
     </figure>
     <h3>Statuslinje og ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt.</li>
+      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt. <code>AMPE</code> viser mA under 1000 og A over.</li>
       <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
       <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
     </ul>
@@ -293,14 +295,14 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SKJERM -&gt; ANTIS.STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Myk startsone. 0 = av / gammel oppføring. Over 0 rampes første del av triggeren fra 0 opp til SENSI før vanlig CURVE tar over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
         <tr><td><code>BREMS+ / Alt.brems</code></td><td>0-100 %</td><td>50</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
         <tr><td><code>BREMS+ / Rel.brems</code></td><td>OFF/QUICK(sone+nivå)/DRAG(nivå)</td><td>OFF</td><td>Release-brems når trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid, scroll av siste runder.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid og scrollbar historikk.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
@@ -411,13 +413,21 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>SLEEP</code>: auto-sleep i minutter + manuell sleep nå (wake med encoder-knapp).</li>
       <li><code>DEEP SLEEP</code>: auto-deep-sleep (0 eller 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: velkomstforsinkelse 0-990 ms i 10 ms steg.</li>
-      <li><code>VIN CAL</code>: mål faktisk banespenning med multimeter, still inn den verdien på kontrolleren og trykk for å kalibrere ADC-skalaen. Bruk bare hvis VIN-visningen er merkbart feil.</li>
+      <li><code>VIN CAL.</code>: mål faktisk banespenning med multimeter, still inn den verdien på kontrolleren og trykk for å kalibrere ADC-skalaen. Bruk bare hvis VIN-visningen er merkbart feil.</li>
     </ul>
     <h3>SETTINGS-rotnivå</h3>
     <ul>
-      <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen.</li>
-      <li><code>A STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
+      <li><code>HARDWARE</code>: encoder-retning, eksterne pot-overstyringer, trigger-sensor info/override og selvtest.</li>
+      <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen. Default AV.</li>
+      <li><code>WIFI</code>: bakgrunns-WiFi, infoside, QR-kode og auto-av for WiFi.</li>
+      <li><code>LOGGING</code>: lokal telemetrilogging med start/stopp og egen auto-av (default 30 min).</li>
+    </ul>
+    <h3>HARDWARE-undermeny</h3>
+    <ul>
       <li><code>ENC INV</code>: snur encoder-retningen globalt hvis menyen føles bakvendt.</li>
+      <li><code>EKST POT</code>: tildel <code>POT 1</code> og <code>POT 2</code> til <code>AV</code>, <code>BREMS</code> eller <code>SENSI</code> som live-overstyringer.</li>
+      <li><code>TRIGGER</code>: viser trigger-sensorfamilie og aktiv type. På <code>TLE493D</code>-builds kan du også overstyre <code>TYPE</code> mellom <code>AUTO</code>, <code>W2B6</code>, <code>W2B6_A0</code> og <code>P3B6</code>.</li>
+      <li><code>TEST</code>: kjører 9-trinns selvtest for OLED, knapper, trigger og utganger.</li>
     </ul>
     <h3>Anslått strømforbruk (kontroller-elektronikk)</h3>
     <table>
@@ -464,7 +474,15 @@ details.doc-fold>:not(summary){margin-top:8px}
   </section>
 
   <section>
-    <h2>8. WiFi/USB backup, restore og OTA</h2>
+    <h2>8. Logging, WiFi/USB backup, restore og OTA</h2>
+    <h3>Logging</h3>
+    <ol>
+      <li>Gå til <code>SETTINGS -> LOGGING</code>.</li>
+      <li><code>START NA</code>/<code>STOPP NA</code>: starter eller stopper lokal telemetrilogging med en gang.</li>
+      <li><code>AUTO AV</code>: velg logging-timeout (1-120 min, default 30 min).</li>
+      <li>Selve loggingen krever ikke WiFi. Du kan la WiFi være av og bruke USB/WebSerial senere, eller starte WiFi separat for live web-visning.</li>
+      <li>Hvis WiFi allerede er aktivt når logging starter, holdes WiFi oppe mens loggingen går.</li>
+    </ol>
     <h3>WiFi</h3>
     <ol>
       <li>Gå til <code>SETTINGS -> WIFI</code> for undermenyen.</li>
@@ -538,13 +556,14 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  |- INTERVAL (0 eller 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
-|  |  |- VIN CAL
+|  |  |- VIN CAL.
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2
@@ -556,14 +575,29 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- BOOT (ON/OFF)
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
-|  |- STATS (ON/OFF)
-|  |- A STEP (1-50 ms, default 5)
-|  |- ENC INV (ON/OFF)
+|  |- HARDWARE
+|  |  |- ENC INV (ON/OFF)
+|  |  |- EKST POT
+|  |  |  |- POT 1 (AV/BREMS/SENSI)
+|  |  |  |- POT 2 (AV/BREMS/SENSI)
+|  |  |  `- TILBAKE
+|  |  |- TRIGGER
+|  |  |  |- FAMILIE
+|  |  |  |- AKTIV
+|  |  |  |- TYPE (AUTO/W2B6/W2B6_A0/P3B6) [kun TLE493D]
+|  |  |  `- TILBAKE
+|  |  |- TEST (Self-Test, 9 steg)
+|  |  `- TILBAKE
+|  |- STATS (AV/PÅ, default AV)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO SIDE
 |  |  |- VIS QR
 |  |  |- AUTO AV (1-120 min, default 5)
+|  |  `- BACK
+|  |- LOGGING
+|  |  |- START/STOP NA
+|  |  |- AUTO AV (1-120 min, default 30)
 |  |  `- BACK
 |  |- USB INFO
 |  |- RESET
@@ -572,10 +606,9 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- CALIBRATION
 |  |  |- EVERYTHING
 |  |  `- BACK
-|  |- TEST (Self-Test, 9 steg)
 |  |- ABOUT
 |  `- BACK
-|- STATS
+|- STATS [hvis aktivert]
 `- CAR
    |- SELECT
    |- RENAME

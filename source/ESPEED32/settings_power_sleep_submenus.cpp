@@ -1,6 +1,7 @@
 #include "settings_power_sleep_submenus.h"
 #include <Arduino.h>
 #include "slot_ESC.h"
+#include "ui_text_access.h"
 
 extern StoredVar_type g_storedVar;
 extern ESC_type g_escVar;
@@ -8,6 +9,7 @@ extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -16,6 +18,34 @@ extern void showScreensaver();
 extern void showPowerSave();
 extern void showDeepSleep();
 extern void saveEEPROM(StoredVar_type toSave);
+
+static void formatConfiguredMenuLabel(const char* source, char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+  buffer[0] = '\0';
+  if (source == nullptr) return;
+
+  if (g_storedVar.textCase != TEXT_CASE_PASCAL) {
+    snprintf(buffer, bufferSize, "%s", source);
+    return;
+  }
+
+  size_t out = 0;
+  bool newWord = true;
+  for (size_t i = 0; source[i] != '\0' && out + 1 < bufferSize; i++) {
+    char c = source[i];
+    if (c >= 'A' && c <= 'Z') {
+      buffer[out++] = newWord ? c : (char)(c - 'A' + 'a');
+      newWord = false;
+    } else if (c >= 'a' && c <= 'z') {
+      buffer[out++] = newWord ? (char)(c - 'a' + 'A') : c;
+      newWord = false;
+    } else {
+      buffer[out++] = c;
+      newWord = (c == ' ' || c == '/' || c == '=' || c == '-');
+    }
+  }
+  buffer[out] = '\0';
+}
 
 /**
  * Sleep settings submenu: NOW (manual sleep) and INTERVAL (auto-sleep timeout).
@@ -26,9 +56,6 @@ void showSleepSettings() {
   /* Labels [NOR, ENG, CS, ACD, ESP, DEU, ITA] */
   const char* lblInterval[7] = {"INTERV.", "INTERVAL", "INTERVAL", "INTERVAL", "INTERVALO", "INTERVAL", "INTERVAL"};
   const char* lblNow[7]      = {"SOV NA",  "SLEEP NOW", "SLEEP NOW", "SLEEP NOW", "REPOSO YA", "JETZT RUH", "DORMI ORA"};
-  const char* lblBack[7]     = {"TILBAKE", "BACK",      "BACK",      "BACK",      "ATRAS",     "ZURUCK",   "INDIETRO"};
-  const char* lblOff[7]      = {"AV",      "OFF",       "OFF",       "OFF",       "OFF",       "AUS",      "OFF"};
-
   const uint8_t ITEM_NOW = 0;
   const uint8_t ITEM_INTERVAL = 1;
   const uint8_t ITEM_BACK = 2;
@@ -48,30 +75,20 @@ void showSleepSettings() {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    if (screensaverActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();
@@ -159,21 +176,24 @@ void showSleepSettings() {
 
       /* Row 0: NOW */
       bool s0 = (!editing && sel == ITEM_NOW);
-      obdWriteString(&g_obd, 0, 0, 0, (char*)lblNow[lang], menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      char rowLabel[16];
+      formatConfiguredMenuLabel(lblNow[lang], rowLabel, sizeof(rowLabel));
+      obdWriteString(&g_obd, 0, 0, 0, rowLabel, menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Row 1: INTERVAL + value */
       bool s1 = (!editing && sel == ITEM_INTERVAL);
-      obdWriteString(&g_obd, 0, 0, lineH, (char*)lblInterval[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      formatConfiguredMenuLabel(lblInterval[lang], rowLabel, sizeof(rowLabel));
+      obdWriteString(&g_obd, 0, 0, lineH, rowLabel, menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
       char valStr[8];
       uint16_t disp = editing ? tmpTimeout : g_storedVar.powerSaveTimeout;
-      if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", lblOff[lang]);
+      if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", getOnOffLabel(lang, 0));
       else           snprintf(valStr, sizeof(valStr), "%2dmin", disp);
       uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * charWidth);
       obdWriteString(&g_obd, 0, vx, lineH, valStr, menuFont, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Row 2: BACK */
       bool s2 = (!editing && sel == ITEM_BACK);
-      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblBack[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)getBackLabel(lang), menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;
     }
@@ -194,9 +214,6 @@ void showDeepSleepSettings() {
 
   const char* lblInterval[7] = {"INTERV.",   "INTERVAL",  "INTERVAL",  "INTERVAL",  "INTERVALO", "INTERVAL", "INTERVAL"};
   const char* lblNow[7]      = {"SLUKK NA",  "SLEEP NOW", "SLEEP NOW", "SLEEP NOW", "APAGA YA",  "AUS JETZT", "SPEGNI ORA"};
-  const char* lblBack[7]     = {"TILBAKE",   "BACK",      "BACK",      "BACK",      "ATRAS",     "ZURUCK",   "INDIETRO"};
-  const char* lblOff[7]      = {"AV",        "OFF",       "OFF",       "OFF",       "OFF",       "AUS",      "OFF"};
-
   const uint8_t ITEM_NOW = 0;
   const uint8_t ITEM_INTERVAL = 1;
   const uint8_t ITEM_BACK = 2;
@@ -213,30 +230,20 @@ void showDeepSleepSettings() {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    if (screensaverActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();
@@ -316,21 +323,24 @@ void showDeepSleepSettings() {
 
       /* Row 0: NOW */
       bool s0 = (!editing && sel == ITEM_NOW);
-      obdWriteString(&g_obd, 0, 0, 0, (char*)lblNow[lang], FONT_8x8, s0 ? OBD_WHITE : OBD_BLACK, 1);
+      char rowLabel[16];
+      formatConfiguredMenuLabel(lblNow[lang], rowLabel, sizeof(rowLabel));
+      obdWriteString(&g_obd, 0, 0, 0, rowLabel, FONT_8x8, s0 ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Row 1: INTERVAL + value */
       bool s1 = (!editing && sel == ITEM_INTERVAL);
-      obdWriteString(&g_obd, 0, 0, HEIGHT8x8, (char*)lblInterval[lang], FONT_8x8, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      formatConfiguredMenuLabel(lblInterval[lang], rowLabel, sizeof(rowLabel));
+      obdWriteString(&g_obd, 0, 0, HEIGHT8x8, rowLabel, FONT_8x8, s1 ? OBD_WHITE : OBD_BLACK, 1);
       char valStr[8];
       uint16_t disp = editing ? tmpTimeout : g_storedVar.deepSleepTimeout;
-      if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", lblOff[lang]);
+      if (disp == 0) snprintf(valStr, sizeof(valStr), "  %s", getOnOffLabel(lang, 0));
       else           snprintf(valStr, sizeof(valStr), "%2dmin", disp);
       uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(valStr) * WIDTH8x8);
       obdWriteString(&g_obd, 0, vx, HEIGHT8x8, valStr, FONT_8x8, (s1 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
       /* Row 2: BACK */
       bool s2 = (!editing && sel == ITEM_BACK);
-      obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)lblBack[lang], FONT_8x8, s2 ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)getBackLabel(lang), FONT_8x8, s2 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;
     }

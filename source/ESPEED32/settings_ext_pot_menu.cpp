@@ -12,6 +12,7 @@ extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern char msgStr[50];
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -29,6 +30,54 @@ static const char* getExtPotTargetLabel(uint8_t lang, uint16_t target) {
   }
 }
 
+static const char* EXT_POT_ITEM_LABELS[7][2] = {
+  {"POT.METER 1", "POT.METER 2"},
+  {"POT.METER 1", "POT.METER 2"},
+  {"POT.METER 1", "POT.METER 2"},
+  {"POT.METER 1", "POT.METER 2"},
+  {"POT.METER 1", "POT.METER 2"},
+  {"POT.METER 1", "POT.METER 2"},
+  {"POT.METER 1", "POT.METER 2"}
+};
+
+static const char* EXT_POT_ITEM_LABELS_PASCAL[7][2] = {
+  {"Pot.meter 1", "Pot.meter 2"},
+  {"Pot.meter 1", "Pot.meter 2"},
+  {"Pot.meter 1", "Pot.meter 2"},
+  {"Pot.meter 1", "Pot.meter 2"},
+  {"Pot.meter 1", "Pot.meter 2"},
+  {"Pot.meter 1", "Pot.meter 2"},
+  {"Pot.meter 1", "Pot.meter 2"}
+};
+
+static const char* getExtPotItemLabel(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL)
+    ? EXT_POT_ITEM_LABELS_PASCAL[lang][item]
+    : EXT_POT_ITEM_LABELS[lang][item];
+}
+
+static void clearValueField(uint8_t x, uint8_t y, uint8_t widthPx, uint8_t heightPx) {
+  if (widthPx == 0 || heightPx == 0) return;
+
+  uint8_t xEnd = x + widthPx - 1;
+  for (uint8_t row = 0; row < heightPx; row++) {
+    obdDrawLine(&g_obd, x, y + row, xEnd, y + row, OBD_WHITE, 1);
+  }
+}
+
+static void drawRightAlignedValue(uint8_t y, const char* value, bool selected, uint8_t fieldChars) {
+  if (value == nullptr || value[0] == '\0') return;
+
+  uint8_t fieldWidthPx = fieldChars * WIDTH8x8;
+  uint8_t fieldX = OLED_WIDTH - fieldWidthPx;
+  clearValueField(fieldX, y, fieldWidthPx, HEIGHT8x8);
+
+  uint8_t valueWidthPx = (uint8_t)(strlen(value) * WIDTH8x8);
+  uint8_t valueX = OLED_WIDTH - valueWidthPx;
+  obdWriteString(&g_obd, 0, valueX, y, (char*)value,
+                 FONT_8x8, selected ? OBD_WHITE : OBD_BLACK, 1);
+}
+
 void showExtPotSettings() {
   const uint8_t NUM_ITEMS = 3;  /* POT 1, POT 2, BACK */
   const uint8_t ITEM_POT1 = 0;
@@ -36,16 +85,6 @@ void showExtPotSettings() {
   const uint8_t ITEM_BACK = 2;
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
-
-  const char* itemLabels[7][NUM_ITEMS] = {
-    {"POT 1", "POT 2", "TILBAKE"},
-    {"POT 1", "POT 2", "BACK"},
-    {"POT 1", "POT 2", "BACK"},
-    {"POT 1", "POT 2", "BACK"},
-    {"POT 1", "POT 2", "ATRAS"},
-    {"POT 1", "POT 2", "ZURUCK"},
-    {"POT 1", "POT 2", "INDIETRO"}
-  };
 
   obdFill(&g_obd, OBD_WHITE, 1);
 
@@ -58,30 +97,20 @@ void showExtPotSettings() {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    if (screensaverActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();
@@ -146,19 +175,13 @@ void showExtPotSettings() {
       uint8_t lang = g_storedVar.language;
       for (uint8_t i = 0; i < NUM_ITEMS; i++) {
         bool isSelected = (sel == i);
-        obdWriteString(&g_obd, 0, 0, i * lineH, (char*)itemLabels[lang][i],
+        const char* label = (i == ITEM_BACK) ? getBackLabel(lang) : getExtPotItemLabel(lang, i);
+        obdWriteString(&g_obd, 0, 0, i * lineH, (char*)label,
                        menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
 
         if (i == ITEM_POT1 || i == ITEM_POT2) {
-          snprintf(msgStr, sizeof(msgStr), "%5s", getExtPotTargetLabel(lang, getExtPotTarget(i)));
-        } else {
-          msgStr[0] = '\0';
-        }
-
-        if (msgStr[0] != '\0') {
-          uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
-          obdWriteString(&g_obd, 0, vx, i * lineH, msgStr,
-                         menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          drawRightAlignedValue(i * lineH, getExtPotTargetLabel(lang, getExtPotTarget(i)),
+                                isSelected, 5);
         }
       }
     }

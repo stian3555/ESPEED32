@@ -16,6 +16,7 @@ extern uint16_t g_adcVoltageRange_mV;
 extern uint16_t g_carSel;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -33,16 +34,6 @@ extern void stopTimedTelemetryLogging();
 extern uint16_t getTelemetryTimedMinutes();
 extern void setTelemetryTimedMinutes(uint16_t minutes);
 
-static void showWiFiLoggingStartFailed() {
-  obdFill(&g_obd, OBD_WHITE, 1);
-  const char* title = "WiFi failed";
-  obdWriteString(&g_obd, 0, centerX8x8(title), 8, (char*)title, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 8, 28, (char*)"Could not start", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 8, 36, (char*)"WiFi logging", FONT_6x8, OBD_BLACK, 1);
-  delay(1100);
-  obdFill(&g_obd, OBD_WHITE, 1);
-}
-
 static void showTelemetryLoggingStartFailed() {
   obdFill(&g_obd, OBD_WHITE, 1);
   const char* title = "Log failed";
@@ -53,34 +44,15 @@ static void showTelemetryLoggingStartFailed() {
   obdFill(&g_obd, OBD_WHITE, 1);
 }
 
-static bool promptEnableWiFiForLogging() {
+static void showLoggingTransportHint() {
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* title = "WiFi req.";
-  obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 16, (char*)"Logging needs", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 24, (char*)"WiFi active.", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 40, (char*)"Click=start", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 48, (char*)"Brake=back", FONT_6x8, OBD_BLACK, 1);
-
-  while (true) {
-    serviceTimedWiFiPortal();
-
-    if (g_rotaryEncoder.isEncoderButtonClicked()) {
-      return true;
-    }
-
-    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-      while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
-      return false;
-    }
-
-    if (checkRaceModeEscape()) {
-      requestEscapeToMain();
-      return false;
-    }
-
-    vTaskDelay(10);
-  }
+  const char* title = "Logging ON";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 4, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 20, (char*)"USB works now.", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 30, (char*)"Start WiFi later", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 40, (char*)"for live web view.", FONT_6x8, OBD_BLACK, 1);
+  delay(1300);
+  obdFill(&g_obd, OBD_WHITE, 1);
 }
 
 static bool startTelemetryLoggingNow() {
@@ -118,24 +90,13 @@ void showSoundSettings() {
 
   uint32_t lastInteraction = millis();
   bool ssActive = false;
-  uint16_t ssEncoderPos = 0;
+  uint16_t ssEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    /* Screensaver wake-up */
-    if (ssActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != ssEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        ssActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &ssActive, &ssEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
@@ -143,7 +104,7 @@ void showSoundSettings() {
     /* Screensaver timeout */
     if (!wakeUp && !ssActive && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!ssActive) {
           ssActive = true;
           ssEncoderPos = readUiEncoder();
@@ -156,6 +117,15 @@ void showSoundSettings() {
         delay(10);
         continue;
       }
+    }
+
+    if (!wakeUp && ssActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
     }
 
     /* Encoder movement */
@@ -232,11 +202,21 @@ void showSoundSettings() {
 void showWiFiSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblOpen[7]    = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
-  const char* lblQr[7]      = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
-  const char* lblTimer[7]   = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
-  const char* lblStartBg[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
-  const char* lblStopBg[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
+  const char* lblOpenUpper[7]  = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
+  const char* lblOpenPascal[7] = {"Info side", "Info page", "Info page", "Info page", "Pag info", "Infosite", "Pag info"};
+  const char* lblQrUpper[7]    = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
+  const char* lblQrPascal[7]   = {"Vis QR",    "Show QR",   "Show QR",   "Show QR",   "Ver QR",   "QR code",  "Mostra QR"};
+  const char* lblTimerUpper[7] = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblTimerPascal[7]= {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off"};
+  const char* lblStartUpper[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
+  const char* lblStartPascal[7]= {"Start WiFi", "Start WiFi", "Start WiFi", "Start WiFi", "Inic WiFi", "Start WiFi", "Avvia WiFi"};
+  const char* lblStopUpper[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
+  const char* lblStopPascal[7] = {"Stopp WiFi", "Stop WiFi",  "Stop WiFi",  "Stop WiFi",  "Stop WiFi", "Stop WiFi",  "Stop WiFi"};
+  const char* const* lblOpen   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblOpenPascal : lblOpenUpper;
+  const char* const* lblQr     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblQrPascal : lblQrUpper;
+  const char* const* lblTimer  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTimerPascal : lblTimerUpper;
+  const char* const* lblStartBg= (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStartPascal : lblStartUpper;
+  const char* const* lblStopBg = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStopPascal : lblStopUpper;
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_INFO = 1;
@@ -258,32 +238,22 @@ void showWiFiSettings() {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
     serviceTimedWiFiPortal();
 
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    if (screensaverActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();
@@ -411,9 +381,15 @@ void showWiFiSettings() {
 void showLoggingSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblTimer[7]     = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
-  const char* lblStartNow[7]  = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA"};
-  const char* lblStopNow[7]   = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA"};
+  const char* lblTimerUpper[7]    = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblTimerPascal[7]   = {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off"};
+  const char* lblStartUpper[7]    = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA"};
+  const char* lblStartPascal[7]   = {"Start nå",  "Start now", "Start now", "Start now", "Inic ahor", "Start now", "Avvia ora"};
+  const char* lblStopUpper[7]     = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA"};
+  const char* lblStopPascal[7]    = {"Stopp nå",  "Stop now",  "Stop now",  "Stop now",  "Para ahor", "Stop now",  "Stop ora"};
+  const char* const* lblTimer     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTimerPascal : lblTimerUpper;
+  const char* const* lblStartNow  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStartPascal : lblStartUpper;
+  const char* const* lblStopNow   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStopPascal : lblStopUpper;
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_TIMER = 1;
@@ -433,32 +409,22 @@ void showLoggingSettings() {
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
-  uint16_t screensaverEncoderPos = 0;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
 
   while (true) {
     serviceTimedWiFiPortal();
 
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-
-    if (screensaverActive) {
-      uint16_t curPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          curPos != screensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        needRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
     }
 
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncoderPos = readUiEncoder();
@@ -506,27 +472,11 @@ void showLoggingSettings() {
           stopTimedTelemetryLogging();
         } else {
           uint16_t loggingMinutes = constrain(getTelemetryTimedMinutes(), 1, 120);
-          bool startedWiFiForLogging = false;
-          if (!isWiFiPortalActive()) {
-            if (!promptEnableWiFiForLogging()) {
-              needRedraw = true;
-              delay(120);
-              continue;
-            }
-
-            startTimedWiFiPortal(loggingMinutes);
-            if (!isWiFiPortalActive()) {
-              showWiFiLoggingStartFailed();
-              needRedraw = true;
-              delay(120);
-              continue;
-            }
-            startedWiFiForLogging = true;
-          }
+          bool wifiWasActive = isWiFiPortalActive();
           if (startTelemetryLoggingNow()) {
             startTimedTelemetryLogging(loggingMinutes);
-            if (startedWiFiForLogging) {
-              showWiFiPortalScreen();
+            if (!wifiWasActive) {
+              showLoggingTransportHint();
               lastInteraction = millis();
               screensaverActive = false;
             }

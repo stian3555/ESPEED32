@@ -215,6 +215,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>ACD</code>: estilo ACD donde hay equivalencia directa (<code>SENSI</code> y <code>CHOKE</code> para LIMIT).</li>
       <li><code>DISPLAY -&gt; CASE</code> decide si las etiquetas se muestran en <code>UPPER</code> o <code>Pascal</code>.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> cambia la vista de listas y menus entre <code>LARGE</code> y <code>small</code>.</li>
+      <li><code>PANTALLA -&gt; ANTIS.STEP</code> ajusta el paso global del encoder para el valor <code>ANTIS</code>.</li>
     </ul>
     <h3>Vista de carrera (LIST vs GRID)</h3>
     <ul>
@@ -306,7 +307,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Frenado con trigger suelto.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (y &lt;= LIMIT)</td><td>20</td><td>Potencia minima al primer movimiento de trigger.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave. El paso del encoder se ajusta globalmente en <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave. El paso del encoder se ajusta globalmente en <code>PANTALLA -&gt; ANTIS.STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona de salida suave. 0 = desactivado / comportamiento antiguo. Por encima de 0, la primera parte del trigger sube de 0 a SENSI antes de que siga la CURVE normal.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>Frecuencia PWM del motor.</td></tr>
@@ -403,7 +404,6 @@ details.doc-fold>:not(summary){margin-top:8px}
     <h3>Elementos raiz de SETTINGS</h3>
     <ul>
       <li><code>HARDWARE</code>: direccion del encoder, overrides de pot externos, info/override del sensor trigger y self-test.</li>
-      <li><code>A STEP</code>: paso global del encoder para ANTIS, 1-50 ms (default 5 ms). ANTIS sigue siendo un parametro por perfil.</li>
       <li><code>WIFI</code>: WiFi en segundo plano, pagina de info, codigo QR y auto-off de WiFi.</li>
       <li><code>LOGGING</code>: registro local de telemetria con start/stop y auto-off propio (default 30 min).</li>
     </ul>
@@ -546,6 +546,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2
@@ -570,7 +571,6 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- ATRAS
 |  |  |- TEST (Self-Test, 9 steps)
 |  |  `- ATRAS
-|  |- A STEP (1-50 ms, default 5)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE

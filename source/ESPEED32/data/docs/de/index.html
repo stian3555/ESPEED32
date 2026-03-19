@@ -215,6 +215,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>ACD</code>: ACD-Stil, wo es direkte Entsprechungen gibt (<code>SENSI</code> und <code>CHOKE</code> fuer LIMIT).</li>
       <li><code>DISPLAY -&gt; CASE</code> waehlt, ob Labels in <code>UPPER</code> oder <code>Pascal</code> angezeigt werden.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> stellt die Listen- und Menueansicht auf <code>LARGE</code> oder <code>small</code>.</li>
+      <li><code>ANZEIGE -&gt; ANTIS.STEP</code> setzt den globalen Encoder-Schritt fuer den <code>ANTIS</code>-Wert.</li>
     </ul>
     <h3>Race View (LIST vs GRID)</h3>
     <ul>
@@ -293,7 +294,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>SETTINGS -&gt; A STEP</code> eingestellt.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>ANZEIGE -&gt; ANTIS.STEP</code> eingestellt.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Sanfte Startzone. 0 = aus / altes Verhalten. Oberhalb von 0 laeuft der erste Triggerweg von 0 bis SENSI hoch, bevor die normale CURVE uebernimmt.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-Frequenz des Motors.</td></tr>
@@ -415,7 +416,6 @@ details.doc-fold>:not(summary){margin-top:8px}
     <h3>SETTINGS-Hauptebene</h3>
     <ul>
       <li><code>HARDWARE</code>: Encoder-Richtung, externe Pot-Overrides, Trigger-Sensor-Info/Override und Selbsttest.</li>
-      <li><code>A STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
       <li><code>WIFI</code>: Hintergrund-WiFi, Infoseite, QR-Code und WiFi-Auto-Aus.</li>
       <li><code>LOGGING</code>: lokale Telemetrie-Aufzeichnung mit Start/Stopp und eigenem Auto-Aus (Standard 30 min).</li>
     </ul>
@@ -558,6 +558,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2
@@ -582,7 +583,6 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- BACK
 |  |  |- TEST (Self-Test, 9 steps)
 |  |  `- BACK
-|  |- A STEP (1-50 ms, default 5)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE

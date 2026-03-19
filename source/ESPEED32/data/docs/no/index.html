@@ -216,6 +216,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
       <li><code>DISPLAY -&gt; CASE</code> velger om etiketter vises i <code>UPPER</code> eller <code>Pascal</code>.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> velger mellom <code>LARGE</code> og <code>small</code> for liste- og menyvisning.</li>
+      <li><code>SKJERM -&gt; ANTIS.STEP</code> setter globalt encoder-steg for <code>ANTIS</code>-verdien.</li>
     </ul>
     <h3>Race view (LIST vs GRID)</h3>
     <ul>
@@ -294,7 +295,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SETTINGS -&gt; A STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SKJERM -&gt; ANTIS.STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Myk startsone. 0 = av / gammel oppføring. Over 0 rampes første del av triggeren fra 0 opp til SENSI før vanlig CURVE tar over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
@@ -416,7 +417,6 @@ details.doc-fold>:not(summary){margin-top:8px}
     <h3>SETTINGS-rotnivå</h3>
     <ul>
       <li><code>HARDWARE</code>: encoder-retning, eksterne pot-overstyringer, trigger-sensor info/override og selvtest.</li>
-      <li><code>A STEP</code>: globalt encoder-steg for ANTIS, 1-50 ms (default 5 ms). ANTIS-verdien er fortsatt per bilprofil.</li>
       <li><code>WIFI</code>: bakgrunns-WiFi, infoside, QR-kode og auto-av for WiFi.</li>
       <li><code>LOGGING</code>: lokal telemetrilogging med start/stopp og egen auto-av (default 30 min).</li>
     </ul>
@@ -561,6 +561,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2
@@ -585,7 +586,6 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- TILBAKE
 |  |  |- TEST (Self-Test, 9 steg)
 |  |  `- TILBAKE
-|  |- A STEP (1-50 ms, default 5)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO SIDE

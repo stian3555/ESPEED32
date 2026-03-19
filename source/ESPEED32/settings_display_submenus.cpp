@@ -294,7 +294,7 @@ void showScreensaverSettings() {
     /* Draw items if changed */
     if (sel != prevSel || inTimeEdit) {
       for (uint8_t idx = 0; idx < SS_ITEMS; idx++) {
-        uint8_t yPx = (idx + 1) * HEIGHT8x8;  /* y=8,16,24,32,40 */
+        uint8_t yPx = idx * HEIGHT8x8;  /* y=0,8,16,24,32 */
         bool isSelected = (sel == idx + 1);
         bool isEditingThis = (inTimeEdit && idx == 3);  /* TIME row */
 

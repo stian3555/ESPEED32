@@ -17,16 +17,16 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 6
-#define SW_MINOR_VERSION 0
+#define SW_MINOR_VERSION 1
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    10    /* Number of items in main menu (incl. FADE, BRAKE+ submenu entry, CAR) */
-#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 10   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
-#define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
+#define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTIS.STEP, STATUS, BACK) */
 #define HARDWARE_ITEMS_COUNT 5    /* Number of items in hardware submenu (ENC INV, EXT POT, TRIGGER, TEST, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 5    /* [min] Default auto power save delay (0=manual only) */
 #define POWER_SAVE_TIMEOUT_MAX     10   /* [min] Maximum auto power save delay */
@@ -116,6 +116,7 @@
 /* Button Press Timing */
 #define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
 #define BUTTON_DEBOUNCE_AFTER_LONG_MS   200  /* [ms] Require release plus short debounce after a long press */
+#define BUTTON_CLICK_MIN_MS           30  /* [ms] Minimum hold time to treat a press/release as a real click */
 #define BUTTON_SHORT_PRESS_DEBOUNCE_MS  200  /* [ms] Minimum time between button presses */
 
 /* Sound Configuration */

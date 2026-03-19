@@ -752,7 +752,7 @@ void Task1code(void *pvParameters) {
             buttonPressStartTime = 0;
 
             if (!buttonLongPressHandled &&
-                pressDuration >= BUTTON_SHORT_PRESS_DEBOUNCE_MS &&
+                pressDuration >= BUTTON_CLICK_MIN_MS &&
                 (lastShortPressTime == 0 || millis() - lastShortPressTime >= BUTTON_SHORT_PRESS_DEBOUNCE_MS)) {
               encoderShortClick = true;
               lastShortPressTime = millis();

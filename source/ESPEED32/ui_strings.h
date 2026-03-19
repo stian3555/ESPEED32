@@ -5,9 +5,9 @@
 
 /* Menu item names: [language][item] */
 extern const char* MENU_NAMES[][10];
-extern const char* SETTINGS_MENU_NAMES[][11];
+extern const char* SETTINGS_MENU_NAMES[][10];
 extern const char* POWER_MENU_NAMES[][6];
-extern const char* DISPLAY_MENU_NAMES[][6];
+extern const char* DISPLAY_MENU_NAMES[][7];
 extern const char* RACE_LABELS[][4];
 extern const char* CAR_MENU_OPTIONS[][5];
 extern const char* VIEW_MODE_LABELS[][3];
@@ -20,9 +20,9 @@ extern const char* FONT_SIZE_LABELS[][2];
 
 /* Pascal-case variants */
 extern const char* MENU_NAMES_PASCAL[][10];
-extern const char* SETTINGS_MENU_NAMES_PASCAL[][11];
+extern const char* SETTINGS_MENU_NAMES_PASCAL[][10];
 extern const char* POWER_MENU_NAMES_PASCAL[][6];
-extern const char* DISPLAY_MENU_NAMES_PASCAL[][6];
+extern const char* DISPLAY_MENU_NAMES_PASCAL[][7];
 extern const char* RACE_LABELS_PASCAL[][4];
 extern const char* CAR_MENU_OPTIONS_PASCAL[][5];
 extern const char* VIEW_MODE_LABELS_PASCAL[][3];

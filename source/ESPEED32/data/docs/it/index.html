@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32 Manuale Utente (IT)</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <style>
 :root{
   --bg:#f3f1eb;
@@ -404,6 +405,8 @@ details.doc-fold>:not(summary){margin-top:8px}
     <ul>
       <li><code>A STEP</code>: passo globale encoder per ANTIS, 1-50 ms (default 5 ms). Il valore ANTIS resta comunque per singolo profilo auto.</li>
       <li><code>ENC INV</code>: inverte globalmente la direzione dell'encoder se il menu gira al contrario.</li>
+      <li><code>WIFI</code>: WiFi in background, pagina info, QR code e auto-off del WiFi.</li>
+      <li><code>LOGGING</code>: logging locale della telemetria con start/stop e auto-off dedicato (default 30 min).</li>
     </ul>
     <h3>Consumo stimato (elettronica controller)</h3>
     <table>
@@ -450,7 +453,15 @@ details.doc-fold>:not(summary){margin-top:8px}
   </section>
 
   <section>
-    <h2>8. WiFi/USB backup, restore e OTA</h2>
+    <h2>8. Logging, WiFi/USB backup, restore e OTA</h2>
+    <h3>Logging</h3>
+    <ol>
+      <li>Apri <code>SETTINGS -> LOGGING</code>.</li>
+      <li><code>START NOW</code>/<code>STOP NOW</code>: avvia o ferma subito il logging locale della telemetria.</li>
+      <li><code>AUTO OFF</code>: imposta il timeout del logging (1-120 min, default 30 min).</li>
+      <li>Il logging non richiede WiFi di per se. Puoi lasciare WiFi spento e usare USB/WebSerial dopo, oppure attivare WiFi separatamente per la vista web live.</li>
+      <li>Se WiFi e gia attivo quando parte il logging, WiFi resta attivo mentre il logging e in corso.</li>
+    </ol>
     <h3>WiFi</h3>
     <ol>
       <li>Apri <code>SETTINGS -> WIFI</code> per entrare nel sottomenu WiFi.</li>
@@ -549,6 +560,10 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- INFO PAGE
 |  |  |- MOSTRA QR
 |  |  |- AUTO OFF (1-120 min, default 5)
+|  |  `- BACK
+|  |- LOGGING
+|  |  |- START/STOP NOW
+|  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
 |  |- USB INFO
 |  |- RESET

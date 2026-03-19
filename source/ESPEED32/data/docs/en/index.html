@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESPEED32 User Manual (EN)</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <style>
 :root{
   --bg:#f3f1eb;
@@ -416,6 +417,8 @@ details.doc-fold>:not(summary){margin-top:8px}
     <ul>
       <li><code>A STEP</code>: global ANTIS encoder step, 1-50 ms (default 5 ms). ANTIS itself stays per car profile.</li>
       <li><code>ENC INV</code>: invert encoder rotation globally if the menu feels backwards on your hardware.</li>
+      <li><code>WIFI</code>: background WiFi, direct info page, QR code, and WiFi auto-off timer.</li>
+      <li><code>LOGGING</code>: local telemetry logging start/stop plus a separate logging auto-off timer (default 30 min).</li>
     </ul>
     <h3>Estimated current draw (controller electronics)</h3>
     <table>
@@ -462,7 +465,15 @@ details.doc-fold>:not(summary){margin-top:8px}
   </section>
 
   <section>
-    <h2>8. WiFi/USB backup, restore and OTA</h2>
+    <h2>8. Logging, WiFi/USB backup, restore and OTA</h2>
+    <h3>Logging</h3>
+    <ol>
+      <li>Open <code>SETTINGS -> LOGGING</code>.</li>
+      <li><code>START NOW</code>/<code>STOP NOW</code>: starts or stops local telemetry logging immediately.</li>
+      <li><code>AUTO OFF</code>: set logging timeout (1-120 min, default 30 min).</li>
+      <li>Logging itself does not require WiFi. You can keep WiFi off and use USB/WebSerial later, or turn WiFi on separately for live web viewing.</li>
+      <li>If WiFi is already active when logging starts, WiFi stays up while logging is running.</li>
+    </ol>
     <h3>WiFi</h3>
     <ol>
       <li>Open <code>SETTINGS -> WIFI</code> to enter the WiFi submenu.</li>
@@ -561,6 +572,10 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- INFO PAGE
 |  |  |- SHOW QR
 |  |  |- AUTO OFF (1-120 min, default 5)
+|  |  `- BACK
+|  |- LOGGING
+|  |  |- START/STOP NOW
+|  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
 |  |- USB INFO
 |  |- RESET

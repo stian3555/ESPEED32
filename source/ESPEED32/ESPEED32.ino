@@ -117,6 +117,7 @@ static bool g_inSettingsMenu = false;  /* Track if we're currently in the settin
 bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 static bool g_escapeToMain = false;    /* Set by any submenu long press → cascade-breaks to RUNNING for race mode toggle */
 static bool g_raceToggleReleaseGuardActive = false;  /* Swallow release click after race-mode long press. */
+static uint32_t g_raceToggleReleaseAtMs = 0;  /* Release timestamp used to re-arm short presses after race toggle. */
 static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
@@ -256,35 +257,40 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
   g_escVar.encoderPos = 1;
   lastLongPressTime = millis();
   g_raceToggleReleaseGuardActive = true;
+  g_raceToggleReleaseAtMs = 0;
   saveEEPROM(g_storedVar);
   if (g_storedVar.soundRace) keySound();
   g_lastEncoderInteraction = millis();
-  g_rotaryEncoder.isEncoderButtonClicked();  /* consume any pending click */
 }
 
 /**
  * @brief Hold off short-press handling until the encoder button is released after a race-mode long press.
- * @details This prevents the release edge from being interpreted as an OK click on whichever race item is
- *          currently selected after the mode toggle.
- * @param lastLongPressTime Timestamp from the most recent race-mode long press.
+ * @details RUNNING uses raw press/release detection, so we only need to wait for a clean release
+ *          plus a short debounce window before re-arming short clicks.
+ * @param encoderButtonPressed Current raw encoder button state.
  * @return true while short presses should remain blocked.
  */
-static bool serviceRaceModeToggleReleaseGuard(uint32_t lastLongPressTime) {
+static bool serviceRaceModeToggleReleaseGuard(bool encoderButtonPressed) {
   if (!g_raceToggleReleaseGuardActive) {
     return false;
   }
 
-  g_rotaryEncoder.isEncoderButtonClicked();  /* keep draining any delayed release edge */
-
-  if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+  if (encoderButtonPressed) {
+    g_raceToggleReleaseAtMs = 0;
     return true;
   }
 
-  if ((uint32_t)(millis() - lastLongPressTime) < BUTTON_DEBOUNCE_AFTER_LONG_MS) {
+  if (g_raceToggleReleaseAtMs == 0) {
+    g_raceToggleReleaseAtMs = millis();
+    return true;
+  }
+
+  if ((uint32_t)(millis() - g_raceToggleReleaseAtMs) < BUTTON_DEBOUNCE_AFTER_LONG_MS) {
     return true;
   }
 
   g_raceToggleReleaseGuardActive = false;
+  g_raceToggleReleaseAtMs = 0;
   return false;
 }
 
@@ -709,8 +715,12 @@ void Task1code(void *pvParameters) {
         /* Handle race mode toggle: either from a submenu escape or direct long press */
         static uint32_t lastLongPressTime = 0;
         static uint32_t buttonPressStartTime = 0;
+        static uint32_t lastShortPressTime = 0;
         static bool buttonWasPressed = false;
-        bool raceToggleReleaseGuardActive = serviceRaceModeToggleReleaseGuard(lastLongPressTime);
+        static bool buttonLongPressHandled = false;
+        bool encoderButtonPressed = (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED);
+        bool raceToggleReleaseGuardActive = serviceRaceModeToggleReleaseGuard(encoderButtonPressed);
+        bool encoderShortClick = false;
 
         if (g_escapeToMain) {
           /* Return from submenu long press → toggle race mode immediately */
@@ -718,24 +728,42 @@ void Task1code(void *pvParameters) {
           applyRaceModeToggle(menuState, lastLongPressTime);
           raceToggleReleaseGuardActive = true;
           buttonPressStartTime = 0;
+          lastShortPressTime = 0;
           buttonWasPressed = false;
+          buttonLongPressHandled = true;
         } else if (!raceToggleReleaseGuardActive) {
-          /* Direct long press detection in RUNNING */
-          if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+          /* Direct press/release handling in RUNNING, independent of the encoder library click timeout logic. */
+          if (encoderButtonPressed) {
             if (!buttonWasPressed) {
               buttonPressStartTime = millis();
               buttonWasPressed = true;
+              buttonLongPressHandled = false;
             }
-            if (millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
+            if (!buttonLongPressHandled &&
+                millis() - buttonPressStartTime > BUTTON_LONG_PRESS_MS &&
                 millis() - lastLongPressTime > BUTTON_LONG_PRESS_MS) {
               applyRaceModeToggle(menuState, lastLongPressTime);
+              raceToggleReleaseGuardActive = true;
+              buttonLongPressHandled = true;
             }
-          } else {
+          } else if (buttonWasPressed) {
+            uint32_t pressDuration = millis() - buttonPressStartTime;
             buttonWasPressed = false;
+            buttonPressStartTime = 0;
+
+            if (!buttonLongPressHandled &&
+                pressDuration >= BUTTON_SHORT_PRESS_DEBOUNCE_MS &&
+                (lastShortPressTime == 0 || millis() - lastShortPressTime >= BUTTON_SHORT_PRESS_DEBOUNCE_MS)) {
+              encoderShortClick = true;
+              lastShortPressTime = millis();
+            }
+
+            buttonLongPressHandled = false;
           }
         } else {
           buttonPressStartTime = 0;
           buttonWasPressed = false;
+          buttonLongPressHandled = false;
         }
 
         /* Check for brake button press - acts as "back" in edit mode */
@@ -806,7 +834,7 @@ void Task1code(void *pvParameters) {
         }
 
         /* Change menu state if encoder button is clicked (short press) */
-        if (!raceToggleReleaseGuardActive && g_rotaryEncoder.isEncoderButtonClicked())
+        if (encoderShortClick)
         {
           /* If screensaver is active (timeout exceeded), just wake up - don't process menu action */
           if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {

@@ -1,6 +1,7 @@
 #include "settings_display_submenus.h"
 #include <Arduino.h>
 #include "slot_ESC.h"
+#include "ui_text_access.h"
 
 extern StoredVar_type g_storedVar;
 extern ESC_type g_escVar;
@@ -17,6 +18,34 @@ extern void requestEscapeToMain();
 extern void showScreensaver();
 extern void displayStatusLine();
 extern void saveEEPROM(StoredVar_type toSave);
+
+static void formatConfiguredMenuLabel(const char* source, char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+  buffer[0] = '\0';
+  if (source == nullptr) return;
+
+  if (g_storedVar.textCase != TEXT_CASE_PASCAL) {
+    snprintf(buffer, bufferSize, "%s", source);
+    return;
+  }
+
+  size_t out = 0;
+  bool newWord = true;
+  for (size_t i = 0; source[i] != '\0' && out + 1 < bufferSize; i++) {
+    char c = source[i];
+    if (c >= 'A' && c <= 'Z') {
+      buffer[out++] = newWord ? c : (char)(c - 'A' + 'a');
+      newWord = false;
+    } else if (c >= 'a' && c <= 'z') {
+      buffer[out++] = newWord ? (char)(c - 'a' + 'A') : c;
+      newWord = false;
+    } else {
+      buffer[out++] = c;
+      newWord = (c == ' ' || c == '/' || c == '=' || c == '-');
+    }
+  }
+  buffer[out] = '\0';
+}
 
 /**
  * Character-by-character text editor for screensaver lines.
@@ -174,8 +203,6 @@ void showScreensaverSettings() {
   };
   const char* editorTitleL1ByLang[7] = {"Linje 1", "Line 1", "Line 1", "Line 1", "Linea 1", "Zeile 1", "Riga 1"};
   const char* editorTitleL2ByLang[7] = {"Linje 2", "Line 2", "Line 2", "Line 2", "Linea 2", "Zeile 2", "Riga 2"};
-  const char* offLabelByLang[7] = {"AV", "OFF", "OFF", "OFF", "OFF", "AUS", "OFF"};
-
   const char** ssNames = ssNamesByLang[lang];
   const char* editorTitleL1 = editorTitleL1ByLang[lang];
   const char* editorTitleL2 = editorTitleL2ByLang[lang];
@@ -272,7 +299,10 @@ void showScreensaverSettings() {
         bool isEditingThis = (inTimeEdit && idx == 3);  /* TIME row */
 
         /* Item name */
-        obdWriteString(&g_obd, 0, 0, yPx, (char *)ssNames[idx], FONT_8x8,
+        char rowLabel[16];
+        const char* rawLabel = (idx == 4) ? getBackLabel(lang) : ssNames[idx];
+        formatConfiguredMenuLabel(rawLabel, rowLabel, sizeof(rowLabel));
+        obdWriteString(&g_obd, 0, 0, yPx, rowLabel, FONT_8x8,
                        (isSelected || isEditingThis) ? OBD_WHITE : OBD_BLACK, 1);
 
         /* Value on right side in FONT_6x8 */
@@ -287,7 +317,7 @@ void showScreensaverSettings() {
         } else if (idx == 3) {
           /* TIME: show current timeout, right-justified (4 chars × 6px = 24px from right) */
           if (g_storedVar.screensaverTimeout == 0) {
-            sprintf(msgStr, "%4s", offLabelByLang[lang]);
+            sprintf(msgStr, "%4s", getOnOffLabel(lang, 0));
           } else {
             sprintf(msgStr, "%3ds", g_storedVar.screensaverTimeout);
           }

@@ -299,7 +299,7 @@ void serviceTimedWiFiPortal() {
   serviceConnectivityPortal();
 
   if (g_loggingTimedActive) {
-    if (!telemetryIsLoggingActive() || !isWiFiPortalActive()) {
+    if (!telemetryIsLoggingActive()) {
       g_loggingTimedActive = false;
     } else if ((int32_t)(millis() - g_loggingTimedStopAtMs) >= 0) {
       telemetryStopLogging();
@@ -323,7 +323,7 @@ void serviceTimedWiFiPortal() {
       return;
     }
     if (telemetryIsLoggingActive()) {
-      /* Logging is WiFi-only, so keep the portal alive while telemetry is running. */
+      /* Keep WiFi available while telemetry is being logged over the portal. */
       g_wifiTimedStopAtMs = millis() + 1000UL;
       return;
     }
@@ -363,12 +363,6 @@ void startTimedTelemetryLogging(uint16_t minutes) {
   g_loggingTimedMinutes = constrain(minutes, 1, 120);
   g_loggingTimedActive = true;
   g_loggingTimedStopAtMs = millis() + ((uint32_t)g_loggingTimedMinutes * 60000UL);
-  if (isWiFiPortalActive()) {
-    g_wifiTimedActive = true;
-    if ((int32_t)(g_loggingTimedStopAtMs - g_wifiTimedStopAtMs) > 0) {
-      g_wifiTimedStopAtMs = g_loggingTimedStopAtMs;
-    }
-  }
 }
 
 void stopTimedTelemetryLogging() {

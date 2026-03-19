@@ -33,16 +33,6 @@ extern void stopTimedTelemetryLogging();
 extern uint16_t getTelemetryTimedMinutes();
 extern void setTelemetryTimedMinutes(uint16_t minutes);
 
-static void showWiFiLoggingStartFailed() {
-  obdFill(&g_obd, OBD_WHITE, 1);
-  const char* title = "WiFi failed";
-  obdWriteString(&g_obd, 0, centerX8x8(title), 8, (char*)title, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 8, 28, (char*)"Could not start", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 8, 36, (char*)"WiFi logging", FONT_6x8, OBD_BLACK, 1);
-  delay(1100);
-  obdFill(&g_obd, OBD_WHITE, 1);
-}
-
 static void showTelemetryLoggingStartFailed() {
   obdFill(&g_obd, OBD_WHITE, 1);
   const char* title = "Log failed";
@@ -53,34 +43,15 @@ static void showTelemetryLoggingStartFailed() {
   obdFill(&g_obd, OBD_WHITE, 1);
 }
 
-static bool promptEnableWiFiForLogging() {
+static void showLoggingTransportHint() {
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* title = "WiFi req.";
-  obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 16, (char*)"Logging needs", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 24, (char*)"WiFi active.", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 40, (char*)"Click=start", FONT_6x8, OBD_BLACK, 1);
-  obdWriteString(&g_obd, 0, 4, 48, (char*)"Brake=back", FONT_6x8, OBD_BLACK, 1);
-
-  while (true) {
-    serviceTimedWiFiPortal();
-
-    if (g_rotaryEncoder.isEncoderButtonClicked()) {
-      return true;
-    }
-
-    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-      while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
-      return false;
-    }
-
-    if (checkRaceModeEscape()) {
-      requestEscapeToMain();
-      return false;
-    }
-
-    vTaskDelay(10);
-  }
+  const char* title = "Logging ON";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 4, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 20, (char*)"USB works now.", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 30, (char*)"Start WiFi later", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 4, 40, (char*)"for live web view.", FONT_6x8, OBD_BLACK, 1);
+  delay(1300);
+  obdFill(&g_obd, OBD_WHITE, 1);
 }
 
 static bool startTelemetryLoggingNow() {
@@ -506,27 +477,11 @@ void showLoggingSettings() {
           stopTimedTelemetryLogging();
         } else {
           uint16_t loggingMinutes = constrain(getTelemetryTimedMinutes(), 1, 120);
-          bool startedWiFiForLogging = false;
-          if (!isWiFiPortalActive()) {
-            if (!promptEnableWiFiForLogging()) {
-              needRedraw = true;
-              delay(120);
-              continue;
-            }
-
-            startTimedWiFiPortal(loggingMinutes);
-            if (!isWiFiPortalActive()) {
-              showWiFiLoggingStartFailed();
-              needRedraw = true;
-              delay(120);
-              continue;
-            }
-            startedWiFiForLogging = true;
-          }
+          bool wifiWasActive = isWiFiPortalActive();
           if (startTelemetryLoggingNow()) {
             startTimedTelemetryLogging(loggingMinutes);
-            if (startedWiFiForLogging) {
-              showWiFiPortalScreen();
+            if (!wifiWasActive) {
+              showLoggingTransportHint();
               lastInteraction = millis();
               screensaverActive = false;
             }

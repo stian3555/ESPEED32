@@ -225,6 +225,15 @@ void showPowerSettings() {
       }
     }
 
+    if (!wakeUp && ssActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &ssActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
     /* Encoder movement */
     if (g_rotaryEncoder.encoderChanged()) {
       lastInteraction = millis();

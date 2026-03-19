@@ -76,12 +76,51 @@
 /* Trigger Sensor Family Selection
  * Select exactly one sensor family at compile time.
  * For TLE493D, the concrete variant/address is auto-detected at runtime in HAL.cpp
- * (for example W2B6, W2B6_A0, or P3B6). */
-//#define AS5600_MAG      /* AMS AS5600 magnetic trigger sensor */
-#define TLE493D_MAG     /* Infineon TLE493D family (runtime variant auto-detect) */
-//#define AS5600L_MAG     /* AMS AS5600L variant with different I2C address */
-//#define ANALOG_TRIG     /* Analog potentiometer trigger */
-//#define MT6701_MAG      /* MagnTek MT6701 magnetic trigger sensor */
+ * (for example W2B6, W2B6_A0, or P3B6).
+ *
+ * Default build keeps TLE493D selected.
+ *
+ * Recommended compile-time override:
+ *   -DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_AS5600
+ *
+ * Legacy per-family defines such as AS5600_MAG / TLE493D_MAG are still accepted. */
+#define TRIGGER_SENSOR_FAMILY_AS5600   1
+#define TRIGGER_SENSOR_FAMILY_TLE493D  2
+#define TRIGGER_SENSOR_FAMILY_AS5600L  3
+#define TRIGGER_SENSOR_FAMILY_ANALOG   4
+#define TRIGGER_SENSOR_FAMILY_MT6701   5
+
+#ifndef TRIGGER_SENSOR_FAMILY
+  #if defined(AS5600_MAG)
+    #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_AS5600
+  #elif defined(TLE493D_MAG)
+    #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_TLE493D
+  #elif defined(AS5600L_MAG)
+    #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_AS5600L
+  #elif defined(ANALOG_TRIG)
+    #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_ANALOG
+  #elif defined(MT6701_MAG)
+    #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_MT6701
+  #else
+    #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_TLE493D
+  #endif
+#endif
+
+#if !defined(AS5600_MAG) && !defined(TLE493D_MAG) && !defined(AS5600L_MAG) && !defined(ANALOG_TRIG) && !defined(MT6701_MAG)
+  #if TRIGGER_SENSOR_FAMILY == TRIGGER_SENSOR_FAMILY_AS5600
+    #define AS5600_MAG      /* AMS AS5600 magnetic trigger sensor */
+  #elif TRIGGER_SENSOR_FAMILY == TRIGGER_SENSOR_FAMILY_TLE493D
+    #define TLE493D_MAG     /* Infineon TLE493D family (runtime variant auto-detect) */
+  #elif TRIGGER_SENSOR_FAMILY == TRIGGER_SENSOR_FAMILY_AS5600L
+    #define AS5600L_MAG     /* AMS AS5600L variant with different I2C address */
+  #elif TRIGGER_SENSOR_FAMILY == TRIGGER_SENSOR_FAMILY_ANALOG
+    #define ANALOG_TRIG     /* Analog potentiometer trigger */
+  #elif TRIGGER_SENSOR_FAMILY == TRIGGER_SENSOR_FAMILY_MT6701
+    #define MT6701_MAG      /* MagnTek MT6701 magnetic trigger sensor */
+  #else
+    #error "Unsupported TRIGGER_SENSOR_FAMILY"
+  #endif
+#endif
 
 /* Trigger Reversal Configuration */
 #if defined(AS5600_MAG) || defined(AS5600L_MAG)

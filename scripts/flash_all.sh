@@ -7,13 +7,14 @@ SPIFFS_SCRIPT="$ROOT_DIR/scripts/upload_spiffs.sh"
 
 PORT=""
 BAUD=""
+SENSOR=""
 FIRMWARE_ONLY=0
 SPIFFS_ONLY=0
 COMPILE_ONLY=0
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") [--firmware-only] [--spiffs-only] [--compile-only] [-p PORT] [-u BAUD]
+Usage: $(basename "$0") [--firmware-only] [--spiffs-only] [--compile-only] [--sensor NAME] [-p PORT] [-u BAUD]
 
 Default flow:
   1) Compile firmware
@@ -24,6 +25,7 @@ Options:
   --firmware-only    Compile + upload firmware, skip SPIFFS upload
   --spiffs-only      Only upload SPIFFS image (skip firmware compile/upload)
   --compile-only     Compile firmware only
+  --sensor NAME      Trigger sensor family override: tle493d, as5600, as5600l, mt6701, analog
   -p, --port PORT    Serial port override (default: read from .vscode/arduino.json)
   -u, --baud BAUD    SPIFFS upload baud override (default: UploadSpeed from .vscode/arduino.json)
   -h, --help         Show this help
@@ -43,6 +45,11 @@ while [[ $# -gt 0 ]]; do
     --compile-only)
       COMPILE_ONLY=1
       shift
+      ;;
+    --sensor)
+      [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; exit 1; }
+      SENSOR="$2"
+      shift 2
       ;;
     -p|--port)
       [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; exit 1; }
@@ -94,6 +101,33 @@ fi
 json_value() {
   local key="$1"
   sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" "$ARDUINO_JSON" | head -n 1
+}
+
+sensor_build_flag() {
+  local sensor_name
+  sensor_name="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$sensor_name" in
+    tle|tle493d)
+      printf '%s' '-DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_TLE493D'
+      ;;
+    as5600)
+      printf '%s' '-DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_AS5600'
+      ;;
+    as5600l)
+      printf '%s' '-DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_AS5600L'
+      ;;
+    mt6701)
+      printf '%s' '-DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_MT6701'
+      ;;
+    analog|analog_trig)
+      printf '%s' '-DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_ANALOG'
+      ;;
+    *)
+      echo "Unsupported --sensor value: $1" >&2
+      echo "Supported values: tle493d, as5600, as5600l, mt6701, analog" >&2
+      exit 1
+      ;;
+  esac
 }
 
 run_filtered_cmd() {
@@ -190,6 +224,11 @@ if [[ "$SPIFFS_ONLY" -eq 0 ]]; then
   compile_cmd=(arduino-cli compile --fqbn "$BOARD" --build-path "$BUILD_DIR")
   if [[ -n "$BOARD_OPTIONS" ]]; then
     compile_cmd+=(--board-options "$BOARD_OPTIONS")
+  fi
+  if [[ -n "$SENSOR" ]]; then
+    SENSOR_FLAG="$(sensor_build_flag "$SENSOR")"
+    echo "[FLASH] Trigger sensor family override: $SENSOR"
+    compile_cmd+=(--build-property "build.extra_flags=$SENSOR_FLAG")
   fi
   compile_cmd+=("$SKETCH_DIR")
   run_filtered_cmd "${compile_cmd[@]}"

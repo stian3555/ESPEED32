@@ -8,7 +8,26 @@ Hosted Web UI/docs: https://espeed32.com (best in Chrome/Edge or another WebSeri
 
 The trigger position is read from a magnetic angle sensor over I2C. Several sensors are supported.
 
-To select your sensor, open `source/ESPEED32/HAL.h` and uncomment **exactly one** of the `#define` lines in the sensor selection block — leave the rest commented out.
+Default build uses `TLE493D`.
+
+Recommended selection method is a compile-time override, for example:
+
+```bash
+./scripts/flash_all.sh --compile-only --sensor as5600
+```
+
+You can also pass the family directly to `arduino-cli`:
+
+```bash
+arduino-cli compile \
+  --fqbn esp32:esp32:esp32 \
+  --board-options "JTAGAdapter=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none,ZigbeeMode=default" \
+  --build-path build-as5600 \
+  --build-property build.extra_flags="-DTRIGGER_SENSOR_FAMILY=TRIGGER_SENSOR_FAMILY_AS5600" \
+  source/ESPEED32
+```
+
+Legacy manual selection in `source/ESPEED32/HAL.h` still works if you prefer editing the header directly.
 
 ### Supported sensors
 

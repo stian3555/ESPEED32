@@ -116,6 +116,7 @@ uint32_t g_lastEncoderInteraction = 0;         /* Timestamp of last encoder inte
 static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
 bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 static bool g_escapeToMain = false;    /* Set by any submenu long press → cascade-breaks to RUNNING for race mode toggle */
+static bool g_raceToggleReleaseGuardActive = false;  /* Swallow release click after race-mode long press. */
 static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
@@ -254,10 +255,37 @@ static void applyRaceModeToggle(MenuState_enum &menuState, uint32_t &lastLongPre
   g_encoderMainSelector = 1;
   g_escVar.encoderPos = 1;
   lastLongPressTime = millis();
+  g_raceToggleReleaseGuardActive = true;
   saveEEPROM(g_storedVar);
   if (g_storedVar.soundRace) keySound();
   g_lastEncoderInteraction = millis();
   g_rotaryEncoder.isEncoderButtonClicked();  /* consume any pending click */
+}
+
+/**
+ * @brief Hold off short-press handling until the encoder button is released after a race-mode long press.
+ * @details This prevents the release edge from being interpreted as an OK click on whichever race item is
+ *          currently selected after the mode toggle.
+ * @param lastLongPressTime Timestamp from the most recent race-mode long press.
+ * @return true while short presses should remain blocked.
+ */
+static bool serviceRaceModeToggleReleaseGuard(uint32_t lastLongPressTime) {
+  if (!g_raceToggleReleaseGuardActive) {
+    return false;
+  }
+
+  g_rotaryEncoder.isEncoderButtonClicked();  /* keep draining any delayed release edge */
+
+  if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
+    return true;
+  }
+
+  if ((uint32_t)(millis() - lastLongPressTime) < BUTTON_DEBOUNCE_AFTER_LONG_MS) {
+    return true;
+  }
+
+  g_raceToggleReleaseGuardActive = false;
+  return false;
 }
 
 void requestEscapeToMain() {
@@ -654,7 +682,7 @@ void Task1code(void *pvParameters) {
         break;
 
 
-      case RUNNING: /* when the global variable State is in RUNNING the Task2 will elaborate the trigger to produce the PWM out */
+      case RUNNING: { /* when the global variable State is in RUNNING the Task2 will elaborate the trigger to produce the PWM out */
 
         /* Set encoder boundaries based on view mode (on first entry) */
         static bool encoderBoundariesSet = false;
@@ -680,15 +708,19 @@ void Task1code(void *pvParameters) {
 
         /* Handle race mode toggle: either from a submenu escape or direct long press */
         static uint32_t lastLongPressTime = 0;
+        static uint32_t buttonPressStartTime = 0;
+        static bool buttonWasPressed = false;
+        bool raceToggleReleaseGuardActive = serviceRaceModeToggleReleaseGuard(lastLongPressTime);
 
         if (g_escapeToMain) {
           /* Return from submenu long press → toggle race mode immediately */
           g_escapeToMain = false;
           applyRaceModeToggle(menuState, lastLongPressTime);
-        } else {
+          raceToggleReleaseGuardActive = true;
+          buttonPressStartTime = 0;
+          buttonWasPressed = false;
+        } else if (!raceToggleReleaseGuardActive) {
           /* Direct long press detection in RUNNING */
-          static uint32_t buttonPressStartTime = 0;
-          static bool buttonWasPressed = false;
           if (digitalRead(ENCODER_BUTTON_PIN) == BUTTON_PRESSED) {
             if (!buttonWasPressed) {
               buttonPressStartTime = millis();
@@ -701,6 +733,9 @@ void Task1code(void *pvParameters) {
           } else {
             buttonWasPressed = false;
           }
+        } else {
+          buttonPressStartTime = 0;
+          buttonWasPressed = false;
         }
 
         /* Check for brake button press - acts as "back" in edit mode */
@@ -771,9 +806,7 @@ void Task1code(void *pvParameters) {
         }
 
         /* Change menu state if encoder button is clicked (short press) */
-        /* Only process if sufficient time has passed since last long press */
-        if ((lastLongPressTime == 0 || millis() - lastLongPressTime > BUTTON_DEBOUNCE_AFTER_LONG_MS) &&
-            g_rotaryEncoder.isEncoderButtonClicked())
+        if (!raceToggleReleaseGuardActive && g_rotaryEncoder.isEncoderButtonClicked())
         {
           /* If screensaver is active (timeout exceeded), just wake up - don't process menu action */
           if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
@@ -826,6 +859,7 @@ void Task1code(void *pvParameters) {
         else
           digitalWrite(LED_BUILTIN, 0);
         break;
+      }
 
 
       case FAULT:

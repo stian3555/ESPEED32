@@ -115,7 +115,7 @@
 
 /* Button Press Timing */
 #define BUTTON_LONG_PRESS_MS        1000  /* [ms] Duration to trigger long press (view mode toggle) */
-#define BUTTON_DEBOUNCE_AFTER_LONG_MS  1500  /* [ms] Debounce time after long press before accepting short press */
+#define BUTTON_DEBOUNCE_AFTER_LONG_MS   200  /* [ms] Require release plus short debounce after a long press */
 #define BUTTON_SHORT_PRESS_DEBOUNCE_MS  200  /* [ms] Minimum time between button presses */
 
 /* Sound Configuration */

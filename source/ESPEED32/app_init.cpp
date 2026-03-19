@@ -5,6 +5,7 @@
 #include "menu_car.h"
 #include "settings_quick_brake_menu.h"
 #include "settings_menu_root.h"
+#include "diagnostics_lap_stats.h"
 
 extern OBDISP g_obd;
 extern StoredVar_type g_storedVar;
@@ -201,7 +202,17 @@ void initMenuItems() {
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = &showSettingsMenu;
 
-  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* CAR or BIL */
+  if (g_statsEnabled) {
+    sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 9));  /* STATS */
+    g_mainMenu.item[i].value = ITEM_NO_VALUE;
+    g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
+    sprintf(g_mainMenu.item[i].unit, "");
+    g_mainMenu.item[i].maxValue = 0;
+    g_mainMenu.item[i].minValue = 0;
+    g_mainMenu.item[i].callback = &showLapStats;
+  }
+
+  sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 10));  /* CAR or BIL */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].carName;
   g_mainMenu.item[i].type = VALUE_TYPE_STRING;
   g_mainMenu.item[i].maxValue = CAR_MAX_COUNT - 1;  // so menu will scroll in the array (CAR_MAX_COUNT long)
@@ -256,7 +267,15 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* WIFI */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 4));  /* STATS */
+  g_settingsMenu.item[i].value = (void *)&g_statsEnabled;
+  g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 1;
+  g_settingsMenu.item[i].minValue = 0;
+  g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
+
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* WIFI */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -264,7 +283,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 5));  /* LOGGING */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* LOGGING */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -272,7 +291,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 6));  /* USB */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* USB */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -280,7 +299,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 7));  /* RESET */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* RESET */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -288,7 +307,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 8));  /* ABOUT/INFO */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* ABOUT/INFO */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
   sprintf(g_settingsMenu.item[i].unit, "");
@@ -296,7 +315,7 @@ void initSettingsMenuItems() {
   g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 9));  /* BACK */
+  sprintf(g_settingsMenu.item[++i].name, "%s", getSettingsMenuName(lang, 10));  /* BACK */
   g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_STRING;
   sprintf(g_settingsMenu.item[i].unit, "");

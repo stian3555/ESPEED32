@@ -318,7 +318,7 @@ uint8_t getMainMenuSelector() {
 }
 
 uint8_t getMainMenuItemsCount() {
-  return MENU_ITEMS_COUNT;
+  return (g_statsEnabled ? MENU_ITEMS_COUNT : (MENU_ITEMS_COUNT - 1));
 }
 
 void resetEncoderForMainMenu() {

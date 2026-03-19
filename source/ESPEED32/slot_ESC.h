@@ -23,9 +23,9 @@
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    10    /* Number of items in main menu (incl. FADE, BRAKE+ submenu entry, CAR) */
-#define SETTINGS_ITEMS_COUNT 10   /* Number of items in settings menu (including BACK) */
-#define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
+#define MENU_ITEMS_COUNT    11    /* Number of possible items in main menu (including optional STATS and CAR) */
+#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
+#define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL., BACK) */
 #define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTIS.STEP, STATUS, BACK) */
 #define HARDWARE_ITEMS_COUNT 5    /* Number of items in hardware submenu (ENC INV, EXT POT, TRIGGER, TEST, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 5    /* [min] Default auto power save delay (0=manual only) */

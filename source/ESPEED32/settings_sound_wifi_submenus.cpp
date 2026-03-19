@@ -202,11 +202,21 @@ void showSoundSettings() {
 void showWiFiSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblOpen[7]    = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
-  const char* lblQr[7]      = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
-  const char* lblTimer[7]   = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
-  const char* lblStartBg[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
-  const char* lblStopBg[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
+  const char* lblOpenUpper[7]  = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
+  const char* lblOpenPascal[7] = {"Info side", "Info page", "Info page", "Info page", "Pag info", "Infosite", "Pag info"};
+  const char* lblQrUpper[7]    = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
+  const char* lblQrPascal[7]   = {"Vis QR",    "Show QR",   "Show QR",   "Show QR",   "Ver QR",   "QR code",  "Mostra QR"};
+  const char* lblTimerUpper[7] = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblTimerPascal[7]= {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off"};
+  const char* lblStartUpper[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
+  const char* lblStartPascal[7]= {"Start WiFi", "Start WiFi", "Start WiFi", "Start WiFi", "Inic WiFi", "Start WiFi", "Avvia WiFi"};
+  const char* lblStopUpper[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
+  const char* lblStopPascal[7] = {"Stopp WiFi", "Stop WiFi",  "Stop WiFi",  "Stop WiFi",  "Stop WiFi", "Stop WiFi",  "Stop WiFi"};
+  const char* const* lblOpen   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblOpenPascal : lblOpenUpper;
+  const char* const* lblQr     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblQrPascal : lblQrUpper;
+  const char* const* lblTimer  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTimerPascal : lblTimerUpper;
+  const char* const* lblStartBg= (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStartPascal : lblStartUpper;
+  const char* const* lblStopBg = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStopPascal : lblStopUpper;
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_INFO = 1;
@@ -371,9 +381,15 @@ void showWiFiSettings() {
 void showLoggingSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblTimer[7]     = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
-  const char* lblStartNow[7]  = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA"};
-  const char* lblStopNow[7]   = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA"};
+  const char* lblTimerUpper[7]    = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
+  const char* lblTimerPascal[7]   = {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off"};
+  const char* lblStartUpper[7]    = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA"};
+  const char* lblStartPascal[7]   = {"Start nå",  "Start now", "Start now", "Start now", "Inic ahor", "Start now", "Avvia ora"};
+  const char* lblStopUpper[7]     = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA"};
+  const char* lblStopPascal[7]    = {"Stopp nå",  "Stop now",  "Stop now",  "Stop now",  "Para ahor", "Stop now",  "Stop ora"};
+  const char* const* lblTimer     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTimerPascal : lblTimerUpper;
+  const char* const* lblStartNow  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStartPascal : lblStartUpper;
+  const char* const* lblStopNow   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStopPascal : lblStopUpper;
 
   const uint8_t ITEM_ACTIVE = 0;
   const uint8_t ITEM_TIMER = 1;

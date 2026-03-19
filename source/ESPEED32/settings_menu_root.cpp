@@ -251,7 +251,9 @@ void showSettingsMenu() {
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
         bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
         uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
-        if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {
+        if (g_settingsMenu.item[itemIndex].type == VALUE_TYPE_STRING) {
+          snprintf(msgStr, sizeof(msgStr), "%3s", getOnOffLabel(g_storedVar.language, value ? 1 : 0));
+        } else if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {
           snprintf(msgStr, sizeof(msgStr), "%2d%s", value, g_settingsMenu.item[itemIndex].unit);
         } else {
           sprintf(msgStr, "%3d", value);

@@ -1,36 +1,36 @@
 #include "ui_strings.h"
 
 /* Menu item names in different languages: [language][item] */
-const char* MENU_NAMES[][10] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMS+", "GRENSE", "INNSTILL", "*BIL*"},
-  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "LIMIT", "SETTINGS", "*CAR*"},
-  /* CS  */ {"BRAKE", "ATTACK", "CHOKE2", "PROFIL", "FADE", "PWM_F", "BRAKE+", "CHOKE1", "SETTINGS", "*CAR*"},
-  /* ACD */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "CHOKE", "SETTINGS", "*CAR*"},
-  /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "AJUSTES", "*AUTO*"},
-  /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMSE+", "LIMIT", "SETUP", "*AUTO*"},
-  /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "SETUP", "*AUTO*"}
+const char* MENU_NAMES[][11] = {
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMS+", "GRENSE", "INNSTILL", "STATS", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
+  /* CS  */ {"BRAKE", "ATTACK", "CHOKE2", "PROFIL", "FADE", "PWM_F", "BRAKE+", "CHOKE1", "SETTINGS", "STATS", "*CAR*"},
+  /* ACD */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "CHOKE", "SETTINGS", "STATS", "*CAR*"},
+  /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "AJUSTES", "STATS", "*AUTO*"},
+  /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMSE+", "LIMIT", "SETUP", "STATS", "*AUTO*"},
+  /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "SETUP", "STATS", "*AUTO*"}
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][10] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "NULLSTILL", "INFO", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
-  /* CS  */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
-  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "RESET", "ACERCA", "ATRAS"},
-  /* DEU */ {"STROM", "ANZEIGE", "TON", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "ZURUCK"},
-  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "HARDWARE", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "INDIETRO"}
+const char* SETTINGS_MENU_NAMES[][11] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "NULLSTILL", "INFO", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* CS  */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ACERCA", "ATRAS"},
+  /* DEU */ {"STROM", "ANZEIGE", "TON", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "ZURUCK"},
+  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "INDIETRO"}
 };
 
 /* Power submenu item names: [language][item] */
 const char* POWER_MENU_NAMES[][6] = {
-  /* NOR */ {"SKJSP", "DVALE", "DYP SOV", "OPPSTART", "VIN KAL", "TILBAKE"},
-  /* ENG */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL", "BACK"},
-  /* CS  */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL", "BACK"},
-  /* ACD */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL", "BACK"},
-  /* ESP */ {"SCRSV", "REPOSO", "SUSP PROF", "ARRANQUE", "VIN CAL", "ATRAS"},
-  /* DEU */ {"SCRSV", "SCHLAF", "TIEF SCHL", "START", "VIN KAL", "ZURUCK"},
-  /* ITA */ {"SCRSV", "RIPOSO", "SONNO PROF", "AVVIO", "VIN CAL", "INDIETRO"}
+  /* NOR */ {"SKJSP", "DVALE", "DYP SOV", "OPPSTART", "VIN KAL.", "TILBAKE"},
+  /* ENG */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL.", "BACK"},
+  /* CS  */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL.", "BACK"},
+  /* ACD */ {"SCRSV", "SLEEP", "DEEP SLEEP", "STARTUP", "VIN CAL.", "BACK"},
+  /* ESP */ {"SCRSV", "REPOSO", "SUSP PROF", "ARRANQUE", "VIN CAL.", "ATRAS"},
+  /* DEU */ {"SCRSV", "SCHLAF", "TIEF SCHL", "START", "VIN KAL.", "ZURUCK"},
+  /* ITA */ {"SCRSV", "RIPOSO", "SONNO PROF", "AVVIO", "VIN CAL.", "INDIETRO"}
 };
 
 /* Display submenu item names: [language][item] */
@@ -136,36 +136,36 @@ const char* FONT_SIZE_LABELS[][2] = {
 };
 
 /* Menu item names - Pascal Case: [language][item] */
-const char* MENU_NAMES_PASCAL[][10] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Brems+", "Grense", "Innstill", "*Bil*"},
-  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Limit", "Settings", "*Car*"},
-  /* CS  */ {"Brake", "Attack", "Choke2", "Profil", "Fade", "Pwm_F", "Brake+", "Choke1", "Settings", "*Car*"},
-  /* ACD */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Choke", "Settings", "*Car*"},
-  /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Ajustes", "*Auto*"},
-  /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Bremse+", "Limit", "Setup", "*Auto*"},
-  /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Setup", "*Auto*"}
+const char* MENU_NAMES_PASCAL[][11] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Brems+", "Grense", "Innstill", "Stats", "*Bil*"},
+  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Limit", "Settings", "Stats", "*Car*"},
+  /* CS  */ {"Brake", "Attack", "Choke2", "Profil", "Fade", "Pwm_F", "Brake+", "Choke1", "Settings", "Stats", "*Car*"},
+  /* ACD */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Choke", "Settings", "Stats", "*Car*"},
+  /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Ajustes", "Stats", "*Auto*"},
+  /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Bremse+", "Limit", "Setup", "Stats", "*Auto*"},
+  /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Setup", "Stats", "*Auto*"}
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][10] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Hardware", "Wifi", "Logging", "Usb info", "Nullstill", "Info", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Hardware", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
-  /* CS  */ {"Power", "Display", "Sound", "Hardware", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Hardware", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
-  /* ESP */ {"Energia", "Pantalla", "Sonido", "Hardware", "Wifi", "Logging", "Usb info", "Reset", "Acerca", "Atras"},
-  /* DEU */ {"Strom", "Anzeige", "Ton", "Hardware", "Wifi", "Logging", "Usb info", "Reset", "Info", "Zuruck"},
-  /* ITA */ {"Potenza", "Schermo", "Suono", "Hardware", "Wifi", "Logging", "Usb info", "Reset", "Info", "Indietro"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][11] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Nullstill", "Info", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
+  /* CS  */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
+  /* ESP */ {"Energia", "Pantalla", "Sonido", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Acerca", "Atras"},
+  /* DEU */ {"Strom", "Anzeige", "Ton", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Zuruck"},
+  /* ITA */ {"Potenza", "Schermo", "Suono", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Indietro"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */
 const char* POWER_MENU_NAMES_PASCAL[][6] = {
-  /* NOR */ {"Skjsp", "Dvale", "Dyp Sov", "Oppstart", "Vin kal", "Tilbake"},
-  /* ENG */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal", "Back"},
-  /* CS  */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal", "Back"},
-  /* ACD */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal", "Back"},
-  /* ESP */ {"Scrsv", "Reposo", "Susp Prof", "Arranque", "Vin Cal", "Atras"},
-  /* DEU */ {"Scrsv", "Schlaf", "Tief Schl", "Start", "Vin Kal", "Zuruck"},
-  /* ITA */ {"Scrsv", "Riposo", "Sonno Prof", "Avvio", "Vin Cal", "Indietro"}
+  /* NOR */ {"Skjsp", "Dvale", "Dyp Sov", "Oppstart", "Vin kal.", "Tilbake"},
+  /* ENG */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal.", "Back"},
+  /* CS  */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal.", "Back"},
+  /* ACD */ {"Scrsv", "Sleep", "Deep Sleep", "Startup", "Vin Cal.", "Back"},
+  /* ESP */ {"Scrsv", "Reposo", "Susp Prof", "Arranque", "Vin Cal.", "Atras"},
+  /* DEU */ {"Scrsv", "Schlaf", "Tief Schl", "Start", "Vin Kal.", "Zuruck"},
+  /* ITA */ {"Scrsv", "Riposo", "Sonno Prof", "Avvio", "Vin Cal.", "Indietro"}
 };
 
 /* Display submenu item names - Pascal Case: [language][item] */

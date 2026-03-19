@@ -384,8 +384,10 @@ void showScreensaverSettings() {
 void showStatusSettings() {
   /* ST_ITEMS: 4 slots + BACK */
   const uint8_t ST_ITEMS    = STATUS_SLOTS + 1;
-  /* Slot content range: STATUS_BLANK..STATUS_VOLTAGE */
-  const uint8_t ST_SLOT_MAX = STATUS_VOLTAGE;
+  /* Slot content range: STATUS_BLANK..STATUS_CURRENT_MA */
+  const uint8_t ST_SLOT_MAX = STATUS_CURRENT_MA;
+  const uint8_t ST_LABEL_CHARS = 7;
+  const uint8_t ST_LABEL_PIXELS = ST_LABEL_CHARS * 6;
 
   uint8_t lang = g_storedVar.language;
 
@@ -401,15 +403,15 @@ void showStatusSettings() {
   };
   const char** rowNames = rowNamesByLang[lang];
 
-  /* Content type labels (max 4 chars, shown right-justified in menu) */
+  /* Content type labels shown right-justified in menu. */
   const char* slotLabelsByLang[7][ST_SLOT_MAX + 1] = {
-    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"}
+    {"---", "OUT%", "GASS", "BIL", "CURR_A", "VOLT", "CURR_mA"},
+    {"---", "OUT%", "THRO", "CAR", "CURR_A", "VOLT", "CURR_mA"},
+    {"---", "OUT%", "THRO", "CAR", "CURR_A", "VOLT", "CURR_mA"},
+    {"---", "OUT%", "THRO", "CAR", "CURR_A", "VOLT", "CURR_mA"},
+    {"---", "OUT%", "GAS", "AUTO", "CURR_A", "VOLT", "CURR_mA"},
+    {"---", "OUT%", "GAS", "AUTO", "CURR_A", "VOLT", "CURR_mA"},
+    {"---", "OUT%", "GAS", "AUTO", "CURR_A", "VOLT", "CURR_mA"}
   };
   const char** slotLabels = slotLabelsByLang[lang];
 
@@ -516,13 +518,13 @@ void showStatusSettings() {
         obdWriteString(&g_obd, 0, 0, yPx, (char *)rowNames[idx], FONT_8x8,
                        (isSelected && state == ITEM_SELECTION) ? OBD_WHITE : OBD_BLACK, 1);
 
-        /* Value label right-justified (4 chars x 6px = 24px from right edge) */
+        /* Value label right-justified in a wider field for longer slot names. */
         if (idx < STATUS_SLOTS) {
           uint16_t v = g_storedVar.statusSlot[idx];
           const char* lbl = (v <= ST_SLOT_MAX) ? slotLabels[v] : "???";
-          char vbuf[5];
-          snprintf(vbuf, sizeof(vbuf), "%4s", lbl);
-          obdWriteString(&g_obd, 0, OLED_WIDTH - 24, yPx, vbuf, FONT_6x8,
+          char vbuf[ST_LABEL_CHARS + 1];
+          snprintf(vbuf, sizeof(vbuf), "%*s", ST_LABEL_CHARS, lbl);
+          obdWriteString(&g_obd, 0, OLED_WIDTH - ST_LABEL_PIXELS, yPx, vbuf, FONT_6x8,
                          inEdit ? OBD_WHITE : OBD_BLACK, 1);
         }
       }

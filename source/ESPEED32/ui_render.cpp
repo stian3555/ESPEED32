@@ -97,10 +97,19 @@ void displayStatusLine() {
         snprintf(buf, 6, "%-5s", g_storedVar.carParam[g_carSel].carName);
         color = carSelected ? OBD_WHITE : OBD_BLACK;
         break;
-      case STATUS_CURRENT: {
+      case STATUS_CURRENT_A: {
         if (HAL_HasMotorCurrentSense()) {
           uint16_t mA = g_escVar.motorCurrent_mA;
           sprintf(buf, "%2d.%01dA", mA / 1000, (mA % 1000) / 100);
+        } else {
+          strcpy(buf, " N/A ");
+        }
+        break;
+      }
+      case STATUS_CURRENT_MA: {
+        if (HAL_HasMotorCurrentSense()) {
+          uint16_t mA = g_escVar.motorCurrent_mA;
+          snprintf(buf, sizeof(buf), "%5u", (unsigned)mA);
         } else {
           strcpy(buf, " N/A ");
         }

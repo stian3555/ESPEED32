@@ -125,7 +125,7 @@
 void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
 #define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
-#define STATS_ENABLED_DEFAULT    1  /* Show STATS menu item by default */
+#define STATS_ENABLED_DEFAULT    0  /* Hide STATS menu item by default */
 #define EXT_POT_COUNT            2  /* Two optional external ADC pots: GPIO35 and GPIO15 */
 #define EXT_POT_TARGET_OFF       0
 #define EXT_POT_TARGET_BRAKE     1

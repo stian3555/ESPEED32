@@ -13,7 +13,6 @@
 #include "ui_render.h"
 
 extern StoredVar_type g_storedVar;
-extern uint16_t g_statsEnabled;
 extern uint16_t g_antiSpinStepMs;
 extern uint16_t g_encoderInvertEnabled;
 extern ESC_type g_escVar;
@@ -199,9 +198,7 @@ void showSettingsMenu() {
         setUiEncoderBoundaries(1, SETTINGS_ITEMS_COUNT, false);
         resetUiEncoder(settingsSelector);
         saveEEPROM(g_storedVar);
-        if (settingsValuePtr == &g_statsEnabled) {
-          initMenuItems();
-        }
+        initMenuItems();
       }
       delay(200);
     }
@@ -279,8 +276,7 @@ void showSettingsMenu() {
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
         bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
         uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
-        if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_statsEnabled ||
-            (uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_encoderInvertEnabled) {
+        if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_encoderInvertEnabled) {
           sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, value ? 1 : 0));
         } else {
           if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {

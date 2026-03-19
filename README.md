@@ -4,17 +4,54 @@ How to build it — video: https://www.youtube.com/watch?v=JtMKeiguHKI
 Hosted Web UI/docs: https://espeed32.com (best in Chrome/Edge or another WebSerial-capable browser)
 ![ThumbV2](https://github.com/user-attachments/assets/9b7e1479-4882-4ed7-93d0-4a9a81be73fc)
 
+## Quick build examples
+
+Default firmware (standard hardware):
+
+```bash
+./scripts/flash_all.sh --compile-only
+```
+
+Build for another magnetic trigger sensor:
+
+```bash
+./scripts/flash_all.sh --compile-only --sensor as5600
+./scripts/flash_all.sh --compile-only --sensor mt6701
+./scripts/flash_all.sh --compile-only --sensor analog
+```
+
+Build for another motor-controller current-sense profile:
+
+```bash
+./scripts/flash_all.sh --compile-only --current-sense bts7960
+./scripts/flash_all.sh --compile-only --current-sense none
+```
+
+Combine both in one build:
+
+```bash
+./scripts/flash_all.sh --compile-only --sensor as5600 --current-sense bts7960
+```
+
 ## Magnetic Trigger Sensor
 
 The trigger position is read from a magnetic angle sensor over I2C. Several sensors are supported.
 
 Default build uses `TLE493D`.
 
-Recommended selection method is a compile-time override, for example:
+Recommended selection method is the helper script:
 
 ```bash
 ./scripts/flash_all.sh --compile-only --sensor as5600
 ```
+
+Supported `--sensor` values:
+
+- `tle493d`
+- `as5600`
+- `as5600l`
+- `mt6701`
+- `analog`
 
 You can also pass the family directly to `arduino-cli`:
 
@@ -68,20 +105,22 @@ If detection fails, firmware continues and prints a warning on serial output.
 
 ## Motor Current Sense Profiles
 
-The firmware now keeps the original motor current path as the default, but allows advanced builders to select a different **current-sense profile** at compile time.
+The default build is still for the original `BTN99X0` motor-control hardware.
+
+What can be changed at compile time today is the **motor current-sense profile**. This is the practical way to build for other motor-controller boards right now.
+
+Important:
+
+- this is supported today
+- it is **not** yet a full alternate motor-driver / PWM implementation switch
+- `BTS7960` currently changes **current measurement only**
+- the BTS7960 values are starting points and may need tuning for the exact module and resistor/filter network used
 
 Current profile defines live in `source/ESPEED32/HAL.h`:
 
 - `CURRENT_SENSE_PROFILE_BTN99X0` = original/default hardware behavior
 - `CURRENT_SENSE_PROFILE_NONE` = disables current-sense-dependent behavior
 - `CURRENT_SENSE_PROFILE_BTS7960` = initial BTS7960 / IBT_2 current-sense profile
-
-Important:
-
-- The default build is still `CURRENT_SENSE_PROFILE_BTN99X0`
-- `CURRENT_SENSE_PROFILE_BTS7960` currently changes **current measurement only**
-- it is **not** a complete alternate motor-driver implementation
-- the BTS7960 values are starting points and may need tuning for the exact module and resistor/filter network used
 
 ### Default build
 
@@ -92,23 +131,46 @@ Use the normal flow:
 - `./scripts/flash_all.sh`
 - or `./scripts/flash_all.sh --compile-only`
 
-### Custom BTS7960 / IBT_2 current-sense build
+### Simple current-sense override with `flash_all.sh`
 
-If you want to try the BTS7960 current-sense profile **without changing the default in the repo**, override it at compile time:
+Supported `--current-sense` values:
+
+- `btn99x0`
+- `none`
+- `bts7960`
+
+Examples:
+
+```bash
+./scripts/flash_all.sh --compile-only --current-sense btn99x0
+./scripts/flash_all.sh --compile-only --current-sense none
+./scripts/flash_all.sh --compile-only --current-sense bts7960
+```
+
+You can combine sensor + current-sense override:
+
+```bash
+./scripts/flash_all.sh --compile-only --sensor tle493d --current-sense bts7960
+./scripts/flash_all.sh --compile-only --sensor mt6701 --current-sense none
+```
+
+### Advanced `arduino-cli` example
+
+If you want to compile directly with `arduino-cli`, override it like this:
 
 ```bash
 arduino-cli compile \
   --fqbn esp32:esp32:esp32 \
   --board-options "JTAGAdapter=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none,ZigbeeMode=default" \
   --build-path build-bts7960 \
-  --build-property build.extra_flags="-DCURRENT_SENSE_PROFILE=2" \
+  --build-property build.extra_flags="-DCURRENT_SENSE_PROFILE=CURRENT_SENSE_PROFILE_BTS7960" \
   source/ESPEED32
 ```
 
 Optional tuning overrides for the BTS7960 profile:
 
 ```bash
---build-property build.extra_flags="-DCURRENT_SENSE_PROFILE=2 -DBTS7960_CURRENT_SENSE_KILIS=8500 -DBTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS=1000 -DBTS7960_CURRENT_SENSE_OFFSET_MV=0"
+--build-property build.extra_flags="-DCURRENT_SENSE_PROFILE=CURRENT_SENSE_PROFILE_BTS7960 -DBTS7960_CURRENT_SENSE_KILIS=8500 -DBTS7960_CURRENT_SENSE_EFFECTIVE_R_OHMS=1000 -DBTS7960_CURRENT_SENSE_OFFSET_MV=0"
 ```
 
 What the BTS7960 tuning values mean:

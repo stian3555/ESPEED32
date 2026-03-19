@@ -32,6 +32,46 @@ Options:
 USAGE
 }
 
+matching_cu_port() {
+  local port="${1:-}"
+  if [[ "$port" == /dev/tty.* ]]; then
+    local cu_port="/dev/cu.${port#/dev/tty.}"
+    if [[ -e "$cu_port" ]]; then
+      printf '%s' "$cu_port"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+preferred_serial_port() {
+  local port="${1:-}"
+  local cu_port=""
+  if cu_port="$(matching_cu_port "$port")"; then
+    printf '%s' "$cu_port"
+  else
+    printf '%s' "$port"
+  fi
+}
+
+wait_for_serial_port() {
+  local port="${1:-}"
+  local retries="${2:-10}"
+  local delay_s="${3:-1}"
+  local candidate=""
+
+  for ((attempt = 0; attempt < retries; ++attempt)); do
+    candidate="$(preferred_serial_port "$port")"
+    if [[ -n "$candidate" && -e "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+    sleep "$delay_s"
+  done
+
+  return 1
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --build-only)
@@ -92,6 +132,12 @@ if [[ ! -e "$PORT" ]]; then
     echo "[SPIFFS] Port $PORT not found, using $ALT_PORT"
     PORT="$ALT_PORT"
   fi
+fi
+
+NORMALIZED_PORT="$(preferred_serial_port "$PORT")"
+if [[ -n "$NORMALIZED_PORT" && "$NORMALIZED_PORT" != "$PORT" ]]; then
+  echo "[SPIFFS] Using $NORMALIZED_PORT instead of $PORT"
+  PORT="$NORMALIZED_PORT"
 fi
 
 if [[ -z "$BAUD" && -f "$ARDUINO_JSON" ]]; then
@@ -159,7 +205,22 @@ if [[ "$BUILD_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
+READY_PORT="$(wait_for_serial_port "$PORT" 10 1 || true)"
+if [[ -n "$READY_PORT" && "$READY_PORT" != "$PORT" ]]; then
+  echo "[SPIFFS] Port became ready as $READY_PORT"
+  PORT="$READY_PORT"
+fi
+
 echo "[SPIFFS] Uploading to $PORT at offset $PARTITION_OFFSET (baud $BAUD)"
-"$ESPTOOL_BIN" --chip esp32 --port "$PORT" --baud "$BAUD" --before default-reset --after hard-reset write-flash "$PARTITION_OFFSET" "$IMAGE_PATH"
+if ! "$ESPTOOL_BIN" --chip esp32 --port "$PORT" --baud "$BAUD" --before default-reset --after hard-reset write-flash "$PARTITION_OFFSET" "$IMAGE_PATH"; then
+  RETRY_PORT="$(matching_cu_port "$PORT" || true)"
+  if [[ -n "$RETRY_PORT" && "$RETRY_PORT" != "$PORT" ]]; then
+    echo "[SPIFFS] Retrying with $RETRY_PORT"
+    "$ESPTOOL_BIN" --chip esp32 --port "$RETRY_PORT" --baud "$BAUD" --before default-reset --after hard-reset write-flash "$PARTITION_OFFSET" "$IMAGE_PATH"
+    PORT="$RETRY_PORT"
+  else
+    exit 1
+  fi
+fi
 
 echo "[SPIFFS] Upload complete"

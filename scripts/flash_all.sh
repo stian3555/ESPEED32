@@ -8,13 +8,14 @@ SPIFFS_SCRIPT="$ROOT_DIR/scripts/upload_spiffs.sh"
 PORT=""
 BAUD=""
 SENSOR=""
+CURRENT_SENSE=""
 FIRMWARE_ONLY=0
 SPIFFS_ONLY=0
 COMPILE_ONLY=0
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") [--firmware-only] [--spiffs-only] [--compile-only] [--sensor NAME] [-p PORT] [-u BAUD]
+Usage: $(basename "$0") [--firmware-only] [--spiffs-only] [--compile-only] [--sensor NAME] [--current-sense NAME] [-p PORT] [-u BAUD]
 
 Default flow:
   1) Compile firmware
@@ -26,6 +27,8 @@ Options:
   --spiffs-only      Only upload SPIFFS image (skip firmware compile/upload)
   --compile-only     Compile firmware only
   --sensor NAME      Trigger sensor family override: tle493d, as5600, as5600l, mt6701, analog
+  --current-sense NAME
+                     Motor current-sense profile override: btn99x0, none, bts7960
   -p, --port PORT    Serial port override (default: read from .vscode/arduino.json)
   -u, --baud BAUD    SPIFFS upload baud override (default: UploadSpeed from .vscode/arduino.json)
   -h, --help         Show this help
@@ -49,6 +52,11 @@ while [[ $# -gt 0 ]]; do
     --sensor)
       [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; exit 1; }
       SENSOR="$2"
+      shift 2
+      ;;
+    --current-sense)
+      [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; exit 1; }
+      CURRENT_SENSE="$2"
       shift 2
       ;;
     -p|--port)
@@ -125,6 +133,27 @@ sensor_build_flag() {
     *)
       echo "Unsupported --sensor value: $1" >&2
       echo "Supported values: tle493d, as5600, as5600l, mt6701, analog" >&2
+      exit 1
+      ;;
+  esac
+}
+
+current_sense_build_flag() {
+  local profile_name
+  profile_name="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$profile_name" in
+    btn99x0|btn99)
+      printf '%s' '-DCURRENT_SENSE_PROFILE=CURRENT_SENSE_PROFILE_BTN99X0'
+      ;;
+    none|off)
+      printf '%s' '-DCURRENT_SENSE_PROFILE=CURRENT_SENSE_PROFILE_NONE'
+      ;;
+    bts7960|ibt2|ibt_2)
+      printf '%s' '-DCURRENT_SENSE_PROFILE=CURRENT_SENSE_PROFILE_BTS7960'
+      ;;
+    *)
+      echo "Unsupported --current-sense value: $1" >&2
+      echo "Supported values: btn99x0, none, bts7960" >&2
       exit 1
       ;;
   esac
@@ -225,10 +254,20 @@ if [[ "$SPIFFS_ONLY" -eq 0 ]]; then
   if [[ -n "$BOARD_OPTIONS" ]]; then
     compile_cmd+=(--board-options "$BOARD_OPTIONS")
   fi
+  EXTRA_FLAGS=()
   if [[ -n "$SENSOR" ]]; then
     SENSOR_FLAG="$(sensor_build_flag "$SENSOR")"
     echo "[FLASH] Trigger sensor family override: $SENSOR"
-    compile_cmd+=(--build-property "build.extra_flags=$SENSOR_FLAG")
+    EXTRA_FLAGS+=("$SENSOR_FLAG")
+  fi
+  if [[ -n "$CURRENT_SENSE" ]]; then
+    CURRENT_SENSE_FLAG="$(current_sense_build_flag "$CURRENT_SENSE")"
+    echo "[FLASH] Current-sense profile override: $CURRENT_SENSE"
+    EXTRA_FLAGS+=("$CURRENT_SENSE_FLAG")
+  fi
+  if [[ ${#EXTRA_FLAGS[@]} -gt 0 ]]; then
+    EXTRA_FLAGS_STRING="${EXTRA_FLAGS[*]}"
+    compile_cmd+=(--build-property "build.extra_flags=$EXTRA_FLAGS_STRING")
   fi
   compile_cmd+=("$SKETCH_DIR")
   run_filtered_cmd "${compile_cmd[@]}"
@@ -253,6 +292,7 @@ if [[ "$FIRMWARE_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
+sleep 2
 echo "[FLASH] Uploading SPIFFS image"
 "$SPIFFS_SCRIPT" -p "$PORT" -u "$BAUD"
 

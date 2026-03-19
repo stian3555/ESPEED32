@@ -27,7 +27,7 @@
 #define SETTINGS_ITEMS_COUNT 13   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL, BACK) */
 #define DISPLAY_ITEMS_COUNT  6    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, STATUS, BACK) */
-#define POWER_SAVE_TIMEOUT_DEFAULT 2    /* [min] Default auto power save delay (0=manual only) */
+#define POWER_SAVE_TIMEOUT_DEFAULT 5    /* [min] Default auto power save delay (0=manual only) */
 #define POWER_SAVE_TIMEOUT_MAX     10   /* [min] Maximum auto power save delay */
 #define DEEP_SLEEP_TIMEOUT_DEFAULT 10   /* [min] Default auto deep sleep delay (0=manual only) */
 #define DEEP_SLEEP_TIMEOUT_MAX     30   /* [min] Maximum auto deep sleep delay */

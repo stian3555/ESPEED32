@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ESPEED32 favicon">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1b335a"/>
+      <stop offset="1" stop-color="#2f6fb3"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#bg)"/>
+  <path fill="#ffffff" d="M20 17h26l-3 7H28v6h16l-3 7H28v7h20l-3 7H20z"/>
+  <circle cx="47" cy="46" r="5" fill="#da4761"/>
+</svg>

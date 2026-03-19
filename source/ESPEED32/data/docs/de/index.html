@@ -414,10 +414,17 @@ details.doc-fold>:not(summary){margin-top:8px}
     </ul>
     <h3>SETTINGS-Hauptebene</h3>
     <ul>
+      <li><code>HARDWARE</code>: Encoder-Richtung, externe Pot-Overrides, Trigger-Sensor-Info/Override und Selbsttest.</li>
       <li><code>A STEP</code>: globaler Encoder-Schritt fuer ANTIS, 1-50 ms (Standard 5 ms). ANTIS selbst bleibt pro Fahrzeugprofil gespeichert.</li>
-      <li><code>ENC INV</code>: Encoder-Richtung global umkehren, falls sich das Menue verkehrt anfuehlt.</li>
       <li><code>WIFI</code>: Hintergrund-WiFi, Infoseite, QR-Code und WiFi-Auto-Aus.</li>
       <li><code>LOGGING</code>: lokale Telemetrie-Aufzeichnung mit Start/Stopp und eigenem Auto-Aus (Standard 30 min).</li>
+    </ul>
+    <h3>HARDWARE-Untermenue</h3>
+    <ul>
+      <li><code>ENC INV</code>: Encoder-Richtung global umkehren, falls sich das Menue verkehrt anfuehlt.</li>
+      <li><code>EXT POT</code>: <code>POT 1</code> und <code>POT 2</code> als Live-Override fuer <code>AUS</code>, <code>BREMSE</code> oder <code>SENSI</code> zuweisen.</li>
+      <li><code>TRIGGER</code>: zeigt Sensorfamilie und aktiven Typ. In <code>TLE493D</code>-Builds laesst sich <code>TYPE</code> auch zwischen <code>AUTO</code>, <code>W2B6</code>, <code>W2B6_A0</code> und <code>P3B6</code> umschalten.</li>
+      <li><code>TEST</code>: startet den 9-Schritt-Selbsttest fuer OLED, Taster, Trigger und Ausgaenge.</li>
     </ul>
     <h3>Geschaetzter Stromverbrauch (Controller-Elektronik)</h3>
     <table>
@@ -562,8 +569,20 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- BOOT (ON/OFF)
 |  |  |- RACE (ON/OFF)
 |  |  `- BACK
+|  |- HARDWARE
+|  |  |- ENC INV (ON/OFF)
+|  |  |- EXT POT
+|  |  |  |- POT 1 (AUS/BREMSE/SENSI)
+|  |  |  |- POT 2 (AUS/BREMSE/SENSI)
+|  |  |  `- BACK
+|  |  |- TRIGGER
+|  |  |  |- FAMILIE
+|  |  |  |- AKTIV
+|  |  |  |- TYPE (AUTO/W2B6/W2B6_A0/P3B6) [nur TLE493D]
+|  |  |  `- BACK
+|  |  |- TEST (Self-Test, 9 steps)
+|  |  `- BACK
 |  |- A STEP (1-50 ms, default 5)
-|  |- ENC INV (ON/OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
@@ -581,7 +600,6 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- CALIBRATION
 |  |  |- EVERYTHING
 |  |  `- BACK
-|  |- TEST (Self-Test, 9 steps)
 |  |- ABOUT
 |  `- BACK
 `- CAR

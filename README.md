@@ -206,7 +206,7 @@ Current hardware mapping in firmware:
 
 Current behavior:
 
-- `POT1` and `POT2` are configured from `Settings -> EXT POT`
+- `POT1` and `POT2` are configured from `Settings -> Hardware -> Ext Pot`
 - each pot can be assigned to `OFF`, `BRAKE`, or `SENSI`
 - the pots act as **live global overrides**
 - they do **not** overwrite the stored car values in flash
@@ -245,7 +245,7 @@ The docs include:
 - full controller usage guide
 - full UI overview
 - full menu tree (main menu and all submenus)
-- Norwegian, English, Spanish, and German versions
+- Norwegian, English, Spanish, German, and Italian versions
 
 ### Update workflow
 

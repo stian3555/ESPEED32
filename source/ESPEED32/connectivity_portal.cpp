@@ -35,6 +35,10 @@ static String buildTelemetryLivePayload(uint32_t afterSeq, size_t limit);
 static String buildTelemetryConfigSnapshotJson();
 static void sendSerialLengthPrefixedPayload(const String& payload);
 
+static uint16_t normalizeStatusSlotForUi(uint16_t slotValue) {
+  return normalizeStatusSlotValue(slotValue);
+}
+
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
 static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -567,13 +571,13 @@ static String buildSchemaJson() {
                         "[{\"value\":0,\"label\":\"LARGE\"},{\"value\":1,\"label\":\"small\"}]");
   appendSchemaIntField(json, first, "startupDelay", "Startup Delay", STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, 1, "x10ms");
   appendSchemaEnumField(json, first, "statusSlot0", "Status Slot 1",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR_A\"},{\"value\":5,\"label\":\"VOLTAGE\"},{\"value\":6,\"label\":\"CURR_mA\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot1", "Status Slot 2",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR_A\"},{\"value\":5,\"label\":\"VOLTAGE\"},{\"value\":6,\"label\":\"CURR_mA\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot2", "Status Slot 3",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR_A\"},{\"value\":5,\"label\":\"VOLTAGE\"},{\"value\":6,\"label\":\"CURR_mA\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot3", "Status Slot 4",
-                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR_A\"},{\"value\":5,\"label\":\"VOLTAGE\"},{\"value\":6,\"label\":\"CURR_mA\"}]");
+                        "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaStringField(json, first, "screensaverLine1", "Screensaver Line 1", SCREENSAVER_TEXT_MAX - 1);
   appendSchemaStringField(json, first, "screensaverLine2", "Screensaver Line 2", SCREENSAVER_TEXT_MAX - 1);
   json += "],";
@@ -637,10 +641,10 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"textCase\":%u,", g_storedVar.textCase); json += buf;
   snprintf(buf, sizeof(buf), "\"listFontSize\":%u,", g_storedVar.listFontSize); json += buf;
   snprintf(buf, sizeof(buf), "\"startupDelay\":%u,", g_storedVar.startupDelay); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot0\":%u,", g_storedVar.statusSlot[0]); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot1\":%u,", g_storedVar.statusSlot[1]); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot2\":%u,", g_storedVar.statusSlot[2]); json += buf;
-  snprintf(buf, sizeof(buf), "\"statusSlot3\":%u,", g_storedVar.statusSlot[3]); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot0\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[0])); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot1\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[1])); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot2\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[2])); json += buf;
+  snprintf(buf, sizeof(buf), "\"statusSlot3\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[3])); json += buf;
   json += "\"screensaverLine1\":\"";
   appendJsonEscaped(json, g_storedVar.screensaverLine1);
   json += "\",\"screensaverLine2\":\"";
@@ -751,19 +755,23 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     updated.startupDelay = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot0", v)) {
-    if (!inRange(v, STATUS_BLANK, STATUS_CURRENT_MA)) { *errorMsg = "Error: invalid statusSlot0"; return false; }
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot0"; return false; }
     updated.statusSlot[0] = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot1", v)) {
-    if (!inRange(v, STATUS_BLANK, STATUS_CURRENT_MA)) { *errorMsg = "Error: invalid statusSlot1"; return false; }
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot1"; return false; }
     updated.statusSlot[1] = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot2", v)) {
-    if (!inRange(v, STATUS_BLANK, STATUS_CURRENT_MA)) { *errorMsg = "Error: invalid statusSlot2"; return false; }
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot2"; return false; }
     updated.statusSlot[2] = (uint16_t)v;
   }
   if (parseJsonInt(json, "statusSlot3", v)) {
-    if (!inRange(v, STATUS_BLANK, STATUS_CURRENT_MA)) { *errorMsg = "Error: invalid statusSlot3"; return false; }
+    if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
+    if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot3"; return false; }
     updated.statusSlot[3] = (uint16_t)v;
   }
 
@@ -1310,7 +1318,7 @@ static String buildTelemetryConfigSummaryJsonFromSnapshot(const TelemetryConfigS
     if (i > 0) {
       json += ",";
     }
-    json += String(snapshot.storedVar.statusSlot[i]);
+    json += String(normalizeStatusSlotForUi(snapshot.storedVar.statusSlot[i]));
   }
   json += "],\"carNames\":";
   appendTelemetryCarNamesJson(json, snapshot.storedVar);
@@ -1399,7 +1407,7 @@ static void appendTelemetryStatusFields(String& json, const TelemetryStatus& sta
   json += ",\"statusSlots\":[";
   for (uint8_t i = 0; i < STATUS_SLOTS; i++) {
     if (i > 0) json += ",";
-    json += String(g_storedVar.statusSlot[i]);
+    json += String(normalizeStatusSlotForUi(g_storedVar.statusSlot[i]));
   }
   json += "]}";
 }

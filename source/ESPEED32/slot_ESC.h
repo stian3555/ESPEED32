@@ -175,10 +175,13 @@ void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define STATUS_OUTPUT   1   /* Motor output % (5 chars, e.g. " 75%O") */
 #define STATUS_THROTTLE 2   /* Trigger input % (5 chars, e.g. " 75%T") */
 #define STATUS_CAR      3   /* Car name (5 chars, e.g. "CAR1 ") */
-#define STATUS_CURRENT_A   4   /* Motor current in amps (5 chars, e.g. " 1.5A" / " N/A ") */
-#define STATUS_VOLTAGE     5   /* Input voltage (5 chars, e.g. " 3.7V") */
-#define STATUS_CURRENT_MA  6   /* Motor current raw mA digits (5 chars, e.g. "  850" / "12345") */
-#define STATUS_CURRENT     STATUS_CURRENT_A  /* Backwards-compatible alias */
+#define STATUS_CURRENT  4   /* Hybrid motor current (5 chars, e.g. "850mA" / "2.7A ") */
+#define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
+#define STATUS_CURRENT_MA  6   /* Legacy stored value; normalized to STATUS_CURRENT */
+
+static inline uint16_t normalizeStatusSlotValue(uint16_t slotValue) {
+  return (slotValue == STATUS_CURRENT_MA) ? STATUS_CURRENT : slotValue;
+}
 /* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
 #define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
 #define STATUS_SLOT1_DEFAULT STATUS_THROTTLE

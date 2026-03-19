@@ -10,6 +10,7 @@ extern uint16_t g_carSel;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void requestEscapeToMain();
@@ -121,7 +122,7 @@ void showAdvancedBrakeMenu() {
 
   uint32_t lastInteraction   = millis();
   bool screensaverActive     = false;
-  uint16_t screensaverEncPos = 0;
+  uint16_t screensaverEncPos = (uint16_t)readUiEncoder();
 
   static bool brakeInQB = false;
   static uint32_t lastBrakeQB = 0;
@@ -140,27 +141,17 @@ void showAdvancedBrakeMenu() {
   };
 
   while (true) {
-    /* Screensaver */
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-    bool wakeUp = false;
-    if (screensaverActive) {
-      uint16_t ep = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          ep != screensaverEncPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUp = true;
-        screensaverActive = false;
-        lastInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-        prevSel     = 0xFF;
-        forceRedraw = true;
-      }
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      prevSel     = 0xFF;
+      forceRedraw = true;
     }
     if (consumeScreensaverWakeInput(wakeUp)) { continue; }
 
     if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!screensaverActive) {
           screensaverActive = true;
           screensaverEncPos = readUiEncoder();

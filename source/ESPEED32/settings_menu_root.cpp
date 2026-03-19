@@ -26,6 +26,7 @@ extern void initSettingsMenuItems();
 extern void initMenuItems();
 extern void saveEEPROM(StoredVar_type toSave);
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern bool serviceIdlePowerTransitions(uint32_t* lastInteraction, bool* screensaverActive);
 extern bool checkRaceModeEscape();
 extern void setInSettingsMenu(bool active);
@@ -55,7 +56,7 @@ void showSettingsMenu() {
 
   uint32_t lastSettingsInteraction = millis();
   bool settingsScreensaverActive = false;
-  uint16_t settingsScreensaverEncoderPos = 0;
+  uint16_t settingsScreensaverEncoderPos = (uint16_t)readUiEncoder();
 
   auto resumeAfterSettingsChild = [&]() {
     lastSettingsInteraction = millis();
@@ -71,20 +72,9 @@ void showSettingsMenu() {
   };
 
   while (true) {
-    uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-
-    /* Screensaver wake-up */
-    bool wakeUpTriggered = false;
-    if (settingsScreensaverActive) {
-      uint16_t currentEncoderPos = readUiEncoder();
-      if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-          currentEncoderPos != settingsScreensaverEncoderPos ||
-          digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        wakeUpTriggered = true;
-        settingsScreensaverActive = false;
-        lastSettingsInteraction = millis();
-        obdFill(&g_obd, OBD_WHITE, 1);
-      }
+    bool wakeUpTriggered = refreshIdleInteractionFromControls(&lastSettingsInteraction, &settingsScreensaverActive, &settingsScreensaverEncoderPos);
+    if (wakeUpTriggered) {
+      obdFill(&g_obd, OBD_WHITE, 1);
     }
 
     /* Screensaver timeout */
@@ -92,7 +82,7 @@ void showSettingsMenu() {
 
     if (!wakeUpTriggered && g_storedVar.screensaverTimeout > 0 &&
         millis() - lastSettingsInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
-      if (throttle_pct < SCREENSAVER_WAKEUP_THRESHOLD) {
+      if (g_escVar.trigger_norm == 0) {
         if (!settingsScreensaverActive) {
           settingsScreensaverActive = true;
           settingsScreensaverEncoderPos = readUiEncoder();

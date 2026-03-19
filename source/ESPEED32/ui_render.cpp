@@ -17,6 +17,7 @@ extern uint8_t g_encoderMainSelector;
 extern uint32_t g_lastEncoderInteraction;
 extern bool g_forceRaceRedraw;
 
+extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
 extern void showScreensaver();
 extern void showPowerSave(uint32_t inactivityStartMs);
 extern void showDeepSleep();
@@ -97,19 +98,15 @@ void displayStatusLine() {
         snprintf(buf, 6, "%-5s", g_storedVar.carParam[g_carSel].carName);
         color = carSelected ? OBD_WHITE : OBD_BLACK;
         break;
-      case STATUS_CURRENT_A: {
-        if (HAL_HasMotorCurrentSense()) {
-          uint16_t mA = g_escVar.motorCurrent_mA;
-          sprintf(buf, "%2d.%01dA", mA / 1000, (mA % 1000) / 100);
-        } else {
-          strcpy(buf, " N/A ");
-        }
-        break;
-      }
+      case STATUS_CURRENT:
       case STATUS_CURRENT_MA: {
         if (HAL_HasMotorCurrentSense()) {
           uint16_t mA = g_escVar.motorCurrent_mA;
-          snprintf(buf, sizeof(buf), "%5u", (unsigned)mA);
+          if (mA < 1000U) {
+            snprintf(buf, sizeof(buf), "%3umA", (unsigned)mA);
+          } else {
+            snprintf(buf, sizeof(buf), "%2u.%1uA", (unsigned)(mA / 1000U), (unsigned)((mA % 1000U) / 100U));
+          }
         } else {
           strcpy(buf, " N/A ");
         }
@@ -465,34 +462,18 @@ void printMainMenu(MenuState_enum currMenuState)
   /* LIST mode: show screensaver or menu */
   lastViewMode = VIEW_MODE_LIST;  /* Track that we're in LIST mode */
 
-  /* Calculate throttle percentage for screensaver logic */
-  uint8_t throttle_pct = (g_escVar.trigger_norm * 100) / THROTTLE_NORMALIZED;
-
   /* Track encoder position for screensaver wake-up */
   static uint16_t screensaverEncoderPos = 0;
 
-  /* Check for any wake-up input (throttle, encoder change, or button press) */
-  if (screensaverActive) {
-    uint16_t currentEncoderPos = readUiEncoder();
-    if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD ||
-        currentEncoderPos != screensaverEncoderPos ||
-        digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-      /* Wake from screensaver */
-      obdFill(&g_obd, OBD_WHITE, 1);
-      screensaverActive = false;
-      g_lastEncoderInteraction = millis();
-    }
-  }
-
-  /* Keep resetting timeout while throttle is above threshold (prevents screensaver activation) */
-  if (throttle_pct >= SCREENSAVER_WAKEUP_THRESHOLD) {
-    g_lastEncoderInteraction = millis();
+  bool wakeUpTriggered = refreshIdleInteractionFromControls(&g_lastEncoderInteraction, &screensaverActive, &screensaverEncoderPos);
+  if (wakeUpTriggered) {
+    obdFill(&g_obd, OBD_WHITE, 1);
   }
 
   if (g_storedVar.screensaverTimeout > 0 && millis() - g_lastEncoderInteraction > (g_storedVar.screensaverTimeout * 1000UL))
   {
-    /* Timeout reached and throttle below threshold - show screensaver */
-    if (!screensaverActive) {
+    /* Timeout reached with no active controls - show screensaver */
+    if (!screensaverActive && g_escVar.trigger_norm == 0) {
       screensaverActive = true;
       screensaverEncoderPos = readUiEncoder();  /* Save position when entering screensaver */
       showScreensaver();

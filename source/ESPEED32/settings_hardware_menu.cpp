@@ -23,13 +23,23 @@ extern void showScreensaver();
 extern void saveEEPROM(StoredVar_type toSave);
 
 static const char* HARDWARE_MENU_LABELS[7][HARDWARE_ITEMS_COUNT] = {
-  {"ENC INV", "EKST POT", "TRIGGER", "TEST", "TILBAKE"},
-  {"ENC INV", "EXT POT", "TRIGGER", "TEST", "BACK"},
-  {"ENC INV", "EXT POT", "TRIGGER", "TEST", "BACK"},
-  {"ENC INV", "EXT POT", "TRIGGER", "TEST", "BACK"},
-  {"ENC INV", "POT EXT", "TRIGGER", "TEST", "ATRAS"},
-  {"ENC INV", "EXT POT", "TRIGGER", "TEST", "ZURUCK"},
-  {"ENC INV", "POT EST", "TRIGGER", "TEST", "INDIETRO"}
+  {"ENC.INVERT", "EKST.POT.", "TRIGGER", "TEST", "TILBAKE"},
+  {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "BACK"},
+  {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "BACK"},
+  {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "BACK"},
+  {"ENC.INVERT", "POT.EXT.", "TRIGGER", "TEST", "ATRAS"},
+  {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "ZURUCK"},
+  {"ENC.INVERT", "POT.EST.", "TRIGGER", "TEST", "INDIETRO"}
+};
+
+static const char* HARDWARE_MENU_LABELS_PASCAL[7][HARDWARE_ITEMS_COUNT] = {
+  {"Enc.Invert", "Ekst.Pot.", "Trigger", "Test", "Tilbake"},
+  {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Back"},
+  {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Back"},
+  {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Back"},
+  {"Enc.Invert", "Pot.Ext.", "Trigger", "Test", "Atras"},
+  {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Zuruck"},
+  {"Enc.Invert", "Pot.Est.", "Trigger", "Test", "Indietro"}
 };
 
 static const char* SENSOR_MENU_LABELS[7][4] = {
@@ -41,6 +51,97 @@ static const char* SENSOR_MENU_LABELS[7][4] = {
   {"FAMILIE", "AKTIV", "TYPE", "ZURUCK"},
   {"FAMIGLIA", "ATTIVO", "TYPE", "INDIETRO"}
 };
+
+static const char* SENSOR_MENU_LABELS_PASCAL[7][4] = {
+  {"Familie", "Aktiv", "Type", "Tilbake"},
+  {"Family", "Active", "Type", "Back"},
+  {"Family", "Active", "Type", "Back"},
+  {"Family", "Active", "Type", "Back"},
+  {"Familia", "Activo", "Type", "Atras"},
+  {"Familie", "Aktiv", "Type", "Zuruck"},
+  {"Famiglia", "Attivo", "Type", "Indietro"}
+};
+
+static const char* getHardwareMenuLabel(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL)
+    ? HARDWARE_MENU_LABELS_PASCAL[lang][item]
+    : HARDWARE_MENU_LABELS[lang][item];
+}
+
+static const char* getSensorMenuLabel(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL)
+    ? SENSOR_MENU_LABELS_PASCAL[lang][item]
+    : SENSOR_MENU_LABELS[lang][item];
+}
+
+static void clearValueField(uint8_t x, uint8_t y, uint8_t widthPx, uint8_t heightPx) {
+  if (widthPx == 0 || heightPx == 0) return;
+
+  uint8_t xEnd = x + widthPx - 1;
+  for (uint8_t row = 0; row < heightPx; row++) {
+    obdDrawLine(&g_obd, x, y + row, xEnd, y + row, OBD_WHITE, 1);
+  }
+}
+
+static void copyConfiguredCaseValue(const char* value, char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+  buffer[0] = '\0';
+  if (value == nullptr) return;
+
+  snprintf(buffer, bufferSize, "%s", value);
+
+  if (g_storedVar.textCase != TEXT_CASE_PASCAL) {
+    return;
+  }
+
+  bool hasLetters = false;
+  bool canConvertToPascal = true;
+  for (size_t i = 0; buffer[i] != '\0'; i++) {
+    char c = buffer[i];
+    if (c >= 'A' && c <= 'Z') {
+      hasLetters = true;
+      continue;
+    }
+    if (c >= 'a' && c <= 'z') {
+      hasLetters = true;
+      canConvertToPascal = false;
+      break;
+    }
+    if ((c >= '0' && c <= '9') || c == '_' || c == '.' || c == '-') {
+      canConvertToPascal = false;
+      break;
+    }
+  }
+
+  if (!hasLetters || !canConvertToPascal) {
+    return;
+  }
+
+  for (size_t i = 1; buffer[i] != '\0'; i++) {
+    if (buffer[i] >= 'A' && buffer[i] <= 'Z') {
+      buffer[i] = (char)(buffer[i] - 'A' + 'a');
+    }
+  }
+}
+
+static void drawRightAlignedValue(uint8_t y, const char* value, bool selected, uint8_t fieldChars = 0) {
+  if (value == nullptr || value[0] == '\0') return;
+
+  copyConfiguredCaseValue(value, msgStr, sizeof(msgStr));
+
+  uint8_t fieldLen = (uint8_t)strlen(msgStr);
+  if (fieldChars > fieldLen) {
+    fieldLen = fieldChars;
+  }
+
+  uint8_t fieldWidthPx = fieldLen * WIDTH8x8;
+  uint8_t fieldX = OLED_WIDTH - fieldWidthPx;
+  clearValueField(fieldX, y, fieldWidthPx, HEIGHT8x8);
+
+  uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
+  obdWriteString(&g_obd, 0, vx, y, msgStr,
+                 FONT_8x8, selected ? OBD_WHITE : OBD_BLACK, 1);
+}
 
 static void showTriggerSensorSettings() {
   const uint8_t menuFont = FONT_8x8;
@@ -145,10 +246,9 @@ static void showTriggerSensorSettings() {
 
       for (uint8_t i = 0; i < numItems; i++) {
         bool isSelected = (sel == i);
-        const char* label = SENSOR_MENU_LABELS[lang][i];
-        if (!supportsTypeOverride && i == itemBack) {
-          label = SENSOR_MENU_LABELS[lang][3];
-        }
+        const char* label = (i == itemBack)
+          ? getBackLabel(lang)
+          : getSensorMenuLabel(lang, i);
         obdWriteString(&g_obd, 0, 0, i * lineH, (char*)label,
                        menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
 
@@ -158,10 +258,7 @@ static void showTriggerSensorSettings() {
         else if (supportsTypeOverride && i == itemType) value = typeBuf;
 
         if (value != nullptr && value[0] != '\0') {
-          snprintf(msgStr, sizeof(msgStr), "%s", value);
-          uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
-          obdWriteString(&g_obd, 0, vx, i * lineH, msgStr,
-                         menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          drawRightAlignedValue(i * lineH, value, isSelected, 8);
         }
       }
     }
@@ -294,7 +391,10 @@ void showHardwareSettings() {
 
       for (uint8_t i = 0; i < HARDWARE_ITEMS_COUNT; i++) {
         bool isSelected = (sel == i);
-        obdWriteString(&g_obd, 0, 0, i * lineH, (char*)HARDWARE_MENU_LABELS[lang][i],
+        const char* label = (i == itemBack)
+          ? getBackLabel(lang)
+          : getHardwareMenuLabel(lang, i);
+        obdWriteString(&g_obd, 0, 0, i * lineH, (char*)label,
                        menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
 
         const char* value = nullptr;
@@ -305,10 +405,7 @@ void showHardwareSettings() {
         }
 
         if (value != nullptr && value[0] != '\0') {
-          snprintf(msgStr, sizeof(msgStr), "%s", value);
-          uint8_t vx = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
-          obdWriteString(&g_obd, 0, vx, i * lineH, msgStr,
-                         menuFont, isSelected ? OBD_WHITE : OBD_BLACK, 1);
+          drawRightAlignedValue(i * lineH, value, isSelected, (i == itemEncInv) ? 3 : 8);
         }
       }
     }

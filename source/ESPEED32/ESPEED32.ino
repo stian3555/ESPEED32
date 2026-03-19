@@ -594,6 +594,7 @@ void Task1code(void *pvParameters) {
         g_pref.putUShort(PREF_KEY_ADC_RANGE, ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, EXT_POT1_TARGET_DEFAULT);
         g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, EXT_POT2_TARGET_DEFAULT);
+        HAL_ResetTriggerSensorConfig();
 
         initStoredVariables();  /* Initialize stored variables with default values */
         g_statsEnabled = STATS_ENABLED_DEFAULT;
@@ -622,7 +623,6 @@ void Task1code(void *pvParameters) {
       case CALIBRATION:
         /* Read Throttle */
         throttleCalibration(g_escVar.trigger_raw);    /* trigger raw is continuously read on task2 */
-        HAL_ResetTriggerSensorConfig();
         showScreenCalibration(g_escVar.trigger_raw);  /* Show calibration screen */
         /* Exit calibration if button is presseded */
         if (g_rotaryEncoder.isEncoderButtonClicked())  /* exit calibration and save calibration data to EEPROM */

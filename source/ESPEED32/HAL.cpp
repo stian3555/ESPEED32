@@ -58,6 +58,8 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
   static constexpr const char* TLE493D_CFG_NS = "sensor_cfg";
   static constexpr const char* TLE493D_CFG_KEY_VAR = "tle_var";
   static constexpr const char* TLE493D_CFG_KEY_ADDR = "tle_addr";
+  static constexpr const char* TLE493D_CFG_KEY_MODE = "tle_mode";
+  static uint8_t g_tleOverrideMode = TRIGGER_SENSOR_TYPE_AUTO;
 
   static uint8_t TLE493D_EncodeVariant(TLE493DVariant variant) {
     switch (variant) {
@@ -207,6 +209,172 @@ static constexpr int BOOT_SOUND_NOTE_MS = 20;
     return angle10;
   }
 
+  static uint8_t TLE493D_NormalizeOverrideMode(uint16_t mode) {
+    if (mode > TRIGGER_SENSOR_TYPE_MAX) return TRIGGER_SENSOR_TYPE_AUTO;
+    return (uint8_t)mode;
+  }
+
+  static uint8_t TLE493D_LoadOverrideMode() {
+    Preferences pref;
+    if (!pref.begin(TLE493D_CFG_NS, true)) return TRIGGER_SENSOR_TYPE_AUTO;
+    uint8_t mode = pref.getUChar(TLE493D_CFG_KEY_MODE, TRIGGER_SENSOR_TYPE_AUTO);
+    pref.end();
+    return TLE493D_NormalizeOverrideMode(mode);
+  }
+
+  static void TLE493D_SaveOverrideMode(uint16_t mode) {
+    uint8_t normalized = TLE493D_NormalizeOverrideMode(mode);
+    Preferences pref;
+    if (!pref.begin(TLE493D_CFG_NS, false)) return;
+    if (pref.getUChar(TLE493D_CFG_KEY_MODE, TRIGGER_SENSOR_TYPE_AUTO) != normalized) {
+      pref.putUChar(TLE493D_CFG_KEY_MODE, normalized);
+    }
+    pref.end();
+  }
+
+  static void TLE493D_ClearStoredConfig(bool clearMode) {
+    Preferences pref;
+    if (!pref.begin(TLE493D_CFG_NS, false)) return;
+    pref.remove(TLE493D_CFG_KEY_VAR);
+    pref.remove(TLE493D_CFG_KEY_ADDR);
+    if (clearMode) pref.remove(TLE493D_CFG_KEY_MODE);
+    pref.end();
+  }
+
+  static void TLE493D_ResetRuntimeState() {
+    g_tleVariant = TLE493DVariant::NONE;
+    g_tleAddress = TLE493D_W2B6_A3_ADDR;
+    g_tleXavg = 0;
+    g_tleYavg = 0;
+    g_tleFilterInit = false;
+    g_tleLastAngle = 0;
+    g_tleLastAngleValid = false;
+  }
+
+  static bool TLE493D_DetectAuto(TLE493DVariant* detectedVariant, uint8_t* detectedAddress) {
+    if (detectedVariant == nullptr || detectedAddress == nullptr) return false;
+
+    bool tleReady = false;
+    TLE493DVariant cachedVariant = TLE493DVariant::NONE;
+    uint8_t cachedAddress = 0;
+    if (TLE493D_LoadCachedConfig(&cachedVariant, &cachedAddress)) {
+      if (cachedVariant == TLE493DVariant::W2B6) {
+        tleReady = TLE493D_TryInitW2B6(cachedAddress, 1);
+      } else if (cachedVariant == TLE493DVariant::W2B6_A0) {
+        tleReady = TLE493D_TryInitW2B6_A0(cachedAddress, 1);
+      } else if (cachedVariant == TLE493DVariant::P3B6) {
+        tleReady = TLE493D_TryInitP3B6(cachedAddress, 1);
+      }
+      if (tleReady) {
+        *detectedVariant = cachedVariant;
+        *detectedAddress = cachedAddress;
+        return true;
+      }
+    }
+
+    if (TLE493D_TryInitW2B6_A0(TLE493D_W2B6_A0_ADDR)) {
+      *detectedVariant = TLE493DVariant::W2B6_A0;
+      *detectedAddress = TLE493D_W2B6_A0_ADDR;
+      return true;
+    }
+    if (TLE493D_TryInitW2B6(TLE493D_W2B6_A3_ADDR)) {
+      *detectedVariant = TLE493DVariant::W2B6;
+      *detectedAddress = TLE493D_W2B6_A3_ADDR;
+      return true;
+    }
+
+    const uint8_t p3Addresses[] = {
+      TLE493D_P3B6_A0_ADDR,
+      TLE493D_P3B6_A1_ADDR,
+      TLE493D_P3B6_A2_ADDR,
+      TLE493D_P3B6_A3_ADDR
+    };
+    for (uint8_t i = 0; i < sizeof(p3Addresses); ++i) {
+      if (TLE493D_TryInitP3B6(p3Addresses[i])) {
+        *detectedVariant = TLE493DVariant::P3B6;
+        *detectedAddress = p3Addresses[i];
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static bool TLE493D_DetectForced(uint8_t overrideMode, TLE493DVariant* detectedVariant, uint8_t* detectedAddress) {
+    if (detectedVariant == nullptr || detectedAddress == nullptr) return false;
+
+    if (overrideMode == TRIGGER_SENSOR_TYPE_W2B6_A0) {
+      if (!TLE493D_TryInitW2B6_A0(TLE493D_W2B6_A0_ADDR)) return false;
+      *detectedVariant = TLE493DVariant::W2B6_A0;
+      *detectedAddress = TLE493D_W2B6_A0_ADDR;
+      return true;
+    }
+    if (overrideMode == TRIGGER_SENSOR_TYPE_W2B6) {
+      if (!TLE493D_TryInitW2B6(TLE493D_W2B6_A3_ADDR)) return false;
+      *detectedVariant = TLE493DVariant::W2B6;
+      *detectedAddress = TLE493D_W2B6_A3_ADDR;
+      return true;
+    }
+    if (overrideMode == TRIGGER_SENSOR_TYPE_P3B6) {
+      const uint8_t p3Addresses[] = {
+        TLE493D_P3B6_A0_ADDR,
+        TLE493D_P3B6_A1_ADDR,
+        TLE493D_P3B6_A2_ADDR,
+        TLE493D_P3B6_A3_ADDR
+      };
+      for (uint8_t i = 0; i < sizeof(p3Addresses); ++i) {
+        if (TLE493D_TryInitP3B6(p3Addresses[i])) {
+          *detectedVariant = TLE493DVariant::P3B6;
+          *detectedAddress = p3Addresses[i];
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static bool TLE493D_ApplyMode(uint8_t overrideMode) {
+    TLE493D_ResetRuntimeState();
+
+    TLE493DVariant detectedVariant = TLE493DVariant::NONE;
+    uint8_t detectedAddress = 0;
+    bool tleReady = (overrideMode == TRIGGER_SENSOR_TYPE_AUTO)
+      ? TLE493D_DetectAuto(&detectedVariant, &detectedAddress)
+      : TLE493D_DetectForced(overrideMode, &detectedVariant, &detectedAddress);
+
+    if (tleReady) {
+      g_tleVariant = detectedVariant;
+      g_tleAddress = detectedAddress;
+      TLE493D_SaveCachedConfig(detectedVariant, detectedAddress);
+    }
+
+    Serial.print("TLE493D mode=");
+    switch (overrideMode) {
+      case TRIGGER_SENSOR_TYPE_W2B6: Serial.print("W2B6"); break;
+      case TRIGGER_SENSOR_TYPE_W2B6_A0: Serial.print("W2B6_A0"); break;
+      case TRIGGER_SENSOR_TYPE_P3B6: Serial.print("P3B6"); break;
+      default: Serial.print("AUTO"); break;
+    }
+
+    if (tleReady) {
+      Serial.print(", active=");
+      if (g_tleVariant == TLE493DVariant::W2B6) {
+        Serial.print("W2B6");
+      } else if (g_tleVariant == TLE493DVariant::W2B6_A0) {
+        Serial.print("W2B6_A0");
+      } else {
+        Serial.print("P3B6");
+      }
+      Serial.print(", addr=0x");
+      Serial.println(g_tleAddress, HEX);
+    } else {
+      Serial.println(", not detected");
+    }
+
+    return tleReady;
+  }
+
 #endif
 
 /*********************************************************************************************************************/
@@ -231,74 +399,8 @@ void HAL_InitHW() {
   /* Initialize I2C for TLE493D sensor */
   Wire1.begin(SDA0_PIN, SCL0_PIN, 100000L);
   delay(TLE493D_I2C_STABILIZE_MS);  /* Wait for I2C stabilization */
-
-  /* Fast path: use cached sensor variant/address from NVS, then verify with a single probe. */
-  bool tleReady = false;
-  TLE493DVariant detectedVariant = TLE493DVariant::NONE;
-  uint8_t detectedAddress = 0;
-
-  TLE493DVariant cachedVariant = TLE493DVariant::NONE;
-  uint8_t cachedAddress = 0;
-  if (TLE493D_LoadCachedConfig(&cachedVariant, &cachedAddress)) {
-    if (cachedVariant == TLE493DVariant::W2B6) {
-      tleReady = TLE493D_TryInitW2B6(cachedAddress, 1);
-    } else if (cachedVariant == TLE493DVariant::W2B6_A0) {
-      tleReady = TLE493D_TryInitW2B6_A0(cachedAddress, 1);
-    } else if (cachedVariant == TLE493DVariant::P3B6) {
-      tleReady = TLE493D_TryInitP3B6(cachedAddress, 1);
-    }
-    if (tleReady) {
-      detectedVariant = cachedVariant;
-      detectedAddress = cachedAddress;
-    }
-  }
-
-  /* Fallback path: full auto-detect when cache is missing/stale. */
-  if (!tleReady) {
-    if (TLE493D_TryInitW2B6_A0(TLE493D_W2B6_A0_ADDR)) {
-      detectedVariant = TLE493DVariant::W2B6_A0;
-      detectedAddress = TLE493D_W2B6_A0_ADDR;
-      tleReady = true;
-    } else if (TLE493D_TryInitW2B6(TLE493D_W2B6_A3_ADDR)) {
-      detectedVariant = TLE493DVariant::W2B6;
-      detectedAddress = TLE493D_W2B6_A3_ADDR;
-      tleReady = true;
-    } else {
-      const uint8_t p3Addresses[] = {
-        TLE493D_P3B6_A0_ADDR,
-        TLE493D_P3B6_A1_ADDR,
-        TLE493D_P3B6_A2_ADDR,
-        TLE493D_P3B6_A3_ADDR
-      };
-      for (uint8_t i = 0; i < sizeof(p3Addresses); ++i) {
-        if (TLE493D_TryInitP3B6(p3Addresses[i])) {
-          detectedVariant = TLE493DVariant::P3B6;
-          detectedAddress = p3Addresses[i];
-          tleReady = true;
-          break;
-        }
-      }
-    }
-  }
-
-  if (tleReady) {
-    g_tleVariant = detectedVariant;
-    g_tleAddress = detectedAddress;
-    TLE493D_SaveCachedConfig(detectedVariant, detectedAddress);
-
-    Serial.print("TLE493D ready, variant=");
-    if (g_tleVariant == TLE493DVariant::W2B6) {
-      Serial.print("W2B6");
-    } else if (g_tleVariant == TLE493DVariant::W2B6_A0) {
-      Serial.print("W2B6_A0");
-    } else {
-      Serial.print("P3B6");
-    }
-    Serial.print(", addr=0x");
-    Serial.println(g_tleAddress, HEX);
-  } else {
-    Serial.println("WARN: TLE493D init not confirmed for W2B6/W2B6_A0/P3B6 (continuing).");
-  }
+  g_tleOverrideMode = TLE493D_LoadOverrideMode();
+  TLE493D_ApplyMode(g_tleOverrideMode);
 #endif
 
   /* Configure motor control PWM channels */
@@ -405,6 +507,109 @@ void HAL_GetTriggerSensorInfo(char* buffer, size_t bufferSize) {
   snprintf(buffer, bufferSize, "ANALOG");
 #else
   snprintf(buffer, bufferSize, "UNKNOWN");
+#endif
+}
+
+void HAL_GetTriggerSensorFamilyLabel(char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+
+#if defined(TLE493D_MAG)
+  snprintf(buffer, bufferSize, "TLE493D");
+#elif defined(AS5600L_MAG)
+  snprintf(buffer, bufferSize, "AS5600L");
+#elif defined(AS5600_MAG)
+  snprintf(buffer, bufferSize, "AS5600");
+#elif defined(MT6701_MAG)
+  snprintf(buffer, bufferSize, "MT6701");
+#elif defined(ANALOG_TRIG)
+  snprintf(buffer, bufferSize, "ANALOG");
+#else
+  snprintf(buffer, bufferSize, "UNKNOWN");
+#endif
+}
+
+void HAL_GetTriggerSensorActiveTypeLabel(char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+
+#if defined(TLE493D_MAG)
+  if (g_tleVariant == TLE493DVariant::W2B6) {
+    snprintf(buffer, bufferSize, "W2B6");
+  } else if (g_tleVariant == TLE493DVariant::W2B6_A0) {
+    snprintf(buffer, bufferSize, "W2B6_A0");
+  } else if (g_tleVariant == TLE493DVariant::P3B6) {
+    snprintf(buffer, bufferSize, "P3B6");
+  } else {
+    snprintf(buffer, bufferSize, "NONE");
+  }
+#elif defined(AS5600L_MAG)
+  snprintf(buffer, bufferSize, "AS5600L");
+#elif defined(AS5600_MAG)
+  snprintf(buffer, bufferSize, "AS5600");
+#elif defined(MT6701_MAG)
+  snprintf(buffer, bufferSize, "MT6701");
+#elif defined(ANALOG_TRIG)
+  snprintf(buffer, bufferSize, "ANALOG");
+#else
+  snprintf(buffer, bufferSize, "UNKNOWN");
+#endif
+}
+
+void HAL_GetTriggerSensorTypeOptionLabel(uint16_t type, char* buffer, size_t bufferSize) {
+  if (buffer == nullptr || bufferSize == 0) return;
+
+  switch (type) {
+    case TRIGGER_SENSOR_TYPE_W2B6:
+      snprintf(buffer, bufferSize, "W2B6");
+      break;
+    case TRIGGER_SENSOR_TYPE_W2B6_A0:
+      snprintf(buffer, bufferSize, "W2B6_A0");
+      break;
+    case TRIGGER_SENSOR_TYPE_P3B6:
+      snprintf(buffer, bufferSize, "P3B6");
+      break;
+    case TRIGGER_SENSOR_TYPE_AUTO:
+    default:
+      snprintf(buffer, bufferSize, "AUTO");
+      break;
+  }
+}
+
+bool HAL_TriggerSensorSupportsTypeOverride() {
+#if defined(TLE493D_MAG)
+  return true;
+#else
+  return false;
+#endif
+}
+
+uint16_t HAL_GetTriggerSensorTypeOverride() {
+#if defined(TLE493D_MAG)
+  return g_tleOverrideMode;
+#else
+  return TRIGGER_SENSOR_TYPE_AUTO;
+#endif
+}
+
+bool HAL_SetTriggerSensorTypeOverride(uint16_t type) {
+#if defined(TLE493D_MAG)
+  uint8_t normalized = TLE493D_NormalizeOverrideMode(type);
+  g_tleOverrideMode = normalized;
+  TLE493D_SaveOverrideMode(normalized);
+  TLE493D_ClearStoredConfig(false);
+  delay(TLE493D_I2C_STABILIZE_MS);
+  return TLE493D_ApplyMode(normalized);
+#else
+  (void)type;
+  return false;
+#endif
+}
+
+void HAL_ResetTriggerSensorConfig() {
+#if defined(TLE493D_MAG)
+  g_tleOverrideMode = TRIGGER_SENSOR_TYPE_AUTO;
+  TLE493D_ClearStoredConfig(true);
+  delay(TLE493D_I2C_STABILIZE_MS);
+  (void)TLE493D_ApplyMode(g_tleOverrideMode);
 #endif
 }
 

@@ -5,16 +5,14 @@
 #include "connectivity_portal.h"
 #include "settings_power_menu.h"
 #include "settings_display_menu.h"
+#include "settings_hardware_menu.h"
 #include "settings_sound_wifi_submenus.h"
-#include "settings_ext_pot_menu.h"
 #include "settings_reset_menu.h"
-#include "diagnostics_self_test.h"
 #include "settings_about_screen.h"
 #include "ui_render.h"
 
 extern StoredVar_type g_storedVar;
 extern uint16_t g_antiSpinStepMs;
-extern uint16_t g_encoderInvertEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
@@ -123,44 +121,37 @@ void showSettingsMenu() {
           resumeAfterSettingsChild();
           continue;
         }
-        /* EXT POT submenu */
+        /* HARDWARE submenu */
         if (settingsSelector == 4) {
-          showExtPotSettings();
+          showHardwareSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;
         }
         /* WIFI submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 6) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
           showWiFiSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;
         }
         /* LOGGING submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
           showLoggingSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;
         }
         /* USB */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
           showUSBPortalScreen();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;
         }
         /* RESET */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 3) {
-          showResetSubmenu();
-          if (isEscapeToMainRequested()) break;
-          resumeAfterSettingsChild();
-          continue;
-        }
-        /* TEST */
         if (settingsSelector == SETTINGS_ITEMS_COUNT - 2) {
-          showSelfTest();
+          showResetSubmenu();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;
@@ -171,7 +162,7 @@ void showSettingsMenu() {
           resumeAfterSettingsChild();
           continue;
         }
-        /* Value items (SOUND=3, DELAY=4) */
+        /* Value items */
         if (g_settingsMenu.item[settingsSelector - 1].value != ITEM_NO_VALUE) {
           settingsValuePtr = (uint16_t *)g_settingsMenu.item[settingsSelector - 1].value;
           originalSettingsValue = *settingsValuePtr;
@@ -200,11 +191,7 @@ void showSettingsMenu() {
         settingsSelector = readUiEncoder();
       } else {
         uint16_t newValue = (uint16_t)readUiEncoder();
-        if (settingsValuePtr == &g_encoderInvertEnabled) {
-          applyEncoderInvertSetting(newValue);
-        } else {
-          *settingsValuePtr = newValue;
-        }
+        *settingsValuePtr = newValue;
       }
     }
 
@@ -217,9 +204,7 @@ void showSettingsMenu() {
         lastBrakeBtnSettingsTime = millis();
         lastSettingsInteraction = millis();
         if (settingsMenuState == VALUE_SELECTION) {
-          if (settingsValuePtr == &g_encoderInvertEnabled) {
-            applyEncoderInvertSetting(originalSettingsValue);
-          } else if (settingsValuePtr != NULL) {
+          if (settingsValuePtr != NULL) {
             *settingsValuePtr = originalSettingsValue;
           }
           settingsMenuState = ITEM_SELECTION;
@@ -266,14 +251,10 @@ void showSettingsMenu() {
       if (g_settingsMenu.item[itemIndex].value != ITEM_NO_VALUE) {
         bool isValueSelected = (settingsSelector - frameUpper == i && settingsMenuState == VALUE_SELECTION);
         uint16_t value = *(uint16_t *)(g_settingsMenu.item[itemIndex].value);
-        if ((uint16_t *)(g_settingsMenu.item[itemIndex].value) == &g_encoderInvertEnabled) {
-          sprintf(msgStr, "%3s", getOnOffLabel(g_storedVar.language, value ? 1 : 0));
+        if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {
+          snprintf(msgStr, sizeof(msgStr), "%2d%s", value, g_settingsMenu.item[itemIndex].unit);
         } else {
-          if (g_settingsMenu.item[itemIndex].unit[0] != '\0') {
-            snprintf(msgStr, sizeof(msgStr), "%2d%s", value, g_settingsMenu.item[itemIndex].unit);
-          } else {
-            sprintf(msgStr, "%3d", value);
-          }
+          sprintf(msgStr, "%3d", value);
         }
         int textWidth = strlen(msgStr) * charWidth;
         obdWriteString(&g_obd, 0, OLED_WIDTH - textWidth, i * lineHeight, msgStr,

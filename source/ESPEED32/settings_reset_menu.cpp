@@ -1,6 +1,7 @@
 #include "settings_reset_menu.h"
 #include <Arduino.h>
 #include "slot_ESC.h"
+#include "HAL.h"
 #include "ext_pot.h"
 
 extern StoredVar_type g_storedVar;
@@ -268,6 +269,7 @@ static void doResetSettings() {
   g_extPotTarget[0]           = EXT_POT1_TARGET_DEFAULT;
   g_extPotTarget[1]           = EXT_POT2_TARGET_DEFAULT;
   resetExtPotFilter();
+  HAL_ResetTriggerSensorConfig();
 }
 
 /** Reset trigger calibration to factory defaults. */

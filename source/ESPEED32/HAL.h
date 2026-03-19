@@ -90,6 +90,12 @@
 #define TRIGGER_SENSOR_FAMILY_ANALOG   4
 #define TRIGGER_SENSOR_FAMILY_MT6701   5
 
+#define TRIGGER_SENSOR_TYPE_AUTO       0
+#define TRIGGER_SENSOR_TYPE_W2B6       1
+#define TRIGGER_SENSOR_TYPE_W2B6_A0    2
+#define TRIGGER_SENSOR_TYPE_P3B6       3
+#define TRIGGER_SENSOR_TYPE_MAX        TRIGGER_SENSOR_TYPE_P3B6
+
 #ifndef TRIGGER_SENSOR_FAMILY
   #if defined(AS5600_MAG)
     #define TRIGGER_SENSOR_FAMILY TRIGGER_SENSOR_FAMILY_AS5600
@@ -184,6 +190,13 @@ void     HAL_InitHW();
 uint16_t HAL_ReadVoltageDivider(int analogInput, uint32_t rvfbl, uint32_t rvfbh);
 int16_t  HAL_ReadTriggerRaw();
 void     HAL_GetTriggerSensorInfo(char* buffer, size_t bufferSize);
+void     HAL_GetTriggerSensorFamilyLabel(char* buffer, size_t bufferSize);
+void     HAL_GetTriggerSensorActiveTypeLabel(char* buffer, size_t bufferSize);
+void     HAL_GetTriggerSensorTypeOptionLabel(uint16_t type, char* buffer, size_t bufferSize);
+bool     HAL_TriggerSensorSupportsTypeOverride();
+uint16_t HAL_GetTriggerSensorTypeOverride();
+bool     HAL_SetTriggerSensorTypeOverride(uint16_t type);
+void     HAL_ResetTriggerSensorConfig();
 void     HALanalogWrite(int pwmChan, int value);
 void     HAL_PinSetup();
 

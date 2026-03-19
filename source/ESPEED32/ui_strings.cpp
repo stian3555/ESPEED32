@@ -12,14 +12,14 @@ const char* MENU_NAMES[][10] = {
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][13] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "EKST POT", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "NULLSTILL", "TEST", "INFO", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
-  /* CS  */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "EXT POT", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "RESET", "TEST", "ABOUT", "BACK"},
-  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "POT EXT", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "RESET", "TEST", "ACERCA", "ATRAS"},
-  /* DEU */ {"STROM", "ANZEIGE", "TON", "EXT POT", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "RESET", "TEST", "INFO", "ZURUCK"},
-  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "POT EST", "A STEP", "ENC INV", "WIFI", "LOGGING", "USB INFO", "RESET", "TEST", "INFO", "INDIETRO"}
+const char* SETTINGS_MENU_NAMES[][11] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "NULLSTILL", "INFO", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* CS  */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "RESET", "ACERCA", "ATRAS"},
+  /* DEU */ {"STROM", "ANZEIGE", "TON", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "ZURUCK"},
+  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "HARDWARE", "A STEP", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "INDIETRO"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -147,14 +147,14 @@ const char* MENU_NAMES_PASCAL[][10] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][13] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Ekst pot", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Nullstill", "Test", "Info", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Ext Pot", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Reset", "Test", "About", "Back"},
-  /* CS  */ {"Power", "Display", "Sound", "Ext Pot", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Reset", "Test", "About", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Ext Pot", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Reset", "Test", "About", "Back"},
-  /* ESP */ {"Energia", "Pantalla", "Sonido", "Pot Ext", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Reset", "Test", "Acerca", "Atras"},
-  /* DEU */ {"Strom", "Anzeige", "Ton", "Ext Pot", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Reset", "Test", "Info", "Zuruck"},
-  /* ITA */ {"Potenza", "Schermo", "Suono", "Pot est", "A Step", "Enc Inv", "Wifi", "Logging", "Usb info", "Reset", "Test", "Info", "Indietro"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][11] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Nullstill", "Info", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
+  /* CS  */ {"Power", "Display", "Sound", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
+  /* ESP */ {"Energia", "Pantalla", "Sonido", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Reset", "Acerca", "Atras"},
+  /* DEU */ {"Strom", "Anzeige", "Ton", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Reset", "Info", "Zuruck"},
+  /* ITA */ {"Potenza", "Schermo", "Suono", "Hardware", "A Step", "Wifi", "Logging", "Usb info", "Reset", "Info", "Indietro"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */

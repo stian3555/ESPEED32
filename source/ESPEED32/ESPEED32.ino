@@ -2,6 +2,7 @@
 /*                                                   Includes                                                        */
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
+#include "HAL.h"
 #include "ui_strings.h"
 #include "ui_text_access.h"
 #include "connectivity_portal.h"
@@ -621,6 +622,7 @@ void Task1code(void *pvParameters) {
       case CALIBRATION:
         /* Read Throttle */
         throttleCalibration(g_escVar.trigger_raw);    /* trigger raw is continuously read on task2 */
+        HAL_ResetTriggerSensorConfig();
         showScreenCalibration(g_escVar.trigger_raw);  /* Show calibration screen */
         /* Exit calibration if button is presseded */
         if (g_rotaryEncoder.isEncoderButtonClicked())  /* exit calibration and save calibration data to EEPROM */

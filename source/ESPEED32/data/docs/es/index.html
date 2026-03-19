@@ -314,6 +314,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>FRENO+ / Alt.Freno</code></td><td>0-100 %</td><td>50</td><td>Valor alternativo de freno con boton de freno + trigger suelto.</td></tr>
         <tr><td><code>FRENO+ / Rel.Freno</code></td><td>OFF/QUICK(zona+nivel)/DRAG(nivel)</td><td>OFF</td><td>Ayuda de frenado al soltar trigger. QUICK usa zona a salida cero; DRAG anade drag sin zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Salida maxima del motor.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>contador de vueltas, mejor vuelta e historial desplazable.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
       </tbody>
     </table>
@@ -399,11 +400,12 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>SLEEP</code>: sleep automatico + sleep manual (wake con encoder).</li>
       <li><code>DEEP SLEEP</code>: deep sleep automatico (0 o 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: retardo de bienvenida 0-990 ms.</li>
-      <li><code>VIN CAL</code>: mide el voltaje real con multimetro, ajusta ese valor en el controlador y pulsa para calibrar la escala ADC. Usalo solo si la lectura VIN se ve claramente desviada.</li>
+      <li><code>VIN CAL.</code>: mide el voltaje real con multimetro, ajusta ese valor en el controlador y pulsa para calibrar la escala ADC. Usalo solo si la lectura VIN se ve claramente desviada.</li>
     </ul>
     <h3>Elementos raiz de SETTINGS</h3>
     <ul>
       <li><code>HARDWARE</code>: direccion del encoder, overrides de pot externos, info/override del sensor trigger y self-test.</li>
+      <li><code>STATS</code>: muestra u oculta la entrada STATS en el menu principal. Default OFF.</li>
       <li><code>WIFI</code>: WiFi en segundo plano, pagina de info, codigo QR y auto-off de WiFi.</li>
       <li><code>LOGGING</code>: registro local de telemetria con start/stop y auto-off propio (default 30 min).</li>
     </ul>
@@ -539,7 +541,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
-|  |  |- VIN CAL
+|  |  |- VIN CAL.
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
@@ -571,6 +573,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- ATRAS
 |  |  |- TEST (Self-Test, 9 steps)
 |  |  `- ATRAS
+|  |- STATS (OFF/ON, default OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
@@ -590,6 +593,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  `- BACK
 |  |- ABOUT
 |  `- BACK
+|- STATS [si esta activo]
 `- CAR
    |- SELECT
    |- RENAME

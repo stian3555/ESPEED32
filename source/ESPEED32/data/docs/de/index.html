@@ -301,6 +301,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>BREMSE+ / Alt.Brems</code></td><td>0-100 %</td><td>50</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
         <tr><td><code>BREMSE+ / Rel.Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, beste Runde und scrollbare Historie.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
@@ -411,11 +412,12 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>SLEEP</code>: Auto-Sleep + manueller Sleep (Wake ueber Encoder-Knopf).</li>
       <li><code>DEEP SLEEP</code>: Auto Deep Sleep (0 oder 2-30 min) + manuell.</li>
       <li><code>STARTUP</code>: Startverzoegerung 0-990 ms.</li>
-      <li><code>VIN CAL</code>: echte Bahnspannung mit Multimeter messen, diesen Wert am Controller einstellen und zur ADC-Kalibrierung bestaetigen. Nur benutzen, wenn die VIN-Anzeige merklich danebenliegt.</li>
+      <li><code>VIN CAL.</code>: echte Bahnspannung mit Multimeter messen, diesen Wert am Controller einstellen und zur ADC-Kalibrierung bestaetigen. Nur benutzen, wenn die VIN-Anzeige merklich danebenliegt.</li>
     </ul>
     <h3>SETTINGS-Hauptebene</h3>
     <ul>
       <li><code>HARDWARE</code>: Encoder-Richtung, externe Pot-Overrides, Trigger-Sensor-Info/Override und Selbsttest.</li>
+      <li><code>STATS</code>: zeigt oder versteckt den STATS-Eintrag im Hauptmenue. Standard AUS.</li>
       <li><code>WIFI</code>: Hintergrund-WiFi, Infoseite, QR-Code und WiFi-Auto-Aus.</li>
       <li><code>LOGGING</code>: lokale Telemetrie-Aufzeichnung mit Start/Stopp und eigenem Auto-Aus (Standard 30 min).</li>
     </ul>
@@ -551,7 +553,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
-|  |  |- VIN CAL
+|  |  |- VIN CAL.
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
@@ -583,6 +585,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- BACK
 |  |  |- TEST (Self-Test, 9 steps)
 |  |  `- BACK
+|  |- STATS (AUS/EIN, Standard AUS)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
@@ -602,6 +605,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  `- BACK
 |  |- ABOUT
 |  `- BACK
+|- STATS [wenn aktiviert]
 `- CAR
    |- SELECT
    |- RENAME

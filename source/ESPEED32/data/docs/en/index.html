@@ -302,6 +302,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>BRAKE+ / Alt.Brake</code></td><td>0-100 %</td><td>50</td><td>Alternate brake value used while brake button is held and trigger is released.</td></tr>
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Release-brake helper near trigger release. QUICK uses a zero-output zone; DRAG adds release drag without a zone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Lap counter, best lap, and scrollable lap history.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
       </tbody>
     </table>
@@ -412,11 +413,12 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>SLEEP</code>: auto sleep timeout + manual sleep now (wake with encoder button).</li>
       <li><code>DEEP SLEEP</code>: auto deep sleep (0 or 2-30 min) + manual.</li>
       <li><code>STARTUP</code>: welcome delay 0-990 ms in 10 ms steps.</li>
-      <li><code>VIN CAL</code>: measure actual track voltage with a multimeter, set that value on the controller, then click to calibrate the ADC voltage scale. Use only if VIN reading is noticeably off.</li>
+      <li><code>VIN CAL.</code>: measure actual track voltage with a multimeter, set that value on the controller, then click to calibrate the ADC voltage scale. Use only if VIN reading is noticeably off.</li>
     </ul>
     <h3>SETTINGS root items</h3>
     <ul>
       <li><code>HARDWARE</code>: encoder direction, external pot overrides, trigger sensor info/override, and self-test.</li>
+      <li><code>STATS</code>: show or hide the STATS entry in the main menu. Default OFF.</li>
       <li><code>WIFI</code>: background WiFi, direct info page, QR code, and WiFi auto-off timer.</li>
       <li><code>LOGGING</code>: local telemetry logging start/stop plus a separate logging auto-off timer (default 30 min).</li>
     </ul>
@@ -554,7 +556,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
-|  |  |- VIN CAL
+|  |  |- VIN CAL.
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
@@ -586,6 +588,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- BACK
 |  |  |- TEST (Self-Test, 9 steps)
 |  |  `- BACK
+|  |- STATS (ON/OFF, default OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
@@ -605,6 +608,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  `- BACK
 |  |- ABOUT
 |  `- BACK
+|- STATS [if enabled]
 `- CAR
    |- SELECT
    |- RENAME

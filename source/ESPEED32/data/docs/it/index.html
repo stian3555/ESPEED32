@@ -315,6 +315,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>FRENO+ / Alt.Freno</code></td><td>0-100 %</td><td>50</td><td>Freno alternativo mentre il pulsante freno e premuto e trigger=0.</td></tr>
         <tr><td><code>FRENO+ / Rel.Freno</code></td><td>OFF/QUICK(zona+livello)/DRAG(livello)</td><td>OFF</td><td>Aiuto frenata vicino al rilascio del trigger. QUICK usa una zona a output zero; DRAG aggiunge drag senza zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Uscita massima del motore.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>contatore giri, best lap e storico scorrevole.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profili</td><td>CAR0</td><td>Seleziona o gestisci il profilo attivo.</td></tr>
       </tbody>
     </table>
@@ -400,11 +401,12 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>SLEEP</code>: sleep automatico + sleep manuale (risveglio con pulsante encoder).</li>
       <li><code>DEEP SLEEP</code>: deep sleep automatico (0 o 2-30 min) + manuale.</li>
       <li><code>STARTUP</code>: ritardo avvio 0-990 ms.</li>
-      <li><code>VIN CAL</code>: misura la tensione reale con un multimetro, imposta quel valore sul controller e premi per calibrare la scala ADC. Usalo solo se la lettura VIN e chiaramente fuori valore.</li>
+      <li><code>VIN CAL.</code>: misura la tensione reale con un multimetro, imposta quel valore sul controller e premi per calibrare la scala ADC. Usalo solo se la lettura VIN e chiaramente fuori valore.</li>
     </ul>
     <h3>Voci principali di SETTINGS</h3>
     <ul>
       <li><code>HARDWARE</code>: direzione encoder, override dei pot esterni, info/override del sensore trigger e self-test.</li>
+      <li><code>STATS</code>: mostra o nasconde la voce STATS nel menu principale. Default OFF.</li>
       <li><code>WIFI</code>: WiFi in background, pagina info, QR code e auto-off del WiFi.</li>
       <li><code>LOGGING</code>: logging locale della telemetria con start/stop e auto-off dedicato (default 30 min).</li>
     </ul>
@@ -542,7 +544,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  |- INTERVAL (0 or 2-30 min)
 |  |  |  `- BACK
 |  |  |- STARTUP (0-99 x 10ms)
-|  |  |- VIN CAL
+|  |  |- VIN CAL.
 |  |  `- BACK
 |  |- DISPLAY
 |  |  |- RACE MODE (OFF/FULL/SIMPLE)
@@ -574,6 +576,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |  `- INDIETRO
 |  |  |- TEST (Self-Test, 9 steps)
 |  |  `- INDIETRO
+|  |- STATS (OFF/ON, default OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
 |  |  |- INFO PAGE
@@ -593,6 +596,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  `- BACK
 |  |- ABOUT
 |  `- BACK
+|- STATS [se abilitato]
 `- CAR
    |- SELECT
    |- RENAME

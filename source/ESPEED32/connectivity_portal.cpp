@@ -34,6 +34,7 @@ static String buildTelemetryStatusPayload(const char* message);
 static String buildTelemetryLivePayload(uint32_t afterSeq, size_t limit);
 static String buildTelemetryConfigSnapshotJson();
 static void sendSerialLengthPrefixedPayload(const String& payload);
+static const char* getBackupReleaseModeName(uint16_t mode);
 
 static uint16_t normalizeStatusSlotForUi(uint16_t slotValue) {
   return normalizeStatusSlotValue(slotValue);
@@ -158,10 +159,12 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
     sprintf(buf, "      \"fade\": %u,\n", c.fade);                       json += buf;
     sprintf(buf, "      \"antiSpin\": %u,\n", c.antiSpin);               json += buf;
     sprintf(buf, "      \"freqPWM\": %u,\n", c.freqPWM);                 json += buf;
-    sprintf(buf, "      \"brakeButton\": %u,\n", c.brakeButtonReduction);  json += buf;
-    sprintf(buf, "      \"quickBrakeEnabled\": %u,\n", c.quickBrakeEnabled);   json += buf;
-    sprintf(buf, "      \"quickBrakeThreshold\": %u,\n", c.quickBrakeThreshold); json += buf;
-    sprintf(buf, "      \"quickBrakeStrength\": %u\n", c.quickBrakeStrength);  json += buf;
+    sprintf(buf, "      \"altBrake\": %u,\n", c.brakeButtonReduction);  json += buf;
+    json += "      \"releaseMode\": \"";
+    json += getBackupReleaseModeName(c.quickBrakeEnabled);
+    json += "\",\n";
+    sprintf(buf, "      \"releaseZone\": %u,\n", c.quickBrakeThreshold); json += buf;
+    sprintf(buf, "      \"releaseLevel\": %u\n", c.quickBrakeStrength);  json += buf;
     json += "    }";
     if (i < CAR_MAX_COUNT - 1) json += ",";
     json += "\n";
@@ -267,6 +270,61 @@ static bool parseJsonStr(const String& json, const char* key, char* outStr, int 
   if (len >= maxLen) len = maxLen - 1;
   json.substring(qStart + 1, qStart + 1 + len).toCharArray(outStr, maxLen);
   return true;
+}
+
+static bool jsonHasKey(const String& json, const char* key) {
+  String search = String("\"") + key + "\"";
+  return json.indexOf(search) >= 0;
+}
+
+static bool parseJsonIntAlias(const String& json, const char* primaryKey, const char* legacyKey, int32_t& outVal) {
+  if (jsonHasKey(json, primaryKey)) return parseJsonInt(json, primaryKey, outVal);
+  return parseJsonInt(json, legacyKey, outVal);
+}
+
+static const char* getBackupReleaseModeName(uint16_t mode) {
+  switch (mode) {
+    case RELEASE_BRAKE_QUICK: return "QUICK";
+    case RELEASE_BRAKE_DRAG:  return "DRAG";
+    case RELEASE_BRAKE_OFF:
+    default:                  return "OFF";
+  }
+}
+
+static bool parseJsonReleaseMode(const String& json, const char* key, uint16_t* outMode) {
+  if (outMode == nullptr) return false;
+
+  int32_t v = 0;
+  if (parseJsonInt(json, key, v)) {
+    if (v < RELEASE_BRAKE_OFF || v > RELEASE_BRAKE_DRAG) return false;
+    *outMode = (uint16_t)v;
+    return true;
+  }
+
+  char modeStr[16];
+  if (!parseJsonStr(json, key, modeStr, sizeof(modeStr))) return false;
+
+  String mode = modeStr;
+  mode.trim();
+  if (mode.equalsIgnoreCase("OFF")) {
+    *outMode = RELEASE_BRAKE_OFF;
+    return true;
+  }
+  if (mode.equalsIgnoreCase("QUICK") || mode.equalsIgnoreCase("QCK")) {
+    *outMode = RELEASE_BRAKE_QUICK;
+    return true;
+  }
+  if (mode.equalsIgnoreCase("DRAG") || mode.equalsIgnoreCase("DRG")) {
+    *outMode = RELEASE_BRAKE_DRAG;
+    return true;
+  }
+
+  return false;
+}
+
+static bool parseJsonReleaseModeAlias(const String& json, const char* primaryKey, const char* legacyKey, uint16_t* outMode) {
+  if (jsonHasKey(json, primaryKey)) return parseJsonReleaseMode(json, primaryKey, outMode);
+  return parseJsonReleaseMode(json, legacyKey, outMode);
 }
 
 
@@ -421,18 +479,36 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
     }
     c.freqPWM = v;
 
-    if (!parseJsonInt(carJson, "brakeButton", v) || !inRange(v, 0, 100)) {
-      *errorMsg = "Error: invalid brakeButton in car " + String(i); return false;
+    if (!parseJsonIntAlias(carJson, "altBrake", "brakeButton", v) || !inRange(v, 0, 100)) {
+      *errorMsg = "Error: invalid altBrake in car " + String(i); return false;
     }
     c.brakeButtonReduction = v;
 
     /* Release-brake fields — optional for backwards compatibility with older backups */
-    if (parseJsonInt(carJson, "quickBrakeEnabled", v) && inRange(v, RELEASE_BRAKE_OFF, RELEASE_BRAKE_DRAG))
-      c.quickBrakeEnabled = v;
-    if (parseJsonInt(carJson, "quickBrakeThreshold", v) && inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX))
+    uint16_t releaseMode = c.quickBrakeEnabled;
+    if (parseJsonReleaseModeAlias(carJson, "releaseMode", "quickBrakeEnabled", &releaseMode)) {
+      c.quickBrakeEnabled = releaseMode;
+    } else if (jsonHasKey(carJson, "releaseMode") || jsonHasKey(carJson, "quickBrakeEnabled")) {
+      *errorMsg = "Error: invalid releaseMode in car " + String(i); return false;
+    }
+
+    if (parseJsonIntAlias(carJson, "releaseZone", "quickBrakeThreshold", v)) {
+      if (!inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) {
+        *errorMsg = "Error: invalid releaseZone in car " + String(i); return false;
+      }
       c.quickBrakeThreshold = v;
-    if (parseJsonInt(carJson, "quickBrakeStrength", v) && inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX))
+    } else if (jsonHasKey(carJson, "releaseZone") || jsonHasKey(carJson, "quickBrakeThreshold")) {
+      *errorMsg = "Error: invalid releaseZone in car " + String(i); return false;
+    }
+
+    if (parseJsonIntAlias(carJson, "releaseLevel", "quickBrakeStrength", v)) {
+      if (!inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) {
+        *errorMsg = "Error: invalid releaseLevel in car " + String(i); return false;
+      }
       c.quickBrakeStrength = v;
+    } else if (jsonHasKey(carJson, "releaseLevel") || jsonHasKey(carJson, "quickBrakeStrength")) {
+      *errorMsg = "Error: invalid releaseLevel in car " + String(i); return false;
+    }
   }
 
   return true;
@@ -825,20 +901,29 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     if (!inRange(v, FREQ_MIN_VALUE / 100, FREQ_MAX_VALUE / 100)) { *errorMsg = "Error: invalid freqPWM"; return false; }
     car.freqPWM = (uint16_t)v;
   }
-  if (parseJsonInt(json, "brakeButton", v)) {
-    if (!inRange(v, 0, 100)) { *errorMsg = "Error: invalid brakeButton"; return false; }
+  if (jsonHasKey(json, "altBrake") || jsonHasKey(json, "brakeButton")) {
+    if (!parseJsonIntAlias(json, "altBrake", "brakeButton", v) || !inRange(v, 0, 100)) {
+      *errorMsg = "Error: invalid altBrake"; return false;
+    }
     car.brakeButtonReduction = (uint16_t)v;
   }
-  if (parseJsonInt(json, "quickBrakeEnabled", v)) {
-    if (!inRange(v, RELEASE_BRAKE_OFF, RELEASE_BRAKE_DRAG)) { *errorMsg = "Error: invalid quickBrakeEnabled"; return false; }
-    car.quickBrakeEnabled = (uint16_t)v;
+  if (jsonHasKey(json, "releaseMode") || jsonHasKey(json, "quickBrakeEnabled")) {
+    uint16_t releaseMode = car.quickBrakeEnabled;
+    if (!parseJsonReleaseModeAlias(json, "releaseMode", "quickBrakeEnabled", &releaseMode)) {
+      *errorMsg = "Error: invalid releaseMode"; return false;
+    }
+    car.quickBrakeEnabled = releaseMode;
   }
-  if (parseJsonInt(json, "quickBrakeThreshold", v)) {
-    if (!inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) { *errorMsg = "Error: invalid quickBrakeThreshold"; return false; }
+  if (jsonHasKey(json, "releaseZone") || jsonHasKey(json, "quickBrakeThreshold")) {
+    if (!parseJsonIntAlias(json, "releaseZone", "quickBrakeThreshold", v) || !inRange(v, 0, QUICK_BRAKE_THRESHOLD_MAX)) {
+      *errorMsg = "Error: invalid releaseZone"; return false;
+    }
     car.quickBrakeThreshold = (uint16_t)v;
   }
-  if (parseJsonInt(json, "quickBrakeStrength", v)) {
-    if (!inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) { *errorMsg = "Error: invalid quickBrakeStrength"; return false; }
+  if (jsonHasKey(json, "releaseLevel") || jsonHasKey(json, "quickBrakeStrength")) {
+    if (!parseJsonIntAlias(json, "releaseLevel", "quickBrakeStrength", v) || !inRange(v, 0, QUICK_BRAKE_STRENGTH_MAX)) {
+      *errorMsg = "Error: invalid releaseLevel"; return false;
+    }
     car.quickBrakeStrength = (uint16_t)v;
   }
 

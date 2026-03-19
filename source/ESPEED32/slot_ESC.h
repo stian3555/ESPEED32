@@ -260,7 +260,7 @@ typedef struct {
   char carName[CAR_NAME_MAX_SIZE];          /* Car profile name (4 chars + null) */
   uint16_t carNumber;                       /* Profile index in array */
   uint16_t freqPWM;                         /* [100*Hz] Motor PWM frequency */
-  uint16_t brakeButtonReduction;            /* [%] Brake reduction when button pressed (0-100%) */
+  uint16_t brakeButtonReduction;            /* [%] Alternate brake value when button pressed (0-100%) */
   uint16_t quickBrakeEnabled;              /* Release brake mode: OFF / QUICK / DRAG */
   uint16_t quickBrakeThreshold;            /* [%] Release-brake zone near trigger release */
   uint16_t quickBrakeStrength;             /* [%] Release-brake level (quick or drag) */

@@ -227,15 +227,36 @@ before soldering to spare pads or assuming a given pad name matches the expected
 
 User documentation served by the controller lives in:
 
-- `source/ESPEED32/data/docs/en/index.html`
-- `source/ESPEED32/data/docs/no/index.html`
-- `source/ESPEED32/data/docs/es/index.html`
-- `source/ESPEED32/data/docs/de/index.html`
-- `source/ESPEED32/data/docs/it/index.html`
+- generated at `source/ESPEED32/data/docs/en/index.html`
+- generated at `source/ESPEED32/data/docs/no/index.html`
+- generated at `source/ESPEED32/data/docs/es/index.html`
+- generated at `source/ESPEED32/data/docs/de/index.html`
+- generated at `source/ESPEED32/data/docs/it/index.html`
 - `source/ESPEED32/data/ui/index.html` (backup/restore web UI)
 
 Recommended location is exactly this path under `source/ESPEED32/data/docs/` (do not move to repo root),
 because ESP32 filesystem tooling expects the `data/` folder next to the sketch.
+
+Docs source now lives in:
+
+- `source/ESPEED32/docs_src/shared/`
+- `source/ESPEED32/docs_src/en/main.html`
+- `source/ESPEED32/docs_src/en/page.json`
+- `source/ESPEED32/docs_src/no/main.html`
+- `source/ESPEED32/docs_src/no/page.json`
+- `source/ESPEED32/docs_src/es/main.html`
+- `source/ESPEED32/docs_src/es/page.json`
+- `source/ESPEED32/docs_src/de/main.html`
+- `source/ESPEED32/docs_src/de/page.json`
+- `source/ESPEED32/docs_src/it/main.html`
+- `source/ESPEED32/docs_src/it/page.json`
+
+Generate docs output locally with:
+
+- `python3 scripts/build_docs.py`
+- `./scripts/refresh_generated_docs.sh`
+
+GitHub Pages also regenerates docs from `source/ESPEED32/docs_src/` in CI before publishing.
 
 The firmware serves these files from SPIFFS at `/docs` in WiFi backup mode.
 The WiFi backup root page (`/`) is also served from SPIFFS (`/ui/index.html`) with a minimal built-in fallback if the file is missing.

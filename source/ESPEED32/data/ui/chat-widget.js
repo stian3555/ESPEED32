@@ -7,7 +7,8 @@
   window.__espeed32ChatWidgetLoaded = true;
 
   var CURRENT_SCRIPT = document.currentScript || null;
-  var TURNSTILE_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  var TURNSTILE_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+  var TURNSTILE_TOKEN_STALE_MS = 4 * 60 * 1000;
   var MAX_MESSAGE_LENGTH = 500;
   var MAX_STORED_MESSAGES = 24;
   var STORAGE_PREFIX = 'espeed32-chat-widget';
@@ -15,7 +16,10 @@
 
   var DEFAULT_CONFIG = {
     apiUrl: 'https://api.espeed32.com/api/chat',
-    turnstileSiteKey: '0x4AAAAAACtvFdsbjONXtzrH'
+    workerApiUrl: 'https://espeed32-chat-api.roy-266.workers.dev/api/chat',
+    turnstileSiteKey: '0x4AAAAAACtvFdsbjONXtzrH',
+    demoMode: false,
+    workerMode: false
   };
 
   var I18N = {
@@ -32,6 +36,9 @@
       verificationExpired: 'Verification expired. Please try again.',
       verificationError: 'Verification could not be loaded. Refresh and try again.',
       verificationLocalHint: 'Check that the Turnstile sitekey allows this hostname.',
+      demoModeNotice: 'Demo mode is active. Replies are simulated in the browser.',
+      workerModeNotice: 'Worker test mode is active. Requests go directly to workers.dev.',
+      workerModeLocalHint: 'If live requests still fail here, allow this origin in backend CORS and Turnstile.',
       configError: 'Set YOUR_TURNSTILE_SITE_KEY in /ui/chat-widget.js to enable chat.',
       tooLong: 'Messages can be up to 500 characters.',
       networkError: 'Something went wrong. Please try again.',
@@ -62,6 +69,9 @@
       verificationExpired: 'Verifiseringen utlop. Prov igjen.',
       verificationError: 'Verifiseringen kunne ikke lastes. Oppdater siden og prov igjen.',
       verificationLocalHint: 'Sjekk at Turnstile-sitekeyen tillater dette hostnavnet.',
+      demoModeNotice: 'Demo-modus er aktiv. Svarene simuleres i nettleseren.',
+      workerModeNotice: 'Worker-testmodus er aktiv. Foresporsler gaar direkte til workers.dev.',
+      workerModeLocalHint: 'Hvis live-requests fortsatt feiler her, maa denne originen tillates i backend-CORS og Turnstile.',
       configError: 'Sett YOUR_TURNSTILE_SITE_KEY i /ui/chat-widget.js for aa aktivere chat.',
       tooLong: 'Meldinger kan vaere opptil 500 tegn.',
       networkError: 'Something went wrong. Please try again.',
@@ -92,6 +102,9 @@
       verificationExpired: 'La verificacion expiro. Intentalo de nuevo.',
       verificationError: 'No se pudo cargar la verificacion. Recarga la pagina e intentalo otra vez.',
       verificationLocalHint: 'Check that the Turnstile sitekey allows this hostname.',
+      demoModeNotice: 'Demo mode is active. Replies are simulated in the browser.',
+      workerModeNotice: 'Worker test mode is active. Requests go directly to workers.dev.',
+      workerModeLocalHint: 'If live requests still fail here, allow this origin in backend CORS and Turnstile.',
       configError: 'Configura YOUR_TURNSTILE_SITE_KEY en /ui/chat-widget.js para activar el chat.',
       tooLong: 'Los mensajes pueden tener hasta 500 caracteres.',
       networkError: 'Something went wrong. Please try again.',
@@ -122,6 +135,9 @@
       verificationExpired: 'Die Verifizierung ist abgelaufen. Bitte erneut versuchen.',
       verificationError: 'Die Verifizierung konnte nicht geladen werden. Seite neu laden und erneut versuchen.',
       verificationLocalHint: 'Check that the Turnstile sitekey allows this hostname.',
+      demoModeNotice: 'Demo mode is active. Replies are simulated in the browser.',
+      workerModeNotice: 'Worker test mode is active. Requests go directly to workers.dev.',
+      workerModeLocalHint: 'If live requests still fail here, allow this origin in backend CORS and Turnstile.',
       configError: 'Trage YOUR_TURNSTILE_SITE_KEY in /ui/chat-widget.js ein, um den Chat zu aktivieren.',
       tooLong: 'Nachrichten duerfen hoechstens 500 Zeichen lang sein.',
       networkError: 'Something went wrong. Please try again.',
@@ -152,6 +168,9 @@
       verificationExpired: 'La verifica e scaduta. Riprova.',
       verificationError: 'Impossibile caricare la verifica. Aggiorna la pagina e riprova.',
       verificationLocalHint: 'Check that the Turnstile sitekey allows this hostname.',
+      demoModeNotice: 'Demo mode is active. Replies are simulated in the browser.',
+      workerModeNotice: 'Worker test mode is active. Requests go directly to workers.dev.',
+      workerModeLocalHint: 'If live requests still fail here, allow this origin in backend CORS and Turnstile.',
       configError: 'Inserisci YOUR_TURNSTILE_SITE_KEY in /ui/chat-widget.js per attivare la chat.',
       tooLong: 'I messaggi possono contenere al massimo 500 caratteri.',
       networkError: 'Something went wrong. Please try again.',
@@ -194,6 +213,22 @@
     return !value || value === PLACEHOLDER_SITE_KEY;
   }
 
+  function hasDemoQueryFlag() {
+    try {
+      return new URLSearchParams(window.location.search).get('chat_demo') === '1';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function hasWorkerQueryFlag() {
+    try {
+      return new URLSearchParams(window.location.search).get('chat_worker') === '1';
+    } catch (_) {
+      return false;
+    }
+  }
+
   function isLocalDevHost() {
     var hostname = (window.location && window.location.hostname || '').toLowerCase();
     return hostname === 'localhost' ||
@@ -220,6 +255,12 @@
       return payload.message.trim();
     }
     return '';
+  }
+
+  function wait(ms) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, ms);
+    });
   }
 
   function resolveLanguage() {
@@ -341,11 +382,21 @@
       isOpen: false,
       isSending: false,
       turnstileToken: '',
+      turnstileTokenIssuedAt: 0,
       turnstileWidgetId: null,
+      lastTurnstileTokenUsed: '',
       messages: []
     };
     this.refs = {};
   }
+
+  Espeed32ChatWidget.prototype.isDemoMode = function () {
+    return !!this.config.demoMode;
+  };
+
+  Espeed32ChatWidget.prototype.isWorkerMode = function () {
+    return !!this.config.workerMode;
+  };
 
   Espeed32ChatWidget.prototype.init = function () {
     ensureStylesheet();
@@ -611,16 +662,18 @@
     }
   };
 
-  Espeed32ChatWidget.prototype.showStatus = function (message, kind) {
+  Espeed32ChatWidget.prototype.showStatus = function (message, kind, source) {
     this.refs.status.hidden = false;
     this.refs.status.textContent = message;
     this.refs.status.dataset.kind = kind || 'info';
+    this.refs.status.dataset.source = source || '';
   };
 
   Espeed32ChatWidget.prototype.clearStatus = function () {
     this.refs.status.hidden = true;
     this.refs.status.textContent = '';
     this.refs.status.dataset.kind = '';
+    this.refs.status.dataset.source = '';
   };
 
   Espeed32ChatWidget.prototype.showLoading = function (show) {
@@ -649,13 +702,22 @@
   };
 
   Espeed32ChatWidget.prototype.renderComposerState = function () {
+    if (this.isDemoMode()) {
+      this.refs.turnstileShell.classList.add('is-disabled');
+      this.refs.input.disabled = this.state.isSending;
+      this.refs.send.disabled = this.state.isSending;
+      this.refs.send.textContent = this.state.isSending ? this.text.loadingLabel : this.text.sendLabel;
+      return;
+    }
+
     var configured = !isPlaceholderSiteKey(this.config.turnstileSiteKey);
+    var hasFreshToken = this.hasUsableTurnstileToken();
     this.refs.input.disabled = this.state.isSending;
-    this.refs.send.disabled = this.state.isSending || !configured;
+    this.refs.send.disabled = this.state.isSending || !configured || !hasFreshToken;
     this.refs.send.textContent = this.state.isSending ? this.text.loadingLabel : this.text.sendLabel;
     if (!configured) {
       this.refs.turnstileShell.classList.add('is-disabled');
-      this.showStatus(this.text.configError, 'error');
+      this.showStatus(this.text.configError, 'error', 'config');
       return;
     }
     this.refs.turnstileShell.classList.remove('is-disabled');
@@ -663,6 +725,22 @@
 
   Espeed32ChatWidget.prototype.initTurnstile = function () {
     var self = this;
+    if (this.isDemoMode()) {
+      this.showStatus(this.text.demoModeNotice, 'info', 'demo');
+      this.renderComposerState();
+      return;
+    }
+
+    if (this.isWorkerMode()) {
+      this.showStatus(
+        isLocalDevHost() ?
+          withHint(this.text.workerModeNotice, this.text.workerModeLocalHint) :
+          this.text.workerModeNotice,
+        'info',
+        'worker'
+      );
+    }
+
     if (isPlaceholderSiteKey(this.config.turnstileSiteKey)) {
       this.renderComposerState();
       return;
@@ -674,54 +752,154 @@
       self.showStatus(self.getErrorMessage({
         kind: 'turnstile_load',
         cause: error
-      }), 'error');
+      }), 'error', 'turnstile');
     });
   };
 
-  Espeed32ChatWidget.prototype.renderTurnstile = function () {
-    var self = this;
-    if (!window.turnstile || typeof window.turnstile.render !== 'function' || this.state.turnstileWidgetId !== null) {
-      return;
-    }
+  Espeed32ChatWidget.prototype.recreateTurnstileMount = function () {
+    var freshMount = document.createElement('div');
+    freshMount.className = 'esw-turnstile';
+    freshMount.setAttribute('aria-live', 'polite');
+    this.refs.turnstile.replaceWith(freshMount);
+    this.refs.turnstile = freshMount;
+  };
 
-    this.state.turnstileWidgetId = window.turnstile.render(this.refs.turnstile, {
-      sitekey: this.config.turnstileSiteKey,
-      theme: 'auto',
-      size: 'flexible',
-      callback: function (token) {
-        self.state.turnstileToken = token || '';
-        self.clearStatus();
-      },
-      'expired-callback': function () {
-        self.showStatus(self.text.verificationExpired, 'error');
-        self.resetTurnstile();
-      },
-      'error-callback': function () {
-        self.showStatus(self.text.verificationError, 'error');
-        self.resetTurnstile();
-      },
-      'timeout-callback': function () {
-        self.showStatus(self.text.verificationExpired, 'error');
-        self.resetTurnstile();
+  Espeed32ChatWidget.prototype.peekTurnstileToken = function () {
+    var token = '';
+
+    if (window.turnstile &&
+        typeof window.turnstile.getResponse === 'function' &&
+        this.state.turnstileWidgetId !== null) {
+      try {
+        token = window.turnstile.getResponse(this.state.turnstileWidgetId) || '';
+      } catch (_) {
+        token = '';
       }
-    });
+    }
+
+    if (!token) {
+      token = this.state.turnstileToken || '';
+    }
+
+    if (token && !this.state.turnstileTokenIssuedAt) {
+      this.state.turnstileTokenIssuedAt = Date.now();
+    }
+
+    return token;
   };
 
-  Espeed32ChatWidget.prototype.resetTurnstile = function () {
-    if (!window.turnstile || typeof window.turnstile.reset !== 'function' || this.state.turnstileWidgetId === null) {
-      this.state.turnstileToken = '';
+  Espeed32ChatWidget.prototype.hasUsableTurnstileToken = function () {
+    var token = this.peekTurnstileToken();
+    if (!token) {
+      return false;
+    }
+    return (Date.now() - this.state.turnstileTokenIssuedAt) < TURNSTILE_TOKEN_STALE_MS;
+  };
+
+  Espeed32ChatWidget.prototype.handleTurnstileToken = function (token) {
+    this.state.turnstileToken = token || '';
+    this.state.turnstileTokenIssuedAt = this.state.turnstileToken ? Date.now() : 0;
+    this.renderComposerState();
+    if (this.state.turnstileToken && this.refs.status.dataset.source === 'turnstile') {
+      this.clearStatus();
+    }
+  };
+
+  /* Turnstile tokens are single-use. We always consume the current response
+   * right before submit, mark it as used, and force a reset after each request. */
+  Espeed32ChatWidget.prototype.getTurnstileToken = function () {
+    var token = this.peekTurnstileToken();
+
+    if (!token ||
+        !this.hasUsableTurnstileToken() ||
+        token === this.state.lastTurnstileTokenUsed) {
+      this.showStatus(this.text.verificationExpired, 'error', 'turnstile');
+      this.resetTurnstile({ rerender: this.state.turnstileWidgetId === null });
+      throw {
+        kind: 'turnstile_expired'
+      };
+    }
+
+    this.state.turnstileToken = '';
+    this.state.lastTurnstileTokenUsed = token;
+    this.renderComposerState();
+    return token;
+  };
+
+  Espeed32ChatWidget.prototype.renderTurnstile = function (forceRerender) {
+    var self = this;
+    if (!window.turnstile || typeof window.turnstile.render !== 'function') {
       return;
     }
-    this.state.turnstileToken = '';
+
+    if (forceRerender) {
+      this.state.turnstileWidgetId = null;
+      this.handleTurnstileToken('');
+      this.recreateTurnstileMount();
+    }
+
+    if (this.state.turnstileWidgetId !== null) {
+      return;
+    }
+
+    try {
+      this.state.turnstileWidgetId = window.turnstile.render(this.refs.turnstile, {
+        sitekey: this.config.turnstileSiteKey,
+        theme: 'auto',
+        size: 'flexible',
+        callback: function (token) {
+          self.handleTurnstileToken(token || '');
+        },
+        'expired-callback': function () {
+          self.showStatus(self.text.verificationExpired, 'error', 'turnstile');
+          self.resetTurnstile();
+        },
+        'error-callback': function () {
+          self.showStatus(self.text.verificationError, 'error', 'turnstile');
+          self.resetTurnstile({ rerender: true });
+        },
+        'timeout-callback': function () {
+          self.showStatus(self.text.verificationExpired, 'error', 'turnstile');
+          self.resetTurnstile();
+        }
+      });
+    } catch (_) {
+      this.showStatus(this.text.verificationError, 'error', 'turnstile');
+    }
+  };
+
+  Espeed32ChatWidget.prototype.resetTurnstile = function (options) {
+    options = options || {};
+    this.handleTurnstileToken('');
+
+    if (!window.turnstile || typeof window.turnstile.reset !== 'function') {
+      if (options.rerender && window.turnstile && typeof window.turnstile.render === 'function') {
+        this.renderTurnstile(true);
+      }
+      return;
+    }
+
+    if (this.state.turnstileWidgetId === null) {
+      if (typeof window.turnstile.render === 'function') {
+        this.renderTurnstile(true);
+      }
+      return;
+    }
+
     try {
       window.turnstile.reset(this.state.turnstileWidgetId);
     } catch (_) {
-      this.showStatus(this.text.verificationError, 'error');
+      if (options.rerender) {
+        this.renderTurnstile(true);
+        return;
+      }
+      this.showStatus(this.text.verificationError, 'error', 'turnstile');
     }
   };
 
   Espeed32ChatWidget.prototype.submitMessage = async function () {
     var message = (this.refs.input.value || '').trim();
+    var turnstileToken;
     var payload;
     var answer;
     var sources;
@@ -731,7 +909,7 @@
     }
 
     if (!navigator.onLine) {
-      this.showStatus(this.text.offlineLabel, 'error');
+      this.showStatus(this.text.offlineLabel, 'error', 'network');
       return;
     }
 
@@ -741,16 +919,25 @@
     }
 
     if (message.length > MAX_MESSAGE_LENGTH) {
-      this.showStatus(this.text.tooLong, 'error');
+      this.showStatus(this.text.tooLong, 'error', 'validation');
       return;
     }
 
-    if (!this.state.turnstileToken) {
-      this.showStatus(this.text.verificationRequired, 'error');
-      return;
+    if (!this.isDemoMode()) {
+      try {
+        turnstileToken = this.getTurnstileToken();
+      } catch (error) {
+        if (error && error.kind === 'turnstile_expired') {
+          return;
+        }
+        this.showStatus(this.getErrorMessage(error), 'error', 'turnstile');
+        return;
+      }
     }
 
-    this.clearStatus();
+    if (!this.isDemoMode()) {
+      this.clearStatus();
+    }
     this.state.isSending = true;
     this.renderComposerState();
     this.addMessage({ role: 'user', text: message, sources: [] }, true);
@@ -760,7 +947,7 @@
     this.showLoading(true);
 
     try {
-      payload = await this.requestAnswer(message, this.state.turnstileToken);
+      payload = await this.requestAnswer(message, turnstileToken || '');
       answer = typeof payload.answer === 'string' && payload.answer.trim() ? payload.answer.trim() : this.text.networkError;
       sources = Array.isArray(payload.sources) ? payload.sources.filter(function (source) {
         return source && typeof source.title === 'string' && typeof source.url === 'string';
@@ -777,16 +964,26 @@
         sources: sources
       }, true);
     } catch (error) {
-      this.showStatus(this.getErrorMessage(error), 'error');
+      this.showStatus(
+        this.getErrorMessage(error),
+        'error',
+        error && (error.kind === 'http' || error.kind === 'network' || error.kind === 'invalid_response') ? 'api' : 'turnstile'
+      );
     } finally {
       this.state.isSending = false;
       this.showLoading(false);
-      this.resetTurnstile();
+      if (!this.isDemoMode()) {
+        this.resetTurnstile({ rerender: true });
+      }
       this.renderComposerState();
     }
   };
 
   Espeed32ChatWidget.prototype.requestAnswer = async function (message, turnstileToken) {
+    if (this.isDemoMode()) {
+      return this.requestDemoAnswer(message);
+    }
+
     var response;
     try {
       response = await fetch(this.config.apiUrl, {
@@ -824,6 +1021,31 @@
     return payload;
   };
 
+  Espeed32ChatWidget.prototype.requestDemoAnswer = async function (message) {
+    var normalized = (message || '').toLowerCase();
+    var docsUrl = window.location.origin + '/docs/';
+    var uiUrl = window.location.origin + '/ui/';
+    var answer = 'This is a demo reply rendered in the browser. The live backend is not being used for this message.';
+
+    if (normalized.indexOf('flash') !== -1 || normalized.indexOf('ota') !== -1) {
+      answer = 'Demo reply: OTA flashing guidance would normally come from the live chat backend. The widget flow, loading state, and message history are working locally.';
+    } else if (normalized.indexOf('brake') !== -1 || normalized.indexOf('sensi') !== -1) {
+      answer = 'Demo reply: setup and tuning questions can be answered once the backend is reachable. This confirms the UI, submit flow, and scrolling behavior are working.';
+    } else if (normalized.indexOf('docs') !== -1 || normalized.indexOf('manual') !== -1) {
+      answer = 'Demo reply: the chat can point users to docs pages and UI pages as clickable sources.';
+    }
+
+    await wait(700);
+
+    return {
+      answer: answer,
+      sources: [
+        { title: 'ESPEED32 Docs', url: docsUrl },
+        { title: 'ESPEED32 UI', url: uiUrl }
+      ]
+    };
+  };
+
   Espeed32ChatWidget.prototype.getErrorMessage = function (error) {
     var backendDetail = readBackendDetail(error && error.payload);
 
@@ -846,9 +1068,10 @@
         case 400:
           return backendDetail ? withHint(this.text.api400, backendDetail) : this.text.api400;
         case 403:
-          return isLocalDevHost() ?
-            withHint(this.text.api403, this.text.api403LocalHint) :
-            this.text.api403;
+          if (isLocalDevHost()) {
+            return withHint(backendDetail || this.text.api403, this.text.api403LocalHint);
+          }
+          return backendDetail || this.text.api403;
         case 429:
           return backendDetail ? withHint(this.text.api429, backendDetail) : this.text.api429;
         case 500:
@@ -868,6 +1091,15 @@
   function start() {
     var overrides = window.ESPEED32_CHAT_WIDGET_CONFIG || {};
     var config = mergeObjects(DEFAULT_CONFIG, overrides);
+    if (hasDemoQueryFlag()) {
+      config.demoMode = true;
+    }
+    if (hasWorkerQueryFlag()) {
+      config.workerMode = true;
+    }
+    if (config.workerMode && !config.demoMode) {
+      config.apiUrl = config.workerApiUrl || DEFAULT_CONFIG.workerApiUrl;
+    }
     if (CURRENT_SCRIPT && CURRENT_SCRIPT.dataset && CURRENT_SCRIPT.dataset.turnstileSiteKey) {
       config.turnstileSiteKey = CURRENT_SCRIPT.dataset.turnstileSiteKey;
     }

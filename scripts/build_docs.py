@@ -33,6 +33,7 @@ DEFAULT_TEMPLATE = """<!DOCTYPE html>
 {{main}}
 <script>
 {{script}}</script>
+<script src="/ui/chat-widget.js"></script>
 </body>
 </html>
 """

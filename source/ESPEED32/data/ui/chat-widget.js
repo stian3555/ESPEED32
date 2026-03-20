@@ -25,7 +25,7 @@
   var I18N = {
     en: {
       launcherLabel: 'Help',
-      panelTitle: 'ESPEED32 Help',
+      panelTitle: 'DRIVING ASSISTANT',
       panelSubtitle: 'Ask about setup, flashing, settings, or troubleshooting.',
       inputPlaceholder: 'Write your message...',
       sendLabel: 'Send',
@@ -58,7 +58,7 @@
     },
     no: {
       launcherLabel: 'Help',
-      panelTitle: 'ESPEED32 Hjelp',
+      panelTitle: 'DRIVING ASSISTANT',
       panelSubtitle: 'Spor om oppsett, flashing, innstillinger eller feilsoking.',
       inputPlaceholder: 'Skriv meldingen din...',
       sendLabel: 'Send',
@@ -91,7 +91,7 @@
     },
     es: {
       launcherLabel: 'Help',
-      panelTitle: 'Soporte ESPEED32',
+      panelTitle: 'DRIVING ASSISTANT',
       panelSubtitle: 'Pregunta sobre configuracion, flasheo, ajustes o solucion de problemas.',
       inputPlaceholder: 'Escribe tu mensaje...',
       sendLabel: 'Enviar',
@@ -124,7 +124,7 @@
     },
     de: {
       launcherLabel: 'Help',
-      panelTitle: 'ESPEED32 Hilfe',
+      panelTitle: 'DRIVING ASSISTANT',
       panelSubtitle: 'Frage nach Setup, Flashing, Einstellungen oder Fehlersuche.',
       inputPlaceholder: 'Nachricht schreiben...',
       sendLabel: 'Senden',
@@ -157,7 +157,7 @@
     },
     it: {
       launcherLabel: 'Help',
-      panelTitle: 'Supporto ESPEED32',
+      panelTitle: 'DRIVING ASSISTANT',
       panelSubtitle: 'Chiedi di configurazione, flashing, impostazioni o risoluzione dei problemi.',
       inputPlaceholder: 'Scrivi il tuo messaggio...',
       sendLabel: 'Invia',
@@ -263,20 +263,60 @@
     });
   }
 
-  function resolveLanguage() {
-    var lang = (document.documentElement.getAttribute('lang') || 'en').toLowerCase();
-    if (lang.indexOf('no') === 0 || lang.indexOf('nb') === 0 || lang.indexOf('nn') === 0) {
+  function normalizeLanguageTag(lang) {
+    var value = String(lang || '').toLowerCase();
+    if (!value) {
+      return '';
+    }
+    if (value.indexOf('no') === 0 || value.indexOf('nb') === 0 || value.indexOf('nn') === 0) {
       return 'no';
     }
-    if (lang.indexOf('es') === 0) {
+    if (value.indexOf('es') === 0) {
       return 'es';
     }
-    if (lang.indexOf('de') === 0) {
+    if (value.indexOf('de') === 0) {
       return 'de';
     }
-    if (lang.indexOf('it') === 0) {
+    if (value.indexOf('it') === 0) {
       return 'it';
     }
+    if (value.indexOf('en') === 0) {
+      return 'en';
+    }
+    return '';
+  }
+
+  function resolveLanguage() {
+    var candidates = [];
+    var htmlLang = '';
+    var i;
+    var resolved;
+
+    if (typeof navigator !== 'undefined') {
+      if (Array.isArray(navigator.languages) && navigator.languages.length) {
+        candidates = candidates.concat(navigator.languages);
+      }
+      if (navigator.language) {
+        candidates.push(navigator.language);
+      }
+    }
+
+    if (document.documentElement) {
+      htmlLang = document.documentElement.getAttribute('lang') || '';
+      if (htmlLang) {
+        candidates.push(htmlLang);
+      }
+    }
+
+    candidates.push('en');
+
+    for (i = 0; i < candidates.length; i += 1) {
+      resolved = normalizeLanguageTag(candidates[i]);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
     return 'en';
   }
 
@@ -447,7 +487,7 @@
       '<section id="esw-panel" class="esw-panel" aria-hidden="true">' +
       '  <header class="esw-header">' +
       '    <div class="esw-header-copy">' +
-      '      <p class="esw-eyebrow">ESPEED32</p>' +
+      '      <p class="esw-eyebrow">ESPEED32 HELP</p>' +
       '      <h2 class="esw-title">' + this.text.panelTitle + '</h2>' +
       '      <p class="esw-subtitle">' + this.text.panelSubtitle + '</p>' +
       '    </div>' +

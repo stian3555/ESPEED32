@@ -1,0 +1,64 @@
+name: Notify Chat Backend to Sync Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "source/ESPEED32/docs_src/**"
+      - "source/ESPEED32/data/docs/**"
+      - "source/ESPEED32/data/ui/**"
+      - "scripts/build_docs.py"
+      - "scripts/refresh_generated_docs.sh"
+      - ".github/CNAME"
+      - ".github/workflows/pages.yml"
+      - ".github/workflows/sync-chat-backend-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend docs sync
+        env:
+          # Personal access token or fine-grained token with access to
+          # nerdweeg/espeed32-chat-api so this repo can send repository_dispatch.
+          BACKEND_REPO_DISPATCH_TOKEN: ${{ secrets.BACKEND_REPO_DISPATCH_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -z "${BACKEND_REPO_DISPATCH_TOKEN}" ]]; then
+            echo "Missing required secret: BACKEND_REPO_DISPATCH_TOKEN" >&2
+            exit 1
+          fi
+
+          payload="$(cat <<'JSON'
+          {
+            "event_type": "sync-docs",
+            "client_payload": {
+              "docs_base_url": "https://espeed32.com/docs",
+              "docs_langs": "en,no,de,es,it",
+              "docs_extra_urls": "https://espeed32.com/ui/index.html"
+            }
+          }
+          JSON
+          )"
+
+          http_code="$(
+            curl -sS -o response.json -w "%{http_code}" \
+              -X POST "https://api.github.com/repos/nerdweeg/espeed32-chat-api/dispatches" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${BACKEND_REPO_DISPATCH_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -d "${payload}"
+          )"
+
+          if [[ "${http_code}" != "204" ]]; then
+            echo "repository_dispatch failed with HTTP ${http_code}" >&2
+            cat response.json >&2 || true
+            exit 1
+          fi
+
+          echo "Triggered nerdweeg/espeed32-chat-api sync-docs dispatch."

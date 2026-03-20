@@ -2,9 +2,15 @@
 .DS_Store
 .vscode/
 .claude
+__pycache__/
+*.py[cod]
 *.swp
 *.swo
 *~
+
+# Generated docs output
+source/ESPEED32/data/docs/*/index.html
+
 source/ESPEED32/build*/
 build/
 external

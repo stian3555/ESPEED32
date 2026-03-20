@@ -6,6 +6,7 @@ DATA_DIR="$ROOT_DIR/source/ESPEED32/data"
 BUILD_DIR="$ROOT_DIR/build"
 IMAGE_PATH="$BUILD_DIR/espeed32_spiffs.bin"
 ARDUINO_JSON="$ROOT_DIR/.vscode/arduino.json"
+DOCS_REFRESH_SCRIPT="$ROOT_DIR/scripts/refresh_generated_docs.sh"
 
 PARTITION_OFFSET="0x290000"
 PARTITION_SIZE="0x160000"
@@ -189,6 +190,10 @@ if [[ "$PURGE" -eq 1 ]]; then
 fi
 
 mkdir -p "$BUILD_DIR"
+
+if [[ "${ESPEED32_DOCS_REFRESHED:-0}" != "1" && -x "$DOCS_REFRESH_SCRIPT" ]]; then
+  "$DOCS_REFRESH_SCRIPT"
+fi
 
 echo "[SPIFFS] Building image from $DATA_DIR"
 "$MKSPiffs_BIN" -c "$DATA_DIR" -b "$BLOCK_SIZE" -p "$PAGE_SIZE" -s "$PARTITION_SIZE" "$IMAGE_PATH"

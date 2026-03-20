@@ -5,8 +5,12 @@ on:
     branches:
       - main
     paths:
+      - "source/ESPEED32/docs_src/**"
       - "source/ESPEED32/data/docs/**"
+      - "source/ESPEED32/data/favicon.svg"
       - "source/ESPEED32/data/ui/**"
+      - "scripts/build_docs.py"
+      - "scripts/refresh_generated_docs.sh"
       - ".github/CNAME"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -27,8 +31,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Refresh generated docs
+        run: ./scripts/refresh_generated_docs.sh
 
       - name: Build Pages site artifact
         run: |

@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARDUINO_JSON="$ROOT_DIR/.vscode/arduino.json"
 SPIFFS_SCRIPT="$ROOT_DIR/scripts/upload_spiffs.sh"
+DOCS_REFRESH_SCRIPT="$ROOT_DIR/scripts/refresh_generated_docs.sh"
 
 PORT=""
 BAUD=""
@@ -244,6 +245,11 @@ if [[ "$SPIFFS_ONLY" -eq 0 && "$COMPILE_ONLY" -eq 0 && ! -e "$PORT" ]]; then
   echo "Serial port not found: $PORT" >&2
   echo "Tip: run with -p /dev/tty.usbserial-XXXX or /dev/cu.usbserial-XXXX" >&2
   exit 1
+fi
+
+if [[ "$FIRMWARE_ONLY" -eq 0 && "$COMPILE_ONLY" -eq 0 && -x "$DOCS_REFRESH_SCRIPT" ]]; then
+  "$DOCS_REFRESH_SCRIPT"
+  export ESPEED32_DOCS_REFRESHED=1
 fi
 
 if [[ "$SPIFFS_ONLY" -eq 0 ]]; then

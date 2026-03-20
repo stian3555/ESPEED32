@@ -86,12 +86,14 @@ main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
 header{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px;box-shadow:var(--shadow)}
 h1{margin:0 0 8px;font-size:30px;line-height:1.1}
 p.lead{margin:0;color:var(--muted)}
-nav.top{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+nav.top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
 a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
 a.primary{background:var(--accent);color:#fff}
 a.secondary{background:var(--accent-2);color:#fff}
-a.btn.lang-active{background:var(--accent-2);color:#fff}
 a.ghost{background:var(--ghost);color:var(--ink)}
+.lang-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-radius:10px;background:var(--ghost)}
+.lang-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.lang-tools select{min-width:180px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;cursor:pointer}
 section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
 h2{margin:0 0 10px;font-size:20px}
 h3{margin:14px 0 8px;font-size:16px}
@@ -145,5 +147,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 }
 @media (max-width:760px){
   h1{font-size:24px}
+  .lang-tools{width:100%}
+  .lang-tools select{flex:1;min-width:0}
   table{font-size:13px}
 }

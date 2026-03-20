@@ -1,23 +1,8 @@
 (function(){
   var key = "espeed32-doc-theme";
   var root = document.documentElement;
-  var select = document.getElementById("theme-select");
-  if (!select) return;
-
-  var saved = localStorage.getItem(key);
-  if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
-  select.value = saved;
-
-  function apply(mode){
-    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
-    else root.removeAttribute("data-theme");
-  }
-
-  apply(saved);
-  select.addEventListener("change", function(){
-    localStorage.setItem(key, select.value);
-    apply(select.value);
-  });
+  var themeSelect = document.getElementById("theme-select");
+  var langSelect = document.getElementById("lang-select");
 
   var path = (window.location.pathname || "").toLowerCase();
   var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
@@ -26,6 +11,32 @@
   else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
   else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
   else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
+
+  var languageOptions = [
+    { value: "no", label: "\uD83C\uDDF3\uD83C\uDDF4 Norsk" },
+    { value: "en", label: "\uD83C\uDDEC\uD83C\uDDE7 English" },
+    { value: "es", label: "\uD83C\uDDEA\uD83C\uDDF8 Espa\u00F1ol" },
+    { value: "de", label: "\uD83C\uDDE9\uD83C\uDDEA Deutsch" },
+    { value: "it", label: "\uD83C\uDDEE\uD83C\uDDF9 Italiano" }
+  ];
+
+  function apply(mode){
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+  }
+
+  if (themeSelect) {
+    var saved = localStorage.getItem(key);
+    if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
+    themeSelect.value = saved;
+    apply(saved);
+    themeSelect.addEventListener("change", function(){
+      localStorage.setItem(key, themeSelect.value);
+      apply(themeSelect.value);
+    });
+  } else {
+    apply("system");
+  }
 
   var anchorLabels = {
     en: "Link to this heading",
@@ -124,14 +135,33 @@
     target.scrollIntoView();
   }
 
+  function docsHrefForLang(lang){
+    var url = new URL(window.location.href);
+    var lowerPath = url.pathname.toLowerCase();
+    var docsIndex = lowerPath.indexOf("/docs");
+    if (docsIndex === -1) return new URL("../" + lang + "/index.html", url.href).href;
+    url.pathname = url.pathname.slice(0, docsIndex) + "/docs/" + lang + "/index.html";
+    url.hash = "";
+    return url.toString();
+  }
+
+  function initLanguageSelect(){
+    if (!langSelect) return;
+    for (var i = 0; i < languageOptions.length; i++) {
+      var config = languageOptions[i];
+      var option = document.createElement("option");
+      option.value = config.value;
+      option.textContent = config.label;
+      langSelect.appendChild(option);
+    }
+    langSelect.value = activeLang;
+    langSelect.addEventListener("change", function(){
+      window.location.href = docsHrefForLang(langSelect.value);
+    });
+  }
+
   addHeadingAnchors();
   revealHashTarget();
   window.addEventListener("hashchange", revealHashTarget);
-
-  var langLinks = document.querySelectorAll("a[data-doc-lang]");
-  for (var i = 0; i < langLinks.length; i++) {
-    var link = langLinks[i];
-    if (link.getAttribute("data-doc-lang") === activeLang) link.classList.add("lang-active");
-    else link.classList.remove("lang-active");
-  }
+  initLanguageSelect();
 })();

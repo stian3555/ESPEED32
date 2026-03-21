@@ -30,6 +30,7 @@ static const char* getResetCancelText(uint16_t lang) {
     case LANG_ESP: return "ATRAS=CANCEL";
     case LANG_DEU: return "ZURUCK=ABBR.";
     case LANG_ITA: return "INDIET=ANNULLA";
+    case LANG_NLD: return "TERUG=ANNUL";
     default:       return "BACK=CANCEL";
   }
 }
@@ -40,6 +41,7 @@ static const char* getResetCancelledText(uint16_t lang) {
     case LANG_ESP: return "CANCELADO!";
     case LANG_DEU: return "ABBRUCH!";
     case LANG_ITA: return "ANNULLATO!";
+    case LANG_NLD: return "GEANNULEERD";
     default:       return "CANCELLED!";
   }
 }
@@ -50,6 +52,7 @@ static const char* getResetPressTwiceText(uint16_t lang) {
     case LANG_ESP: return "PULSA 2 VECES";
     case LANG_DEU: return "ZWEIMAL DRUCK";
     case LANG_ITA: return "PREMI 2 VOLTE";
+    case LANG_NLD: return "DRUK 2 KEER";
     default:       return "PRESS TWICE";
   }
 }
@@ -60,6 +63,7 @@ static const char* getResetAgainLine1(uint16_t lang) {
     case LANG_ESP: return "PULSA OTRA";
     case LANG_DEU: return "NOCHMAL";
     case LANG_ITA: return "PREMI ANCORA";
+    case LANG_NLD: return "DRUK OPNIEUW";
     default:       return "PRESS AGAIN";
   }
 }
@@ -70,6 +74,7 @@ static const char* getResetAgainLine2(uint16_t lang) {
     case LANG_ESP: return "VEZ PARA RESET";
     case LANG_DEU: return "FUER RESET";
     case LANG_ITA: return "PER RESET";
+    case LANG_NLD: return "VOOR RESET";
     default:       return "TO RESET";
   }
 }
@@ -80,6 +85,7 @@ static const char* getResetDoneText(uint16_t lang) {
     case LANG_ESP: return "RESET OK!";
     case LANG_DEU: return "RESET OK!";
     case LANG_ITA: return "RESET OK!";
+    case LANG_NLD: return "RESET OK!";
     default:       return "RESET DONE!";
   }
 }
@@ -298,14 +304,15 @@ void showResetSubmenu() {
   const uint8_t RS_ITEMS = 5;
   uint16_t lang = g_storedVar.language;
 
-  const char* rowNamesByLang[7][RS_ITEMS] = {
+  const char* rowNamesByLang[8][RS_ITEMS] = {
     {"Bil", "Innstillinger", "Kalibrering", "Alt", "Tilbake"},
     {"Car", "Settings", "Calibration", "Everything", "Back"},
     {"Car", "Settings", "Calibration", "Everything", "Back"},
     {"Car", "Settings", "Calibration", "Everything", "Back"},
     {"Auto", "Ajustes", "Calibrac.", "Todo", "Atras"},
     {"Auto", "Einstell.", "Kalibr.", "Alles", "Zuruck"},
-    {"Auto", "Impostaz.", "Calibraz.", "Tutto", "Indietro"}
+    {"Auto", "Impostaz.", "Calibraz.", "Tutto", "Indietro"},
+    {"Auto", "Instell.", "Kalibr.", "Alles", "Terug"}
   };
   const char** rowNames = rowNamesByLang[lang];
 

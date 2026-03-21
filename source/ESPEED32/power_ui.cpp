@@ -109,7 +109,7 @@ void showPowerSave(uint32_t inactivityStartMs) {
   uint16_t lang = g_storedVar.language;
   const char* sleepMsg[] = {
     "SOVER...", "SLEEPING...", "SLEEPING...", "SLEEPING...",
-    "DURMIENDO...", "SCHLAFEN...", "RIPOSO..."
+    "DURMIENDO...", "SCHLAFEN...", "RIPOSO...", "SLAPEN..."
   };
 
   /* Brief sleep message */
@@ -158,7 +158,7 @@ void showDeepSleep() {
   uint16_t lang = g_storedVar.language;
   const char* powerOffMsg[] = {
     "SLUKKER...", "POWER OFF...", "POWER OFF...", "POWER OFF...",
-    "APAGANDO...", "AUSSCHALT.", "SPEGNENDO..."
+    "APAGANDO...", "AUSSCHALT.", "SPEGNENDO...", "UITSCHAK."
   };
 
   /* Brief power-off message */

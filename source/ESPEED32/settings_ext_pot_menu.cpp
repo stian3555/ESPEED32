@@ -30,7 +30,8 @@ static const char* getExtPotTargetLabel(uint8_t lang, uint16_t target) {
   }
 }
 
-static const char* EXT_POT_ITEM_LABELS[7][2] = {
+static const char* EXT_POT_ITEM_LABELS[8][2] = {
+  {"POT.METER 1", "POT.METER 2"},
   {"POT.METER 1", "POT.METER 2"},
   {"POT.METER 1", "POT.METER 2"},
   {"POT.METER 1", "POT.METER 2"},
@@ -40,7 +41,8 @@ static const char* EXT_POT_ITEM_LABELS[7][2] = {
   {"POT.METER 1", "POT.METER 2"}
 };
 
-static const char* EXT_POT_ITEM_LABELS_PASCAL[7][2] = {
+static const char* EXT_POT_ITEM_LABELS_PASCAL[8][2] = {
+  {"Pot.meter 1", "Pot.meter 2"},
   {"Pot.meter 1", "Pot.meter 2"},
   {"Pot.meter 1", "Pot.meter 2"},
   {"Pot.meter 1", "Pot.meter 2"},

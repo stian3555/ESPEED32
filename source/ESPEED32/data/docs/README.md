@@ -7,7 +7,7 @@ This folder contains the on-device documentation that is:
 
 Generated note:
 
-- `en/index.html`, `no/index.html`, `es/index.html`, `de/index.html`, and `it/index.html`
+- `en/index.html`, `no/index.html`, `nl/index.html`, `es/index.html`, `de/index.html`, and `it/index.html`
   are generated from `source/ESPEED32/docs_src/` via `scripts/build_docs.py`.
 - These generated HTML files are not tracked in Git.
 
@@ -22,6 +22,7 @@ That keeps the generated output aligned with what is uploaded to the device.
 
 - `en/index.html` - generated English user guide
 - `no/index.html` - generated Norwegian user guide
+- `nl/index.html` - generated Dutch user guide
 - `es/index.html` - generated Spanish user guide
 - `de/index.html` - generated German user guide
 - `it/index.html` - generated Italian user guide
@@ -43,6 +44,8 @@ That keeps the generated output aligned with what is uploaded to the device.
 - `../docs_src/en/page.json` - English docs metadata
 - `../docs_src/no/main.html` - Norwegian docs content fragment
 - `../docs_src/no/page.json` - Norwegian docs metadata
+- `../docs_src/nl/main.html` - Dutch docs content fragment
+- `../docs_src/nl/page.json` - Dutch docs metadata
 - `../docs_src/es/main.html` - Spanish docs content fragment
 - `../docs_src/es/page.json` - Spanish docs metadata
 - `../docs_src/de/main.html` - German docs content fragment
@@ -78,6 +81,7 @@ Firmware serves docs from:
 - `/docs` (language-aware default)
 - `/docs/en`
 - `/docs/no`
+- `/docs/nl`
 - `/docs/es`
 - `/docs/de`
 - `/docs/it`

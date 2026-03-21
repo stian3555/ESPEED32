@@ -58,7 +58,8 @@
 #define LANG_DEU            5     /* German language */
 #define LANG_ITA            6     /* Italian language */
 #define LANG_NLD            7     /* Dutch language */
-#define LANG_MAX            LANG_NLD
+#define LANG_POR            8     /* Portuguese language */
+#define LANG_MAX            LANG_POR
 #define LANG_DEFAULT        LANG_ENG
 
 /* Default Parameter Values */
@@ -284,7 +285,7 @@ typedef struct {
   uint16_t soundRace;                       /* Race mode sound: 0=OFF, 1=ON (toggle beep) */
   uint16_t gridCarSelectEnabled;            /* Enable car selection from grid view (0=OFF, 1=ON) */
   uint16_t raceViewMode;                    /* Race view mode: OFF, FULL, or SIMPLE */
-  uint16_t language;                        /* Language: NOR, ENG, CS, ACD, ESP, DEU, ITA, or NLD */
+  uint16_t language;                        /* Language: NOR, ENG, CS, ACD, ESP, DEU, ITA, NLD, or POR */
   uint16_t textCase;                        /* Text case style: UPPER or PASCAL */
   uint16_t listFontSize;                    /* List view font size: LARGE or SMALL */
   uint16_t startupDelay;                    /* [×STEP] Startup welcome screen delay */

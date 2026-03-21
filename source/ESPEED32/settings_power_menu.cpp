@@ -28,11 +28,11 @@ static void formatVoltageString(char* buffer, size_t bufferSize, uint16_t milliv
 static void showVinCalibrationScreen() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblRead[8]   = {"LES", "READ", "READ", "READ", "LEE", "IST", "LETT", "LEES"};
-  const char* lblSet[8]    = {"SETT", "SET", "SET", "SET", "SET", "SET", "SET", "SET"};
-  const char* lblSave[8]   = {"TRYKK=LAGR", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "KLIK=OPSL"};
-  const char* lblCancel[8] = {"BREMS=TILB", "BRAKE=BACK", "BRAKE=BACK", "BRAKE=BACK", "FRENO=ATR", "BREMSE=ZRK", "FRENO=BACK", "REM=TERUG"};
-  const char* lblNoVin[8]  = {"INGEN VIN", "NO VIN", "NO VIN", "NO VIN", "SIN VIN", "KEIN VIN", "NO VIN", "GEEN VIN"};
+  const char* lblRead[9]   = {"LES", "READ", "READ", "READ", "LEE", "IST", "LETT", "LEES", "LER"};
+  const char* lblSet[9]    = {"SETT", "SET", "SET", "SET", "SET", "SET", "SET", "SET", "SET"};
+  const char* lblSave[9]   = {"TRYKK=LAGR", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "CLICK=SAVE", "KLIK=OPSL", "CLIQUE=GRAV"};
+  const char* lblCancel[9] = {"BREMS=TILB", "BRAKE=BACK", "BRAKE=BACK", "BRAKE=BACK", "FRENO=ATR", "BREMSE=ZRK", "FRENO=BACK", "REM=TERUG", "TRAV=VOLT"};
+  const char* lblNoVin[9]  = {"INGEN VIN", "NO VIN", "NO VIN", "NO VIN", "SIN VIN", "KEIN VIN", "NO VIN", "GEEN VIN", "SEM VIN"};
 
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;

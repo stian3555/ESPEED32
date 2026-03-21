@@ -640,7 +640,7 @@ static String buildSchemaJson() {
   appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"FULL\"},{\"value\":2,\"label\":\"SIMPLE\"}]");
   appendSchemaEnumField(json, first, "language", "Language",
-                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"},{\"value\":4,\"label\":\"ESP\"},{\"value\":5,\"label\":\"DEU\"},{\"value\":6,\"label\":\"ITA\"},{\"value\":7,\"label\":\"NLD\"}]");
+                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"},{\"value\":4,\"label\":\"ESP\"},{\"value\":5,\"label\":\"DEU\"},{\"value\":6,\"label\":\"ITA\"},{\"value\":7,\"label\":\"NLD\"},{\"value\":8,\"label\":\"POR\"}]");
   appendSchemaEnumField(json, first, "textCase", "Text Case",
                         "[{\"value\":0,\"label\":\"UPPER\"},{\"value\":1,\"label\":\"Pascal\"}]");
   appendSchemaEnumField(json, first, "listFontSize", "Font Size",
@@ -961,6 +961,7 @@ static const char* getDocsPathForLanguage(uint16_t lang) {
     case LANG_DEU: return "/docs/de/index.html";
     case LANG_ITA: return "/docs/it/index.html";
     case LANG_NLD: return "/docs/nl/index.html";
+    case LANG_POR: return "/docs/pt/index.html";
     default:       return "/docs/en/index.html";
   }
 }
@@ -1854,6 +1855,7 @@ static void handleDocsDefault() {
       !streamHtmlFromSpiffs("/docs/en/index.html") &&
       !streamHtmlFromSpiffs("/docs/no/index.html") &&
       !streamHtmlFromSpiffs("/docs/nl/index.html") &&
+      !streamHtmlFromSpiffs("/docs/pt/index.html") &&
       !streamHtmlFromSpiffs("/docs/es/index.html") &&
       !streamHtmlFromSpiffs("/docs/de/index.html") &&
       !streamHtmlFromSpiffs("/docs/it/index.html")) {
@@ -1876,6 +1878,12 @@ static void handleDocsNo() {
 static void handleDocsNl() {
   if (!streamHtmlFromSpiffs("/docs/nl/index.html")) {
     sendDocsMissing("/docs/nl/index.html");
+  }
+}
+
+static void handleDocsPt() {
+  if (!streamHtmlFromSpiffs("/docs/pt/index.html")) {
+    sendDocsMissing("/docs/pt/index.html");
   }
 }
 
@@ -2581,6 +2589,9 @@ static void registerWebRoutes() {
   g_wifiServer->on("/docs/nl", HTTP_GET, handleDocsNl);
   g_wifiServer->on("/docs/nl/", HTTP_GET, handleDocsNl);
   g_wifiServer->on("/docs/nl/index.html", HTTP_GET, handleDocsNl);
+  g_wifiServer->on("/docs/pt", HTTP_GET, handleDocsPt);
+  g_wifiServer->on("/docs/pt/", HTTP_GET, handleDocsPt);
+  g_wifiServer->on("/docs/pt/index.html", HTTP_GET, handleDocsPt);
   g_wifiServer->on("/docs/es", HTTP_GET, handleDocsEs);
   g_wifiServer->on("/docs/es/", HTTP_GET, handleDocsEs);
   g_wifiServer->on("/docs/es/index.html", HTTP_GET, handleDocsEs);

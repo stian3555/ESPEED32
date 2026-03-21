@@ -9,6 +9,7 @@
   if (path.indexOf("/docs/no") !== -1) activeLang = "no";
   else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
   else if (path.indexOf("/docs/nl") !== -1) activeLang = "nl";
+  else if (path.indexOf("/docs/pt") !== -1) activeLang = "pt";
   else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
   else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
   else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
@@ -17,6 +18,7 @@
     { value: "no", label: "\uD83C\uDDF3\uD83C\uDDF4 Norsk" },
     { value: "en", label: "\uD83C\uDDEC\uD83C\uDDE7 English" },
     { value: "nl", label: "\uD83C\uDDF3\uD83C\uDDF1 Nederlands" },
+    { value: "pt", label: "\uD83C\uDDF5\uD83C\uDDF9 Portugues" },
     { value: "es", label: "\uD83C\uDDEA\uD83C\uDDF8 Espa\u00F1ol" },
     { value: "de", label: "\uD83C\uDDE9\uD83C\uDDEA Deutsch" },
     { value: "it", label: "\uD83C\uDDEE\uD83C\uDDF9 Italiano" }
@@ -44,6 +46,7 @@
     en: "Link to this heading",
     no: "Lenke til denne overskriften",
     nl: "Link naar deze kop",
+    pt: "Link para este titulo",
     es: "Enlace a este titulo",
     de: "Link zu dieser Uberschrift",
     it: "Link a questo titolo"

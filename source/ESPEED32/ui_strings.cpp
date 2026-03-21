@@ -9,7 +9,8 @@ const char* MENU_NAMES[][11] = {
   /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "AJUSTES", "STATS", "*AUTO*"},
   /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMSE+", "LIMIT", "SETUP", "STATS", "*AUTO*"},
   /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "SETUP", "STATS", "*AUTO*"},
-  /* NLD */ {"REM", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "REM+", "LIMIET", "INSTELL", "STATS", "*AUTO*"}
+  /* NLD */ {"REM", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "REM+", "LIMIET", "INSTELL", "STATS", "*AUTO*"},
+  /* POR */ {"TRAVAO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "TRAVAO+", "LIMITE", "AJUSTES", "STATS", "*CARRO*"}
 };
 
 /* Settings menu item names: [language][item] */
@@ -21,7 +22,8 @@ const char* SETTINGS_MENU_NAMES[][11] = {
   /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ACERCA", "ATRAS"},
   /* DEU */ {"STROM", "ANZEIGE", "TON", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "ZURUCK"},
   /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "INDIETRO"},
-  /* NLD */ {"STROOM", "DISPLAY", "GELUID", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "TERUG"}
+  /* NLD */ {"STROOM", "DISPLAY", "GELUID", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "TERUG"},
+  /* POR */ {"ENERGIA", "ECRA", "SOM", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "SOBRE", "VOLTAR"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -33,7 +35,8 @@ const char* POWER_MENU_NAMES[][6] = {
   /* ESP */ {"SCRSV", "REPOSO", "SUSP PROF", "ARRANQUE", "VIN CAL.", "ATRAS"},
   /* DEU */ {"SCRSV", "SCHLAF", "TIEF SCHL", "START", "VIN KAL.", "ZURUCK"},
   /* ITA */ {"SCRSV", "RIPOSO", "SONNO PROF", "AVVIO", "VIN CAL.", "INDIETRO"},
-  /* NLD */ {"SCRSV", "SLAPEN", "DIEP SLP", "START", "VIN KAL.", "TERUG"}
+  /* NLD */ {"SCRSV", "SLAPEN", "DIEP SLP", "START", "VIN KAL.", "TERUG"},
+  /* POR */ {"SCRSV", "DORMIR", "SONO PROF", "ARRANQUE", "VIN CAL.", "VOLTAR"}
 };
 
 /* Display submenu item names: [language][item] */
@@ -45,7 +48,8 @@ const char* DISPLAY_MENU_NAMES[][7] = {
   /* ESP */ {"MODO RACE", "IDIOMA", "ESTILO", "TAM TEXTO", "ANTIS.STEP", "BARRA EST", "ATRAS"},
   /* DEU */ {"RACE MODUS", "SPRACHE", "STIL", "SCHRIFT", "ANTIS.STEP", "STATUSLEISTE", "ZURUCK"},
   /* ITA */ {"MODO GARA", "LINGUA", "STILE", "DIM TESTO", "ANTIS.STEP", "BARRA STATO", "INDIETRO"},
-  /* NLD */ {"RACE MODUS", "TAAL", "STIJL", "TEKSTGRT", "ANTIS.STEP", "STATUSBALK", "TERUG"}
+  /* NLD */ {"RACE MODUS", "TAAL", "STIJL", "TEKSTGRT", "ANTIS.STEP", "STATUSBALK", "TERUG"},
+  /* POR */ {"MODO RACE", "IDIOMA", "ESTILO", "TAM TEXTO", "ANTIS.STEP", "BARRA EST", "VOLTAR"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -57,7 +61,8 @@ const char* RACE_LABELS[][4] = {
   /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA"},
   /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE"},
   /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA"},
-  /* NLD */ {"REM", "SENSI", "ANTIS", "CURVE"}
+  /* NLD */ {"REM", "SENSI", "ANTIS", "CURVE"},
+  /* POR */ {"TRAVAO", "SENSI", "ANTIS", "CURVA"}
 };
 
 /* Car menu option labels: [language][option] */
@@ -69,7 +74,8 @@ const char* CAR_MENU_OPTIONS[][5] = {
   /* ESP */ {"ELEGIR", "RENOMB", "RACESWP", "COPIAR", "RESET"},
   /* DEU */ {"WAHL", "NAME", "RACESWP", "KOPIER", "RESET"},
   /* ITA */ {"SCEGLI", "RINOM", "RACESWP", "COPIA", "RESET"},
-  /* NLD */ {"KIES", "HERNOEM", "RACESWP", "KOPIE", "RESET"}
+  /* NLD */ {"KIES", "HERNOEM", "RACESWP", "KOPIE", "RESET"},
+  /* POR */ {"ESCOLH", "RENOME", "RACESWP", "COPIAR", "RESET"}
 };
 
 /* View mode value labels: [language][mode] */
@@ -81,7 +87,8 @@ const char* VIEW_MODE_LABELS[][3] = {
   /* ESP */ {"OFF", "TOTAL", "SIMPLE"},
   /* DEU */ {"AUS", "VOLL", "EINF"},
   /* ITA */ {"OFF", "PIENO", "SEMPL"},
-  /* NLD */ {"UIT", "VOL", "EENV"}
+  /* NLD */ {"UIT", "VOL", "EENV"},
+  /* POR */ {"OFF", "TOTAL", "SIMP"}
 };
 
 /* Sound submenu item names: [language][item] - BOOT, RACE, BACK */
@@ -93,7 +100,8 @@ const char* SOUND_MENU_NAMES[][3] = {
   /* ESP */ {"INICIO", "CARRERA", "ATRAS"},
   /* DEU */ {"START", "RENNEN", "ZURUCK"},
   /* ITA */ {"AVVIO", "GARA", "INDIETRO"},
-  /* NLD */ {"START", "RACE", "TERUG"}
+  /* NLD */ {"START", "RACE", "TERUG"},
+  /* POR */ {"ARRANQUE", "CORRIDA", "VOLTAR"}
 };
 
 /* ON/OFF labels: [language][state] */
@@ -105,7 +113,8 @@ const char* ON_OFF_LABELS[][2] = {
   /* ESP */ {"OFF", "ON"},
   /* DEU */ {"AUS", "EIN"},
   /* ITA */ {"OFF", "ON"},
-  /* NLD */ {"UIT", "AAN"}
+  /* NLD */ {"UIT", "AAN"},
+  /* POR */ {"OFF", "ON"}
 };
 
 /* Release-brake mode labels: [language][mode] */
@@ -117,11 +126,12 @@ const char* RELEASE_BRAKE_MODE_LABELS[][3] = {
   /* ESP */ {"OFF", "QCK", "DRG"},
   /* DEU */ {"AUS", "QCK", "DRG"},
   /* ITA */ {"OFF", "QCK", "DRG"},
-  /* NLD */ {"UIT", "QCK", "DRG"}
+  /* NLD */ {"UIT", "QCK", "DRG"},
+  /* POR */ {"OFF", "QCK", "DRG"}
 };
 
 /* Language labels: [language_code] */
-const char* LANG_LABELS[] = {"NOR", "ENG", "CS", "ACD", "ESP", "DEU", "ITA", "NLD"};
+const char* LANG_LABELS[] = {"NOR", "ENG", "CS", "ACD", "ESP", "DEU", "ITA", "NLD", "POR"};
 
 /* Text case style labels: [language][case_style] */
 const char* TEXT_CASE_LABELS[][2] = {
@@ -132,7 +142,8 @@ const char* TEXT_CASE_LABELS[][2] = {
   /* ESP */ {"MAYUS", "Pascal"},
   /* DEU */ {"GROSS", "Pascal"},
   /* ITA */ {"MAIUS", "Pascal"},
-  /* NLD */ {"HOOFD", "Pascal"}
+  /* NLD */ {"HOOFD", "Pascal"},
+  /* POR */ {"MAIUS", "Pascal"}
 };
 
 /* Font size labels: [language][size] */
@@ -144,7 +155,8 @@ const char* FONT_SIZE_LABELS[][2] = {
   /* ESP */ {"GRAND", "peq."},
   /* DEU */ {"GROSS", "klein"},
   /* ITA */ {"GRAND", "picc."},
-  /* NLD */ {"GROOT", "klein"}
+  /* NLD */ {"GROOT", "klein"},
+  /* POR */ {"GRAND", "peq."}
 };
 
 /* Menu item names - Pascal Case: [language][item] */
@@ -156,7 +168,8 @@ const char* MENU_NAMES_PASCAL[][11] = {
   /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Ajustes", "Stats", "*Auto*"},
   /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Bremse+", "Limit", "Setup", "Stats", "*Auto*"},
   /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Setup", "Stats", "*Auto*"},
-  /* NLD */ {"Rem", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Rem+", "Limiet", "Instell", "Stats", "*Auto*"}
+  /* NLD */ {"Rem", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Rem+", "Limiet", "Instell", "Stats", "*Auto*"},
+  /* POR */ {"Travao", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Travao+", "Limite", "Ajustes", "Stats", "*Carro*"}
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
@@ -168,7 +181,8 @@ const char* SETTINGS_MENU_NAMES_PASCAL[][11] = {
   /* ESP */ {"Energia", "Pantalla", "Sonido", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Acerca", "Atras"},
   /* DEU */ {"Strom", "Anzeige", "Ton", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Zuruck"},
   /* ITA */ {"Potenza", "Schermo", "Suono", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Indietro"},
-  /* NLD */ {"Stroom", "Display", "Geluid", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Terug"}
+  /* NLD */ {"Stroom", "Display", "Geluid", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Terug"},
+  /* POR */ {"Energia", "Ecra", "Som", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Sobre", "Voltar"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */
@@ -180,7 +194,8 @@ const char* POWER_MENU_NAMES_PASCAL[][6] = {
   /* ESP */ {"Scrsv", "Reposo", "Susp Prof", "Arranque", "Vin Cal.", "Atras"},
   /* DEU */ {"Scrsv", "Schlaf", "Tief Schl", "Start", "Vin Kal.", "Zuruck"},
   /* ITA */ {"Scrsv", "Riposo", "Sonno Prof", "Avvio", "Vin Cal.", "Indietro"},
-  /* NLD */ {"Scrsv", "Slapen", "Diep Slp", "Start", "Vin kal.", "Terug"}
+  /* NLD */ {"Scrsv", "Slapen", "Diep Slp", "Start", "Vin kal.", "Terug"},
+  /* POR */ {"Scrsv", "Dormir", "Sono Prof", "Arranque", "Vin Cal.", "Voltar"}
 };
 
 /* Display submenu item names - Pascal Case: [language][item] */
@@ -192,7 +207,8 @@ const char* DISPLAY_MENU_NAMES_PASCAL[][7] = {
   /* ESP */ {"Modo Race", "Idioma", "Estilo", "Tam texto", "Antis.Step", "Barra est", "Atras"},
   /* DEU */ {"Race Modus", "Sprache", "Stil", "Schrift", "Antis.Step", "Statusleiste", "Zuruck"},
   /* ITA */ {"Modo Gara", "Lingua", "Stile", "Dim testo", "Antis.Step", "Barra stato", "Indietro"},
-  /* NLD */ {"Race Modus", "Taal", "Stijl", "Tekstgrt", "Antis.Step", "Statusbalk", "Terug"}
+  /* NLD */ {"Race Modus", "Taal", "Stijl", "Tekstgrt", "Antis.Step", "Statusbalk", "Terug"},
+  /* POR */ {"Modo Race", "Idioma", "Estilo", "Tam texto", "Antis.Step", "Barra est", "Voltar"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */
@@ -204,7 +220,8 @@ const char* RACE_LABELS_PASCAL[][4] = {
   /* ESP */ {"Freno", "Sensi", "Antis", "Curva"},
   /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve"},
   /* ITA */ {"Freno", "Sensi", "Antis", "Curva"},
-  /* NLD */ {"Rem", "Sensi", "Antis", "Curve"}
+  /* NLD */ {"Rem", "Sensi", "Antis", "Curve"},
+  /* POR */ {"Travao", "Sensi", "Antis", "Curva"}
 };
 
 /* Car menu option labels - Pascal Case: [language][option] */
@@ -216,7 +233,8 @@ const char* CAR_MENU_OPTIONS_PASCAL[][5] = {
   /* ESP */ {"Elegir", "Renomb", "Raceswp", "Copiar", "Reset"},
   /* DEU */ {"Wahl", "Name", "Raceswp", "Kopier", "Reset"},
   /* ITA */ {"Scegli", "Rinom", "Raceswp", "Copia", "Reset"},
-  /* NLD */ {"Kies", "Hernoem", "Raceswp", "Kopie", "Reset"}
+  /* NLD */ {"Kies", "Hernoem", "Raceswp", "Kopie", "Reset"},
+  /* POR */ {"Escolh", "Renome", "Raceswp", "Copiar", "Reset"}
 };
 
 /* View mode value labels - Pascal Case: [language][mode] */
@@ -228,7 +246,8 @@ const char* VIEW_MODE_LABELS_PASCAL[][3] = {
   /* ESP */ {"Off", "Total", "Simple"},
   /* DEU */ {"Aus", "Voll", "Einf"},
   /* ITA */ {"Off", "Pieno", "Sempl"},
-  /* NLD */ {"Uit", "Vol", "Eenv"}
+  /* NLD */ {"Uit", "Vol", "Eenv"},
+  /* POR */ {"Off", "Total", "Simp"}
 };
 
 /* Sound submenu item names - Pascal Case: [language][item] */
@@ -240,7 +259,8 @@ const char* SOUND_MENU_NAMES_PASCAL[][3] = {
   /* ESP */ {"Inicio", "Carrera", "Atras"},
   /* DEU */ {"Start", "Rennen", "Zuruck"},
   /* ITA */ {"Avvio", "Gara", "Indietro"},
-  /* NLD */ {"Start", "Race", "Terug"}
+  /* NLD */ {"Start", "Race", "Terug"},
+  /* POR */ {"Arranque", "Corrida", "Voltar"}
 };
 
 /* ON/OFF labels - Pascal Case: [language][state] */
@@ -252,7 +272,8 @@ const char* ON_OFF_LABELS_PASCAL[][2] = {
   /* ESP */ {"Off", "On"},
   /* DEU */ {"Aus", "Ein"},
   /* ITA */ {"Off", "On"},
-  /* NLD */ {"Uit", "Aan"}
+  /* NLD */ {"Uit", "Aan"},
+  /* POR */ {"Off", "On"}
 };
 
 /* Release-brake mode labels - Pascal Case: [language][mode] */
@@ -264,7 +285,8 @@ const char* RELEASE_BRAKE_MODE_LABELS_PASCAL[][3] = {
   /* ESP */ {"Off", "Qck", "Drg"},
   /* DEU */ {"Aus", "Qck", "Drg"},
   /* ITA */ {"Off", "Qck", "Drg"},
-  /* NLD */ {"Uit", "Qck", "Drg"}
+  /* NLD */ {"Uit", "Qck", "Drg"},
+  /* POR */ {"Off", "Qck", "Drg"}
 };
 
 /* BACK button labels - UPPER CASE: [language] */
@@ -276,7 +298,8 @@ const char* BACK_LABELS[] = {
   /* ESP */ "ATRAS",
   /* DEU */ "ZURUCK",
   /* ITA */ "INDIETRO",
-  /* NLD */ "TERUG"
+  /* NLD */ "TERUG",
+  /* POR */ "VOLTAR"
 };
 
 /* BACK button labels - Pascal Case: [language] */
@@ -288,49 +311,50 @@ const char* BACK_LABELS_PASCAL[] = {
   /* ESP */ "Atras",
   /* DEU */ "Zuruck",
   /* ITA */ "Indietro",
-  /* NLD */ "Terug"
+  /* NLD */ "Terug",
+  /* POR */ "Voltar"
 };
 
 /* UI strings for car selection/copy/rename/reset screens: [language] */
 const char* STR_SELECT_CAR[] = {
   "-VELG BIL-", "-SELECT THE CAR-", "-SELECT THE CAR-", "-SELECT THE CAR-",
-  "-ELEGIR AUTO-", "-AUTO WAEHLEN-", "-SCEGLI AUTO-", "-KIES AUTO-"
+  "-ELEGIR AUTO-", "-AUTO WAEHLEN-", "-SCEGLI AUTO-", "-KIES AUTO-", "-ESCOLH CARRO-"
 };
 const char* STR_COPY_FROM[] = {
   "-KOPIER FRA:-", "-COPY FROM:-", "-COPY FROM:-", "-COPY FROM:-",
-  "-COPIAR DE:-", "-KOPIER VON:-", "-COPIA DA:-", "-KOPIE VAN:-"
+  "-COPIAR DE:-", "-KOPIER VON:-", "-COPIA DA:-", "-KOPIE VAN:-", "-COPIAR DE:-"
 };
 const char* STR_COPY_TO[] = {
   "-KOPIER TIL:-", "-COPY TO:-", "-COPY TO:-", "-COPY TO:-",
-  "-COPIAR A:-", "-KOPIER ZU:-", "-COPIA A:-", "-KOPIE NAAR-"
+  "-COPIAR A:-", "-KOPIER ZU:-", "-COPIA A:-", "-KOPIE NAAR-", "-COPIAR PARA-"
 };
-const char* STR_ALL[] = {"ALLE", "ALL", "ALL", "ALL", "TODO", "ALLE", "TUTT", "ALLE"};
+const char* STR_ALL[] = {"ALLE", "ALL", "ALL", "ALL", "TODO", "ALLE", "TUTT", "ALLE", "TODOS"};
 const char* STR_COPIED_ALL[] = {
   "KOPIERT!", "COPIED ALL", "COPIED ALL", "COPIED ALL",
-  "TODO COP", "ALLE KOP", "TUTTE OK", "ALLES OK"
+  "TODO COP", "ALLE KOP", "TUTTE OK", "ALLES OK", "TODOS OK"
 };
-const char* STR_COPIED[] = {"KOPIERT!", "COPIED!", "COPIED!", "COPIED!", "COPIADO", "KOPIERT", "COPIATO", "KOPIE OK"};
+const char* STR_COPIED[] = {"KOPIERT!", "COPIED!", "COPIED!", "COPIED!", "COPIADO", "KOPIERT", "COPIATO", "KOPIE OK", "COPIADO"};
 const char* STR_RENAME_CAR[] = {
   "-GI NYTT NAVN-", "-RENAME THE CAR-", "-RENAME THE CAR-", "-RENAME THE CAR-",
-  "-RENOMB AUTO-", "-AUTO BENENN-", "-RINOM AUTO-", "-HERNOEM AUTO-"
+  "-RENOMB AUTO-", "-AUTO BENENN-", "-RINOM AUTO-", "-HERNOEM AUTO-", "-RENOMEAR CARRO-"
 };
 const char* STR_CONFIRM[] = {
   "-TRYKK OK FOR GODTA-", "-CLICK OK TO CONFIRM-", "-CLICK OK TO CONFIRM-", "-CLICK OK TO CONFIRM-",
-  "-OK CONFIRMAR-", "-OK BESTAETIG-", "-OK CONFERMA-", "-DRUK OK BEVEST-"
+  "-OK CONFIRMAR-", "-OK BESTAETIG-", "-OK CONFERMA-", "-DRUK OK BEVEST-", "-OK P/CONFIRMAR-"
 };
 const char* STR_LIMITER[] = {
   " - BEGRENS - ", " - LIMITER - ", " - CHOKE1 - ", " - CHOKE - ",
-  " - LIMITE - ", " - LIMIT - ", " - LIMITE - ", " - LIMIET - "
+  " - LIMITE - ", " - LIMIT - ", " - LIMITE - ", " - LIMIET - ", " - LIMITE - "
 };
 const char* STR_CALIBRATION[] = {
   "KALIBRERING", "CALIBRATION", "CALIBRATION", "CALIBRATION",
-  "CALIBRACION", "KALIBRATION", "CALIBRAZIONE", "KALIBRATIE"
+  "CALIBRACION", "KALIBRATION", "CALIBRAZIONE", "KALIBRATIE", "CALIBRACAO"
 };
 const char* STR_PRESS_RELEASE[] = {
   "trykk/slipp gass", "press/release trg", "press/release trg", "press/release trg",
-  "pulsa/suelta trg", "drueck/los trg", "premi/molla trg", "druk/los trg"
+  "pulsa/suelta trg", "drueck/los trg", "premi/molla trg", "druk/los trg", "prima/solte trg"
 };
 const char* STR_PUSH_DONE[] = {
   " trykk nar ferdig ", " press when done ", " press when done ", " press when done ",
-  " pulsa al final  ", " druck bei ende ", " premi a fine   ", " druk als klaar "
+  " pulsa al final  ", " druck bei ende ", " premi a fine   ", " druk als klaar ", " prima no fim   "
 };

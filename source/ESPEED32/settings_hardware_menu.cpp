@@ -22,7 +22,7 @@ extern bool isEscapeToMainRequested();
 extern void showScreensaver();
 extern void saveEEPROM(StoredVar_type toSave);
 
-static const char* HARDWARE_MENU_LABELS[8][HARDWARE_ITEMS_COUNT] = {
+static const char* HARDWARE_MENU_LABELS[9][HARDWARE_ITEMS_COUNT] = {
   {"ENC.INVERT", "EKST.POT.", "TRIGGER", "TEST", "TILBAKE"},
   {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "BACK"},
   {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "BACK"},
@@ -30,10 +30,11 @@ static const char* HARDWARE_MENU_LABELS[8][HARDWARE_ITEMS_COUNT] = {
   {"ENC.INVERT", "POT.EXT.", "TRIGGER", "TEST", "ATRAS"},
   {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "ZURUCK"},
   {"ENC.INVERT", "POT.EST.", "TRIGGER", "TEST", "INDIETRO"},
-  {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "TERUG"}
+  {"ENC.INVERT", "EXT.POT.", "TRIGGER", "TEST", "TERUG"},
+  {"ENC.INVERT", "POT.EXT.", "TRIGGER", "TESTE", "VOLTAR"}
 };
 
-static const char* HARDWARE_MENU_LABELS_PASCAL[8][HARDWARE_ITEMS_COUNT] = {
+static const char* HARDWARE_MENU_LABELS_PASCAL[9][HARDWARE_ITEMS_COUNT] = {
   {"Enc.Invert", "Ekst.Pot.", "Trigger", "Test", "Tilbake"},
   {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Back"},
   {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Back"},
@@ -41,10 +42,11 @@ static const char* HARDWARE_MENU_LABELS_PASCAL[8][HARDWARE_ITEMS_COUNT] = {
   {"Enc.Invert", "Pot.Ext.", "Trigger", "Test", "Atras"},
   {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Zuruck"},
   {"Enc.Invert", "Pot.Est.", "Trigger", "Test", "Indietro"},
-  {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Terug"}
+  {"Enc.Invert", "Ext.Pot.", "Trigger", "Test", "Terug"},
+  {"Enc.Invert", "Pot.Ext.", "Trigger", "Teste", "Voltar"}
 };
 
-static const char* SENSOR_MENU_LABELS[8][4] = {
+static const char* SENSOR_MENU_LABELS[9][4] = {
   {"FAMILIE", "AKTIV", "TYPE", "TILBAKE"},
   {"FAMILY", "ACTIVE", "TYPE", "BACK"},
   {"FAMILY", "ACTIVE", "TYPE", "BACK"},
@@ -52,10 +54,11 @@ static const char* SENSOR_MENU_LABELS[8][4] = {
   {"FAMILIA", "ACTIVO", "TYPE", "ATRAS"},
   {"FAMILIE", "AKTIV", "TYPE", "ZURUCK"},
   {"FAMIGLIA", "ATTIVO", "TYPE", "INDIETRO"},
-  {"FAMILIE", "ACTIEF", "TYPE", "TERUG"}
+  {"FAMILIE", "ACTIEF", "TYPE", "TERUG"},
+  {"FAMILIA", "ATIVO", "TYPE", "VOLTAR"}
 };
 
-static const char* SENSOR_MENU_LABELS_PASCAL[8][4] = {
+static const char* SENSOR_MENU_LABELS_PASCAL[9][4] = {
   {"Familie", "Aktiv", "Type", "Tilbake"},
   {"Family", "Active", "Type", "Back"},
   {"Family", "Active", "Type", "Back"},
@@ -63,7 +66,8 @@ static const char* SENSOR_MENU_LABELS_PASCAL[8][4] = {
   {"Familia", "Activo", "Type", "Atras"},
   {"Familie", "Aktiv", "Type", "Zuruck"},
   {"Famiglia", "Attivo", "Type", "Indietro"},
-  {"Familie", "Actief", "Type", "Terug"}
+  {"Familie", "Actief", "Type", "Terug"},
+  {"Familia", "Ativo", "Type", "Voltar"}
 };
 
 static const char* getHardwareMenuLabel(uint8_t lang, uint8_t item) {

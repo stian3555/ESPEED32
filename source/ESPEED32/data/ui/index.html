@@ -473,6 +473,38 @@ form{margin:0}
 .about-list{margin:8px 0 8px 18px;padding:0}
 .about-list li{margin:6px 0;color:var(--card-text-soft)}
 .about-card a{color:var(--card-link)}
+.controller-specs{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.controller-spec{
+  border:1px solid var(--card-border);
+  border-radius:9px;
+  padding:9px 10px;
+  background:var(--panel);
+}
+.controller-spec-label{
+  display:block;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+  color:var(--tiny);
+  margin-bottom:4px;
+}
+.controller-spec-value{
+  display:block;
+  color:var(--card-text);
+  font-size:13px;
+  line-height:1.4;
+  word-break:break-word;
+}
+.controller-spec-value code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:12px;
+}
 .repo-card p{margin:6px 0;color:var(--card-text);line-height:1.45}
 .repo-card a{color:var(--card-link)}
 .release-line{margin:3px 0}
@@ -899,20 +931,28 @@ form{margin:0}
   body{padding:18px 18px 32px}
   .panel{padding:14px}
   .layout-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
     gap:12px;
     align-items:start;
   }
   .about-panel,
-  .repo-panel,
   .telemetry-panel,
   .lap-panel,
   .backup-panel,
-  .guide-panel,
-  .usb-panel,
   .editor-shell,
   .update-stack{
     grid-column:1 / -1;
+  }
+  .guide-panel,
+  .usb-panel,
+  .repo-panel{
+    align-self:stretch;
+  }
+  .guide-panel .btn,
+  .usb-panel .btn{
+    width:100%;
+    min-width:0;
+    max-width:none;
   }
   .section-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
   .update-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -922,8 +962,8 @@ form{margin:0}
   .layout-grid{
     grid-template-columns:repeat(12,minmax(0,1fr));
     grid-template-areas:
-      "about about about about about about about about repo repo repo repo"
-      "guide guide guide guide guide guide usb usb usb usb usb usb"
+      "guide guide guide guide usb usb usb usb repo repo repo repo"
+      "about about about about about about about about about about about about"
       "telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry telemetry"
       "lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay lapoverlay"
       "backup backup backup backup backup backup backup backup backup backup backup backup"
@@ -941,7 +981,9 @@ form{margin:0}
   .backup-panel{grid-area:backup}
   .editor-shell{grid-area:editor}
   .about-panel,
-  .repo-panel{
+  .repo-panel,
+  .guide-panel,
+  .usb-panel{
     align-self:stretch;
     display:flex;
     flex-direction:column;
@@ -949,10 +991,6 @@ form{margin:0}
   .about-panel .card,
   .repo-panel .card{
     flex:1;
-  }
-  .guide-panel,
-  .usb-panel{
-    align-self:stretch;
   }
   .update-stack{
     grid-area:updates;
@@ -1025,30 +1063,12 @@ form{margin:0}
 </div>
 </div>
 </header>
+<p id="controller-auth-note" class="warn" style="display:none"></p>
 <main class="layout-grid">
-<section class="panel about-panel">
-<h2>About ESPEED32</h2>
-<div class="card about-card">
-<p><b>ESPEED32</b> is a handheld slot car controller based on ESP32.</p>
-<ul class="about-list">
-<li>PWM motor control with adjustable frequency, throttle curve, anti-spin, and brake behavior.</li>
-<li>Magnetic trigger support, calibration, and per-car profile storage.</li>
-<li>Built-in backup/restore, firmware update (OTA), filesystem update (SPIFFS), and onboard user guide.</li>
-</ul>
-</div>
-</section>
-<section class="panel repo-panel">
-<h2>Repo &amp; Release</h2>
-<div class="card repo-card">
-<p class="tiny"><b>Main repository for espeed32.com:</b> <a href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">nerdweeg/ESPEED32</a></p>
-<div id="release-info" class="tiny">Latest firmware release (official repo nerdweeg/ESPEED32): checking...</div>
-<p class="tiny">Original upstream project: <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a></p>
-</div>
-</section>
 <section class="panel guide-panel">
 <h2>User Guide</h2>
 <a id="docs-link" class="btn doc" href="docs/" target="_blank" rel="noopener">Open User Guide</a>
-<p id="docs-note" class="warn">Docs and UI are served from the controller file system (SPIFFS).</p>
+<p id="docs-note" class="warn">The user guide is stored on the controller and opens in a new tab.</p>
 </section>
 <section class="panel usb-panel">
 <h2>USB Connection</h2>
@@ -1058,6 +1078,37 @@ form{margin:0}
 <div id="ust" class="st"></div>
 </div>
 <p id="hosted-note" class="warn" style="display:none">Hosted mode: connect via USB for backup/restore/editor.</p>
+</section>
+<section class="panel repo-panel">
+<h2>Repo &amp; Release</h2>
+<div class="card repo-card">
+<p class="tiny"><b>Main repository for espeed32.com:</b> <a href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">nerdweeg/ESPEED32</a></p>
+<div id="release-info" class="tiny">Latest firmware release (official repo nerdweeg/ESPEED32): checking...</div>
+<p class="tiny">Original upstream project: <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a></p>
+</div>
+</section>
+<section class="panel about-panel">
+<h2>This Controller</h2>
+<div class="card about-card">
+<p id="controller-about-note">Technical details for the physical controller you are connected to.</p>
+<div class="controller-specs">
+<div class="controller-spec"><span class="controller-spec-label">Device ID</span><span class="controller-spec-value"><code id="about-device-id">----</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">Firmware</span><span class="controller-spec-value"><code id="about-firmware">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">Data</span><span class="controller-spec-value"><code id="about-data">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">HAL Sensor</span><span class="controller-spec-value" id="about-sensor">-</span></div>
+<div class="controller-spec"><span class="controller-spec-label">Chip</span><span class="controller-spec-value" id="about-chip">-</span></div>
+<div class="controller-spec"><span class="controller-spec-label">WiFi MAC</span><span class="controller-spec-value"><code id="about-wifi-mac">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">BT MAC</span><span class="controller-spec-value"><code id="about-bt-mac">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">Host</span><span class="controller-spec-value"><code id="about-host">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">SSID</span><span class="controller-spec-value"><code id="about-ssid">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">IP Address</span><span class="controller-spec-value"><code id="about-ip-address">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">WiFi Config</span><span class="controller-spec-value" id="about-wifi-mode">-</span></div>
+<div class="controller-spec"><span class="controller-spec-label">Portal</span><span class="controller-spec-value" id="about-portal-mode">-</span></div>
+<div class="controller-spec"><span class="controller-spec-label">Build</span><span class="controller-spec-value"><code id="about-build">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">Screensaver 1</span><span class="controller-spec-value"><code id="about-screensaver-line1">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">Screensaver 2</span><span class="controller-spec-value"><code id="about-screensaver-line2">-</code></span></div>
+</div>
+</div>
 </section>
 <section class="panel telemetry-panel">
 <h2>Telemetry &amp; Logging</h2>
@@ -1243,8 +1294,9 @@ form{margin:0}
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
-var info={deviceId:'----',version:'-',docsPath:'docs/en/'};
+var info={deviceId:'----',version:'-',dataVersion:'-',halSensor:'-',chip:'-',wifiMac:'-',btMac:'-',build:'-',hostName:'-',ssid:'',ipAddress:'',wifiMode:null,portalMode:null,wifiFallback:null,docsPath:'docs/en/',authDefault:false,screensaverLine1:'',screensaverLine2:''};
 var infoLoadedFromApi=false;
+var infoLoadedFromUsb=false;
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
 var hostedMode=false;
 var telemetryStatus=null;
@@ -1399,27 +1451,121 @@ function browserSupportsSerial(){
   return !!(navigator && ('serial' in navigator));
 }
 
+function getUsbSerialUnavailableMessage(){
+  if(browserSupportsSerial()) return '';
+  var secureBlocked=(typeof window!=='undefined' && window.isSecureContext===false && location.protocol!=='file:');
+  if(secureBlocked){
+    return 'USB WebSerial requires Chrome or Edge on desktop and a secure page context. This plain HTTP page cannot use it. Open the local UI file or the HTTPS-hosted UI for USB.';
+  }
+  return 'USB WebSerial is not supported in this browser. Use Chrome or Edge on desktop.';
+}
+
 function updateUsbUiState(){
   var btn=document.getElementById('ucb');
   var note=document.getElementById('usb-note');
   if(!btn || !note) return;
 
-  var unsupported=!browserSupportsSerial();
+  var unavailableMsg=getUsbSerialUnavailableMessage();
+  var unsupported=unavailableMsg!=='';
   btn.disabled=unsupported;
   btn.classList.toggle('disabled',unsupported);
   note.style.display=unsupported?'block':'none';
-  note.textContent=unsupported?'USB WebSerial is not supported in this browser. Use Chrome or Edge on desktop.':'';
+  note.textContent=unavailableMsg;
 }
 
 function applyHostedMode(){
-  if(!hostedMode) return;
   var note=document.getElementById('hosted-note');
-  if(note) note.style.display='block';
+  if(note) note.style.display=hostedMode?'block':'none';
   var b=document.getElementById('btn-backup');
-  if(b) b.textContent='Download Config Backup (USB)';
+  if(b) b.textContent=hostedMode?'Download Config Backup (USB)':'Download Config Backup (.json)';
   var restoreBtn=document.querySelector('#uf button[type="submit"]');
-  if(restoreBtn) restoreBtn.textContent='Restore Config (USB)';
+  if(restoreBtn) restoreBtn.textContent=hostedMode?'Restore Config (USB)':'Restore Config (.json)';
+  updateControllerAuthNote();
   updateFirmwareUiState();
+}
+
+function setText(id,val){
+  var el=document.getElementById(id);
+  if(!el) return;
+  var out=(val==null || val==='')?'-':String(val);
+  el.textContent=out;
+}
+
+function controllerAuthUsesDefault(){
+  if(state && state.global && state.global.uiAuthDefault!=null) return Number(state.global.uiAuthDefault)!==0;
+  return !!info.authDefault;
+}
+
+function mergeInfoPayload(j){
+  if(!j) return;
+  if(j.deviceId) info.deviceId=j.deviceId;
+  if(j.version) info.version=j.version;
+  if(j.dataVersion) info.dataVersion=j.dataVersion;
+  if(j.halSensor) info.halSensor=j.halSensor;
+  if(j.chip) info.chip=j.chip;
+  if(j.wifiMac) info.wifiMac=j.wifiMac;
+  if(j.btMac) info.btMac=j.btMac;
+  if(j.build) info.build=j.build;
+  if(j.hostName) info.hostName=j.hostName;
+  if(j.ssid!=null) info.ssid=j.ssid;
+  if(j.ipAddress!=null) info.ipAddress=j.ipAddress;
+  if(j.screensaverLine1!=null) info.screensaverLine1=j.screensaverLine1;
+  if(j.screensaverLine2!=null) info.screensaverLine2=j.screensaverLine2;
+  if(j.wifiMode!=null) info.wifiMode=j.wifiMode;
+  if(j.portalMode!=null) info.portalMode=j.portalMode;
+  if(j.wifiFallback!=null) info.wifiFallback=!!Number(j.wifiFallback);
+  if(j.docsPath) info.docsPath=j.docsPath;
+  if(j.authDefault!=null) info.authDefault=!!Number(j.authDefault);
+}
+
+function updateControllerAuthNote(){
+  var note=document.getElementById('controller-auth-note');
+  if(!note) return;
+  var show=!hostedMode && controllerAuthUsesDefault();
+  note.style.display=show?'block':'none';
+  note.textContent=show?'Default controller login is still active. Use username espeed32 and password espeed32, or change the controller password in Advanced Config Editor > Controller Access. The printed login is also shown on the controller WiFi info page.':'';
+}
+
+function formatAboutWifiMode(mode){
+  if(mode==null) return '-';
+  return Number(mode)===1?'Client':'AP';
+}
+
+function formatAboutPortalMode(mode,fallback){
+  if(mode==null) return '-';
+  mode=Number(mode||0);
+  if(mode===2) return 'Client';
+  if(mode===1) return fallback?'AP (fallback active)':'AP';
+  return 'Off';
+}
+
+function renderControllerAbout(){
+  setText('about-device-id',info.deviceId||'----');
+  setText('about-firmware',info.version||'-');
+  setText('about-data',info.dataVersion||'-');
+  setText('about-sensor',info.halSensor||'-');
+  setText('about-chip',info.chip||'-');
+  setText('about-wifi-mac',info.wifiMac||'-');
+  setText('about-bt-mac',info.btMac||'-');
+  setText('about-host',info.hostName||'-');
+  setText('about-ssid',info.ssid||'-');
+  setText('about-ip-address',info.ipAddress||'-');
+  setText('about-wifi-mode',formatAboutWifiMode(info.wifiMode));
+  setText('about-portal-mode',formatAboutPortalMode(info.portalMode,info.wifiFallback));
+  setText('about-build',info.build||'-');
+  setText('about-screensaver-line1',info.screensaverLine1||'-');
+  setText('about-screensaver-line2',info.screensaverLine2||'-');
+  var note=document.getElementById('controller-about-note');
+  if(!note) return;
+  if(infoLoadedFromApi){
+    note.textContent='Technical details for the physical controller you are connected to, similar to the onboard About screen.';
+  }else if(infoLoadedFromUsb){
+    note.textContent='Hosted copy: live controller details loaded over USB WebSerial.';
+  }else if(hostedMode){
+    note.textContent='Hosted copy: connect to controller WiFi or USB to load live hardware, MAC, build, and network details.';
+  }else{
+    note.textContent='Loading controller details...';
+  }
 }
 
 function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
@@ -1700,6 +1846,8 @@ async function loadLatestReleaseInfo(){
 function applyInfo(){
   document.getElementById('devid').textContent=info.deviceId||'----';
   document.getElementById('ver').textContent=info.version||'-';
+  renderControllerAbout();
+  updateControllerAuthNote();
   updateDocsLinkState();
   updateFirmwareUiState();
   updateReleaseInfoUi();
@@ -1807,7 +1955,7 @@ async function updateDocsLinkState(){
 
   if(!hostedMode && infoLoadedFromApi){
     link.href=info.docsPath||'/docs';
-    note.textContent='Docs and UI are served from the controller file system (SPIFFS).';
+    note.textContent='The user guide is stored on the controller and opens in a new tab.';
     return;
   }
 
@@ -1844,7 +1992,7 @@ function telemetryUsesUsb(){
 }
 
 function telemetryAvailable(){
-  return telemetryUsesUsb() || (!hostedMode && infoLoadedFromApi);
+  return telemetryUsesUsb() || infoLoadedFromApi;
 }
 
 function telemetryUnavailableText(){
@@ -3330,7 +3478,6 @@ function otaUpdateUnavailableReason(label){
 
 function canShowAutoUpdateControls(){
   if(hostedMode) return false;
-  if((location.hostname||'')!=='192.168.4.1') return false;
   if(usb) return false;
   if(typeof navigator!=='undefined' && navigator.onLine===false) return false;
   return true;
@@ -3484,9 +3631,27 @@ async function ensureUsbReady(silent){
     if(v.version) info.version=v.version;
     applyInfo();
     setUsbReadyState(true,silent?'':'USB command channel ready');
+    if(!infoLoadedFromApi && !infoLoadedFromUsb){
+      loadInfoFromUsb();
+    }
     return true;
   }catch(_){
     setUsbReadyState(false,silent?'':'USB connected, but device command channel is not ready');
+    return false;
+  }
+}
+
+async function loadInfoFromUsb(){
+  if(!usb || !usbReady) return false;
+  try{
+    var j=await usbReadJsonResponse('INFO',5000,4000);
+    mergeInfoPayload(j);
+    infoLoadedFromUsb=true;
+    applyInfo();
+    return true;
+  }catch(_){
+    infoLoadedFromUsb=false;
+    applyInfo();
     return false;
   }
 }
@@ -3498,12 +3663,13 @@ async function loadInfo(){
     if(r.ok){
       var j=await r.json();
       infoLoadedFromApi=true;
+      infoLoadedFromUsb=false;
       apiOk=true;
-      if(j.deviceId)info.deviceId=j.deviceId;
-      if(j.version)info.version=j.version;
-      if(j.docsPath)info.docsPath=j.docsPath;
+      hostedMode=false;
+      mergeInfoPayload(j);
     }
   }catch(_){ }
+  applyHostedMode();
   applyInfo();
   if(apiOk){
     startTelemetryPollingIfAvailable(true);
@@ -3545,6 +3711,7 @@ async function ws(s){
 async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
   usb=false;
   usbReady=false;
+  infoLoadedFromUsb=false;
   telemetryConfigSnapshot=null;
   updateDocsLinkState();
   if(_r){try{await _r.cancel();}catch(_){}}
@@ -3580,8 +3747,9 @@ async function resetUsbToDisconnected(showStatus,statusType,statusMsg){
 }
 
 async function usbToggle(){
-  if(!browserSupportsSerial()){
-    ss('ust','err','USB WebSerial is not supported in this browser.');
+  var unavailableMsg=getUsbSerialUnavailableMessage();
+  if(unavailableMsg){
+    ss('ust','err',unavailableMsg);
     return;
   }
   if(!usb){
@@ -3595,7 +3763,7 @@ async function usbToggle(){
       var ready=await ensureUsbReady(true);
       if(!ready){
         await resetUsbToDisconnected(false);
-        ss('ust','err','USB connect failed: no command response. Open USB mode on controller (older FW) or update FW.');
+        ss('ust','err','USB connect failed: no command response. Wake the controller from sleep and try again. On older firmware, open USB mode manually or update firmware.');
       }else{
         var b=document.getElementById('ucb');
         b.textContent='Disconnect USB';
@@ -3729,11 +3897,26 @@ function renderField(prefix,field,val){
       var sel=(Number(val)===Number(o.value))?' selected':'';
       return '<option value="'+o.value+'"'+sel+'>'+esc(o.label)+'</option>';
     }).join('');
-    return '<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><select id="'+id+'">'+opts+'</select></div>';
+    var enumHtml='<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><select id="'+id+'">'+opts+'</select></div>';
+    if(field.id==='wifiStaPasswordClear'){
+      enumHtml+='<div class="tiny">Set this to CLEAR and Apply/Save to remove the saved Client WiFi password.</div>';
+    }else if(field.id==='uiAuthResetDefault'){
+      enumHtml+='<div class="tiny">Set this to RESET and Apply/Save to restore the printed default controller login.</div>';
+    }
+    return enumHtml;
   }
   if(field.type==='string'){
     var ml=(field.maxLen!=null)?(' maxlength="'+field.maxLen+'"'):'';
-    return '<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><input id="'+id+'" type="text"'+ml+' value="'+esc(val||'')+'"></div>';
+    var inputType=field.secret?'password':'text';
+    var rowHtml='<div class="row"><label for="'+id+'">'+esc(field.label)+unit+'</label><input id="'+id+'" type="'+inputType+'"'+ml+' value="'+esc(val||'')+'"></div>';
+    if(field.id==='wifiStaPassword'){
+      var hasSaved=!!(state && state.global && Number(state.global.wifiStaPasswordSet));
+      rowHtml+='<div class="tiny">Saved password on device: '+(hasSaved?'YES':'NO')+'. Leave this blank to keep the current saved password. Backup files do not export the Client WiFi password; restore keeps the controller&apos;s local WiFi settings.</div>';
+    }else if(field.id==='uiAuthPassword'){
+      var authDefault=!!(state && state.global && Number(state.global.uiAuthDefault));
+      rowHtml+='<div class="tiny">Username is always <code>espeed32</code>. Leave this blank to keep the current controller login password. Use Reset Controller Login To Default to go back to <code>espeed32</code>. Default login active right now: '+(authDefault?'YES':'NO')+'. Backup files do not export the controller login password; restore keeps the controller&apos;s local login.</div>';
+    }
+    return rowHtml;
   }
   var attrs='';
   if(field.min!=null) attrs+=' min="'+field.min+'"';
@@ -3746,6 +3929,8 @@ function categorizeGlobalField(id){
   if(id==='selectedCarNumber' || id==='viewMode' || id==='gridCarSelectEnabled' || id==='raceViewMode') return 'Race & Driving';
   if(id==='screensaverTimeout' || id==='powerSaveTimeout' || id==='deepSleepTimeout' || id==='startupDelay') return 'Power & Startup';
   if(id==='antiSpinStep') return 'Race & Driving';
+  if(id==='wifiMode' || id==='wifiStaSsid' || id==='wifiStaPassword' || id==='wifiStaPasswordClear') return 'Network';
+  if(id==='uiAuthPassword' || id==='uiAuthResetDefault') return 'Controller Access';
   if(id==='language' || id==='textCase' || id==='listFontSize') return 'Display & Language';
   if(id==='statusSlot0' || id==='statusSlot1' || id==='statusSlot2' || id==='statusSlot3') return 'Status Slots';
   if(id==='soundBoot' || id==='soundRace') return 'Sound';
@@ -3808,7 +3993,7 @@ function renderEditor(){
       schema.global,
       globalValues,
       categorizeGlobalField,
-      ['Race & Driving','Power & Startup','Display & Language','Status Slots','Sound','Screensaver Text','Other']
+      ['Race & Driving','Power & Startup','Network','Controller Access','Display & Language','Status Slots','Sound','Screensaver Text','Other']
     );
 
   var cHtml='<div class="group-title">Car Params (editing profile '+editCar+')</div>'+
@@ -3828,6 +4013,7 @@ function renderEditor(){
       tabBtn('car','Car Params')+
     '</div>'+
     (editorTab==='car'?cHtml:gHtml);
+  updateControllerAuthNote();
 }
 
 function showEditorTab(tab){
@@ -3920,6 +4106,19 @@ async function applyEditor(saveAfter){
     (schema.global||[]).forEach(function(f){
       var el=document.getElementById(fieldId('g',f.id));
       if(!el) return;
+      if(f.id==='wifiStaPassword'){
+        var passwordVal=String(el.value||'');
+        var clearEl=document.getElementById(fieldId('g','wifiStaPasswordClear'));
+        var clearRequested=!!(clearEl && Number(clearEl.value)===1);
+        if(passwordVal!=='' && clearRequested) throw new Error('Choose a new Client WiFi password or CLEAR, not both');
+        if(passwordVal==='') return;
+      }else if(f.id==='uiAuthPassword'){
+        var authPasswordVal=String(el.value||'');
+        var resetEl=document.getElementById(fieldId('g','uiAuthResetDefault'));
+        var resetRequested=!!(resetEl && Number(resetEl.value)===1);
+        if(authPasswordVal!=='' && resetRequested) throw new Error('Choose a new controller login password or RESET, not both');
+        if(authPasswordVal==='') return;
+      }
       payload[f.id]=coerceFieldValue(f,el.value);
     });
     (schema.car||[]).forEach(function(f){
@@ -3941,7 +4140,8 @@ async function applyEditor(saveAfter){
         editorCarIndex=payload.carIndex;
       }
     }else{
-      var r=await fetch('/api/apply',{
+      var applyUrl=saveAfter?'/api/apply?save=1':'/api/apply';
+      var r=await fetch(applyUrl,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload)
@@ -3953,12 +4153,6 @@ async function applyEditor(saveAfter){
         editorCarIndex=parseInt(state.selectedCarNumber,10);
       }else{
         editorCarIndex=payload.carIndex;
-      }
-
-      if(saveAfter){
-        var rs=await fetch('/api/save',{method:'POST'});
-        var js=await rs.json();
-        if(!rs.ok || !js.ok) throw new Error((js&&js.error)?js.error:'save failed');
       }
     }
     renderEditor();
@@ -4115,7 +4309,7 @@ async function runOtaUpload(opts){
 
 async function autoUpdateFirmware(){
   if(!canShowAutoUpdateControls()){
-    ss('ost','err','Auto update is available only on 192.168.4.1 with internet access and no USB connection.');
+    ss('ost','err','Auto update is available only on the controller WiFi page with internet access and no USB connection.');
     return;
   }
   var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
@@ -4141,7 +4335,7 @@ async function autoUpdateFirmware(){
 
 async function autoUpdateSpiffs(){
   if(!canShowAutoUpdateControls()){
-    ss('sst','err','Auto update is available only on 192.168.4.1 with internet access and no USB connection.');
+    ss('sst','err','Auto update is available only on the controller WiFi page with internet access and no USB connection.');
     return;
   }
   var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');

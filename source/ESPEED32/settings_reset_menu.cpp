@@ -3,6 +3,7 @@
 #include "slot_ESC.h"
 #include "HAL.h"
 #include "ext_pot.h"
+#include "connectivity_portal.h"
 
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
@@ -303,23 +304,23 @@ void resetAllCarsToFactoryDefaults() {
 }
 
 /**
- * Reset submenu. Items: CAR, SETTINGS, CALIBRATION, ALL, BACK.
+ * Reset submenu. Items: CAR, SETTINGS, CALIBRATION, NETWORK, ALL, BACK.
  * Each destructive action requires double-click confirmation.
  */
 void showResetSubmenu() {
-  const uint8_t RS_ITEMS = 5;
+  const uint8_t RS_ITEMS = 6;
   uint16_t lang = g_storedVar.language;
 
   const char* rowNamesByLang[9][RS_ITEMS] = {
-    {"Bil", "Innstillinger", "Kalibrering", "Alt", "Tilbake"},
-    {"Car", "Settings", "Calibration", "Everything", "Back"},
-    {"Car", "Settings", "Calibration", "Everything", "Back"},
-    {"Car", "Settings", "Calibration", "Everything", "Back"},
-    {"Auto", "Ajustes", "Calibrac.", "Todo", "Atras"},
-    {"Auto", "Einstell.", "Kalibr.", "Alles", "Zuruck"},
-    {"Auto", "Impostaz.", "Calibraz.", "Tutto", "Indietro"},
-    {"Auto", "Instell.", "Kalibr.", "Alles", "Terug"},
-    {"Carro", "Ajustes", "Calibr.", "Tudo", "Voltar"}
+    {"Bil", "Innstillinger", "Kalibrering", "Nettverk", "Alt", "Tilbake"},
+    {"Car", "Settings", "Calibration", "Network", "Everything", "Back"},
+    {"Car", "Settings", "Calibration", "Network", "Everything", "Back"},
+    {"Car", "Settings", "Calibration", "Network", "Everything", "Back"},
+    {"Auto", "Ajustes", "Calibrac.", "Red", "Todo", "Atras"},
+    {"Auto", "Einstell.", "Kalibr.", "Netzwerk", "Alles", "Zuruck"},
+    {"Auto", "Impostaz.", "Calibraz.", "Rete", "Tutto", "Indietro"},
+    {"Auto", "Instell.", "Kalibr.", "Netwerk", "Alles", "Terug"},
+    {"Carro", "Ajustes", "Calibr.", "Rede", "Tudo", "Voltar"}
   };
   const char** rowNames = rowNamesByLang[lang];
 
@@ -408,7 +409,7 @@ void showResetSubmenu() {
         obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
         delay(1500);
 
-        if (sel == 4) {
+        if (sel == 5) {
           /* Full factory reset: wipe flash, reboot into first-boot path */
           g_pref.begin("stored_var", false);
           g_pref.clear();
@@ -419,6 +420,7 @@ void showResetSubmenu() {
         if (sel == 1) { doResetCar(); }
         else if (sel == 2) { doResetSettings(); }
         else if (sel == 3) { doResetCalibration(); }
+        else if (sel == 4) { resetWiFiNetworkSettings(); }
 
         saveEEPROM(g_storedVar);
         initMenuItems();

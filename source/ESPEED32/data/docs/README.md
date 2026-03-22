@@ -37,8 +37,7 @@ That keeps the generated output aligned with what is uploaded to the device.
 - `assets/pwm_freq.svg` - PWM frequency examples
 - `assets/wifi_examples.svg` - controller OLED WiFi info and full-screen QR examples
 - `assets/display_modes.svg` - OLED list and grid view mockups
-- `assets/car_params.png` - wide browser screenshot of the Car Params editor
-- `assets/car_params_t.png` - taller browser screenshot of the Car Params editor
+- `assets/car_params.png` - browser screenshot of the Car Params editor
 - `assets/trig_cal.png` - trigger calibration figure
 - `../docs_src/shared/` - shared template, CSS, and JS for generated docs
 - `../docs_src/en/main.html` - English docs content fragment

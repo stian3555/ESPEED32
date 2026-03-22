@@ -21,7 +21,7 @@
   <g transform="translate(35,30)">
     <rect class="panel" x="0" y="0" width="670" height="420"/>
     <text class="title" x="335" y="48">INFO PAGE</text>
-    <text class="note" x="335" y="78">Controller OLED with SSID, password, and browser IP</text>
+    <text class="note" x="335" y="78">AP mode OLED with SSID, password, and browser IP</text>
 
     <g transform="translate(115,104)">
       <rect class="frame" x="0" y="0" width="440" height="300"/>
@@ -38,7 +38,7 @@
   <g transform="translate(745,30)">
     <rect class="panel" x="0" y="0" width="670" height="420"/>
     <text class="title" x="335" y="48">SHOW QR</text>
-    <text class="note" x="335" y="78">Full-screen OLED QR view for direct phone joining</text>
+    <text class="note" x="335" y="78">Full-screen OLED QR view for direct phone joining (AP only)</text>
 
     <g transform="translate(115,104)">
       <rect class="frame" x="0" y="0" width="440" height="300"/>

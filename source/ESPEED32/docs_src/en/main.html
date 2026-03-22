@@ -348,15 +348,20 @@
     <ol>
       <li>Open <code>SETTINGS -> WIFI</code> to enter the WiFi submenu.</li>
       <li><code>START WIFI</code>/<code>STOP WIFI</code>: starts or stops background WiFi immediately.</li>
-      <li><code>INFO PAGE</code>: opens the WiFi page directly and starts WiFi/AP automatically. Leaving the info page stops WiFi again (unless background mode was started first).</li>
-      <li><code>SHOW QR</code>: opens a full-screen WiFi QR code so phone/tablet can join the AP directly.</li>
+      <li><code>MODE</code>: switches between <code>AP</code> and <code>CLIENT</code>.</li>
+      <li><code>INFO PAGE</code>: opens the WiFi page directly and starts WiFi automatically. Leaving the info page stops WiFi again (unless background mode was started first).</li>
+      <li>In <code>AP</code> mode the controller hosts <code>ESPEED32_XXXX</code> with password <code>espeed32</code>. <code>SHOW QR</code> is available only in <code>AP</code> mode.</li>
+      <li>In <code>CLIENT</code> mode you must first enter WiFi SSID and password in <code>Advanced Config Editor -> Network</code>. Client mode uses DHCP from your router/network and does not show a QR code.</li>
+      <li>If the Client connection fails, the controller falls back to <code>AP</code> automatically so you can get back in and fix the settings.</li>
       <li><code>AUTO OFF</code>: set timeout for background WiFi (1-120 min, default 5 min).</li>
-      <li>While WiFi is active: connect to AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) and open OLED IP in browser (typically <code>192.168.4.1</code>).</li>
-      <li>On the info page you can use <code>Backup</code>, <code>Restore</code>, the <code>Advanced Config Editor</code>, <code>Upload Firmware</code>, and <code>/docs</code>.</li>
+      <li>Open the IP shown on the OLED in your browser. In <code>AP</code> mode this is typically <code>192.168.4.1</code>. In <code>CLIENT</code> mode it is the DHCP address assigned by your router.</li>
+      <li>The first page is public controller home. Sensitive tools such as <code>Controller Panel</code>, <code>Backup</code>, <code>Restore</code>, telemetry, OTA, and <code>Advanced Config Editor</code> are protected by controller login.</li>
+      <li>Default controller login is username <code>espeed32</code> and password <code>espeed32</code>. The current login is also shown on the controller WiFi info page.</li>
+      <li>Backup files do not export Client WiFi or controller login passwords. Restore keeps the local WiFi/login credentials already stored on that controller.</li>
     </ol>
     <figure class="doc-media">
       <img src="../assets/wifi_examples.svg" alt="Controller OLED WiFi info page and full-screen QR example">
-      <figcaption>WiFi example: left is the controller's INFO PAGE with SSID, password, and browser IP. Right is the full-screen SHOW QR view, where the QR code is made as large as possible for quick phone or tablet pairing.</figcaption>
+      <figcaption>WiFi example in AP mode: left is the controller's INFO PAGE with SSID, password, and browser IP. Right is the full-screen SHOW QR view, available only in AP mode for quick phone or tablet pairing.</figcaption>
     </figure>
     <p class="small">WiFi increases controller electronics current draw from roughly 100 mA to 150 mA, about 50% more. On units with an internal battery, use WiFi sparingly and switch it off when you are done.</p>
     <p class="small">Status bar behavior while WiFi is active: <code>WIFI</code> uses the first blank slot; if no blank slot exists, slot 4 is shown as <code>WIFI</code> until WiFi stops.</p>
@@ -364,6 +369,7 @@
     <ul>
       <li>The browser portal also includes an <code>Advanced Config Editor</code> for live setup changes.</li>
       <li><code>Global Config</code> edits controller-wide settings. <code>Car Params</code> edits the selected car profile.</li>
+      <li>Under <code>Global Config</code> you can also set Client WiFi SSID/password and the controller login password.</li>
       <li>In <code>Car Params</code> you can load and edit any car profile directly from the dropdown, even if another profile is currently active on the controller.</li>
       <li><code>Refresh from device</code> reloads the current values from the controller.</li>
       <li><code>Apply (RAM only)</code> lets you test changes live without writing flash first. This is ideal for trying brake, throttle, anti-spin, curve, fade, and release-brake changes on track.</li>
@@ -452,8 +458,9 @@
 |  |- STATS (ON/OFF, default OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
+|  |  |- MODE
 |  |  |- INFO PAGE
-|  |  |- SHOW QR
+|  |  |- SHOW QR [AP only]
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
 |  |- LOGGING

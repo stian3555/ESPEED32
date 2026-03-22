@@ -348,15 +348,20 @@
     <ol>
       <li>Open <code>SETTINGS -&gt; WIFI</code> om het WiFi-submenu te openen.</li>
       <li><code>START WIFI</code>/<code>STOP WIFI</code>: start of stop WiFi op de achtergrond direct.</li>
-      <li><code>INFO PAGE</code>: opent direct de WiFi-pagina en start automatisch WiFi/AP. Het verlaten van de infopagina stopt WiFi weer, tenzij de achtergrondmodus al eerder was gestart.</li>
-      <li><code>SHOW QR</code>: opent een QR-code op volledig scherm zodat telefoon of tablet direct met de AP kan verbinden.</li>
+      <li><code>MODE</code>: schakelt tussen <code>AP</code> en <code>CLIENT</code>.</li>
+      <li><code>INFO PAGE</code>: opent direct de WiFi-pagina en start automatisch WiFi. Het verlaten van de infopagina stopt WiFi weer, tenzij de achtergrondmodus al eerder was gestart.</li>
+      <li>In <code>AP</code>-modus host de controller <code>ESPEED32_XXXX</code> met wachtwoord <code>espeed32</code>. <code>SHOW QR</code> is alleen beschikbaar in <code>AP</code>-modus.</li>
+      <li>In <code>CLIENT</code>-modus moet je eerst WiFi-SSID en wachtwoord invullen in <code>Advanced Config Editor -&gt; Network</code>. Client-modus gebruikt DHCP van je router/netwerk en toont geen QR-code.</li>
+      <li>Als de Client-verbinding mislukt, valt de controller automatisch terug op <code>AP</code> zodat je weer binnenkomt en de instellingen kunt corrigeren.</li>
       <li><code>AUTO OFF</code>: stel de timeout in voor achtergrond-WiFi, 1-120 min, standaard 5 min.</li>
-      <li>Wanneer WiFi actief is: verbind met AP <code>ESPEED32_XXXX</code> met wachtwoord <code>espeed32</code> en open het OLED-IP-adres in de browser, meestal <code>192.168.4.1</code>.</li>
-      <li>Op de infopagina kun je <code>Backup</code>, <code>Restore</code>, de <code>Advanced Config Editor</code>, <code>Upload Firmware</code> en <code>/docs</code> gebruiken.</li>
+      <li>Open het IP-adres dat op het OLED wordt getoond in je browser. In <code>AP</code>-modus is dit meestal <code>192.168.4.1</code>. In <code>CLIENT</code>-modus is dit het DHCP-adres van je router.</li>
+      <li>De eerste pagina is de publieke controller-home. Gevoelige tools zoals <code>Controller Panel</code>, <code>Backup</code>, <code>Restore</code>, telemetrie, OTA en <code>Advanced Config Editor</code> zijn beschermd met controller-login.</li>
+      <li>De standaard controller-login is gebruikersnaam <code>espeed32</code> en wachtwoord <code>espeed32</code>. De huidige login staat ook op de WiFi-infopagina van de controller.</li>
+      <li>Backupbestanden exporteren geen Client WiFi-wachtwoord en geen controller-login-wachtwoord. Restore behoudt de lokale WiFi/login-gegevens die al op die controller opgeslagen zijn.</li>
     </ol>
     <figure class="doc-media">
       <img src="../assets/wifi_examples.svg" alt="OLED-infopagina van de controller en voorbeeld van QR-code op volledig scherm">
-      <figcaption>WiFi-voorbeeld: links staat de INFO PAGE van de controller met SSID, wachtwoord en browser-IP. Rechts staat de volledige SHOW QR-weergave, waarbij de QR-code zo groot mogelijk wordt getoond voor snel koppelen met telefoon of tablet.</figcaption>
+      <figcaption>WiFi-voorbeeld in AP-modus: links staat de INFO PAGE van de controller met SSID, wachtwoord en browser-IP. Rechts staat de volledige SHOW QR-weergave, die alleen in AP-modus beschikbaar is voor snel koppelen met telefoon of tablet.</figcaption>
     </figure>
     <p class="small">WiFi verhoogt het stroomverbruik van de controller-elektronica van ongeveer 100 mA naar 150 mA, ongeveer 50% meer. Gebruik WiFi op units met een interne batterij spaarzaam en schakel het uit zodra je klaar bent.</p>
     <p class="small">Gedrag van de statusbalk terwijl WiFi actief is: <code>WIFI</code> gebruikt de eerste lege slot. Als er geen lege slot is, toont slot 4 <code>WIFI</code> totdat WiFi stopt.</p>
@@ -364,6 +369,7 @@
     <ul>
       <li>Het browserportaal bevat ook een <code>Advanced Config Editor</code> voor live aanpassingen van de setup.</li>
       <li><code>Global Config</code> bewerkt controllerbrede instellingen. <code>Car Params</code> bewerkt het geselecteerde autoprofiel.</li>
+      <li>Onder <code>Global Config</code> kun je ook Client WiFi-SSID/-wachtwoord en het controller-login-wachtwoord instellen.</li>
       <li>In <code>Car Params</code> kun je elk autoprofiel rechtstreeks vanuit de dropdown laden en bewerken, ook als op de controller op dat moment een ander profiel actief is.</li>
       <li><code>Refresh from device</code> laadt de huidige waarden opnieuw van de controller.</li>
       <li><code>Apply (RAM only)</code> laat je wijzigingen live testen zonder eerst flash te beschrijven. Dit is ideaal om rem, throttle, anti-spin, curve, fade en loslaatrem op de baan te proberen.</li>
@@ -452,8 +458,9 @@
 |  |- STATS (ON/OFF, default OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
+|  |  |- MODE
 |  |  |- INFO PAGE
-|  |  |- SHOW QR
+|  |  |- SHOW QR [alleen AP]
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
 |  |- LOGGING

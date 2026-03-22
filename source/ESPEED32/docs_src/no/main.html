@@ -348,15 +348,20 @@
     <ol>
       <li>Gå til <code>SETTINGS -> WIFI</code> for undermenyen.</li>
       <li><code>START WIFI</code>/<code>STOPP WIFI</code>: starter eller stopper bakgrunns-WiFi med en gang.</li>
-      <li><code>INFO SIDE</code>: åpner WiFi-siden direkte, og WiFi/AP startes automatisk. Når du går ut av infosiden stoppes WiFi igjen (med mindre du hadde aktivert bakgrunnsmodus først).</li>
-      <li><code>VIS QR</code>: åpner en fullskjerms WiFi-QR-kode slik at mobil/nettbrett kan koble seg direkte til AP-et.</li>
+      <li><code>MODUS</code>: bytter mellom <code>AP</code> og <code>CLIENT</code>.</li>
+      <li><code>INFO SIDE</code>: åpner WiFi-siden direkte, og WiFi startes automatisk. Når du går ut av infosiden stoppes WiFi igjen (med mindre du hadde aktivert bakgrunnsmodus først).</li>
+      <li>I <code>AP</code>-modus hoster kontrolleren <code>ESPEED32_XXXX</code> med passord <code>espeed32</code>. <code>VIS QR</code> er bare tilgjengelig i <code>AP</code>-modus.</li>
+      <li>I <code>CLIENT</code>-modus må du først angi WiFi-SSID og passord i <code>Advanced Config Editor -> Network</code>. Client-modus bruker DHCP fra ruteren/nettverket og viser ikke QR-kode.</li>
+      <li>Hvis Client-tilkoblingen feiler, går kontrolleren automatisk tilbake til <code>AP</code> slik at du kommer inn igjen og kan rette innstillingene.</li>
       <li><code>AUTO AV</code>: velg timeout for bakgrunns-WiFi (1-120 min, default 5 min).</li>
-      <li>Mens WiFi er aktiv: koble til AP <code>ESPEED32_XXXX</code> (passord <code>espeed32</code>) og åpne IP vist på OLED (vanligvis <code>192.168.4.1</code>).</li>
-      <li>På infosiden kan du bruke <code>Backup</code>, <code>Restore</code>, <code>Advanced Config Editor</code>, <code>Upload Firmware</code> og <code>/docs</code>.</li>
+      <li>Åpne IP-en som vises på OLED i nettleseren. I <code>AP</code>-modus er den vanligvis <code>192.168.4.1</code>. I <code>CLIENT</code>-modus er det DHCP-adressen fra ruteren.</li>
+      <li>Første side er kontrollerens offentlige startside. Sensitive verktøy som <code>Controller Panel</code>, <code>Backup</code>, <code>Restore</code>, telemetri, OTA og <code>Advanced Config Editor</code> krever controller-login.</li>
+      <li>Default controller-login er username <code>espeed32</code> og password <code>espeed32</code>. Gjeldende login vises også på kontrollerens WiFi info-side.</li>
+      <li>Backup-filer eksporterer ikke Client WiFi-passord eller controller-login-passord. Restore beholder de lokale WiFi/login-credentials som allerede ligger på den kontrolleren.</li>
     </ol>
     <figure class="doc-media">
       <img src="../assets/wifi_examples.svg" alt="Eksempel på WiFi info-side og fullskjerms QR-kode på kontrollerens OLED">
-      <figcaption>WiFi-eksempel: til venstre vises INFO SIDE slik den ser ut på kontrolleren, med SSID, passord og IP-adresse til nettleseren. Til høyre vises VIS QR, der QR-koden gjøres så stor som mulig for rask tilkobling med mobil eller nettbrett.</figcaption>
+      <figcaption>WiFi-eksempel i AP-modus: til venstre vises INFO SIDE slik den ser ut på kontrolleren, med SSID, passord og IP-adresse til nettleseren. Til høyre vises VIS QR, som bare er tilgjengelig i AP-modus for rask tilkobling med mobil eller nettbrett.</figcaption>
     </figure>
     <p class="small">WiFi øker strømforbruket til kontroller-elektronikken fra omtrent 100 mA til omtrent 150 mA, altså rundt 50% mer. På enheter med batteri bør WiFi brukes med varsomhet og slås av når du er ferdig.</p>
     <p class="small">Statuslinje ved aktiv WiFi: <code>WIFI</code> bruker første ledige felt. Hvis ingen felt er ledige, vises <code>WIFI</code> i felt 4 til WiFi stoppes.</p>
@@ -364,6 +369,7 @@
     <ul>
       <li>Nettleserportalen har også en <code>Advanced Config Editor</code> for live justering av oppsett.</li>
       <li><code>Global Config</code> redigerer globale innstillinger. <code>Car Params</code> redigerer bilparametrene for valgt profil.</li>
+      <li>Under <code>Global Config</code> kan du også sette Client WiFi SSID/passord og controller-login-passord.</li>
       <li>I <code>Car Params</code> kan du laste inn og redigere hvilken som helst bilprofil direkte fra nedtrekkslisten, selv om en annen profil er aktiv på kontrolleren.</li>
       <li><code>Refresh from device</code> henter inn verdiene fra kontrolleren på nytt.</li>
       <li><code>Apply (RAM only)</code> lar deg prøve endringer live uten å skrive til flash først. Det er spesielt nyttig når du vil teste brems, gass, antispinn, kurve, fade eller release-brems på banen.</li>
@@ -452,8 +458,9 @@
 |  |- STATS (AV/PÅ, default AV)
 |  |- WIFI
 |  |  |- START/STOP WIFI
+|  |  |- MODUS
 |  |  |- INFO SIDE
-|  |  |- VIS QR
+|  |  |- VIS QR [kun AP]
 |  |  |- AUTO AV (1-120 min, default 5)
 |  |  `- BACK
 |  |- LOGGING

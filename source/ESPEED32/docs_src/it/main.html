@@ -336,15 +336,20 @@
     <ol>
       <li>Apri <code>SETTINGS -> WIFI</code> per entrare nel sottomenu WiFi.</li>
       <li><code>START WIFI</code>/<code>STOP WIFI</code>: avvia o ferma subito il WiFi in background.</li>
-      <li><code>INFO PAGE</code>: apre direttamente la pagina WiFi e avvia automaticamente WiFi/AP. Uscendo dalla pagina info il WiFi si ferma di nuovo, a meno che il background mode non fosse gia attivo.</li>
-      <li><code>MOSTRA QR</code>: apre un QR WiFi a schermo pieno per collegare direttamente telefono o tablet all'AP.</li>
+      <li><code>MODO</code>: cambia tra <code>AP</code> e <code>CLIENT</code>.</li>
+      <li><code>INFO PAGE</code>: apre direttamente la pagina WiFi e avvia automaticamente il WiFi. Uscendo dalla pagina info il WiFi si ferma di nuovo, a meno che il background mode non fosse gia attivo.</li>
+      <li>In <code>AP</code> il controller crea <code>ESPEED32_XXXX</code> con password <code>espeed32</code>. <code>MOSTRA QR</code> e disponibile solo in <code>AP</code>.</li>
+      <li>In <code>CLIENT</code> devi prima inserire SSID e password WiFi in <code>Advanced Config Editor -> Network</code>. La modalita Client usa DHCP dal router/rete e non mostra QR.</li>
+      <li>Se la connessione Client fallisce, il controller torna automaticamente in <code>AP</code> cosi puoi rientrare e correggere le impostazioni.</li>
       <li><code>AUTO OFF</code>: imposta il timeout per il WiFi in background (1-120 min, default 5 min).</li>
-      <li>Quando il WiFi e attivo: collegati all'AP <code>ESPEED32_XXXX</code> (password <code>espeed32</code>) e apri l'IP mostrato sull'OLED nel browser (tipicamente <code>192.168.4.1</code>).</li>
-      <li>Nella info page trovi <code>Backup</code>, <code>Restore</code>, l'<code>Advanced Config Editor</code>, <code>Upload Firmware</code> e <code>/docs</code>.</li>
+      <li>Apri nel browser l'IP mostrato sull'OLED. In <code>AP</code> di solito e <code>192.168.4.1</code>. In <code>CLIENT</code> e l'indirizzo DHCP assegnato dal router.</li>
+      <li>La prima pagina e la home pubblica del controller. Strumenti sensibili come <code>Controller Panel</code>, <code>Backup</code>, <code>Restore</code>, telemetria, OTA e <code>Advanced Config Editor</code> sono protetti dal login del controller.</li>
+      <li>Il login predefinito del controller e username <code>espeed32</code> e password <code>espeed32</code>. Il login attuale e mostrato anche sulla WiFi info page del controller.</li>
+      <li>I backup non esportano la password del Client WiFi ne la password di login del controller. Restore mantiene le credenziali locali gia presenti su quel controller.</li>
     </ol>
     <figure class="doc-media">
       <img src="../assets/wifi_examples.svg" alt="Esempio della schermata OLED WiFi info e del QR a schermo pieno sul controller">
-      <figcaption>Esempio WiFi: a sinistra c'e INFO PAGE come appare sul controller, con SSID, password e IP da aprire nel browser. A destra c'e MOSTRA QR, dove il codice QR viene mostrato il piu grande possibile per collegare rapidamente telefono o tablet.</figcaption>
+      <figcaption>Esempio WiFi in AP: a sinistra c'e INFO PAGE come appare sul controller, con SSID, password e IP da aprire nel browser. A destra c'e MOSTRA QR, disponibile solo in AP per collegare rapidamente telefono o tablet.</figcaption>
     </figure>
     <p class="small">Il WiFi aumenta l'assorbimento dell'elettronica del controller da circa 100 mA a circa 150 mA, quindi di circa il 50% in piu. Sui modelli con batteria, usa il WiFi con cautela e spegnilo quando non serve piu.</p>
     <p class="small">Comportamento della barra di stato con WiFi attivo: <code>WIFI</code> usa il primo slot vuoto; se non esistono slot vuoti, lo slot 4 viene mostrato temporaneamente come <code>WIFI</code> finche il WiFi non si ferma.</p>
@@ -352,6 +357,7 @@
     <ul>
       <li>Il portale nel browser include anche un <code>Advanced Config Editor</code> per regolare il setup dal vivo.</li>
       <li><code>Global Config</code> modifica le impostazioni globali del controller. <code>Car Params</code> modifica il profilo auto selezionato.</li>
+      <li>In <code>Global Config</code> puoi anche impostare SSID/password del Client WiFi e la password di login del controller.</li>
       <li>In <code>Car Params</code> puoi caricare e modificare qualsiasi profilo direttamente dal menu a tendina, anche se sul controller e attivo un altro profilo.</li>
       <li><code>Refresh from device</code> rilegge i valori correnti direttamente dal controller.</li>
       <li><code>Apply (RAM only)</code> ti permette di provare le modifiche dal vivo senza scrivere subito in flash. E' l'ideale per testare in pista freno, gas, anti-spin, curva, fade o release brake.</li>
@@ -440,8 +446,9 @@
 |  |- STATS (OFF/ON, default OFF)
 |  |- WIFI
 |  |  |- START/STOP WIFI
+|  |  |- MODO
 |  |  |- INFO PAGE
-|  |  |- MOSTRA QR
+|  |  |- MOSTRA QR [solo AP]
 |  |  |- AUTO OFF (1-120 min, default 5)
 |  |  `- BACK
 |  |- LOGGING

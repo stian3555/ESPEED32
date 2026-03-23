@@ -1,0 +1,489 @@
+<main>
+  <header>
+    <h1>ESPEED32 Gebruikershandleiding</h1>
+    <p class="lead">Gebruikshandleiding voor slotracen: opstarten, belangrijkste rijbediening, menu's en back-up/herstel.</p>
+    <nav class="top">
+      <a class="btn primary" href="../../ui/index.html">Open webinterface van controller</a>
+      <div class="lang-tools">
+        <label for="lang-select">Taal</label>
+        <select id="lang-select" aria-label="Taal"></select>
+      </div>
+    </nav>
+    <div class="theme-tools">
+      <label for="theme-select">Thema</label>
+      <select id="theme-select">
+        <option value="system">Systeem</option>
+        <option value="light">Licht</option>
+        <option value="dark">Donker</option>
+      </select>
+    </div>
+    <ul class="sources">
+      <li>Firmwarebron: ESPEED32 (<code>source/ESPEED32/</code>).</li>
+      <li>Lokale handleidingen in de repo: Quick Start + Extended Guide (DOC-map, DOCX/PDF).</li>
+      <li>ACD-referentie: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
+      <li>CarSteen-referentie: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
+    </ul>
+    <p class="small">De gebruikersdocumentatie op <code>espeed32.com</code> toont altijd de laatst gepubliceerde versie. De kopie op de controller volgt de firmware die op dat apparaat is geinstalleerd en wordt tegelijk daarmee bijgewerkt.</p>
+  </header>
+
+  <section>
+    <h2>1. Snel starten</h2>
+    <ol>
+      <li>Schakel de controller normaal in.</li>
+      <li>Draai aan de encoder om door menu-items te bewegen.</li>
+      <li>Druk kort op de encoder om waardebewerking te openen of te verlaten, of om een submenu te openen.</li>
+      <li>Druk kort op de remknop tijdens het bewerken om te annuleren en de oorspronkelijke waarde te herstellen.</li>
+      <li>Druk lang op de encoder (~1 s) om tussen LIST en raceweergave GRID te wisselen wanneer race view niet op OFF staat.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. Opstarten, kalibratie en zelftest</h2>
+    <ul>
+      <li>Kalibreer de trigger opnieuw na een firmware-update of als de triggermechaniek is veranderd.</li>
+      <li><code>Power ON</code>: normale opstart, daarna RUNNING-modus.</li>
+      <li>Bij <code>TLE493D</code>-builds wordt sensorvariant/adres automatisch gedetecteerd tijdens het opstarten, zonder handmatige adreswijziging.</li>
+      <li>Houd de <code>encoderknop</code> ingedrukt tijdens het inschakelen om triggerkalibratie te starten.</li>
+      <li>Houd de <code>remknop</code> ingedrukt tijdens het inschakelen om de zelftest met 9 stappen te starten.</li>
+    </ul>
+    <h3>Kalibratieverloop</h3>
+    <ol>
+      <li>Houd de encoder ingedrukt tijdens het inschakelen tot het kalibratiescherm verschijnt.</li>
+      <li>Druk de trigger meerdere keren volledig in en laat hem weer los.</li>
+      <li>Druk een keer op de encoder om de kalibratie op te slaan.</li>
+      <li>Controleer dat throttle 0% aangeeft bij losgelaten trigger en 100% bij volledig inknijpen.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="../assets/trig_cal.png" alt="Triggerkalibratie">
+      <figcaption>Kalibratie: beweeg de trigger meerdere keren over de volledige slag voor een correcte 0-100%-mapping.</figcaption>
+    </figure>
+    <h3>Triggermechaniek</h3>
+    <ul>
+      <li>De triggerslag kan mechanisch worden aangepast met de stelschroef achteraan.</li>
+      <li>Het terugkeergevoel van de trigger hangt af van de veervoorspanning/retourspanning; pas het veeranker of de spanningsslider voorzichtig aan.</li>
+      <li>Na het wijzigen van triggerslag of veerspanning, of na het openen van de controller, moet je de trigger opnieuw kalibreren voordat je rijdt.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Display, raceweergave en ABOUT</h2>
+    <p class="small">Deze sectie groepeert wat je op het OLED-scherm ziet: taal, labelstijl, race-indeling, statusbalk en systeeminfo.</p>
+    <h3>Taal en display</h3>
+    <ul>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> kiest tussen gelokaliseerde labels en de naamprofielen ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA/NLD/POR</code>: gelokaliseerde UI met de standaardset <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: algemene benamingen (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
+      <li><code>CS</code>: termen in CarSteen-stijl (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: ACD-termen waar direct van toepassing, met <code>SENSI</code> en <code>CHOKE</code> voor limit. <code>ANTIS</code> blijft anti-spin omdat de ACD-handleiding geen aparte Choke2-term definieert.</li>
+      <li><code>DISPLAY -&gt; CASE</code> bepaalt of labels in <code>UPPER</code> of <code>Pascal</code> worden getoond.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> verandert de tekstdichtheid van lijsten/menu's tussen <code>LARGE</code> en <code>small</code>.</li>
+      <li><code>DISPLAY -&gt; ANTIS.STEP</code> stelt de globale encoderstap in voor de waarde <code>ANTIS</code>.</li>
+    </ul>
+    <h3>Gedrag van raceweergave (LIST vs GRID)</h3>
+    <ul>
+      <li><span class="badge">LIST</span> klassiek menu met alle hoofditems.</li>
+      <li><span class="badge">GRID</span> racescherm voor snelle aanpassingen tijdens het rijden.</li>
+      <li><code>DISPLAY -&gt; RACE MODE</code>: OFF / FULL / SIMPLE.</li>
+      <li>FULL-grid: BRAKE, SENSI, ANTIS, CURVE (+ CAR als <code>RACESWP</code> op ON staat).</li>
+      <li>SIMPLE-grid: BRAKE, SENSI (+ CAR als <code>RACESWP</code> op ON staat).</li>
+      <li>Lang drukken op de encoder wisselt tussen LIST en GRID.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/display_modes.svg" alt="Mock-up van OLED-lijstweergave en GRID-raceweergave">
+      <figcaption>Voorbeeld van display: LIST toont de volledige menustructuur, terwijl GRID de belangrijkste raceparameters zichtbaar houdt voor snellere wijzigingen op de baan.</figcaption>
+    </figure>
+    <h3>Statusbalk en ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 vaste slots. Elke slot kan <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> of leeg tonen. <code>CURR</code> toont mA onder 1000 en A daarboven.</li>
+      <li>Wanneer WiFi actief is toont de statusbalk <code>WIFI</code>. Hiervoor wordt de eerste lege slot gebruikt; als er geen lege slot is, wordt slot 4 tijdelijk overschreven.</li>
+      <li><code>ABOUT</code> toont firmware-/dataversie, gedetecteerde triggersensor, chipdetails, flash/heap, MAC-adressen en builddatum/-tijd.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. CAR-menu en Car Params</h2>
+    <p class="small">Het menu <code>CAR</code> beheert de autoprofilen. Elk profiel slaat zijn eigen <code>Car Params</code> op: <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>BRAKE+</code> en <code>LIMIT</code>. Dit is dezelfde parametergroep die later terugkomt in de <code>Advanced Config Editor</code>.</p>
+    <ul>
+      <li><code>SELECT</code>: kies actief autoprofiel (0-19).</li>
+      <li><code>RENAME</code>: editor voor een naam van 4 tekens (ASCII 32-122). Zie <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">ASCII-tabel</a>.</li>
+      <li><code>RACESWP</code>: ON maakt profielwissel direct vanuit GRID-modus mogelijk.</li>
+      <li><code>COPY</code>: kopieer van een profiel naar een ander, of naar ALL profiles.</li>
+      <li><code>RESET</code>: reset alle autoprofilen met bevestiging.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Rijparameters</h2>
+    <p class="small">Deze sectie groepeert de belangrijkste instelparameters die bepalen hoe de controller op de baan aanvoelt. Diepere uitleg staat in uitklapbare panelen zodat de sectie makkelijker te scannen blijft.</p>
+    <h3>BRAKE en BRAKE+</h3>
+    <h4>BRAKE</h4>
+    <p>Wanneer de trigger volledig los is, past de controller normale remkracht toe met de waarde <code>BRAKE</code>.</p>
+    <p class="small"><code>BRAKE+</code> in het hoofdmenu opent het geavanceerde remsubmenu. Daar vind je nu <code>Alt.Brake</code> en <code>Rel.Brake</code>.</p>
+    <h4>Alternatieve rem (<code>Alt.Brake</code>)</h4>
+    <ul>
+      <li><code>Alt.Brake</code> betekent een alternatieve remwaarde in procent (0-100%), geen relatieve reductie.</li>
+      <li>Deze wordt alleen toegepast wanneer trigger = 0 en je de remknop ingedrukt houdt.</li>
+      <li>Als de statusbalk OUTPUT toont, verschijnt <code>Bxxx%</code> terwijl de remknop wordt vastgehouden.</li>
+      <li>Typisch gebruik: tijdelijk extra harde of zachte rem bij het insturen, zonder de basissetup te wijzigen.</li>
+      <li>Sommige rijders zetten <code>Alt.Brake</code> lager dan de normale <code>BRAKE</code> voor een zachtere tijdelijke knoprem, terwijl anderen het hoger zetten voor een hardere remimpuls. Dat is vooral persoonlijke voorkeur en afhankelijk van het gevoel van de auto.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/alt_brake.svg" alt="Conceptgrafieken waarin Alt.Brake lager of hoger is dan BRAKE">
+      <figcaption>Voorbeelden van alternatieve rem: <code>Alt.Brake</code> kan tijdelijk zachter of harder worden ingesteld dan de normale BRAKE, afhankelijk van de voorkeur van de rijder.</figcaption>
+    </figure>
+    <h4>Loslaatrem (<code>Rel.Brake</code>)</h4>
+    <ul>
+      <li><code>Rel.Brake</code> heeft drie modi: <code>OFF</code>, <code>QUICK</code> en <code>DRAG</code>.</li>
+      <li><code>QUICK</code> is de oude remzone voor loslaten: onder de gekozen <code>Zone</code> snijdt de controller het vermogen weg en gebruikt <code>Level</code> als remkracht.</li>
+      <li><code>DRAG</code> werkt alleen terwijl je de trigger actief loslaat. Throttle blijft actief, er wordt extra drag toegevoegd tijdens de loslaatbeweging en dit voelt zachter dan QUICK.</li>
+      <li><code>Zone</code> wordt alleen gebruikt door <code>QUICK</code>. In QUICK is dit een echte zone met nul output dicht bij het loslaten van de trigger.</li>
+      <li>Met <code>QUICK</code> actief is het dus normaal dat je een paar <code>%T</code> op het scherm ziet terwijl de output nog steeds <code>0%</code> blijft tot de trigger boven de gekozen zone komt.</li>
+      <li>Belangrijkste verschil: <code>QUICK</code> is een harde onderbreking binnen de zone, terwijl <code>DRAG</code> throttle actief houdt en alleen extra drag toevoegt terwijl de trigger naar los beweegt.</li>
+      <li>Typisch gebruik van QUICK: banen of auto's die vroeg een duidelijke remimpuls nodig hebben. Voorbeeld: <code>Zone</code> 6-10% en <code>Level</code> 70-100% voor een sterke, herhaalbare rem wanneer je het laatste deel van de triggerslag begint los te laten.</li>
+      <li>Typisch gebruik van DRAG: nerveuze auto's die te abrupt reageren met QUICK. Voorbeeld: <code>Level</code> 20-50% voor zachte vertraging tijdens het loslaten, zonder het volledige gevoel van direct naar nul snijden.</li>
+      <li>Bereik <code>QUICK Zone</code>: 0-50%. Bereik <code>Level</code>: 0-100%.</li>
+      <li>Gebruik QUICK voor een duidelijke vroege remimpuls. Gebruik DRAG voor soepelere ondersteuning bij het loslaten zonder het abrupte gevoel van volledige quick brake.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/rel_brake.svg" alt="Conceptgrafieken die QUICK- en DRAG-gedrag voor Rel.Brake tonen">
+      <figcaption>Voorbeelden van loslaatrem: QUICK maakt een zone met nul output en remkracht onder de gekozen zone, terwijl DRAG alleen tijdens het loslaten zachtere drag toevoegt.</figcaption>
+    </figure>
+    <h3>Korte referentie voor het hoofdmenu</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Bereik</th><th>Standaard</th><th>Beschrijving</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Remkracht wanneer de trigger wordt losgelaten.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (en &lt;= LIMIT)</td><td>20</td><td>Minimale motoroutput bij de eerste meetbare triggerbeweging.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Duur van anti-spin-ramp. Hogere waarde = zachtere opbouw van vermogen. De encoderstap wordt globaal ingesteld in <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle-mapping. 50 = lineair. &lt;50 zachtere start, &gt;50 scherpere start.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Soft-start-zone. 0 = uitgeschakeld / oud gedrag. Boven 0 loopt het eerste deel van de triggerslag van 0 naar SENSI voordat normale CURVE het overneemt.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frequentie van de motor. Een hogere waarde maakt de respons onderin vaak zachter.</td></tr>
+        <tr><td><code>BRAKE+ / Alt.Brake</code></td><td>0-100 %</td><td>50</td><td>Alternatieve remwaarde die wordt gebruikt terwijl de remknop is ingedrukt en de trigger los is.</td></tr>
+        <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Hulpfunctie voor remmen bij loslaten van de trigger. QUICK gebruikt een zone met nul output; DRAG voegt loslaatdrag toe zonder zone.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale motoroutput. &lt;100 activeert de LIMITER-waarschuwing.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rondeteller, snelste ronde en scrollbare rondehistorie.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 profielen</td><td>CAR0</td><td>Selecteer of beheer profiel, kopieer instellingen en reset car params.</td></tr>
+      </tbody>
+    </table>
+    <h3>Typische beginwaarden</h3>
+    <p class="small">Dit zijn startpunten, geen regels. Gebruik ze om in de buurt te komen en stel daarna telkens maar een parameter tegelijk bij.</p>
+    <p class="small">De juiste waarden hangen nog steeds sterk af van de specifieke auto, motor, banden, baangrip en jouw persoonlijke rijstijl.</p>
+    <table>
+      <thead>
+        <tr><th>Setup</th><th>SENSI</th><th>BRAKE</th><th>ANTIS</th><th>CURVE</th><th>FADE</th><th>PWM_F</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1/32 gebalanceerd</td><td>28-35%</td><td>90-95%</td><td>40-90 ms</td><td>40-50%</td><td>0-6%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/32 lage grip</td><td>22-30%</td><td>90-95%</td><td>100-150 ms</td><td>30-45%</td><td>5-12%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 gebalanceerd</td><td>35-45%</td><td>95-100%</td><td>0-30 ms</td><td>50-60%</td><td>0-5%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 hoge grip</td><td>40-50%</td><td>95-100%</td><td>0-15 ms</td><td>55-70%</td><td>0-3%</td><td>4.0 kHz</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Laat voor de eerste tests <code>Rel.Brake</code> op <code>OFF</code> staan. Voeg <code>QUICK</code> of <code>DRAG</code> pas toe nadat de basisinstelling van throttle en rem goed aanvoelt.</p>
+    <details class="doc-fold">
+      <summary>Van CarSteen/ACD-termen naar ESPEED32</summary>
+      <table>
+        <thead>
+          <tr><th>Oude term</th><th>ESPEED32-equivalent</th><th>Praktisch effect</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Attack</td><td><code>SENSI</code></td><td>Hoe hard de auto vertrekt bij de eerste triggerbeweging.</td></tr>
+          <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Begrenzing aan de top en de zachtheid van de vermogensopbouw.</td></tr>
+          <tr><td>Profile</td><td><code>CURVE</code></td><td>Vorm van de triggerrespons, vroeg versus laat agressief.</td></tr>
+          <tr><td>Brake</td><td><code>BRAKE</code> + <code>BRAKE+</code></td><td>Basisrem plus instellingen voor remknop en loslaatrem.</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Voorbeeld van een oudere setup: voor een zacht en gecontroleerd gevoel kun je beginnen rond <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code> en van daaruit verder afstellen.</p>
+    </details>
+    <details class="doc-fold">
+      <summary>FADE in de praktijk</summary>
+      <ul>
+        <li><code>FADE</code> maakt een zachte ramp <code>0 -&gt; SENSI</code> in het eerste deel van de triggerslag.</li>
+        <li><code>FADE = 0%</code> schakelt dit uit en behoudt het oude directe gevoel.</li>
+        <li>Probeer <code>5-15%</code> als de auto te abrupt reageert precies wanneer SENSI begint te werken.</li>
+        <li>Zie <code>FADE</code> als een extra eerste punt in de grafiek: het verandert alleen het onderste bereik, terwijl <code>CURVE</code> de rest blijft vormen.</li>
+      </ul>
+      <figure class="doc-media">
+        <img src="../assets/fade_examples.svg" alt="Grafiekvoorbeelden van Fade uit versus Fade aan">
+        <figcaption>FADE-voorbeelden: OFF behoudt de oude directe stap naar SENSI, terwijl ON eerst een zachte ramp toevoegt voordat normale CURVE verdergaat.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>Opmerkingen over lineariteit</summary>
+      <ul>
+        <li><code>LIMIT</code>: lineaire begrenzing van gevraagde output in %. Werkelijke topsnelheid op de baan is niet perfect lineair.</li>
+        <li><code>BRAKE</code>: lineair rem-/dragcommando in %. Het echte remgevoel hangt af van motor, banden en baangrip.</li>
+        <li><code>SENSI</code>: lineaire minimale outputvloer in %, maar geen lineaire gain-knop over de hele triggerslag omdat <code>CURVE</code> de rest vormt.</li>
+        <li><code>FADE</code>: lineair in % van de triggerslag. Het beinvloedt alleen het eerste deel van de trigger en geeft daarna de controle weer door aan <code>CURVE</code>.</li>
+        <li><code>ANTIS</code>: vooral een tijdsinstelling in ms. Zodra anti-spin actief is geeft een hogere waarde een langere of zwakkere ramp, maar het totale gevoel is niet perfect lineair omdat de bypassdrempel bij lage snelheid ook verschuift met de instelling.</li>
+      </ul>
+    </details>
+    <details class="doc-fold">
+      <summary>Voorbeelden van CURVE</summary>
+      <p class="small">Deze figuren richten zich op de vorm van de respons zelf, voordat PWM-frequentie en duty-limieten in beeld komen.</p>
+      <figure class="doc-media">
+        <img src="../assets/curve_examples.svg" alt="Voorbeelden van lineaire, zachte en harde curve">
+        <figcaption>CURVE-voorbeelden: lineair (50%), zacht (lagere waarde) en hard (hogere waarde).</figcaption>
+      </figure>
+      <figure class="doc-media">
+        <img src="../assets/fade_curve.svg" alt="Voorbeelden die fade combineren met lineaire en harde curvevormen">
+        <figcaption>FADE plus CURVE: FADE kan het allereerste begin verzachten, terwijl de rest van de respons lineair blijft of harder wordt afgestemd.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>LIMIT in de praktijk</summary>
+      <ul>
+        <li><code>LIMIT 100</code> laat de controller volledige duty bereiken wanneer trigger en curve dat vragen.</li>
+        <li><code>LIMIT 70</code> begrenst de maximale duty tot ongeveer 70%, zelfs bij volledig ingetrokken trigger.</li>
+      </ul>
+      <figure class="doc-media">
+        <img src="../assets/limit_examples.svg" alt="LIMIT-voorbeelden met LIMIT 100 en LIMIT 70">
+        <figcaption>LIMIT-voorbeelden: LIMIT verandert de maximale duty die de controller mag bereiken.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>PWM_F in de praktijk</summary>
+      <ul>
+        <li><code>PWM_F</code> verandert hoe vaak de output schakelt, niet direct de gevraagde duty zelf.</li>
+        <li>Onder <code>LIMIT 100</code> kan gedeeltelijke trigger nog steeds op gedeeltelijke duty draaien. Onder <code>LIMIT 70</code> eindigt volle trigger rond 70% duty.</li>
+        <li>Bij dezelfde duty gebruikt <code>1 kHz</code> minder en bredere pulsen, terwijl <code>5 kHz</code> meer en smallere pulsen gebruikt in hetzelfde tijdvenster.</li>
+      </ul>
+      <h4>Scenario 1: gedeeltelijke trigger onder LIMIT 100</h4>
+      <p class="small">Vergelijk deze twee afbeeldingen horizontaal. Beide tonen hetzelfde effectieve niveau, 50% duty, dus het enige verschil is de puls-dichtheid. De stippellijn markeert het gemiddelde of effectieve niveau.</p>
+      <figure class="doc-media">
+        <img src="../assets/pwm_part.svg" alt="PWM-frequentievoorbeelden die 1 kilohertz en 5 kilohertz vergelijken bij gedeeltelijke trigger onder LIMIT 100">
+        <figcaption>Bij 50% duty gebruikt <code>1 kHz</code> minder en bredere pulsen, terwijl <code>5 kHz</code> meer en smallere pulsen gebruikt in hetzelfde tijdvenster.</figcaption>
+      </figure>
+      <h4>Scenario 2: volle trigger onder LIMIT 70</h4>
+      <p class="small">Vergelijk ook deze twee afbeeldingen horizontaal. Beide tonen volle trigger, maar <code>LIMIT 70</code> houdt het effectieve niveau op 70% duty. Ook hier markeert de stippellijn het gemiddelde of effectieve niveau.</p>
+      <figure class="doc-media">
+        <img src="../assets/pwm_cap.svg" alt="PWM-frequentievoorbeelden die 1 kilohertz en 5 kilohertz vergelijken bij volle trigger onder LIMIT 70">
+        <figcaption>Hier is de duty in beide afbeeldingen begrensd tot 70%. <code>PWM_F</code> verandert hoe vaak pulsen voorkomen, niet de LIMIT-cap zelf.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <section>
+    <h2>6. SETTINGS, POWER en stroomverbruik</h2>
+    <p class="small"><code>SETTINGS</code> groepeert de globale systeemopties die niet bij een enkel autoprofiel horen.</p>
+    <h3>Submenu POWER</h3>
+    <ul>
+      <li><code>SCRSV</code>: tekst voor screensaver regel 1/regel 2, timeout en direct tonen.</li>
+      <li><code>SLEEP</code>: automatische sleep-timeout plus handmatig nu slapen, ontwaken met de encoderknop.</li>
+      <li><code>DEEP SLEEP</code>: automatische deep sleep (0 of 2-30 min) plus handmatig.</li>
+      <li><code>STARTUP</code>: vertraging van welkomstscherm 0-990 ms in stappen van 10 ms.</li>
+      <li><code>VIN CAL.</code>: meet de werkelijke baanspanning met een multimeter, stel die waarde in op de controller en klik dan om de ADC-spanningsschaal te kalibreren. Gebruik dit alleen als de VIN-uitlezing merkbaar afwijkt.</li>
+    </ul>
+    <h3>Hoofditems onder SETTINGS</h3>
+    <ul>
+      <li><code>HARDWARE</code>: encoderrichting, overrides via externe potmeters, info/override voor triggersensor en zelftest.</li>
+      <li><code>STATS</code>: toon of verberg de STATS-ingang in het hoofdmenu. Standaard OFF.</li>
+      <li><code>WIFI</code>: WiFi op de achtergrond, directe infopagina, QR-code en WiFi auto-off timer.</li>
+      <li><code>LOGGING</code>: lokaal telemetrieloggen starten/stoppen plus aparte auto-off timer voor logging, standaard 30 min.</li>
+    </ul>
+    <h3>Submenu HARDWARE</h3>
+    <ul>
+      <li><code>ENC INV</code>: draai de encoderrichting globaal om als het menu op jouw hardware achterstevoren aanvoelt.</li>
+      <li><code>EXT POT</code>: wijs <code>POT 1</code> en <code>POT 2</code> toe aan live overrides voor <code>OFF</code>, <code>BRAKE</code> of <code>SENSI</code>.</li>
+      <li><code>TRIGGER</code>: toont triggersensorfamilie en actief type. Op <code>TLE493D</code>-builds kun je ook <code>TYPE</code> overriden tussen <code>AUTO</code>, <code>W2B6</code>, <code>W2B6_A0</code> en <code>P3B6</code>.</li>
+      <li><code>TEST</code>: voert de 9-stappen zelftest uit voor OLED, knoppen, trigger en outputs.</li>
+    </ul>
+    <h3>Geschat stroomverbruik van de controller-elektronica</h3>
+    <table>
+      <thead>
+        <tr><th>Status</th><th>Schatting</th><th>Opmerkingen</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Opstarten</td><td>120 mA</td><td>Korte boot- en initialisatiefase.</td></tr>
+        <tr><td>Normaal gebruik</td><td>100 mA</td><td>Typisch menu-/racegebruik zonder WiFi.</td></tr>
+        <tr><td>WiFi-module actief</td><td>150 mA</td><td>AP-modus en webserver actief.</td></tr>
+        <tr><td>Screensaver</td><td>80 mA</td><td>Display actief, weinig interactie.</td></tr>
+        <tr><td>SLEEP (soft)</td><td>55 mA (geschat)</td><td>OLED uit, CPU 80 MHz, motortaak gepauzeerd.</td></tr>
+        <tr><td>DEEP SLEEP</td><td>10 mA (geschat)</td><td>Staat vergelijkbaar met uit, ontwaken via power cycle.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">De waarden zijn schattingen en hangen af van voedingsspanning, hardwarevariant en meetopstelling. Motorbelasting van de auto komt daar nog bij. De cijfers hier zijn gemeten aan de 5 V-zijde na de step-down-converter. Meet je aan de 12 V-zijde, dan is de stroom anders en niet direct vergelijkbaar, zie de relatie tussen spanning en stroom (U = R * I).</p>
+    <h3>Interne batterij (optioneel)</h3>
+    <p>Sommige hardwarevarianten kunnen een kleine 1-cel lithiumbatterij hebben voor setupwerk naast de baan. Deze wordt geladen terwijl de controller stroom krijgt van de baan of via USB. Deze batterij is bedoeld voor menuwijzigingen, setup voor de race, lane-change-aanpassingen of om opstartvertraging te vermijden voordat de baan stroom krijgt. Ze is niet bedoeld voor langdurig zelfstandig gebruik.</p>
+    <p class="small">De looptijd hieronder betekent gebruik van de controller terwijl deze niet met de baan verbonden is. De laadstroom kan per lader en print verschillen, maar als het laden rond 200 mA ligt en het verbruik van de controller rond 100 mA, dan is de off-track-gebruiksduur vaak ongeveer twee keer zo lang als de laadtijd. De echte laadtijd van lithium is nog iets langer dan deze simpele rekensom, omdat het laatste deel van het laden vertraagt wanneer de batterij bijna vol is.</p>
+    <table>
+      <thead>
+        <tr><th>Batterij</th><th>Typische laadtijd</th><th>Typische gebruiksduur buiten de baan</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>ongeveer 1.4-1.8 uur</td><td>ongeveer 2.0-2.5 uur</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>ongeveer 2.8-3.6 uur</td><td>ongeveer 4.0-5.0 uur</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>7. Rijtips</h2>
+    <ul>
+      <li>Verander steeds maar een parameter tegelijk en rijd daarna 5-10 ronden voordat je de volgende aanpassing doet.</li>
+      <li>Stem af in deze volgorde: <code>SENSI</code>, daarna <code>FADE</code>, daarna <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> en ten slotte <code>PWM_F</code>.</li>
+      <li>1/32-auto's op banen met weinig grip: probeer hogere <code>ANTIS</code>, ongeveer 100-150 ms, en een zachtere <code>CURVE</code>, lager dan 50.</li>
+      <li>1/24-auto's op banen met veel grip: vaak lagere <code>ANTIS</code>, 0-40 ms, en directere <code>CURVE</code>, 50-70.</li>
+      <li>Gebruik <code>BRAKE+ -&gt; Alt.Brake</code> als tijdelijk hulpmiddel in bochten in plaats van BRAKE tussen heats te veranderen.</li>
+      <li>Gebruik <code>BRAKE+ -&gt; Rel.Brake QUICK</code> met lage zone, 5-12%, en gemiddeld level, 40-70%, voor een duidelijkere vroege remimpuls. Probeer <code>DRAG</code> rond 20-50% als je hulp bij loslaten wilt zonder een zone met nul output.</li>
+      <li>Als de auto te hard reageert precies wanneer de trigger begint te werken, laat <code>SENSI</code> dan staan en voeg eerst een beetje <code>FADE</code> toe.</li>
+      <li>Als de auto vroeg in de triggerslag spint: verlaag <code>SENSI</code> of verhoog <code>ANTIS</code>.</li>
+      <li>Als de auto traag aanvoelt bij het uitkomen van de bocht: verhoog <code>SENSI</code> iets of verminder <code>ANTIS</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>8. Logging, WiFi/USB-back-up, herstel en OTA</h2>
+    <h3>Logging</h3>
+    <ol>
+      <li>Open <code>SETTINGS -&gt; LOGGING</code>.</li>
+      <li><code>START NOW</code>/<code>STOP NOW</code>: start of stop lokaal telemetrieloggen direct.</li>
+      <li><code>AUTO OFF</code>: stel een timeout in voor logging, 1-120 min, standaard 30 min.</li>
+      <li>Voor logging zelf is geen WiFi nodig. Je kunt WiFi uit laten en later USB/WebSerial gebruiken, of WiFi apart inschakelen voor live webweergave.</li>
+      <li>Als WiFi al actief is wanneer logging start, blijft WiFi actief zolang logging draait.</li>
+    </ol>
+    <h3>WiFi</h3>
+    <ol>
+      <li>Open <code>SETTINGS -&gt; WIFI</code> om het WiFi-submenu te openen.</li>
+      <li><code>START WIFI</code>/<code>STOP WIFI</code>: start of stop WiFi op de achtergrond direct.</li>
+      <li><code>MODE</code>: schakelt tussen <code>AP</code> en <code>CLIENT</code>.</li>
+      <li><code>INFO PAGE</code>: opent direct de WiFi-pagina en start automatisch WiFi. Het verlaten van de infopagina stopt WiFi weer, tenzij de achtergrondmodus al eerder was gestart.</li>
+      <li>In <code>AP</code>-modus host de controller <code>ESPEED32_XXXX</code> met wachtwoord <code>espeed32</code>. <code>SHOW QR</code> is alleen beschikbaar in <code>AP</code>-modus.</li>
+      <li>In <code>CLIENT</code>-modus moet je eerst WiFi-SSID en wachtwoord invullen in <code>Advanced Config Editor -&gt; Network</code>. Client-modus gebruikt DHCP van je router/netwerk en toont geen QR-code.</li>
+      <li>Als de Client-verbinding mislukt, valt de controller automatisch terug op <code>AP</code> zodat je weer binnenkomt en de instellingen kunt corrigeren.</li>
+      <li><code>AUTO OFF</code>: stel de timeout in voor achtergrond-WiFi, 1-120 min, standaard 10 min.</li>
+      <li>Open het IP-adres dat op het OLED wordt getoond in je browser. In <code>AP</code>-modus is dit meestal <code>192.168.4.1</code>. In <code>CLIENT</code>-modus is dit het DHCP-adres van je router.</li>
+      <li>De eerste pagina is de publieke controller-home. Gevoelige tools zoals <code>Controller Panel</code>, <code>Backup</code>, <code>Restore</code>, telemetrie, OTA en <code>Advanced Config Editor</code> zijn beschermd met controller-login.</li>
+      <li>De standaard controller-login is gebruikersnaam <code>espeed32</code> en wachtwoord <code>espeed32</code>. De huidige login staat ook op de WiFi-infopagina van de controller.</li>
+      <li>Backupbestanden exporteren geen Client WiFi-wachtwoord en geen controller-login-wachtwoord. Restore behoudt de lokale WiFi/login-gegevens die al op die controller opgeslagen zijn.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="../assets/wifi_examples.svg" alt="OLED-infopagina van de controller en voorbeeld van QR-code op volledig scherm">
+      <figcaption>WiFi-voorbeeld in AP-modus: links staat de INFO PAGE van de controller met SSID, wachtwoord en browser-IP. Rechts staat de volledige SHOW QR-weergave, die alleen in AP-modus beschikbaar is voor snel koppelen met telefoon of tablet.</figcaption>
+    </figure>
+    <p class="small">WiFi verhoogt het stroomverbruik van de controller-elektronica van ongeveer 100 mA naar 150 mA, ongeveer 50% meer. Gebruik WiFi op units met een interne batterij spaarzaam en schakel het uit zodra je klaar bent.</p>
+    <p class="small">Gedrag van de statusbalk terwijl WiFi actief is: <code>WIFI</code> gebruikt de eerste lege slot. Als er geen lege slot is, toont slot 4 <code>WIFI</code> totdat WiFi stopt.</p>
+    <h3>Advanced Config Editor</h3>
+    <ul>
+      <li>Het browserportaal bevat ook een <code>Advanced Config Editor</code> voor live aanpassingen van de setup.</li>
+      <li><code>Global Config</code> bewerkt controllerbrede instellingen. <code>Car Params</code> bewerkt het geselecteerde autoprofiel.</li>
+      <li>Onder <code>Global Config</code> kun je ook Client WiFi-SSID/-wachtwoord en het controller-login-wachtwoord instellen.</li>
+      <li>In <code>Car Params</code> kun je elk autoprofiel rechtstreeks vanuit de dropdown laden en bewerken, ook als op de controller op dat moment een ander profiel actief is.</li>
+      <li><code>Refresh from device</code> laadt de huidige waarden opnieuw van de controller.</li>
+      <li><code>Apply (RAM only)</code> laat je wijzigingen live testen zonder eerst flash te beschrijven. Dit is ideaal om rem, throttle, anti-spin, curve, fade en loslaatrem op de baan te proberen.</li>
+      <li><code>Apply + Save to flash</code> slaat dezelfde waarden permanent op zodra je tevreden bent over de live test.</li>
+      <li>Op de WiFi-pagina van de controller werkt de editor direct in de browser via WiFi. Op gehoste <code>espeed32.com</code> vereist dezelfde editor een USB WebSerial-verbinding.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/car_params.png" alt="Screenshot van Advanced Config Editor met profielselectie en live bewerkbare throttle- en vermogensvelden">
+      <figcaption>Voorbeeld van Advanced Config Editor: de screenshot toont het tabblad <code>Car Params</code> met profielselectie en live bewerkbare autoinstellingen. De editor-UI staat hier in het Engels, maar de workflow is in alle handleidingen hetzelfde.</figcaption>
+    </figure>
+    <h3>USB</h3>
+    <ol>
+      <li>Open <code>SETTINGS -&gt; USB INFO</code>.</li>
+      <li>Gebruik Chrome/Edge, WebSerial.</li>
+      <li>Back-up/herstel werkt via USB. OTA vereist WiFi-modus.</li>
+    </ol>
+    <p class="warn">Verwijder nooit de voeding tijdens een OTA-upload.</p>
+  </section>
+
+  <section>
+    <h2>9. Menustructuur (volledige UI-kaart)</h2>
+<pre>ROOT (Main Menu)
+|- BRAKE
+|- SENSI
+|- ANTIS
+|- CURVE (graph view)
+|- FADE (graph view)
+|- PWM_F
+|- BRAKE+
+|  |- Alt.Brake (%)
+|  |- Rel.Brake (OFF/QUICK/DRAG)
+|  |- Zone (%) [QUICK only]
+|  |- Quick (%) [QUICK mode]
+|  |- Drag (%) [DRAG mode]
+|  `- Back
+|- LIMIT
+|- SETTINGS
+|  |- POWER
+|  |  |- SCRSV
+|  |  |  |- NOW
+|  |  |  |- LINE1
+|  |  |  |- LINE2
+|  |  |  |- TIME (0-240 s, 0=OFF)
+|  |  |  `- BACK
+|  |  |- SLEEP
+|  |  |  |- SLEEP NOW
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
+|  |  |  `- BACK
+|  |  |- DEEP SLEEP
+|  |  |  |- SLEEP NOW (power-off)
+|  |  |  |- INTERVAL (0 or 2-30 min)
+|  |  |  `- BACK
+|  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL.
+|  |  `- BACK
+|  |- DISPLAY
+|  |  |- RACE MODE (OFF/FULL/SIMPLE)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA/NLD/POR)
+|  |  |- CASE (UPPER/Pascal)
+|  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
+|  |  |- STATUS BAR
+|  |  |  |- SLOT 1
+|  |  |  |- SLOT 2
+|  |  |  |- SLOT 3
+|  |  |  |- SLOT 4
+|  |  |  `- BACK
+|  |  `- BACK
+|  |- SOUND
+|  |  |- BOOT (ON/OFF)
+|  |  |- RACE (ON/OFF)
+|  |  `- BACK
+|  |- HARDWARE
+|  |  |- ENC INV (ON/OFF)
+|  |  |- EXT POT
+|  |  |  |- POT 1 (OFF/BRAKE/SENSI)
+|  |  |  |- POT 2 (OFF/BRAKE/SENSI)
+|  |  |  `- BACK
+|  |  |- TRIGGER
+|  |  |  |- FAMILY
+|  |  |  |- ACTIVE
+|  |  |  |- TYPE (AUTO/W2B6/W2B6_A0/P3B6) [TLE493D only]
+|  |  |  `- BACK
+|  |  |- TEST (Self-Test, 9 steps)
+|  |  `- BACK
+|  |- STATS (ON/OFF, default OFF)
+|  |- WIFI
+|  |  |- START/STOP WIFI
+|  |  |- MODE
+|  |  |- INFO PAGE
+|  |  |- SHOW QR [alleen AP]
+|  |  |- AUTO OFF (1-120 min, default 10)
+|  |  `- BACK
+|  |- LOGGING
+|  |  |- START/STOP NOW
+|  |  |- AUTO OFF (1-120 min, default 30)
+|  |  `- BACK
+|  |- USB INFO
+|  |- RESET
+|  |  |- CAR
+|  |  |- SETTINGS
+|  |  |- CALIBRATION
+|  |  |- EVERYTHING
+|  |  `- BACK
+|  |- ABOUT
+|  `- BACK
+|- STATS [if enabled]
+`- CAR
+   |- SELECT
+   |- RENAME
+   |- RACESWP (grid car select ON/OFF)
+   |- COPY
+   |- RESET
+   `- BACK</pre>
+  </section>
+
+</main>

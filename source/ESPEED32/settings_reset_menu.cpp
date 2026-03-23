@@ -3,6 +3,7 @@
 #include "slot_ESC.h"
 #include "HAL.h"
 #include "ext_pot.h"
+#include "connectivity_portal.h"
 
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
@@ -30,6 +31,8 @@ static const char* getResetCancelText(uint16_t lang) {
     case LANG_ESP: return "ATRAS=CANCEL";
     case LANG_DEU: return "ZURUCK=ABBR.";
     case LANG_ITA: return "INDIET=ANNULLA";
+    case LANG_NLD: return "TERUG=ANNUL";
+    case LANG_POR: return "VOLTAR=CANC";
     default:       return "BACK=CANCEL";
   }
 }
@@ -40,6 +43,8 @@ static const char* getResetCancelledText(uint16_t lang) {
     case LANG_ESP: return "CANCELADO!";
     case LANG_DEU: return "ABBRUCH!";
     case LANG_ITA: return "ANNULLATO!";
+    case LANG_NLD: return "GEANNULEERD";
+    case LANG_POR: return "CANCELADO!";
     default:       return "CANCELLED!";
   }
 }
@@ -50,6 +55,8 @@ static const char* getResetPressTwiceText(uint16_t lang) {
     case LANG_ESP: return "PULSA 2 VECES";
     case LANG_DEU: return "ZWEIMAL DRUCK";
     case LANG_ITA: return "PREMI 2 VOLTE";
+    case LANG_NLD: return "DRUK 2 KEER";
+    case LANG_POR: return "PRIMA 2 VEZES";
     default:       return "PRESS TWICE";
   }
 }
@@ -60,6 +67,8 @@ static const char* getResetAgainLine1(uint16_t lang) {
     case LANG_ESP: return "PULSA OTRA";
     case LANG_DEU: return "NOCHMAL";
     case LANG_ITA: return "PREMI ANCORA";
+    case LANG_NLD: return "DRUK OPNIEUW";
+    case LANG_POR: return "PRIMA NOVO";
     default:       return "PRESS AGAIN";
   }
 }
@@ -70,6 +79,8 @@ static const char* getResetAgainLine2(uint16_t lang) {
     case LANG_ESP: return "VEZ PARA RESET";
     case LANG_DEU: return "FUER RESET";
     case LANG_ITA: return "PER RESET";
+    case LANG_NLD: return "VOOR RESET";
+    case LANG_POR: return "PARA RESET";
     default:       return "TO RESET";
   }
 }
@@ -80,6 +91,8 @@ static const char* getResetDoneText(uint16_t lang) {
     case LANG_ESP: return "RESET OK!";
     case LANG_DEU: return "RESET OK!";
     case LANG_ITA: return "RESET OK!";
+    case LANG_NLD: return "RESET OK!";
+    case LANG_POR: return "RESET OK!";
     default:       return "RESET DONE!";
   }
 }
@@ -291,21 +304,23 @@ void resetAllCarsToFactoryDefaults() {
 }
 
 /**
- * Reset submenu. Items: CAR, SETTINGS, CALIBRATION, ALL, BACK.
+ * Reset submenu. Items: CAR, SETTINGS, CALIBRATION, NETWORK, ALL, BACK.
  * Each destructive action requires double-click confirmation.
  */
 void showResetSubmenu() {
-  const uint8_t RS_ITEMS = 5;
+  const uint8_t RS_ITEMS = 6;
   uint16_t lang = g_storedVar.language;
 
-  const char* rowNamesByLang[7][RS_ITEMS] = {
-    {"Bil", "Innstillinger", "Kalibrering", "Alt", "Tilbake"},
-    {"Car", "Settings", "Calibration", "Everything", "Back"},
-    {"Car", "Settings", "Calibration", "Everything", "Back"},
-    {"Car", "Settings", "Calibration", "Everything", "Back"},
-    {"Auto", "Ajustes", "Calibrac.", "Todo", "Atras"},
-    {"Auto", "Einstell.", "Kalibr.", "Alles", "Zuruck"},
-    {"Auto", "Impostaz.", "Calibraz.", "Tutto", "Indietro"}
+  const char* rowNamesByLang[9][RS_ITEMS] = {
+    {"Bil", "Innstillinger", "Kalibrering", "Nettverk", "Alt", "Tilbake"},
+    {"Car", "Settings", "Calibration", "Network", "Everything", "Back"},
+    {"Car", "Settings", "Calibration", "Network", "Everything", "Back"},
+    {"Car", "Settings", "Calibration", "Network", "Everything", "Back"},
+    {"Auto", "Ajustes", "Calibrac.", "Red", "Todo", "Atras"},
+    {"Auto", "Einstell.", "Kalibr.", "Netzwerk", "Alles", "Zuruck"},
+    {"Auto", "Impostaz.", "Calibraz.", "Rete", "Tutto", "Indietro"},
+    {"Auto", "Instell.", "Kalibr.", "Netwerk", "Alles", "Terug"},
+    {"Carro", "Ajustes", "Calibr.", "Rede", "Tudo", "Voltar"}
   };
   const char** rowNames = rowNamesByLang[lang];
 
@@ -394,7 +409,7 @@ void showResetSubmenu() {
         obdWriteString(&g_obd, 0, (OLED_WIDTH - tw) / 2, 24, (char *)doneText, FONT_12x16, OBD_BLACK, 1);
         delay(1500);
 
-        if (sel == 4) {
+        if (sel == 5) {
           /* Full factory reset: wipe flash, reboot into first-boot path */
           g_pref.begin("stored_var", false);
           g_pref.clear();
@@ -405,6 +420,7 @@ void showResetSubmenu() {
         if (sel == 1) { doResetCar(); }
         else if (sel == 2) { doResetSettings(); }
         else if (sel == 3) { doResetCalibration(); }
+        else if (sel == 4) { resetWiFiNetworkSettings(); }
 
         saveEEPROM(g_storedVar);
         initMenuItems();

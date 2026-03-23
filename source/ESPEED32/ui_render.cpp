@@ -350,6 +350,10 @@ void showScreensaver() {
  */
 void printMainMenu(MenuState_enum currMenuState) 
 {
+  if (isOtaInProgress()) {
+    return;
+  }
+
   static uint16_t tmp = 0;
   static bool screensaverActive = false;
   uint8_t mainMenuItems = getMainMenuItemsCount();

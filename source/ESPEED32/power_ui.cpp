@@ -21,6 +21,17 @@ extern void stopTimedWiFiPortal();
 bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos) {
   if (lastInteraction == NULL || lastEncoderPos == NULL) return false;
 
+  if (isOtaInProgress()) {
+    uint32_t now = millis();
+    *lastInteraction = now;
+    g_lastEncoderInteraction = now;
+    if (screensaverActive != NULL && *screensaverActive) {
+      *screensaverActive = false;
+      return true;
+    }
+    return false;
+  }
+
   uint16_t currentEncoderPos = (uint16_t)readUiEncoder();
   bool encoderMoved = (currentEncoderPos != *lastEncoderPos);
   bool buttonPressed = (digitalRead(BUTT_PIN) == BUTTON_PRESSED);
@@ -109,7 +120,7 @@ void showPowerSave(uint32_t inactivityStartMs) {
   uint16_t lang = g_storedVar.language;
   const char* sleepMsg[] = {
     "SOVER...", "SLEEPING...", "SLEEPING...", "SLEEPING...",
-    "DURMIENDO...", "SCHLAFEN...", "RIPOSO..."
+    "DURMIENDO...", "SCHLAFEN...", "RIPOSO...", "SLAPEN...", "DORMIR..."
   };
 
   /* Brief sleep message */
@@ -158,7 +169,7 @@ void showDeepSleep() {
   uint16_t lang = g_storedVar.language;
   const char* powerOffMsg[] = {
     "SLUKKER...", "POWER OFF...", "POWER OFF...", "POWER OFF...",
-    "APAGANDO...", "AUSSCHALT.", "SPEGNENDO..."
+    "APAGANDO...", "AUSSCHALT.", "SPEGNENDO...", "UITSCHAK.", "DESLIGAR."
   };
 
   /* Brief power-off message */

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 Manual do Utilizador (PT)</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#151a1f;
+    --paper:#1f262e;
+    --ink:#eef2f7;
+    --muted:#b8c7d8;
+    --line:#39495a;
+    --accent:#ff6b5d;
+    --accent-2:#59b9dd;
+    --chip:#283340;
+    --chip-border:#405061;
+    --code-bg:#242f3b;
+    --code-border:#3b4b5b;
+    --pre-bg:#1a232c;
+    --pre-border:#324254;
+    --th-bg:#2a3441;
+    --ghost:#283340;
+    --shadow:0 10px 24px rgba(0,0,0,.35);
+  }
+}
+html[data-theme="light"]{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+html[data-theme="dark"]{
+  --bg:#151a1f;
+  --paper:#1f262e;
+  --ink:#eef2f7;
+  --muted:#b8c7d8;
+  --line:#39495a;
+  --accent:#ff6b5d;
+  --accent-2:#59b9dd;
+  --chip:#283340;
+  --chip-border:#405061;
+  --code-bg:#242f3b;
+  --code-border:#3b4b5b;
+  --pre-bg:#1a232c;
+  --pre-border:#324254;
+  --th-bg:#2a3441;
+  --ghost:#283340;
+  --shadow:0 10px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Segoe UI",Tahoma,Verdana,sans-serif;
+  background:
+    linear-gradient(120deg,rgba(180,35,24,.08),rgba(31,106,138,.08)),
+    repeating-linear-gradient(0deg,transparent 0 30px,rgba(25,25,25,.02) 30px 31px),
+    var(--bg);
+}
+main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+header{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:30px;line-height:1.1}
+p.lead{margin:0;color:var(--muted)}
+nav.top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
+a.primary{background:var(--accent);color:#fff}
+a.secondary{background:var(--accent-2);color:#fff}
+a.ghost{background:var(--ghost);color:var(--ink)}
+.lang-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-radius:10px;background:var(--ghost)}
+.lang-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.lang-tools select{min-width:180px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;cursor:pointer}
+section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{margin:0 0 10px;font-size:20px}
+h3{margin:14px 0 8px;font-size:16px}
+h4{margin:12px 0 6px;font-size:15px}
+h2,h3,h4,details.doc-fold summary{scroll-margin-top:16px}
+p{margin:8px 0;line-height:1.45}
+ul,ol{margin:8px 0 0 20px;padding:0}
+li{margin:4px 0;line-height:1.4}
+code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1px 5px}
+pre{margin:8px 0 0;padding:12px;border-radius:10px;border:1px solid var(--pre-border);background:var(--pre-bg);overflow:auto;line-height:1.3}
+.small{font-size:13px;color:var(--muted)}
+.sources{margin:8px 0 0 18px;padding:0}
+.sources li{font-size:13px;color:var(--muted);line-height:1.35}
+.warn{color:var(--accent);font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--th-bg)}
+.badge{display:inline-block;background:var(--chip);border:1px solid var(--chip-border);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--ink)}
+.theme-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.theme-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.theme-tools select{padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+figure.doc-media{margin:10px 0 0}
+figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);overflow:hidden;padding:0 12px 12px}
+details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 38px 12px 12px;position:relative;background:var(--ghost);margin:0 -12px;border-bottom:1px solid var(--line)}
+details.doc-fold summary::-webkit-details-marker{display:none}
+details.doc-fold summary::after{content:'+';position:absolute;right:12px;top:10px;font-size:20px;color:var(--muted)}
+details.doc-fold[open] summary::after{content:'-'}
+details.doc-fold>:not(summary){margin-top:8px}
+.anchor-target .heading-anchor{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left:8px;
+  color:var(--muted);
+  text-decoration:none;
+  opacity:.65;
+  transition:opacity .15s ease,color .15s ease;
+}
+.anchor-target:hover .heading-anchor,
+.anchor-target:focus-within .heading-anchor,
+.heading-anchor:focus{
+  opacity:1;
+  color:var(--accent);
+}
+.heading-anchor::before{
+  content:"\1F4CE";
+  font-size:.85em;
+  line-height:1;
+}
+@media (max-width:760px){
+  h1{font-size:24px}
+  .lang-tools{width:100%}
+  .lang-tools select{flex:1;min-width:0}
+  table{font-size:13px}
+}</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ESPEED32 Manual do Utilizador</h1>
+    <p class="lead">Guia para o utilizador em corridas de slot: arranque, controlos principais de conducao, menus e copia de seguranca/restauro.</p>
+    <nav class="top">
+      <a class="btn primary" href="../../ui/index.html">Abrir a Web UI do controlador</a>
+      <div class="lang-tools">
+        <label for="lang-select">Idioma</label>
+        <select id="lang-select" aria-label="Idioma"></select>
+      </div>
+    </nav>
+    <div class="theme-tools">
+      <label for="theme-select">Tema</label>
+      <select id="theme-select">
+        <option value="system">Sistema</option>
+        <option value="light">Claro</option>
+        <option value="dark">Escuro</option>
+      </select>
+    </div>
+    <ul class="sources">
+      <li>Fonte do firmware: ESPEED32 (<code>source/ESPEED32/</code>).</li>
+      <li>Manuais locais no repo: Quick Start + Extended Guide (pasta DOC, DOCX/PDF).</li>
+      <li>Referencia ACD: <a href="https://www.yatronic.com/ACD_PRO_Manual_11_E.pdf" target="_blank" rel="noopener">ACD PRO Manual 11E</a>.</li>
+      <li>Referencia CarSteen: <a href="https://abslotsport.biz/CS-4.2%20Owners%20GuideENG.pdf" target="_blank" rel="noopener">CS 4.2 Owner's Guide</a>.</li>
+    </ul>
+    <p class="small">A documentacao do utilizador em <code>espeed32.com</code> mostra sempre a versao publicada mais recente. A copia guardada no controlador segue o firmware realmente instalado nessa unidade e e atualizada em conjunto com ele.</p>
+  </header>
+
+  <section>
+    <h2>1. Arranque rapido</h2>
+    <ol>
+      <li>Ligue o controlador normalmente.</li>
+      <li>Rode o encoder para percorrer os itens do menu.</li>
+      <li>Prima o encoder uma vez: entrar/sair da edicao de valores ou abrir um submenu.</li>
+      <li>Prima o botao de travao durante a edicao para cancelar e restaurar o valor original.</li>
+      <li>Prima o encoder de forma longa (~1 s): alterna entre LIST e a vista de corrida GRID quando race view nao esta em OFF.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. Arranque, calibracao e auto-teste</h2>
+    <ul>
+      <li>Recalibre o gatilho depois de uma atualizacao de firmware ou sempre que a mecanica do gatilho mudar.</li>
+      <li><code>Power ON</code>: arranque normal e depois modo RUNNING.</li>
+      <li>Nas builds <code>TLE493D</code>, a variante e o endereco do sensor sao detetados automaticamente durante o arranque.</li>
+      <li>Mantenha o <code>botao do encoder</code> premido durante o arranque para entrar na calibracao do gatilho.</li>
+      <li>Mantenha o <code>botao de travao</code> premido durante o arranque para iniciar o auto-teste de 9 passos.</li>
+    </ul>
+    <h3>Fluxo de calibracao</h3>
+    <ol>
+      <li>Mantenha o encoder premido ao ligar ate aparecer o ecra de calibracao.</li>
+      <li>Prima e solte totalmente o gatilho varias vezes.</li>
+      <li>Prima o encoder uma vez para guardar a calibracao.</li>
+      <li>Confirme que a throttle mostra 0% com o gatilho solto e 100% com o gatilho totalmente premido.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="../assets/trig_cal.png" alt="Calibracao do gatilho">
+      <figcaption>Calibracao: mova o gatilho por todo o curso varias vezes para obter um mapeamento correto de 0-100%.</figcaption>
+    </figure>
+    <h3>Mecanica do gatilho</h3>
+    <ul>
+      <li>O curso do gatilho pode ser ajustado mecanicamente com o parafuso limitador traseiro.</li>
+      <li>A sensacao de retorno do gatilho depende da pre-carga da mola; ajuste a ancora da mola ou o cursor de tensao com cuidado.</li>
+      <li>Depois de alterar o curso ou a tensao da mola, ou depois de abrir o controlador, recalibre o gatilho antes de conduzir.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Display, race view e ABOUT</h2>
+    <p class="small">Esta secao agrupa o que ve no OLED: idioma, estilo de texto, layout de corrida, barra de estado e informacao do sistema.</p>
+    <h3>Idioma e display</h3>
+    <ul>
+      <li><code>DISPLAY -&gt; LANGUAGE</code> escolhe entre etiquetas localizadas e os perfis de nomes ENG/CS/ACD.</li>
+      <li><code>NOR/ESP/DEU/ITA/NLD/POR</code>: UI localizada com o conjunto de nomes padrao <code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>.</li>
+      <li><code>ENG</code>: nomenclatura generica (<code>BRAKE/SENSI/ANTIS/CURVE/FADE/LIMIT</code>).</li>
+      <li><code>CS</code>: termos ao estilo CarSteen (<code>ATTACK/CHOKE2/PROFIL/CHOKE1</code>).</li>
+      <li><code>ACD</code>: termos ACD quando aplicavel diretamente, com <code>SENSI</code> e <code>CHOKE</code> para limit. <code>ANTIS</code> continua como anti-spin porque o manual ACD nao define um termo separado para Choke2.</li>
+      <li><code>DISPLAY -&gt; CASE</code> define se as etiquetas aparecem em <code>UPPER</code> ou <code>Pascal</code>.</li>
+      <li><code>DISPLAY -&gt; FONT SIZE</code> altera a densidade do texto entre <code>LARGE</code> e <code>small</code>.</li>
+      <li><code>DISPLAY -&gt; ANTIS.STEP</code> define o passo global do encoder para o valor <code>ANTIS</code>.</li>
+    </ul>
+    <h3>Comportamento da race view (LIST vs GRID)</h3>
+    <ul>
+      <li><span class="badge">LIST</span> menu classico com todos os itens principais.</li>
+      <li><span class="badge">GRID</span> ecra de corrida para alteracoes rapidas durante a conducao.</li>
+      <li><code>DISPLAY -&gt; RACE MODE</code>: OFF / FULL / SIMPLE.</li>
+      <li>GRID FULL: BRAKE, SENSI, ANTIS, CURVE (+ CAR se <code>RACESWP</code> estiver em ON).</li>
+      <li>GRID SIMPLE: BRAKE, SENSI (+ CAR se <code>RACESWP</code> estiver em ON).</li>
+      <li>Uma pressao longa no encoder alterna entre LIST e GRID.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/display_modes.svg" alt="Mockup da vista OLED em lista e em grelha de corrida">
+      <figcaption>Exemplo do display: LIST mostra toda a pilha de menus, enquanto GRID mantem visiveis os parametros principais de corrida para alteracoes mais rapidas em pista.</figcaption>
+    </figure>
+    <h3>Barra de estado e ABOUT</h3>
+    <ul>
+      <li><code>STATUS BAR</code>: 4 posicoes fixas. Cada posicao pode mostrar <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> ou vazio. <code>CURR</code> mostra mA abaixo de 1000 e A acima disso.</li>
+      <li>Enquanto o WiFi esta ativo, a barra de estado mostra <code>WIFI</code>. Usa a primeira posicao vazia; se nao existir, substitui temporariamente a posicao 4.</li>
+      <li><code>ABOUT</code> mostra a versao de firmware/dados, o sensor de gatilho detetado, detalhes do chip, flash/heap, enderecos MAC e data/hora da build.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Menu CAR e Car Params</h2>
+    <p class="small">O menu <code>CAR</code> gere os perfis de carro. Cada perfil guarda os seus proprios <code>Car Params</code>: <code>BRAKE</code>, <code>SENSI</code>, <code>ANTIS</code>, <code>CURVE</code>, <code>FADE</code>, <code>PWM_F</code>, <code>BRAKE+</code> e <code>LIMIT</code>. Este e o mesmo grupo de parametros que aparece depois no <code>Advanced Config Editor</code>.</p>
+    <ul>
+      <li><code>SELECT</code>: escolher o perfil de carro ativo (0-19).</li>
+      <li><code>RENAME</code>: editor de nome com 4 caracteres (ASCII 32-122). Ver <a href="https://slatecave.net/notebook/ascii/" target="_blank" rel="noopener noreferrer">tabela ASCII</a>.</li>
+      <li><code>RACESWP</code>: ON permite trocar de perfil diretamente a partir do modo GRID.</li>
+      <li><code>COPY</code>: copiar de um perfil para outro ou para ALL profiles.</li>
+      <li><code>RESET</code>: repor todos os perfis de carro com confirmacao.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Parametros de conducao</h2>
+    <p class="small">Esta secao agrupa os principais parametros de setup que definem a sensacao do controlador em pista. As explicacoes mais detalhadas ficam em paineis expansivos para tornar a leitura mais facil.</p>
+    <h3>BRAKE e BRAKE+</h3>
+    <h4>BRAKE</h4>
+    <p>Quando o gatilho e totalmente libertado, o controlador aplica a travagem normal com o valor <code>BRAKE</code>.</p>
+    <p class="small"><code>BRAKE+</code> no menu principal abre o submenu avancado de travagem. Aí encontra <code>Alt.Brake</code> e <code>Rel.Brake</code>.</p>
+    <h4>Travagem alternativa (<code>Alt.Brake</code>)</h4>
+    <ul>
+      <li><code>Alt.Brake</code> significa uma percentagem alternativa de travagem (0-100%), nao uma reducao relativa.</li>
+      <li>So e aplicada quando trigger = 0 e o botao de travao e mantido premido.</li>
+      <li>Se a barra de estado mostrar OUTPUT, vera <code>Bxxx%</code> enquanto o botao de travao estiver premido.</li>
+      <li>Uso tipico: travagem temporariamente mais forte ou mais suave na entrada de curva sem alterar o setup base.</li>
+      <li>Alguns pilotos preferem <code>Alt.Brake</code> mais baixo que o <code>BRAKE</code> normal para um travao temporario mais suave, enquanto outros o preferem mais alto para uma resposta mais forte. Isto depende sobretudo da preferencia do utilizador e do comportamento do carro.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/alt_brake.svg" alt="Graficos conceptuais mostrando Alt.Brake inferior e superior a BRAKE">
+      <figcaption>Exemplos de travagem alternativa: <code>Alt.Brake</code> pode ser definido temporariamente mais suave ou mais forte do que o BRAKE normal, consoante a preferencia do piloto.</figcaption>
+    </figure>
+    <h4>Travagem de largada (<code>Rel.Brake</code>)</h4>
+    <ul>
+      <li><code>Rel.Brake</code> tem tres modos: <code>OFF</code>, <code>QUICK</code> e <code>DRAG</code>.</li>
+      <li><code>QUICK</code> e a antiga zona de travagem antecipada: abaixo da <code>Zone</code> definida, o controlador corta a tracao e aplica <code>Level</code> como forca de travagem.</li>
+      <li><code>DRAG</code> atua apenas enquanto esta a libertar ativamente o gatilho. Mantem a throttle ativa, adiciona drag durante o movimento de libertacao e e mais suave que QUICK.</li>
+      <li><code>Zone</code> so e usada por <code>QUICK</code>. Em QUICK trata-se de uma zona real de output zero perto da libertacao do gatilho.</li>
+      <li>Por isso, com <code>QUICK</code> ativo, e normal ver alguns <code>%T</code> no ecra enquanto o output continua em <code>0%</code> ate o gatilho ultrapassar a zona definida.</li>
+      <li>Diferenca principal: <code>QUICK</code> faz um corte duro dentro da zona, enquanto <code>DRAG</code> mantem a throttle ativa e apenas adiciona drag enquanto o gatilho se move para a posicao de libertacao.</li>
+      <li>Uso tipico de QUICK: pistas ou carros que precisam de uma travagem clara logo no inicio da libertacao. Exemplo: <code>Zone</code> 6-10% e <code>Level</code> 70-100% para uma travagem forte e repetivel no ultimo segmento do curso do gatilho.</li>
+      <li>Uso tipico de DRAG: carros nervosos que parecem demasiado bruscos com QUICK. Exemplo: <code>Level</code> 20-50% para adicionar desaceleracao suave durante a largada sem a sensacao de corte imediato para zero.</li>
+      <li>Intervalo de <code>QUICK Zone</code>: 0-50%. Intervalo de <code>Level</code>: 0-100%.</li>
+      <li>Use QUICK para uma travagem inicial clara. Use DRAG para apoio mais suave ao libertar o gatilho sem a sensacao abrupta do quick brake total.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/rel_brake.svg" alt="Graficos conceptuais com o comportamento QUICK e DRAG para Rel.Brake">
+      <figcaption>Exemplos de travagem de largada: QUICK cria uma zona de output zero com travagem abaixo da zona definida, enquanto DRAG adiciona um arrasto mais suave apenas durante a libertacao do gatilho.</figcaption>
+    </figure>
+    <h3>Referencia rapida do menu principal</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Intervalo</th><th>Predef.</th><th>Descricao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Forca de travagem quando o gatilho e largado.</td></tr>
+        <tr><td><code>SENSI</code></td><td>0-90 % (e &lt;= LIMIT)</td><td>20</td><td>Output minimo do motor no primeiro movimento detetavel do gatilho.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Duracao da rampa anti-spin. Valor mais alto = subida de potencia mais suave. O passo do encoder e definido globalmente em <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapeamento da throttle. 50 = linear. &lt;50 arranque mais suave, &gt;50 arranque mais agressivo.</td></tr>
+        <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona de soft-start. 0 = desligado / comportamento antigo. Acima de 0, a primeira parte do curso sobe de 0 ate SENSI antes de CURVE assumir o controlo.</td></tr>
+        <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>Frequencia PWM do motor. Um valor mais alto costuma suavizar a resposta em baixa.</td></tr>
+        <tr><td><code>BRAKE+ / Alt.Brake</code></td><td>0-100 %</td><td>50</td><td>Valor alternativo de travagem usado enquanto o botao de travao esta premido e o gatilho esta solto.</td></tr>
+        <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Ajuda de travagem perto da libertacao do gatilho. QUICK usa uma zona de output zero; DRAG adiciona arrasto sem zona.</td></tr>
+        <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Output maximo do motor. &lt;100 ativa o aviso LIMITER.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Contador de voltas, melhor volta e historico de voltas com scroll.</td></tr>
+        <tr><td><code>CAR</code></td><td>0-19 perfis</td><td>CAR0</td><td>Selecionar/gerir perfil, copiar valores e repor car params.</td></tr>
+      </tbody>
+    </table>
+    <h3>Valores iniciais tipicos</h3>
+    <p class="small">Estes valores sao pontos de partida, nao regras. Use-os para chegar perto do ideal e ajuste apenas um parametro de cada vez.</p>
+    <p class="small">Os valores certos continuam a depender do carro, motor, pneus, aderencia da pista e estilo de conducao.</p>
+    <table>
+      <thead>
+        <tr><th>Setup</th><th>SENSI</th><th>BRAKE</th><th>ANTIS</th><th>CURVE</th><th>FADE</th><th>PWM_F</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1/32 equilibrado</td><td>28-35%</td><td>90-95%</td><td>40-90 ms</td><td>40-50%</td><td>0-6%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/32 baixa aderencia</td><td>22-30%</td><td>90-95%</td><td>100-150 ms</td><td>30-45%</td><td>5-12%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 equilibrado</td><td>35-45%</td><td>95-100%</td><td>0-30 ms</td><td>50-60%</td><td>0-5%</td><td>4.0 kHz</td></tr>
+        <tr><td>1/24 alta aderencia</td><td>40-50%</td><td>95-100%</td><td>0-15 ms</td><td>55-70%</td><td>0-3%</td><td>4.0 kHz</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Nos primeiros testes, deixe <code>Rel.Brake</code> em <code>OFF</code>. Adicione <code>QUICK</code> ou <code>DRAG</code> apenas depois de a base da throttle e da travagem parecer correta.</p>
+    <details class="doc-fold">
+      <summary>De termos CarSteen/ACD para ESPEED32</summary>
+      <table>
+        <thead>
+          <tr><th>Termo antigo</th><th>Equivalente ESPEED32</th><th>Efeito pratico</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Attack</td><td><code>SENSI</code></td><td>Quao forte o carro arranca no primeiro movimento do gatilho.</td></tr>
+          <tr><td>Choke / Choke2</td><td><code>LIMIT</code> + <code>ANTIS</code></td><td>Limitacao no topo e suavidade da rampa de potencia.</td></tr>
+          <tr><td>Profile</td><td><code>CURVE</code></td><td>Forma da resposta do gatilho, mais agressiva cedo ou mais tarde.</td></tr>
+          <tr><td>Brake</td><td><code>BRAKE</code> + <code>BRAKE+</code></td><td>Travagem base mais as definicoes do botao de travao e da ajuda de largada.</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Exemplo de setup antigo: para uma sensacao suave e controlada, comece por <code>SENSI 40</code>, <code>ANTIS 130 ms</code>, <code>CURVE 30</code> e afine a partir daí.</p>
+    </details>
+    <details class="doc-fold">
+      <summary>FADE na pratica</summary>
+      <ul>
+        <li><code>FADE</code> cria uma rampa suave <code>0 -&gt; SENSI</code> na primeira parte do curso do gatilho.</li>
+        <li><code>FADE = 0%</code> desativa a funcao e mantem a resposta direta antiga.</li>
+        <li>Experimente <code>5-15%</code> se o carro parecer demasiado brusco exatamente quando SENSI entra em acao.</li>
+        <li>Pense em <code>FADE</code> como um ponto adicional no inicio do grafico: so altera a parte mais baixa, enquanto <code>CURVE</code> continua a moldar o resto.</li>
+      </ul>
+      <figure class="doc-media">
+        <img src="../assets/fade_examples.svg" alt="Exemplos de grafico com Fade desligado e ligado">
+        <figcaption>Exemplos de FADE: OFF mantem o salto direto antigo para SENSI, enquanto ON adiciona primeiro uma rampa suave antes de CURVE continuar.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>Notas sobre linearidade</summary>
+      <ul>
+        <li><code>LIMIT</code>: limite linear do output comandado em %. A velocidade maxima real em pista nao e perfeitamente linear.</li>
+        <li><code>BRAKE</code>: comando linear de travagem/drag em %. A sensacao real depende do motor, pneus e aderencia da pista.</li>
+        <li><code>SENSI</code>: nivel minimo de output linear em %, mas nao um ganho linear ao longo de todo o curso do gatilho, porque <code>CURVE</code> define o resto.</li>
+        <li><code>FADE</code>: linear em % do curso do gatilho. Afeta apenas a primeira parte e depois entrega novamente o controlo a <code>CURVE</code>.</li>
+        <li><code>ANTIS</code>: sobretudo uma definicao temporal em ms. Um valor maior cria uma rampa mais longa e mais fraca, mas a sensacao geral nao e perfeitamente linear porque o limiar de bypass em baixa velocidade tambem muda.</li>
+      </ul>
+    </details>
+    <details class="doc-fold">
+      <summary>Exemplos de CURVE</summary>
+      <p class="small">Estas figuras focam-se na propria forma da resposta antes de considerar frequencia PWM e limites de duty.</p>
+      <figure class="doc-media">
+        <img src="../assets/curve_examples.svg" alt="Exemplos de curva linear, suave e agressiva">
+        <figcaption>Exemplos de CURVE: linear (50%), suave (valor mais baixo) e agressiva (valor mais alto).</figcaption>
+      </figure>
+      <figure class="doc-media">
+        <img src="../assets/fade_curve.svg" alt="Exemplos que combinam fade com curvas lineares e agressivas">
+        <figcaption>FADE mais CURVE: FADE pode suavizar o inicio enquanto o resto da resposta se mantem linear ou mais agressivo.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>LIMIT na pratica</summary>
+      <ul>
+        <li><code>LIMIT 100</code> permite ao controlador atingir duty total quando o gatilho e a curva o pedem.</li>
+        <li><code>LIMIT 70</code> limita o duty maximo a cerca de 70%, mesmo com o gatilho totalmente premido.</li>
+      </ul>
+      <figure class="doc-media">
+        <img src="../assets/limit_examples.svg" alt="Exemplos de LIMIT com LIMIT 100 e LIMIT 70">
+        <figcaption>Exemplos de LIMIT: LIMIT altera o duty maximo que o controlador pode atingir.</figcaption>
+      </figure>
+    </details>
+    <details class="doc-fold">
+      <summary>PWM_F na pratica</summary>
+      <ul>
+        <li><code>PWM_F</code> altera a frequencia de comutacao do output, nao o duty pedido por si so.</li>
+        <li>Com <code>LIMIT 100</code>, meia throttle pode continuar a usar duty parcial. Com <code>LIMIT 70</code>, full trigger para perto de 70% duty.</li>
+        <li>Com o mesmo duty, <code>1 kHz</code> usa menos pulsos e mais largos, enquanto <code>5 kHz</code> usa mais pulsos e mais estreitos no mesmo intervalo de tempo.</li>
+      </ul>
+      <h4>Cenario 1: trigger parcial com LIMIT 100</h4>
+      <p class="small">Compare estas duas imagens lado a lado. Ambas mostram o mesmo nivel efetivo, 50% duty, portanto a unica diferenca e a densidade dos pulsos. A linha tracejada marca o nivel medio ou efetivo.</p>
+      <figure class="doc-media">
+        <img src="../assets/pwm_part.svg" alt="Exemplos de frequencia PWM comparando 1 kHz e 5 kHz com trigger parcial e LIMIT 100">
+        <figcaption>Com 50% duty, <code>1 kHz</code> usa menos pulsos e mais largos, enquanto <code>5 kHz</code> usa mais pulsos e mais estreitos no mesmo intervalo de tempo.</figcaption>
+      </figure>
+      <h4>Cenario 2: full trigger com LIMIT 70</h4>
+      <p class="small">Compare tambem estas duas imagens lado a lado. Ambas mostram full trigger, mas <code>LIMIT 70</code> prende o nivel efetivo em 70% duty. Mais uma vez, a linha tracejada marca o nivel medio ou efetivo.</p>
+      <figure class="doc-media">
+        <img src="../assets/pwm_cap.svg" alt="Exemplos de frequencia PWM comparando 1 kHz e 5 kHz com full trigger e LIMIT 70">
+        <figcaption>Aqui o duty esta limitado a 70% em ambas as imagens. <code>PWM_F</code> muda a frequencia dos pulsos, nao o proprio limite LIMIT.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <section>
+    <h2>6. SETTINGS, POWER e consumo de corrente</h2>
+    <p class="small"><code>SETTINGS</code> agrupa as opcoes globais do sistema que nao pertencem a um unico perfil de carro.</p>
+    <h3>Submenu POWER</h3>
+    <ul>
+      <li><code>SCRSV</code>: texto da screensaver linha 1/linha 2, timeout e mostrar agora.</li>
+      <li><code>SLEEP</code>: timeout de sleep automatico mais sleep manual imediato, acordar com o botao do encoder.</li>
+      <li><code>DEEP SLEEP</code>: deep sleep automatico (0 ou 2-30 min) mais manual.</li>
+      <li><code>STARTUP</code>: atraso do ecra de boas-vindas 0-990 ms em passos de 10 ms.</li>
+      <li><code>VIN CAL.</code>: medir a tensao real da pista com um multimetro, definir esse valor no controlador e depois clicar para calibrar a escala ADC. Use apenas se a leitura VIN estiver claramente errada.</li>
+    </ul>
+    <h3>Itens principais em SETTINGS</h3>
+    <ul>
+      <li><code>HARDWARE</code>: direcao do encoder, overrides por potenciometros externos, informacao/override do sensor do gatilho e auto-teste.</li>
+      <li><code>STATS</code>: mostrar ou ocultar a entrada STATS no menu principal. Predefinido OFF.</li>
+      <li><code>WIFI</code>: WiFi em segundo plano, pagina de informacao, QR code e temporizador de desligar automatico.</li>
+      <li><code>LOGGING</code>: iniciar/parar logging local de telemetria e um temporizador separado de auto-off para logging (predefinido 30 min).</li>
+    </ul>
+    <h3>Submenu HARDWARE</h3>
+    <ul>
+      <li><code>ENC INV</code>: inverter globalmente a rotacao do encoder se o menu parecer invertido no seu hardware.</li>
+      <li><code>EXT POT</code>: atribuir <code>POT 1</code> e <code>POT 2</code> a overrides live de <code>OFF</code>, <code>BRAKE</code> ou <code>SENSI</code>.</li>
+      <li><code>TRIGGER</code>: mostra a familia do sensor do gatilho e o tipo ativo. Em builds <code>TLE493D</code> tambem pode fazer override de <code>TYPE</code> entre <code>AUTO</code>, <code>W2B6</code>, <code>W2B6_A0</code> e <code>P3B6</code>.</li>
+      <li><code>TEST</code>: executa o auto-teste de 9 passos para OLED, botoes, gatilho e outputs.</li>
+    </ul>
+    <h3>Consumo estimado de corrente (eletronica do controlador)</h3>
+    <table>
+      <thead>
+        <tr><th>Estado</th><th>Estimativa</th><th>Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Arranque</td><td>120 mA</td><td>Fase curta de boot e inicializacao.</td></tr>
+        <tr><td>Funcionamento normal</td><td>100 mA</td><td>Utilizacao tipica em menu/corrida sem WiFi.</td></tr>
+        <tr><td>Modulo WiFi ativo</td><td>150 mA</td><td>Modo AP e servidor web ativos.</td></tr>
+        <tr><td>Screensaver</td><td>80 mA</td><td>Display ativo, pouca interacao.</td></tr>
+        <tr><td>SLEEP (soft)</td><td>55 mA (estimado)</td><td>OLED desligado, CPU a 80 MHz, tarefa do motor suspensa.</td></tr>
+        <tr><td>DEEP SLEEP</td><td>10 mA (estimado)</td><td>Estado semelhante a desligado, acorda por ciclo de alimentacao.</td></tr>
+      </tbody>
+    </table>
+    <p class="small">Os valores sao estimativas e dependem da tensao de alimentacao, variante de hardware e metodo de medicao. A carga do motor do carro e adicional. Estes valores foram medidos no lado de 5 V depois do step-down. Se medir no lado de 12 V, a corrente sera diferente e nao diretamente comparavel.</p>
+    <h3>Bateria interna (opcional)</h3>
+    <p>Algumas variantes de hardware podem incluir uma pequena bateria de lition de 1 celula para setup fora de pista. Carrega enquanto o controlador esta alimentado pela pista ou por USB. Esta bateria destina-se a alteracoes de menu, setup antes da corrida, ajustes de lane-change ou para evitar o atraso de arranque antes de a pista ter alimentacao. Nao se destina a utilizacao autonoma prolongada.</p>
+    <p class="small">O tempo abaixo significa utilizacao do controlador sem ligacao a pista. A corrente de carga pode variar, mas se o carregamento estiver perto de 200 mA e o consumo do controlador perto de 100 mA, a autonomia fora da pista sera muitas vezes cerca do dobro do tempo de carga. Na realidade, a carga do litio demora um pouco mais porque a fase final abranda perto da carga total.</p>
+    <table>
+      <thead>
+        <tr><th>Bateria</th><th>Tempo de carga tipico</th><th>Autonomia tipica fora da pista</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1S Li-ion/LiPo 250 mAh</td><td>cerca de 1.4-1.8 horas</td><td>cerca de 2.0-2.5 horas</td></tr>
+        <tr><td>1S Li-ion/LiPo 500 mAh</td><td>cerca de 2.8-3.6 horas</td><td>cerca de 4.0-5.0 horas</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>7. Dicas de conducao</h2>
+    <ul>
+      <li>Altere apenas um parametro de cada vez e faca 5-10 voltas antes da alteracao seguinte.</li>
+      <li>Afine por esta ordem: <code>SENSI</code>, depois <code>FADE</code>, depois <code>BRAKE</code>, <code>ANTIS</code>, <code>CURVE</code> e por fim <code>PWM_F</code>.</li>
+      <li>Carros 1/32 em pistas com pouca aderencia: experimente <code>ANTIS</code> mais alto, cerca de 100-150 ms, e <code>CURVE</code> mais suave, abaixo de 50.</li>
+      <li>Carros 1/24 em pistas com muita aderencia: frequentemente <code>ANTIS</code> mais baixo, 0-40 ms, e <code>CURVE</code> mais direta, 50-70.</li>
+      <li>Use <code>BRAKE+ -&gt; Alt.Brake</code> como ferramenta temporaria de curva em vez de alterar BRAKE entre mangas.</li>
+      <li>Use <code>BRAKE+ -&gt; Rel.Brake QUICK</code> com zona baixa (5-12%) e nivel medio (40-70%) para uma travagem inicial mais clara. Experimente <code>DRAG</code> por volta de 20-50% se quiser ajuda ao largar sem uma zona de output zero.</li>
+      <li>Se o carro parecer demasiado brusco logo quando o gatilho comeca a atuar, mantenha <code>SENSI</code> onde pretende e adicione primeiro um pouco de <code>FADE</code>.</li>
+      <li>Se o carro fizer spin cedo no curso do gatilho: reduza <code>SENSI</code> ou aumente <code>ANTIS</code>.</li>
+      <li>Se o carro parecer lento a sair da curva: aumente ligeiramente <code>SENSI</code> ou reduza <code>ANTIS</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>8. Logging, backup/restauro via WiFi/USB e OTA</h2>
+    <h3>Logging</h3>
+    <ol>
+      <li>Abra <code>SETTINGS -&gt; LOGGING</code>.</li>
+      <li><code>START NOW</code>/<code>STOP NOW</code>: inicia ou para o logging local de telemetria imediatamente.</li>
+      <li><code>AUTO OFF</code>: define o timeout de logging (1-120 min, predefinido 30 min).</li>
+      <li>O logging nao exige WiFi. Pode manter o WiFi desligado e usar USB/WebSerial depois, ou ligar o WiFi separadamente para vista live na web.</li>
+      <li>Se o WiFi ja estiver ativo quando o logging comeca, o WiFi permanece ligado enquanto o logging estiver ativo.</li>
+    </ol>
+    <h3>WiFi</h3>
+    <ol>
+      <li>Abra <code>SETTINGS -&gt; WIFI</code> para entrar no submenu WiFi.</li>
+      <li><code>START WIFI</code>/<code>STOP WIFI</code>: inicia ou para o WiFi de fundo imediatamente.</li>
+      <li><code>MODE</code>: alterna entre <code>AP</code> e <code>CLIENT</code>.</li>
+      <li><code>INFO PAGE</code>: abre diretamente a pagina WiFi e inicia automaticamente o WiFi. Ao sair da pagina, o WiFi volta a desligar (a menos que o modo de fundo tenha sido iniciado antes).</li>
+      <li>Em <code>AP</code> o controlador cria <code>ESPEED32_XXXX</code> com password <code>espeed32</code>. <code>SHOW QR</code> so esta disponivel em <code>AP</code>.</li>
+      <li>Em <code>CLIENT</code> tens primeiro de definir SSID e password em <code>Advanced Config Editor -&gt; Network</code>. O modo Client usa DHCP do router/rede e nao mostra QR code.</li>
+      <li>Se a ligacao Client falhar, o controlador volta automaticamente a <code>AP</code> para poderes entrar outra vez e corrigir as definicoes.</li>
+      <li><code>AUTO OFF</code>: define o timeout do WiFi em fundo (1-120 min, predefinido 10 min).</li>
+      <li>Abra no browser o IP mostrado no OLED. Em <code>AP</code> normalmente e <code>192.168.4.1</code>. Em <code>CLIENT</code> e o endereco DHCP atribuido pelo router.</li>
+      <li>A primeira pagina e a home publica do controlador. Ferramentas sensiveis como <code>Controller Panel</code>, <code>Backup</code>, <code>Restore</code>, telemetria, OTA e <code>Advanced Config Editor</code> ficam protegidas por login do controlador.</li>
+      <li>As credenciais predefinidas do controlador sao username <code>espeed32</code> e password <code>espeed32</code>. O login atual tambem aparece na pagina WiFi info do controlador.</li>
+      <li>Os ficheiros de backup nao exportam a password do Client WiFi nem a password de login do controlador. Restore mantem as credenciais locais de WiFi/login ja guardadas nesse controlador.</li>
+    </ol>
+    <figure class="doc-media">
+      <img src="../assets/wifi_examples.svg" alt="Pagina de informacao WiFi no OLED do controlador e exemplo de QR em ecra inteiro">
+      <figcaption>Exemplo de WiFi em AP: a esquerda esta a INFO PAGE do controlador com SSID, password e IP do browser. A direita esta a vista SHOW QR em ecra inteiro, disponivel apenas em AP para ligacao rapida por telemovel ou tablet.</figcaption>
+    </figure>
+    <p class="small">O WiFi aumenta o consumo da eletronica do controlador de cerca de 100 mA para 150 mA, aproximadamente 50% a mais. Em unidades com bateria interna, use WiFi de forma moderada e desligue-o quando terminar.</p>
+    <p class="small">Comportamento da barra de estado com WiFi ativo: <code>WIFI</code> usa a primeira posicao vazia; se nao existir, a posicao 4 mostra <code>WIFI</code> ate o WiFi parar.</p>
+    <h3>Advanced Config Editor</h3>
+    <ul>
+      <li>O portal no browser tambem inclui um <code>Advanced Config Editor</code> para alteracoes live do setup.</li>
+      <li><code>Global Config</code> edita definicoes globais do controlador. <code>Car Params</code> edita o perfil de carro selecionado.</li>
+      <li>Em <code>Global Config</code> tambem pode definir SSID/password do Client WiFi e a password de login do controlador.</li>
+      <li>Em <code>Car Params</code> pode carregar e editar qualquer perfil diretamente da dropdown, mesmo que outro perfil esteja ativo no controlador.</li>
+      <li><code>Refresh from device</code> recarrega os valores atuais do controlador.</li>
+      <li><code>Apply (RAM only)</code> deixa testar alteracoes ao vivo sem gravar logo na flash. E ideal para experimentar travagem, throttle, anti-spin, curve, fade e release-brake em pista.</li>
+      <li><code>Apply + Save to flash</code> grava os mesmos valores de forma permanente quando estiver satisfeito com o teste live.</li>
+      <li>Na pagina WiFi do controlador, o editor funciona diretamente no browser via WiFi. Em <code>espeed32.com</code>, o mesmo editor requer uma ligacao USB WebSerial.</li>
+    </ul>
+    <figure class="doc-media">
+      <img src="../assets/car_params.png" alt="Screenshot do Advanced Config Editor com selecao de perfil e campos de throttle/potencia editaveis ao vivo">
+      <figcaption>Exemplo do Advanced Config Editor: o screenshot mostra o separador <code>Car Params</code> com selecao de perfil e parametros do carro editaveis ao vivo. A UI esta em ingles neste exemplo, mas o fluxo de trabalho e o mesmo em todos os manuais.</figcaption>
+    </figure>
+    <h3>USB</h3>
+    <ol>
+      <li>Abra <code>SETTINGS -&gt; USB INFO</code>.</li>
+      <li>Use Chrome/Edge (WebSerial).</li>
+      <li>Backup/restauro funciona via USB; OTA exige modo WiFi.</li>
+    </ol>
+    <p class="warn">Nunca desligue a alimentacao durante um upload OTA.</p>
+  </section>
+
+  <section>
+    <h2>9. Arvore de menus (mapa completo da UI)</h2>
+<pre>ROOT (Main Menu)
+|- BRAKE
+|- SENSI
+|- ANTIS
+|- CURVE (graph view)
+|- FADE (graph view)
+|- PWM_F
+|- BRAKE+
+|  |- Alt.Brake (%)
+|  |- Rel.Brake (OFF/QUICK/DRAG)
+|  |- Zone (%) [QUICK only]
+|  |- Quick (%) [QUICK mode]
+|  |- Drag (%) [DRAG mode]
+|  `- Back
+|- LIMIT
+|- SETTINGS
+|  |- POWER
+|  |  |- SCRSV
+|  |  |  |- NOW
+|  |  |  |- LINE1
+|  |  |  |- LINE2
+|  |  |  |- TIME (0-240 s, 0=OFF)
+|  |  |  `- BACK
+|  |  |- SLEEP
+|  |  |  |- SLEEP NOW
+|  |  |  |- INTERVAL (0-10 min, 0=OFF)
+|  |  |  `- BACK
+|  |  |- DEEP SLEEP
+|  |  |  |- SLEEP NOW (power-off)
+|  |  |  |- INTERVAL (0 or 2-30 min)
+|  |  |  `- BACK
+|  |  |- STARTUP (0-99 x 10ms)
+|  |  |- VIN CAL.
+|  |  `- BACK
+|  |- DISPLAY
+|  |  |- RACE MODE (OFF/FULL/SIMPLE)
+|  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA/NLD/POR)
+|  |  |- CASE (UPPER/Pascal)
+|  |  |- FONT SIZE (LARGE/small)
+|  |  |- ANTIS.STEP (1-50 ms, default 5)
+|  |  |- STATUS BAR
+|  |  |  |- SLOT 1
+|  |  |  |- SLOT 2
+|  |  |  |- SLOT 3
+|  |  |  |- SLOT 4
+|  |  |  `- BACK
+|  |  `- BACK
+|  |- SOUND
+|  |  |- BOOT (ON/OFF)
+|  |  |- RACE (ON/OFF)
+|  |  `- BACK
+|  |- HARDWARE
+|  |  |- ENC INV (ON/OFF)
+|  |  |- EXT POT
+|  |  |  |- POT 1 (OFF/BRAKE/SENSI)
+|  |  |  |- POT 2 (OFF/BRAKE/SENSI)
+|  |  |  `- BACK
+|  |  |- TRIGGER
+|  |  |  |- FAMILY
+|  |  |  |- ACTIVE
+|  |  |  |- TYPE (AUTO/W2B6/W2B6_A0/P3B6) [TLE493D only]
+|  |  |  `- BACK
+|  |  |- TEST (Self-Test, 9 steps)
+|  |  `- BACK
+|  |- STATS (ON/OFF, default OFF)
+|  |- WIFI
+|  |  |- START/STOP WIFI
+|  |  |- MODE
+|  |  |- INFO PAGE
+|  |  |- SHOW QR [so AP]
+|  |  |- AUTO OFF (1-120 min, default 10)
+|  |  `- BACK
+|  |- LOGGING
+|  |  |- START/STOP NOW
+|  |  |- AUTO OFF (1-120 min, default 30)
+|  |  `- BACK
+|  |- USB INFO
+|  |- RESET
+|  |  |- CAR
+|  |  |- SETTINGS
+|  |  |- CALIBRATION
+|  |  |- EVERYTHING
+|  |  `- BACK
+|  |- ABOUT
+|  `- BACK
+|- STATS [if enabled]
+`- CAR
+   |- SELECT
+   |- RENAME
+   |- RACESWP (grid car select ON/OFF)
+   |- COPY
+   |- RESET
+   `- BACK</pre>
+  </section>
+
+</main>
+<script>
+(function(){
+  var key = "espeed32-doc-theme";
+  var root = document.documentElement;
+  var themeSelect = document.getElementById("theme-select");
+  var langSelect = document.getElementById("lang-select");
+
+  var path = (window.location.pathname || "").toLowerCase();
+  var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
+  if (path.indexOf("/docs/no") !== -1) activeLang = "no";
+  else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
+  else if (path.indexOf("/docs/nl") !== -1) activeLang = "nl";
+  else if (path.indexOf("/docs/pt") !== -1) activeLang = "pt";
+  else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
+  else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+  else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
+
+  var languageOptions = [
+    { value: "no", label: "\uD83C\uDDF3\uD83C\uDDF4 Norsk" },
+    { value: "en", label: "\uD83C\uDDEC\uD83C\uDDE7 English" },
+    { value: "nl", label: "\uD83C\uDDF3\uD83C\uDDF1 Nederlands" },
+    { value: "pt", label: "\uD83C\uDDF5\uD83C\uDDF9 Portugues" },
+    { value: "es", label: "\uD83C\uDDEA\uD83C\uDDF8 Espa\u00F1ol" },
+    { value: "de", label: "\uD83C\uDDE9\uD83C\uDDEA Deutsch" },
+    { value: "it", label: "\uD83C\uDDEE\uD83C\uDDF9 Italiano" }
+  ];
+
+  function apply(mode){
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+  }
+
+  if (themeSelect) {
+    var saved = localStorage.getItem(key);
+    if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
+    themeSelect.value = saved;
+    apply(saved);
+    themeSelect.addEventListener("change", function(){
+      localStorage.setItem(key, themeSelect.value);
+      apply(themeSelect.value);
+    });
+  } else {
+    apply("system");
+  }
+
+  var anchorLabels = {
+    en: "Link to this heading",
+    no: "Lenke til denne overskriften",
+    nl: "Link naar deze kop",
+    pt: "Link para este titulo",
+    es: "Enlace a este titulo",
+    de: "Link zu dieser Uberschrift",
+    it: "Link a questo titolo"
+  };
+
+  function slugify(text){
+    var slug = String(text || "").toLowerCase();
+    slug = slug
+      .replace(/[æ]/g, "ae")
+      .replace(/[ø]/g, "o")
+      .replace(/[å]/g, "a")
+      .replace(/[ä]/g, "a")
+      .replace(/[ö]/g, "o")
+      .replace(/[ü]/g, "u")
+      .replace(/[ß]/g, "ss")
+      .replace(/[ñ]/g, "n");
+    if (slug.normalize) slug = slug.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    slug = slug.replace(/^\d+[\.\)]\s*/, "");
+    slug = slug.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return slug || "section";
+  }
+
+  function collectUsedIds(){
+    var used = {};
+    var nodes = document.querySelectorAll("[id]");
+    for (var i = 0; i < nodes.length; i++) {
+      var id = nodes[i].id;
+      if (!id) continue;
+      used[id] = (used[id] || 0) + 1;
+    }
+    return used;
+  }
+
+  function makeUniqueId(base, used){
+    if (!used[base]) {
+      used[base] = 1;
+      return base;
+    }
+    var index = 2;
+    var next = base + "-" + index;
+    while (used[next]) {
+      index += 1;
+      next = base + "-" + index;
+    }
+    used[next] = 1;
+    return next;
+  }
+
+  function addHeadingAnchors(){
+    var used = collectUsedIds();
+    var label = anchorLabels[activeLang] || anchorLabels.en;
+    var targets = document.querySelectorAll("h2, h3, h4, details.doc-fold > summary");
+    for (var i = 0; i < targets.length; i++) {
+      var target = targets[i];
+      target.classList.add("anchor-target");
+      if (!target.id) target.id = makeUniqueId(slugify(target.textContent), used);
+      if (target.querySelector(".heading-anchor")) continue;
+      var link = document.createElement("a");
+      link.className = "heading-anchor";
+      link.href = "#" + target.id;
+      link.setAttribute("aria-label", label);
+      link.setAttribute("title", label);
+      link.addEventListener("click", function(event){
+        event.stopPropagation();
+      });
+      target.appendChild(link);
+    }
+  }
+
+  function openAncestorDetails(node){
+    var current = node;
+    while (current) {
+      if (current.tagName === "DETAILS") current.open = true;
+      current = current.parentElement;
+    }
+  }
+
+  function getHashTarget(){
+    var hash = window.location.hash || "";
+    if (!hash || hash.charAt(0) !== "#") return null;
+    var id = hash.slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch (err) {}
+    return document.getElementById(id);
+  }
+
+  function revealHashTarget(){
+    var target = getHashTarget();
+    if (!target) return;
+    openAncestorDetails(target);
+    target.scrollIntoView();
+  }
+
+  function docsHrefForLang(lang){
+    var url = new URL(window.location.href);
+    var lowerPath = url.pathname.toLowerCase();
+    var docsIndex = lowerPath.indexOf("/docs");
+    if (docsIndex === -1) return new URL("../" + lang + "/index.html", url.href).href;
+    url.pathname = url.pathname.slice(0, docsIndex) + "/docs/" + lang + "/index.html";
+    url.hash = "";
+    return url.toString();
+  }
+
+  function initLanguageSelect(){
+    if (!langSelect) return;
+    for (var i = 0; i < languageOptions.length; i++) {
+      var config = languageOptions[i];
+      var option = document.createElement("option");
+      option.value = config.value;
+      option.textContent = config.label;
+      langSelect.appendChild(option);
+    }
+    langSelect.value = activeLang;
+    langSelect.addEventListener("change", function(){
+      window.location.href = docsHrefForLang(langSelect.value);
+    });
+  }
+
+  addHeadingAnchors();
+  revealHashTarget();
+  window.addEventListener("hashchange", revealHashTarget);
+  initLanguageSelect();
+})();</script>
+<script src="/ui/chat-widget.js"></script>
+</body>
+</html>

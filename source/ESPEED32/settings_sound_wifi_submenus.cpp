@@ -196,34 +196,53 @@ void showSoundSettings() {
 
 /**
  * WiFi submenu.
- * Items: START/STOP WIFI, INFO PAGE, QR, AUTO OFF (minutes), BACK.
- * MINUTES is a runtime-only value used for timed background activation.
+ * Items: START/STOP WIFI, MODE, INFO PAGE, SHOW QR (AP only), AUTO OFF, BACK.
  */
+static void showWiFiClientSetupRequiredScreen() {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* title = "Client mode";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)"Set WiFi SSID", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"and password in", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"the web UI first", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Press to exit", FONT_6x8, OBD_BLACK, 1);
+
+  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      break;
+    }
+    vTaskDelay(1);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
 void showWiFiSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblOpenUpper[7]  = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO"};
-  const char* lblOpenPascal[7] = {"Info side", "Info page", "Info page", "Info page", "Pag info", "Infosite", "Pag info"};
-  const char* lblQrUpper[7]    = {"VIS QR",    "SHOW QR",   "SHOW QR",   "SHOW QR",   "VER QR",   "QR CODE",  "MOSTRA QR"};
-  const char* lblQrPascal[7]   = {"Vis QR",    "Show QR",   "Show QR",   "Show QR",   "Ver QR",   "QR code",  "Mostra QR"};
-  const char* lblTimerUpper[7] = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
-  const char* lblTimerPascal[7]= {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off"};
-  const char* lblStartUpper[7] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI"};
-  const char* lblStartPascal[7]= {"Start WiFi", "Start WiFi", "Start WiFi", "Start WiFi", "Inic WiFi", "Start WiFi", "Avvia WiFi"};
-  const char* lblStopUpper[7]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI"};
-  const char* lblStopPascal[7] = {"Stopp WiFi", "Stop WiFi",  "Stop WiFi",  "Stop WiFi",  "Stop WiFi", "Stop WiFi",  "Stop WiFi"};
+  const char* lblOpenUpper[9]  = {"INFO SIDE", "INFO PAGE", "INFO PAGE", "INFO PAGE", "PAG INFO", "INFOSITE", "PAG INFO", "INFO PAG", "PAG INFO"};
+  const char* lblOpenPascal[9] = {"Info side", "Info page", "Info page", "Info page", "Pag info", "Infosite", "Pag info", "Info pag", "Pag info"};
+  const char* lblTimerUpper[9] = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF", "AUTO UIT", "AUTO OFF"};
+  const char* lblTimerPascal[9]= {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off", "Auto uit", "Auto off"};
+  const char* lblModeUpper[9]  = {"MODUS",     "MODE",      "MODE",      "MODE",      "MODO",      "MODUS",    "MODO",      "MODE",     "MODO"};
+  const char* lblModePascal[9] = {"Modus",     "Mode",      "Mode",      "Mode",      "Modo",      "Modus",    "Modo",      "Mode",     "Modo"};
+  const char* lblStartUpper[9] = {"START WIFI", "START WIFI", "START WIFI", "START WIFI", "INIC WIFI", "START WIFI", "AVVIA WIFI", "START WIFI", "INIC WIFI"};
+  const char* lblStartPascal[9]= {"Start WiFi", "Start WiFi", "Start WiFi", "Start WiFi", "Inic WiFi", "Start WiFi", "Avvia WiFi", "Start WiFi", "Inic WiFi"};
+  const char* lblStopUpper[9]  = {"STOPP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI", "STOP WIFI",  "STOP WIFI",  "STOP WIFI",  "STOP WIFI"};
+  const char* lblStopPascal[9] = {"Stopp WiFi", "Stop WiFi",  "Stop WiFi",  "Stop WiFi",  "Stop WiFi", "Stop WiFi",  "Stop WiFi",  "Stop WiFi",  "Stop WiFi"};
+  const char* lblQrUpper[9]    = {"VIS QR",     "SHOW QR",    "SHOW QR",    "SHOW QR",    "VER QR",    "ZEIG QR",    "MOSTRA QR",  "TOON QR",    "VER QR"};
+  const char* lblQrPascal[9]   = {"Vis QR",     "Show QR",    "Show QR",    "Show QR",    "Ver QR",    "Zeig QR",    "Mostra QR",  "Toon QR",    "Ver QR"};
   const char* const* lblOpen   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblOpenPascal : lblOpenUpper;
-  const char* const* lblQr     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblQrPascal : lblQrUpper;
   const char* const* lblTimer  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTimerPascal : lblTimerUpper;
+  const char* const* lblMode   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblModePascal : lblModeUpper;
   const char* const* lblStartBg= (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStartPascal : lblStartUpper;
   const char* const* lblStopBg = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStopPascal : lblStopUpper;
+  const char* const* lblQr     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblQrPascal : lblQrUpper;
 
   const uint8_t ITEM_ACTIVE = 0;
-  const uint8_t ITEM_INFO = 1;
-  const uint8_t ITEM_QR = 2;
-  const uint8_t ITEM_TIMER = 3;
-  const uint8_t ITEM_BACK = 4;
-  const uint8_t NUM_ITEMS = 5;  /* 0=ACTIVE, 1=INFO, 2=QR, 3=MINUTES, 4=BACK */
+  const uint8_t ITEM_MODE = 1;
+  const uint8_t ITEM_INFO = 2;
   const uint8_t menuFont = FONT_8x8;
   const uint8_t lineH = HEIGHT8x8;
 
@@ -231,10 +250,35 @@ void showWiFiSettings() {
   bool editing = false;
   uint16_t tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
   bool needRedraw = true;
+  uint8_t itemQr = 3;
+  uint8_t itemTimer = 4;
+  uint8_t itemBack = 5;
+  uint8_t numItems = 6;
+
+  auto getShownPortalMode = [&]() -> uint16_t {
+    if (isWiFiPortalActive()) {
+      return getActiveWiFiPortalMode();
+    }
+    return (getConfiguredWiFiMode() == WIFI_CONFIG_HOME) ? WIFI_PORTAL_HOME : WIFI_PORTAL_AP;
+  };
+
+  auto updateMenuLayout = [&]() {
+    bool showQr = (getShownPortalMode() == WIFI_PORTAL_AP);
+    itemQr = 3;
+    itemTimer = showQr ? 4 : 3;
+    itemBack = showQr ? 5 : 4;
+    numItems = showQr ? 6 : 5;
+    if (!editing) {
+      if (sel >= (int8_t)numItems) {
+        sel = (int8_t)(numItems - 1);
+      }
+      setUiEncoderBoundaries(0, numItems - 1, false);
+      resetUiEncoder(sel);
+    }
+  };
 
   g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-  setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
-  resetUiEncoder(0);
+  updateMenuLayout();
 
   uint32_t lastInteraction = millis();
   bool screensaverActive = false;
@@ -293,29 +337,57 @@ void showWiFiSettings() {
         setWiFiTimedMinutes(tmpMinutes);
         editing = false;
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-        setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
-        resetUiEncoder(ITEM_TIMER);
+        updateMenuLayout();
+        resetUiEncoder(itemTimer);
       } else if (sel == ITEM_ACTIVE) {
         if (isWiFiPortalActive()) {
           stopTimedWiFiPortal();
         } else {
           startTimedWiFiPortal(getWiFiTimedMinutes());
         }
+        updateMenuLayout();
+      } else if (sel == ITEM_MODE) {
+        uint16_t nextMode = (getConfiguredWiFiMode() == WIFI_CONFIG_HOME) ? WIFI_CONFIG_AP : WIFI_CONFIG_HOME;
+        if (nextMode == WIFI_CONFIG_HOME && !hasConfiguredWiFiClientCredentials()) {
+          showWiFiClientSetupRequiredScreen();
+          lastInteraction = millis();
+          screensaverActive = false;
+          needRedraw = true;
+          delay(120);
+          continue;
+        }
+        bool restartPortal = isWiFiPortalActive();
+        uint16_t restartMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
+        if (restartPortal) {
+          stopTimedWiFiPortal();
+        }
+        setConfiguredWiFiMode(nextMode);
+        saveEEPROM(g_storedVar);
+        if (restartPortal) {
+          startTimedWiFiPortal(restartMinutes);
+        }
+        updateMenuLayout();
       } else if (sel == ITEM_INFO) {
         showWiFiPortalScreen();
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        updateMenuLayout();
+        resetUiEncoder(sel);
         lastInteraction = millis();
         screensaverActive = false;
-      } else if (sel == ITEM_QR) {
+      } else if (getShownPortalMode() == WIFI_PORTAL_AP && sel == itemQr) {
         showWiFiQrScreen();
+        g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+        updateMenuLayout();
+        resetUiEncoder(sel);
         lastInteraction = millis();
         screensaverActive = false;
-      } else if (sel == ITEM_TIMER) {
+      } else if (sel == itemTimer) {
         editing = true;
         tmpMinutes = constrain(getWiFiTimedMinutes(), 1, 120);
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
         setUiEncoderBoundaries(1, 120, false);
         resetUiEncoder(tmpMinutes);
-      } else if (sel == ITEM_BACK) {
+      } else if (sel == itemBack) {
         break;
       }
       needRedraw = true;
@@ -332,8 +404,8 @@ void showWiFiSettings() {
         if (editing) {
           editing = false;
           g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
-          setUiEncoderBoundaries(0, NUM_ITEMS - 1, false);
-          resetUiEncoder(ITEM_TIMER);
+          updateMenuLayout();
+          resetUiEncoder(itemTimer);
           needRedraw = true;
         } else {
           while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
@@ -352,21 +424,32 @@ void showWiFiSettings() {
       obdWriteString(&g_obd, 0, 0, 0 * lineH, (char*)actionStr, menuFont, s0 ? OBD_WHITE : OBD_BLACK, 1);
 
       bool s1 = (!editing && sel == ITEM_INFO);
-      obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblOpen[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
+      bool sMode = (!editing && sel == ITEM_MODE);
+      bool showQr = (getShownPortalMode() == WIFI_PORTAL_AP);
+      obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblMode[lang], menuFont, sMode ? OBD_WHITE : OBD_BLACK, 1);
+      const char* modeValue = (getShownPortalMode() == WIFI_PORTAL_HOME) ? "CLIENT" : "AP";
+      uint8_t modeX = OLED_WIDTH - (uint8_t)(strlen(modeValue) * WIDTH8x8);
+      obdWriteString(&g_obd, 0, modeX, 1 * lineH, (char*)modeValue, menuFont, sMode ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s2 = (!editing && sel == ITEM_QR);
-      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblQr[lang], menuFont, s2 ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 2 * lineH, (char*)lblOpen[lang], menuFont, s1 ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s3 = (!editing && sel == ITEM_TIMER);
-      obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)lblTimer[lang], menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
+      uint8_t timerRow = showQr ? 4 : 3;
+      uint8_t backRow = showQr ? 5 : 4;
+      bool sQr = (!editing && showQr && sel == itemQr);
+      if (showQr) {
+        obdWriteString(&g_obd, 0, 0, 3 * lineH, (char*)lblQr[lang], menuFont, sQr ? OBD_WHITE : OBD_BLACK, 1);
+      }
+
+      bool s3 = (!editing && sel == itemTimer);
+      obdWriteString(&g_obd, 0, 0, timerRow * lineH, (char*)lblTimer[lang], menuFont, s3 ? OBD_WHITE : OBD_BLACK, 1);
       char minutesStr[10];
       uint16_t shownMinutes = editing ? tmpMinutes : constrain(getWiFiTimedMinutes(), 1, 120);
       snprintf(minutesStr, sizeof(minutesStr), "%3dm", shownMinutes);
       uint8_t mx = OLED_WIDTH - (uint8_t)(strlen(minutesStr) * WIDTH8x8);
-      obdWriteString(&g_obd, 0, mx, 3 * lineH, minutesStr, menuFont, (s3 || editing) ? OBD_WHITE : OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, mx, timerRow * lineH, minutesStr, menuFont, (s3 || editing) ? OBD_WHITE : OBD_BLACK, 1);
 
-      bool s4 = (!editing && sel == ITEM_BACK);
-      obdWriteString(&g_obd, 0, 0, 4 * lineH, (char*)getBackLabel(lang), menuFont, s4 ? OBD_WHITE : OBD_BLACK, 1);
+      bool s4 = (!editing && sel == itemBack);
+      obdWriteString(&g_obd, 0, 0, backRow * lineH, (char*)getBackLabel(lang), menuFont, s4 ? OBD_WHITE : OBD_BLACK, 1);
 
       needRedraw = false;
     }
@@ -381,12 +464,12 @@ void showWiFiSettings() {
 void showLoggingSettings() {
   uint16_t lang = g_storedVar.language;
 
-  const char* lblTimerUpper[7]    = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF"};
-  const char* lblTimerPascal[7]   = {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off"};
-  const char* lblStartUpper[7]    = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA"};
-  const char* lblStartPascal[7]   = {"Start nå",  "Start now", "Start now", "Start now", "Inic ahor", "Start now", "Avvia ora"};
-  const char* lblStopUpper[7]     = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA"};
-  const char* lblStopPascal[7]    = {"Stopp nå",  "Stop now",  "Stop now",  "Stop now",  "Para ahor", "Stop now",  "Stop ora"};
+  const char* lblTimerUpper[9]    = {"AUTO AV",   "AUTO OFF",  "AUTO OFF",  "AUTO OFF",  "AUTO OFF", "AUTO AUS", "AUTO OFF", "AUTO UIT", "AUTO OFF"};
+  const char* lblTimerPascal[9]   = {"Auto av",   "Auto off",  "Auto off",  "Auto off",  "Auto off", "Auto aus", "Auto off", "Auto uit", "Auto off"};
+  const char* lblStartUpper[9]    = {"START NA",  "START NOW", "START NOW", "START NOW", "INIC AHOR", "START NOW", "AVVIA ORA", "START NU", "INIC AGORA"};
+  const char* lblStartPascal[9]   = {"Start nå",  "Start now", "Start now", "Start now", "Inic ahor", "Start now", "Avvia ora", "Start nu", "Inic agora"};
+  const char* lblStopUpper[9]     = {"STOPP NA",  "STOP NOW",  "STOP NOW",  "STOP NOW",  "PARA AHOR", "STOP NOW",  "STOP ORA",  "STOP NU",  "STOP AGORA"};
+  const char* lblStopPascal[9]    = {"Stopp nå",  "Stop now",  "Stop now",  "Stop now",  "Para ahor", "Stop now",  "Stop ora",  "Stop nu",  "Stop agora"};
   const char* const* lblTimer     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTimerPascal : lblTimerUpper;
   const char* const* lblStartNow  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStartPascal : lblStartUpper;
   const char* const* lblStopNow   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStopPascal : lblStopUpper;

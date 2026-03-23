@@ -223,12 +223,14 @@ Please verify the actual board routing against:
 
 before soldering to spare pads or assuming a given pad name matches the expected ESP32 GPIO.
 
-## On-Device Documentation (NO/EN/ES/DE/IT)
+## On-Device Documentation (NO/EN/NL/PT/ES/DE/IT)
 
 User documentation served by the controller lives in:
 
 - generated at `source/ESPEED32/data/docs/en/index.html`
 - generated at `source/ESPEED32/data/docs/no/index.html`
+- generated at `source/ESPEED32/data/docs/nl/index.html`
+- generated at `source/ESPEED32/data/docs/pt/index.html`
 - generated at `source/ESPEED32/data/docs/es/index.html`
 - generated at `source/ESPEED32/data/docs/de/index.html`
 - generated at `source/ESPEED32/data/docs/it/index.html`
@@ -244,6 +246,10 @@ Docs source now lives in:
 - `source/ESPEED32/docs_src/en/page.json`
 - `source/ESPEED32/docs_src/no/main.html`
 - `source/ESPEED32/docs_src/no/page.json`
+- `source/ESPEED32/docs_src/nl/main.html`
+- `source/ESPEED32/docs_src/nl/page.json`
+- `source/ESPEED32/docs_src/pt/main.html`
+- `source/ESPEED32/docs_src/pt/page.json`
 - `source/ESPEED32/docs_src/es/main.html`
 - `source/ESPEED32/docs_src/es/page.json`
 - `source/ESPEED32/docs_src/de/main.html`

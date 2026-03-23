@@ -118,7 +118,7 @@ bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
 static bool g_escapeToMain = false;    /* Set by any submenu long press → cascade-breaks to RUNNING for race mode toggle */
 static bool g_raceToggleReleaseGuardActive = false;  /* Swallow release click after race-mode long press. */
 static uint32_t g_raceToggleReleaseAtMs = 0;  /* Release timestamp used to re-arm short presses after race toggle. */
-static uint16_t g_wifiTimedMinutes = 5;       /* Runtime-only default for timed WiFi activation */
+static uint16_t g_wifiTimedMinutes = 10;      /* Runtime-only default for timed WiFi activation */
 static bool g_wifiTimedActive = false;        /* True when background WiFi should auto-stop on deadline */
 static uint32_t g_wifiTimedStopAtMs = 0;      /* millis() deadline for auto-stop */
 static uint16_t g_loggingTimedMinutes = 30;   /* Runtime-only default for timed telemetry logging */
@@ -133,6 +133,7 @@ static const char* PREF_KEY_EXT_POT1_TARGET = "ext_pot1_tgt";
 static const char* PREF_KEY_EXT_POT2_TARGET = "ext_pot2_tgt";
 static const char* PREF_KEY_EXT_POT_ENABLED_LEGACY = "ext_pot_en";
 static const char* PREF_KEY_EXT_POT_TARGET_LEGACY = "ext_pot_tgt";
+static bool g_startWiFiAfterOtaBoot = false;
 
 /* Long press tracking shared across all submenus (only one active at a time) */
 static uint32_t g_lpRaceStart = 0;
@@ -549,6 +550,7 @@ void Task1code(void *pvParameters) {
               g_pref.putBool(PREF_KEY_SENSI_HALF, true);
             }
             initMenuItems();                                                  /* init menu items with EEPROM stored variables */
+            g_startWiFiAfterOtaBoot = consumeWiFiAutoStartOnNextBootRequest();
 
             /* If calibration reset was requested from settings, go straight to calibration */
             if (g_pref.getBool("force_calib", false)) {
@@ -598,6 +600,10 @@ void Task1code(void *pvParameters) {
               g_currState = WELCOME;                    /* Go to WELCOME state */
               g_carSel = g_storedVar.selectedCarNumber; /* now it is safe to address the proper car */
               initDisplayAndEncoder();  /* init and clear OLED and Encoder */
+              if (g_startWiFiAfterOtaBoot) {
+                startTimedWiFiPortal(getWiFiTimedMinutes());
+                g_startWiFiAfterOtaBoot = false;
+              }
               if (g_storedVar.soundBoot) {
                 onSound();                /* Play ON sound */
               }
@@ -631,6 +637,7 @@ void Task1code(void *pvParameters) {
         HAL_ResetTriggerSensorConfig();
 
         initStoredVariables();  /* Initialize stored variables with default values */
+        g_startWiFiAfterOtaBoot = false;
         g_statsEnabled = STATS_ENABLED_DEFAULT;
         applyAdcVoltageRangeMilliVolts(ACD_VOLTAGE_RANGE_DEFAULT_MVOLTS);
         g_extPotTarget[0] = EXT_POT1_TARGET_DEFAULT;
@@ -1391,4 +1398,5 @@ void saveEEPROM(StoredVar_type toSave) {
   g_pref.putUChar(PREF_KEY_EXT_POT1_TARGET, constrain(g_extPotTarget[0], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.putUChar(PREF_KEY_EXT_POT2_TARGET, constrain(g_extPotTarget[1], EXT_POT_TARGET_MIN, EXT_POT_TARGET_MAX));
   g_pref.end();                                           /* Close the namespace */
+  saveWiFiNetworkSettings();
 }

@@ -6,6 +6,12 @@
 #include <SPIFFS.h>
 #include <Update.h>
 #include <esp_mac.h>
+#include <esp_random.h>
+#include <ESPmDNS.h>
+#include <Preferences.h>
+#include <mbedtls/base64.h>
+#include <mbedtls/gcm.h>
+#include <ctype.h>
 
 /* External references from main .ino */
 extern StoredVar_type g_storedVar;
@@ -21,23 +27,628 @@ extern void saveEEPROM(StoredVar_type toSave);
 static WebServer* g_wifiServer = nullptr;
 static String g_uploadBuffer;
 static char g_wifiSuffix[5] = "";  /* MAC-based suffix, e.g. "A3B4" */
+static char g_wifiHostName[18] = "";
 static bool g_spiffsMounted = false;
 static String g_serialCmdLine;
+static bool g_mdnsActive = false;
+static bool g_wifiConfigLoaded = false;
+static bool g_backupSecretLoaded = false;
+static bool g_backupSecretAvailable = false;
+static bool g_wifiRestartPending = false;
+static uint32_t g_wifiRestartAtMs = 0;
+static uint16_t g_wifiConfiguredMode = WIFI_CONFIG_AP;
+static uint8_t g_wifiActiveMode = WIFI_PORTAL_OFF;
+static bool g_wifiApFallbackActive = false;
+static char g_wifiClientSsid[WIFI_STA_SSID_MAX_LEN + 1] = "";
+static char g_wifiClientPassword[WIFI_STA_PASS_MAX_LEN + 1] = "";
+static const size_t UI_AUTH_USER_MAX_LEN = 31;
+static const size_t UI_AUTH_PASS_MAX_LEN = 63;
+static char g_uiAuthUsername[UI_AUTH_USER_MAX_LEN + 1] = "espeed32";
+static char g_uiAuthPassword[UI_AUTH_PASS_MAX_LEN + 1] = "";
+static char g_wifiConnectedSsid[WIFI_STA_SSID_MAX_LEN + 1] = "";
+static uint8_t g_backupSecret[32] = {0};
+
+static const char* PREF_KEY_WIFI_MODE = "wifi_mode_v1";
+static const char* PREF_KEY_WIFI_STA_SSID = "wifi_sta_ssid";
+static const char* PREF_KEY_WIFI_STA_PASS = "wifi_sta_pass";
+static const char* PREF_KEY_UI_AUTH_USER = "ui_auth_user";
+static const char* PREF_KEY_UI_AUTH_PASS = "ui_auth_pass";
+static const char* PREF_KEY_WIFI_BACKUP_SECRET = "wifi_bkp_sec";
+static const char* PREF_KEY_OTA_WIFI_BOOT = "ota_wifi_boot";
+static const uint32_t WIFI_STA_CONNECT_TIMEOUT_MS = 8000UL;
+static const size_t WIFI_BACKUP_SECRET_LEN = 32;
+static const size_t WIFI_BACKUP_SECRET_HEX_LEN = WIFI_BACKUP_SECRET_LEN * 2;
+static const size_t WIFI_BACKUP_NONCE_LEN = 12;
+static const size_t WIFI_BACKUP_TAG_LEN = 16;
+static const size_t WIFI_BACKUP_NONCE_B64_LEN = 16;
+static const size_t WIFI_BACKUP_TAG_B64_LEN = 24;
+static const size_t WIFI_BACKUP_PASS_B64_MAX_LEN = (((WIFI_STA_PASS_MAX_LEN + 2) / 3) * 4);
 
 static bool readMacAddress(esp_mac_type_t type, uint8_t out[6]) {
   if (out == nullptr) return false;
   return esp_read_mac(out, type) == ESP_OK;
 }
 
+static void serviceUsbSerialCommands();
 static void appendJsonEscaped(String& out, const char* in);
 static String buildTelemetryStatusPayload(const char* message);
 static String buildTelemetryLivePayload(uint32_t afterSeq, size_t limit);
 static String buildTelemetryConfigSnapshotJson();
+static String buildInfoJson();
 static void sendSerialLengthPrefixedPayload(const String& payload);
 static const char* getBackupReleaseModeName(uint16_t mode);
+static bool parseJsonStr(const String& json, const char* key, char* outStr, int maxLen);
+static void copyBoundedString(char* out, size_t outLen, const char* in);
+static bool otaRequestWantsRestart();
+static void clearOtaDeferredRestartState();
+static bool isOtaDeferredRestartActive();
+static bool readSpiffsRelease(char* out, size_t outLen);
+
+static void scheduleWiFiPortalRestartIfNeeded(uint16_t previousConfiguredMode,
+                                              const char* previousWiFiSsid,
+                                              const char* previousWiFiPassword) {
+  if (!isWiFiPortalActive()) {
+    return;
+  }
+  bool modeChanged = previousConfiguredMode != g_wifiConfiguredMode;
+  bool clientCredentialsChanged =
+    g_wifiConfiguredMode == WIFI_CONFIG_HOME &&
+    ((previousWiFiSsid != nullptr && strcmp(previousWiFiSsid, g_wifiClientSsid) != 0) ||
+     (previousWiFiPassword != nullptr && strcmp(previousWiFiPassword, g_wifiClientPassword) != 0));
+  if (!modeChanged && !clientCredentialsChanged) {
+    return;
+  }
+  g_wifiRestartPending = true;
+  g_wifiRestartAtMs = millis() + 250UL;
+}
 
 static uint16_t normalizeStatusSlotForUi(uint16_t slotValue) {
   return normalizeStatusSlotValue(slotValue);
+}
+
+static void buildWifiSuffixIfNeeded() {
+  if (g_wifiSuffix[0] != '\0') {
+    return;
+  }
+  uint8_t wifiMac[6] = {0};
+  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+    sprintf(g_wifiSuffix, "%02X%02X", wifiMac[4], wifiMac[5]);
+  } else {
+    uint64_t mac = ESP.getEfuseMac();
+    sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
+  }
+}
+
+static void buildWifiHostNameIfNeeded() {
+  if (g_wifiHostName[0] != '\0') {
+    return;
+  }
+  buildWifiSuffixIfNeeded();
+  char suffixLower[5];
+  for (uint8_t i = 0; i < 4; i++) {
+    suffixLower[i] = (char)tolower((unsigned char)g_wifiSuffix[i]);
+  }
+  suffixLower[4] = '\0';
+  snprintf(g_wifiHostName, sizeof(g_wifiHostName), "espeed32-%s", suffixLower);
+}
+
+static bool readSpiffsRelease(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return false;
+  }
+  out[0] = '\0';
+
+  bool mountedHere = false;
+  if (!g_spiffsMounted) {
+    if (!SPIFFS.begin(false)) {
+      return false;
+    }
+    mountedHere = true;
+  }
+
+  File manifest = SPIFFS.open("/ui/release.json", "r");
+  if (!manifest) {
+    if (mountedHere) {
+      SPIFFS.end();
+    }
+    return false;
+  }
+
+  String json = manifest.readString();
+  manifest.close();
+
+  if (mountedHere) {
+    SPIFFS.end();
+  }
+
+  char release[16];
+  if (parseJsonStr(json, "spiffsRelease", release, sizeof(release)) ||
+      parseJsonStr(json, "release", release, sizeof(release))) {
+    copyBoundedString(out, outLen, release);
+    return release[0] != '\0';
+  }
+
+  return false;
+}
+
+bool getSpiffsReleaseString(char* out, size_t outLen) {
+  return readSpiffsRelease(out, outLen);
+}
+
+static void getBackupControllerId(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  uint64_t mac = ESP.getEfuseMac();
+  snprintf(out, outLen, "%012llX", (unsigned long long)(mac & 0xFFFFFFFFFFFFULL));
+}
+
+static void getDefaultUiAuthUsername(char* out, size_t outLen) {
+  copyBoundedString(out, outLen, "espeed32");
+}
+
+static void getDefaultUiAuthPassword(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  copyBoundedString(out, outLen, WIFI_PASS);
+}
+
+static void getLegacyUiAuthPassword4(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  uint8_t wifiMac[6] = {0};
+  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+    snprintf(out, outLen, "%02x%02x", wifiMac[4], wifiMac[5]);
+  } else {
+    uint64_t mac = ESP.getEfuseMac();
+    snprintf(out, outLen, "%04llx", (unsigned long long)(mac & 0xFFFFULL));
+  }
+}
+
+static void getLegacyUiAuthPassword8(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  uint8_t wifiMac[6] = {0};
+  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
+    snprintf(out, outLen, "%02x%02x%02x%02x", wifiMac[2], wifiMac[3], wifiMac[4], wifiMac[5]);
+  } else {
+    uint64_t mac = ESP.getEfuseMac();
+    snprintf(out, outLen, "%08llx", (unsigned long long)(mac & 0xFFFFFFFFULL));
+  }
+}
+
+static void applyDefaultUiAuthCredentials() {
+  getDefaultUiAuthUsername(g_uiAuthUsername, sizeof(g_uiAuthUsername));
+  getDefaultUiAuthPassword(g_uiAuthPassword, sizeof(g_uiAuthPassword));
+}
+
+static void loadWiFiNetworkSettingsIfNeeded() {
+  if (g_wifiConfigLoaded) {
+    return;
+  }
+
+  Preferences pref;
+  if (pref.begin("stored_var", true)) {
+    char legacyDefault4[UI_AUTH_PASS_MAX_LEN + 1];
+    char legacyDefault8[UI_AUTH_PASS_MAX_LEN + 1];
+    uint32_t mode = pref.getUChar(PREF_KEY_WIFI_MODE, WIFI_CONFIG_AP);
+    g_wifiConfiguredMode = (mode == WIFI_CONFIG_HOME) ? WIFI_CONFIG_HOME : WIFI_CONFIG_AP;
+
+    String ssid = pref.getString(PREF_KEY_WIFI_STA_SSID, "");
+    String pass = pref.getString(PREF_KEY_WIFI_STA_PASS, "");
+    String authPass = pref.getString(PREF_KEY_UI_AUTH_PASS, "");
+    ssid.toCharArray(g_wifiClientSsid, sizeof(g_wifiClientSsid));
+    pass.toCharArray(g_wifiClientPassword, sizeof(g_wifiClientPassword));
+    getDefaultUiAuthUsername(g_uiAuthUsername, sizeof(g_uiAuthUsername));
+    authPass.toCharArray(g_uiAuthPassword, sizeof(g_uiAuthPassword));
+    getLegacyUiAuthPassword4(legacyDefault4, sizeof(legacyDefault4));
+    getLegacyUiAuthPassword8(legacyDefault8, sizeof(legacyDefault8));
+    if (g_uiAuthPassword[0] == '\0' ||
+        strcmp(g_uiAuthPassword, legacyDefault4) == 0 ||
+        strcmp(g_uiAuthPassword, legacyDefault8) == 0) {
+      getDefaultUiAuthPassword(g_uiAuthPassword, sizeof(g_uiAuthPassword));
+    }
+    pref.end();
+  } else {
+    g_wifiConfiguredMode = WIFI_CONFIG_AP;
+    g_wifiClientSsid[0] = '\0';
+    g_wifiClientPassword[0] = '\0';
+    applyDefaultUiAuthCredentials();
+  }
+
+  g_wifiConfigLoaded = true;
+}
+
+static void writeWiFiNetworkSettingsToPrefs() {
+  loadWiFiNetworkSettingsIfNeeded();
+
+  Preferences pref;
+  if (!pref.begin("stored_var", false)) {
+    return;
+  }
+  pref.putUChar(PREF_KEY_WIFI_MODE, (uint8_t)((g_wifiConfiguredMode == WIFI_CONFIG_HOME) ? WIFI_CONFIG_HOME : WIFI_CONFIG_AP));
+  pref.putString(PREF_KEY_WIFI_STA_SSID, g_wifiClientSsid);
+  pref.putString(PREF_KEY_WIFI_STA_PASS, g_wifiClientPassword);
+  pref.remove(PREF_KEY_UI_AUTH_USER);
+  pref.putString(PREF_KEY_UI_AUTH_PASS, g_uiAuthPassword);
+  pref.end();
+}
+
+void requestWiFiAutoStartOnNextBoot() {
+  Preferences pref;
+  if (!pref.begin("stored_var", false)) {
+    return;
+  }
+  pref.putBool(PREF_KEY_OTA_WIFI_BOOT, true);
+  pref.end();
+}
+
+bool consumeWiFiAutoStartOnNextBootRequest() {
+  Preferences pref;
+  if (!pref.begin("stored_var", false)) {
+    return false;
+  }
+  bool enabled = pref.getBool(PREF_KEY_OTA_WIFI_BOOT, false);
+  if (enabled) {
+    pref.putBool(PREF_KEY_OTA_WIFI_BOOT, false);
+  }
+  pref.end();
+  return enabled;
+}
+
+static void copyBoundedString(char* out, size_t outLen, const char* in) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  if (in == nullptr) {
+    out[0] = '\0';
+    return;
+  }
+  strncpy(out, in, outLen - 1);
+  out[outLen - 1] = '\0';
+}
+
+static void getCurrentUiAuthUsername(char* out, size_t outLen) {
+  getDefaultUiAuthUsername(out, outLen);
+}
+
+static void getCurrentUiAuthPassword(char* out, size_t outLen) {
+  loadWiFiNetworkSettingsIfNeeded();
+  copyBoundedString(out, outLen, g_uiAuthPassword);
+}
+
+static void setCurrentUiAuthCredentials(const char* username, const char* password) {
+  (void)username;
+  loadWiFiNetworkSettingsIfNeeded();
+  getDefaultUiAuthUsername(g_uiAuthUsername, sizeof(g_uiAuthUsername));
+  if (password != nullptr && password[0] != '\0') {
+    copyBoundedString(g_uiAuthPassword, sizeof(g_uiAuthPassword), password);
+  } else {
+    getDefaultUiAuthPassword(g_uiAuthPassword, sizeof(g_uiAuthPassword));
+  }
+}
+
+static bool stringsEqualIgnoreCase(const char* a, const char* b) {
+  if (a == nullptr || b == nullptr) {
+    return a == b;
+  }
+  while (*a != '\0' && *b != '\0') {
+    if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) {
+      return false;
+    }
+    ++a;
+    ++b;
+  }
+  return *a == '\0' && *b == '\0';
+}
+
+static bool areCurrentUiAuthCredentialsDefault() {
+  loadWiFiNetworkSettingsIfNeeded();
+  char defaultUser[UI_AUTH_USER_MAX_LEN + 1];
+  char defaultPass[UI_AUTH_PASS_MAX_LEN + 1];
+  getDefaultUiAuthUsername(defaultUser, sizeof(defaultUser));
+  getDefaultUiAuthPassword(defaultPass, sizeof(defaultPass));
+  return stringsEqualIgnoreCase(g_uiAuthUsername, defaultUser) &&
+         strcmp(g_uiAuthPassword, defaultPass) == 0;
+}
+
+static bool hexCharToNibble(char c, uint8_t* out) {
+  if (out == nullptr) return false;
+  if (c >= '0' && c <= '9') {
+    *out = (uint8_t)(c - '0');
+    return true;
+  }
+  if (c >= 'a' && c <= 'f') {
+    *out = (uint8_t)(10 + (c - 'a'));
+    return true;
+  }
+  if (c >= 'A' && c <= 'F') {
+    *out = (uint8_t)(10 + (c - 'A'));
+    return true;
+  }
+  return false;
+}
+
+static void bytesToHex(const uint8_t* in, size_t inLen, char* out, size_t outLen) {
+  if (in == nullptr || out == nullptr || outLen < (inLen * 2U + 1U)) {
+    return;
+  }
+  static const char kHex[] = "0123456789abcdef";
+  for (size_t i = 0; i < inLen; i++) {
+    out[i * 2U] = kHex[(in[i] >> 4) & 0x0F];
+    out[i * 2U + 1U] = kHex[in[i] & 0x0F];
+  }
+  out[inLen * 2U] = '\0';
+}
+
+static bool hexToBytes(const char* in, uint8_t* out, size_t outLen) {
+  if (in == nullptr || out == nullptr) return false;
+  size_t hexLen = strlen(in);
+  if (hexLen != outLen * 2U) return false;
+  for (size_t i = 0; i < outLen; i++) {
+    uint8_t hi = 0;
+    uint8_t lo = 0;
+    if (!hexCharToNibble(in[i * 2U], &hi) || !hexCharToNibble(in[i * 2U + 1U], &lo)) {
+      return false;
+    }
+    out[i] = (uint8_t)((hi << 4) | lo);
+  }
+  return true;
+}
+
+static bool encodeBase64(const uint8_t* in, size_t inLen, char* out, size_t outLen) {
+  if (in == nullptr || out == nullptr || outLen == 0) return false;
+  size_t actualLen = 0;
+  int rc = mbedtls_base64_encode((unsigned char*)out, outLen - 1U, &actualLen, in, inLen);
+  if (rc != 0 || actualLen >= outLen) {
+    out[0] = '\0';
+    return false;
+  }
+  out[actualLen] = '\0';
+  return true;
+}
+
+static bool decodeBase64(const char* in, uint8_t* out, size_t outLen, size_t* actualLen) {
+  if (in == nullptr || out == nullptr) return false;
+  size_t decodedLen = 0;
+  int rc = mbedtls_base64_decode(out, outLen, &decodedLen, (const unsigned char*)in, strlen(in));
+  if (rc != 0) return false;
+  if (actualLen != nullptr) {
+    *actualLen = decodedLen;
+  }
+  return true;
+}
+
+static bool ensureBackupSecretAvailable(bool createIfMissing) {
+  if (g_backupSecretLoaded) {
+    if (g_backupSecretAvailable || !createIfMissing) {
+      return g_backupSecretAvailable;
+    }
+  }
+
+  Preferences pref;
+  if (!pref.begin("stored_var", createIfMissing ? false : true)) {
+    g_backupSecretLoaded = true;
+    g_backupSecretAvailable = false;
+    return false;
+  }
+
+  String secretHex = pref.getString(PREF_KEY_WIFI_BACKUP_SECRET, "");
+  bool ok = secretHex.length() == WIFI_BACKUP_SECRET_HEX_LEN &&
+            hexToBytes(secretHex.c_str(), g_backupSecret, sizeof(g_backupSecret));
+
+  if (!ok && createIfMissing) {
+    esp_fill_random(g_backupSecret, sizeof(g_backupSecret));
+    char secretHexBuf[WIFI_BACKUP_SECRET_HEX_LEN + 1];
+    bytesToHex(g_backupSecret, sizeof(g_backupSecret), secretHexBuf, sizeof(secretHexBuf));
+    ok = pref.putString(PREF_KEY_WIFI_BACKUP_SECRET, secretHexBuf) == WIFI_BACKUP_SECRET_HEX_LEN;
+  }
+
+  pref.end();
+  g_backupSecretLoaded = true;
+  g_backupSecretAvailable = ok;
+  if (!ok) {
+    memset(g_backupSecret, 0, sizeof(g_backupSecret));
+  }
+  return ok;
+}
+
+static bool encryptBackupWiFiPassword(const char* password, const char* backupControllerId,
+                                      char* nonceB64, size_t nonceB64Len,
+                                      char* tagB64, size_t tagB64Len,
+                                      char* cipherB64, size_t cipherB64Len) {
+  if (password == nullptr || backupControllerId == nullptr ||
+      nonceB64 == nullptr || tagB64 == nullptr || cipherB64 == nullptr) {
+    return false;
+  }
+  size_t passwordLen = strlen(password);
+  if (passwordLen == 0 || passwordLen > WIFI_STA_PASS_MAX_LEN) {
+    return false;
+  }
+  if (!ensureBackupSecretAvailable(true)) {
+    return false;
+  }
+
+  uint8_t nonce[WIFI_BACKUP_NONCE_LEN];
+  uint8_t tag[WIFI_BACKUP_TAG_LEN];
+  uint8_t cipher[WIFI_STA_PASS_MAX_LEN];
+  esp_fill_random(nonce, sizeof(nonce));
+
+  mbedtls_gcm_context ctx;
+  mbedtls_gcm_init(&ctx);
+  int rc = mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES,
+                              g_backupSecret, (unsigned int)(sizeof(g_backupSecret) * 8U));
+  if (rc == 0) {
+    rc = mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, passwordLen,
+                                   nonce, sizeof(nonce),
+                                   (const unsigned char*)backupControllerId, strlen(backupControllerId),
+                                   (const unsigned char*)password, cipher,
+                                   sizeof(tag), tag);
+  }
+  mbedtls_gcm_free(&ctx);
+  if (rc != 0) {
+    return false;
+  }
+
+  return encodeBase64(nonce, sizeof(nonce), nonceB64, nonceB64Len) &&
+         encodeBase64(tag, sizeof(tag), tagB64, tagB64Len) &&
+         encodeBase64(cipher, passwordLen, cipherB64, cipherB64Len);
+}
+
+static bool decryptBackupWiFiPasswordFromJson(const String& json, char* outPassword,
+                                              size_t outPasswordLen, String* errorMsg) {
+  if (outPassword == nullptr || outPasswordLen == 0 || errorMsg == nullptr) {
+    return false;
+  }
+
+  char backupControllerId[13];
+  char currentControllerId[13];
+  char nonceB64[WIFI_BACKUP_NONCE_B64_LEN + 1];
+  char tagB64[WIFI_BACKUP_TAG_B64_LEN + 1];
+  char cipherB64[WIFI_BACKUP_PASS_B64_MAX_LEN + 1];
+  getBackupControllerId(currentControllerId, sizeof(currentControllerId));
+
+  if (!parseJsonStr(json, "backupControllerId", backupControllerId, sizeof(backupControllerId)) ||
+      backupControllerId[0] == '\0') {
+    *errorMsg = "Error: encrypted Client WiFi password is missing backupControllerId";
+    return false;
+  }
+  if (strcmp(backupControllerId, currentControllerId) != 0) {
+    *errorMsg = "Error: encrypted Client WiFi password belongs to another controller";
+    return false;
+  }
+  if (!parseJsonStr(json, "wifiStaPasswordNonce", nonceB64, sizeof(nonceB64)) ||
+      !parseJsonStr(json, "wifiStaPasswordTag", tagB64, sizeof(tagB64)) ||
+      !parseJsonStr(json, "wifiStaPasswordEnc", cipherB64, sizeof(cipherB64))) {
+    *errorMsg = "Error: encrypted Client WiFi password is missing crypto fields";
+    return false;
+  }
+  if (!ensureBackupSecretAvailable(false)) {
+    *errorMsg = "Error: this controller is missing the backup key for encrypted Client WiFi password";
+    return false;
+  }
+
+  uint8_t nonce[WIFI_BACKUP_NONCE_LEN];
+  uint8_t tag[WIFI_BACKUP_TAG_LEN];
+  uint8_t cipher[WIFI_STA_PASS_MAX_LEN];
+  uint8_t plain[WIFI_STA_PASS_MAX_LEN];
+  size_t nonceLen = 0;
+  size_t tagLen = 0;
+  size_t cipherLen = 0;
+
+  if (!decodeBase64(nonceB64, nonce, sizeof(nonce), &nonceLen) ||
+      !decodeBase64(tagB64, tag, sizeof(tag), &tagLen) ||
+      !decodeBase64(cipherB64, cipher, sizeof(cipher), &cipherLen)) {
+    *errorMsg = "Error: encrypted Client WiFi password has invalid base64 data";
+    return false;
+  }
+  if (nonceLen != sizeof(nonce) || tagLen != sizeof(tag) || cipherLen >= outPasswordLen) {
+    *errorMsg = "Error: encrypted Client WiFi password has invalid lengths";
+    return false;
+  }
+
+  mbedtls_gcm_context ctx;
+  mbedtls_gcm_init(&ctx);
+  int rc = mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES,
+                              g_backupSecret, (unsigned int)(sizeof(g_backupSecret) * 8U));
+  if (rc == 0) {
+    rc = mbedtls_gcm_auth_decrypt(&ctx, cipherLen,
+                                  nonce, sizeof(nonce),
+                                  (const unsigned char*)backupControllerId, strlen(backupControllerId),
+                                  tag, sizeof(tag),
+                                  cipher, plain);
+  }
+  mbedtls_gcm_free(&ctx);
+  if (rc != 0) {
+    *errorMsg = "Error: failed to decrypt Client WiFi password on this controller";
+    return false;
+  }
+
+  memcpy(outPassword, plain, cipherLen);
+  outPassword[cipherLen] = '\0';
+  return true;
+}
+
+static bool decryptBackupUiAuthPasswordFromJson(const String& json, char* outPassword,
+                                                size_t outPasswordLen, String* errorMsg) {
+  if (outPassword == nullptr || outPasswordLen == 0 || errorMsg == nullptr) {
+    return false;
+  }
+
+  char backupControllerId[13];
+  char currentControllerId[13];
+  char nonceB64[WIFI_BACKUP_NONCE_B64_LEN + 1];
+  char tagB64[WIFI_BACKUP_TAG_B64_LEN + 1];
+  char cipherB64[WIFI_BACKUP_PASS_B64_MAX_LEN + 1];
+  getBackupControllerId(currentControllerId, sizeof(currentControllerId));
+
+  if (!parseJsonStr(json, "backupControllerId", backupControllerId, sizeof(backupControllerId)) ||
+      backupControllerId[0] == '\0') {
+    *errorMsg = "Error: encrypted UI auth password is missing backupControllerId";
+    return false;
+  }
+  if (strcmp(backupControllerId, currentControllerId) != 0) {
+    *errorMsg = "Error: encrypted UI auth password belongs to another controller";
+    return false;
+  }
+  if (!parseJsonStr(json, "uiAuthPasswordNonce", nonceB64, sizeof(nonceB64)) ||
+      !parseJsonStr(json, "uiAuthPasswordTag", tagB64, sizeof(tagB64)) ||
+      !parseJsonStr(json, "uiAuthPasswordEnc", cipherB64, sizeof(cipherB64))) {
+    *errorMsg = "Error: encrypted UI auth password is missing crypto fields";
+    return false;
+  }
+  if (!ensureBackupSecretAvailable(false)) {
+    *errorMsg = "Error: this controller is missing the backup key for encrypted UI auth password";
+    return false;
+  }
+
+  uint8_t nonce[WIFI_BACKUP_NONCE_LEN];
+  uint8_t tag[WIFI_BACKUP_TAG_LEN];
+  uint8_t cipher[UI_AUTH_PASS_MAX_LEN];
+  uint8_t plain[UI_AUTH_PASS_MAX_LEN];
+  size_t nonceLen = 0;
+  size_t tagLen = 0;
+  size_t cipherLen = 0;
+
+  if (!decodeBase64(nonceB64, nonce, sizeof(nonce), &nonceLen) ||
+      !decodeBase64(tagB64, tag, sizeof(tag), &tagLen) ||
+      !decodeBase64(cipherB64, cipher, sizeof(cipher), &cipherLen)) {
+    *errorMsg = "Error: encrypted UI auth password has invalid base64 data";
+    return false;
+  }
+  if (nonceLen != sizeof(nonce) || tagLen != sizeof(tag) || cipherLen >= outPasswordLen) {
+    *errorMsg = "Error: encrypted UI auth password has invalid lengths";
+    return false;
+  }
+
+  mbedtls_gcm_context ctx;
+  mbedtls_gcm_init(&ctx);
+  int rc = mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES,
+                              g_backupSecret, (unsigned int)(sizeof(g_backupSecret) * 8U));
+  if (rc == 0) {
+    rc = mbedtls_gcm_auth_decrypt(&ctx, cipherLen,
+                                  nonce, sizeof(nonce),
+                                  (const unsigned char*)backupControllerId, strlen(backupControllerId),
+                                  tag, sizeof(tag),
+                                  cipher, plain);
+  }
+  mbedtls_gcm_free(&ctx);
+  if (rc != 0) {
+    *errorMsg = "Error: failed to decrypt UI auth password on this controller";
+    return false;
+  }
+
+  memcpy(outPassword, plain, cipherLen);
+  outPassword[cipherLen] = '\0';
+  return true;
+}
+
+static bool hasWiFiClientCredentials() {
+  loadWiFiNetworkSettingsIfNeeded();
+  return g_wifiClientSsid[0] != '\0' && g_wifiClientPassword[0] != '\0';
 }
 
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
@@ -53,7 +664,7 @@ static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
 <p>Missing SPIFFS file: <code>/ui/index.html</code></p>
 <p>This page is intentionally minimal.</p>
 <p><a href="/backup">Download Config Backup (.json)</a></p>
-<form method="POST" action="/ota" enctype="multipart/form-data">
+<form method="POST" action="/ota-fw" enctype="multipart/form-data">
   <p><b>Firmware Recovery (.bin)</b></p>
   <input type="file" name="file" accept=".bin" required>
   <button type="submit">Upload Firmware</button>
@@ -69,6 +680,23 @@ static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
   <li>Upload SPIFFS image on this page or from IDE.</li>
   <li>Reload <code>/</code>.</li>
 </ol>
+</body>
+</html>
+)rawliteral";
+
+static const char PUBLIC_UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32</title>
+</head>
+<body style="font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 12px;line-height:1.45;">
+<h1>ESPEED32</h1>
+<p>Open the protected controller panel for tools, or the onboard guide for docs.</p>
+<p><a href="/controller">Open Controller Panel</a></p>
+<p><a href="/docs">Open User Guide</a></p>
+<p>Controller login credentials are shown on the controller WiFi info page.</p>
 </body>
 </html>
 )rawliteral";
@@ -114,11 +742,19 @@ a{color:#7ed6ff}
 static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
                                         uint16_t antiSpinStepMs,
                                         uint16_t encoderInvertEnabled,
-                                        uint16_t adcVoltageRange_mV) {
+                                        uint16_t adcVoltageRange_mV,
+                                        uint16_t wifiConfiguredMode,
+                                        const char* wifiClientSsid,
+                                        const char* wifiClientPassword,
+                                        const char* uiAuthPassword) {
+  (void)wifiClientPassword;
+  (void)uiAuthPassword;
   String json;
-  json.reserve(5600);
+  json.reserve(6000);
   char buf[128];
+  char backupControllerId[13];
 
+  getBackupControllerId(backupControllerId, sizeof(backupControllerId));
   json += "{\n";
   sprintf(buf, "  \"version\": %d,\n", STORED_VAR_VERSION);              json += buf;
   sprintf(buf, "  \"selectedCarNumber\": %u,\n", storedVar.selectedCarNumber); json += buf;
@@ -137,12 +773,21 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
   sprintf(buf, "  \"textCase\": %u,\n", storedVar.textCase);           json += buf;
   sprintf(buf, "  \"listFontSize\": %u,\n", storedVar.listFontSize);   json += buf;
   sprintf(buf, "  \"startupDelay\": %u,\n", storedVar.startupDelay);   json += buf;
+  json += "  \"backupControllerId\": \"";
+  appendJsonEscaped(json, backupControllerId);
+  json += "\",\n";
   json += "  \"screensaverLine1\": \"";
   appendJsonEscaped(json, storedVar.screensaverLine1);
   json += "\",\n";
   json += "  \"screensaverLine2\": \"";
   appendJsonEscaped(json, storedVar.screensaverLine2);
   json += "\",\n";
+  sprintf(buf, "  \"wifiMode\": %u,\n", wifiConfiguredMode); json += buf;
+  json += "  \"wifiStaSsid\": \"";
+  appendJsonEscaped(json, wifiClientSsid);
+  json += "\",\n";
+  json += "  \"wifiStaPasswordStored\": 0,\n";
+  json += "  \"uiAuthPasswordStored\": 0,\n";
 
   json += "  \"cars\": [\n";
   for (int i = 0; i < CAR_MAX_COUNT; i++) {
@@ -177,10 +822,15 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
  * @brief Build JSON backup string from current runtime configuration.
  */
 static String buildJsonBackup() {
+  loadWiFiNetworkSettingsIfNeeded();
   return buildJsonBackupFromConfig(g_storedVar,
                                    g_antiSpinStepMs,
                                    g_encoderInvertEnabled,
-                                   g_adcVoltageRange_mV);
+                                   g_adcVoltageRange_mV,
+                                   g_wifiConfiguredMode,
+                                   g_wifiClientSsid,
+                                   g_wifiClientPassword,
+                                   g_uiAuthPassword);
 }
 
 
@@ -341,11 +991,55 @@ static bool inRange(int32_t val, int32_t minVal, int32_t maxVal) {
  * @return true if valid, false with error message
  */
 static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs,
-                                 uint16_t* encoderInvertEnabled, uint16_t* adcVoltageRangeMv, String* errorMsg) {
+                                 uint16_t* encoderInvertEnabled, uint16_t* adcVoltageRangeMv,
+                                 uint16_t* wifiConfiguredMode, char* wifiClientSsid,
+                                 size_t wifiClientSsidLen, char* wifiClientPassword,
+                                 size_t wifiClientPasswordLen, char* uiAuthUsername,
+                                 size_t uiAuthUsernameLen, char* uiAuthPassword,
+                                 size_t uiAuthPasswordLen, String* errorMsg,
+                                 String* warningMsg = nullptr) {
   int32_t v;
+  bool wifiPasswordStoredSpecified = false;
+  bool wifiPasswordStored = false;
+  bool hasEncryptedWifiPassword = jsonHasKey(json, "wifiStaPasswordEnc") ||
+                                  jsonHasKey(json, "wifiStaPasswordNonce") ||
+                                  jsonHasKey(json, "wifiStaPasswordTag");
+  bool hasLegacyPlainWifiPassword = jsonHasKey(json, "wifiStaPassword");
+  bool uiAuthPasswordStoredSpecified = false;
+  bool uiAuthPasswordStored = false;
+  bool hasEncryptedUiAuthPassword = jsonHasKey(json, "uiAuthPasswordEnc") ||
+                                    jsonHasKey(json, "uiAuthPasswordNonce") ||
+                                    jsonHasKey(json, "uiAuthPasswordTag");
+  bool hasLegacyPlainUiAuthPassword = jsonHasKey(json, "uiAuthPassword");
+  bool controllerLocalSettingsRestoreAllowed = true;
+  char backupControllerId[13];
+  char currentControllerId[13];
+
+  if (warningMsg != nullptr) {
+    *warningMsg = "";
+  }
+  if (parseJsonStr(json, "backupControllerId", backupControllerId, sizeof(backupControllerId)) &&
+      backupControllerId[0] != '\0') {
+    getBackupControllerId(currentControllerId, sizeof(currentControllerId));
+    if (strcmp(backupControllerId, currentControllerId) != 0) {
+      controllerLocalSettingsRestoreAllowed = false;
+      if (warningMsg != nullptr) {
+        *warningMsg = "WiFi/login settings skipped (backup is from another controller)";
+      }
+    }
+  }
+  if (controllerLocalSettingsRestoreAllowed &&
+      (hasEncryptedWifiPassword || hasEncryptedUiAuthPassword) &&
+      !ensureBackupSecretAvailable(false)) {
+    controllerLocalSettingsRestoreAllowed = false;
+    if (warningMsg != nullptr) {
+      *warningMsg = "WiFi/login settings skipped (controller backup key is missing)";
+    }
+  }
 
   /* Initialize with current settings as defaults (missing fields keep current values) */
   *sv = g_storedVar;
+  loadWiFiNetworkSettingsIfNeeded();
   if (antiSpinStepMs != nullptr) {
     *antiSpinStepMs = g_antiSpinStepMs;
   }
@@ -354,6 +1048,21 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
   }
   if (adcVoltageRangeMv != nullptr) {
     *adcVoltageRangeMv = g_adcVoltageRange_mV;
+  }
+  if (wifiConfiguredMode != nullptr) {
+    *wifiConfiguredMode = g_wifiConfiguredMode;
+  }
+  if (wifiClientSsid != nullptr && wifiClientSsidLen > 0) {
+    copyBoundedString(wifiClientSsid, wifiClientSsidLen, g_wifiClientSsid);
+  }
+  if (wifiClientPassword != nullptr && wifiClientPasswordLen > 0) {
+    copyBoundedString(wifiClientPassword, wifiClientPasswordLen, g_wifiClientPassword);
+  }
+  if (uiAuthUsername != nullptr && uiAuthUsernameLen > 0) {
+    copyBoundedString(uiAuthUsername, uiAuthUsernameLen, g_uiAuthUsername);
+  }
+  if (uiAuthPassword != nullptr && uiAuthPasswordLen > 0) {
+    copyBoundedString(uiAuthPassword, uiAuthPasswordLen, g_uiAuthPassword);
   }
 
   /* Version check - warn but allow cross-version restore for car profiles */
@@ -403,6 +1112,12 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
     sv->listFontSize = v;
   if (parseJsonInt(json, "startupDelay", v) && inRange(v, STARTUP_DELAY_MIN, STARTUP_DELAY_MAX))
     sv->startupDelay = v;
+  if (controllerLocalSettingsRestoreAllowed &&
+      wifiConfiguredMode != nullptr &&
+      parseJsonInt(json, "wifiMode", v) &&
+      inRange(v, WIFI_CONFIG_AP, WIFI_CONFIG_HOME)) {
+    *wifiConfiguredMode = (uint16_t)v;
+  }
 
   /* Parse screensaver text fields */
   char tempStr[SCREENSAVER_TEXT_MAX];
@@ -410,6 +1125,98 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
     strncpy(sv->screensaverLine1, tempStr, SCREENSAVER_TEXT_MAX);
   if (parseJsonStr(json, "screensaverLine2", tempStr, SCREENSAVER_TEXT_MAX))
     strncpy(sv->screensaverLine2, tempStr, SCREENSAVER_TEXT_MAX);
+  if (controllerLocalSettingsRestoreAllowed &&
+      wifiClientSsid != nullptr && wifiClientSsidLen > 0 &&
+      parseJsonStr(json, "wifiStaSsid", wifiClientSsid, (int)wifiClientSsidLen)) {
+    wifiClientSsid[wifiClientSsidLen - 1] = '\0';
+  }
+  if (controllerLocalSettingsRestoreAllowed && parseJsonInt(json, "wifiStaPasswordStored", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid wifiStaPasswordStored"; return false; }
+    wifiPasswordStoredSpecified = true;
+    wifiPasswordStored = (v != 0);
+  }
+  if (controllerLocalSettingsRestoreAllowed && wifiClientPassword != nullptr && wifiClientPasswordLen > 0) {
+    if (wifiPasswordStoredSpecified && !wifiPasswordStored) {
+      copyBoundedString(wifiClientSsid, wifiClientSsidLen, g_wifiClientSsid);
+      copyBoundedString(wifiClientPassword, wifiClientPasswordLen, g_wifiClientPassword);
+      if (wifiConfiguredMode != nullptr) {
+        *wifiConfiguredMode = g_wifiConfiguredMode;
+      }
+    } else if (hasEncryptedWifiPassword) {
+      if (!decryptBackupWiFiPasswordFromJson(json, wifiClientPassword, wifiClientPasswordLen, errorMsg)) {
+        if (warningMsg != nullptr && warningMsg->length() == 0) {
+          *warningMsg = "WiFi/login settings skipped (could not decrypt Client WiFi password)";
+        }
+        copyBoundedString(wifiClientSsid, wifiClientSsidLen, g_wifiClientSsid);
+        copyBoundedString(wifiClientPassword, wifiClientPasswordLen, g_wifiClientPassword);
+        if (wifiConfiguredMode != nullptr) {
+          *wifiConfiguredMode = g_wifiConfiguredMode;
+        }
+      } else {
+        /* WiFi restore succeeded, keep parsed values. */
+      }
+    } else if (hasLegacyPlainWifiPassword &&
+               parseJsonStr(json, "wifiStaPassword", wifiClientPassword, (int)wifiClientPasswordLen)) {
+      wifiClientPassword[wifiClientPasswordLen - 1] = '\0';
+    } else if (wifiPasswordStoredSpecified && wifiPasswordStored) {
+      if (warningMsg != nullptr && warningMsg->length() == 0) {
+        *warningMsg = "WiFi/login settings skipped (backup WiFi password data is incomplete)";
+      }
+      copyBoundedString(wifiClientSsid, wifiClientSsidLen, g_wifiClientSsid);
+      copyBoundedString(wifiClientPassword, wifiClientPasswordLen, g_wifiClientPassword);
+      if (wifiConfiguredMode != nullptr) {
+        *wifiConfiguredMode = g_wifiConfiguredMode;
+      }
+    }
+  }
+  if (controllerLocalSettingsRestoreAllowed &&
+      uiAuthUsername != nullptr && uiAuthUsernameLen > 0 &&
+      parseJsonStr(json, "uiAuthUsername", uiAuthUsername, (int)uiAuthUsernameLen)) {
+    uiAuthUsername[uiAuthUsernameLen - 1] = '\0';
+    if (uiAuthUsername[0] == '\0') {
+      getDefaultUiAuthUsername(uiAuthUsername, uiAuthUsernameLen);
+    }
+  }
+  if (controllerLocalSettingsRestoreAllowed && parseJsonInt(json, "uiAuthPasswordStored", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid uiAuthPasswordStored"; return false; }
+    uiAuthPasswordStoredSpecified = true;
+    uiAuthPasswordStored = (v != 0);
+  }
+  if (controllerLocalSettingsRestoreAllowed && uiAuthPassword != nullptr && uiAuthPasswordLen > 0) {
+    if (uiAuthPasswordStoredSpecified && !uiAuthPasswordStored) {
+      copyBoundedString(uiAuthUsername, uiAuthUsernameLen, g_uiAuthUsername);
+      copyBoundedString(uiAuthPassword, uiAuthPasswordLen, g_uiAuthPassword);
+    } else if (hasEncryptedUiAuthPassword) {
+      if (!decryptBackupUiAuthPasswordFromJson(json, uiAuthPassword, uiAuthPasswordLen, errorMsg)) {
+        if (warningMsg != nullptr && warningMsg->length() == 0) {
+          *warningMsg = "WiFi/login settings skipped (could not decrypt controller login)";
+        }
+        copyBoundedString(uiAuthUsername, uiAuthUsernameLen, g_uiAuthUsername);
+        copyBoundedString(uiAuthPassword, uiAuthPasswordLen, g_uiAuthPassword);
+      }
+    } else if (hasLegacyPlainUiAuthPassword &&
+               parseJsonStr(json, "uiAuthPassword", uiAuthPassword, (int)uiAuthPasswordLen)) {
+      uiAuthPassword[uiAuthPasswordLen - 1] = '\0';
+      if (uiAuthPassword[0] == '\0') {
+        getDefaultUiAuthPassword(uiAuthPassword, uiAuthPasswordLen);
+      }
+    } else if (uiAuthPasswordStoredSpecified && uiAuthPasswordStored) {
+      if (warningMsg != nullptr && warningMsg->length() == 0) {
+        *warningMsg = "WiFi/login settings skipped (backup login data is incomplete)";
+      }
+      copyBoundedString(uiAuthUsername, uiAuthUsernameLen, g_uiAuthUsername);
+      copyBoundedString(uiAuthPassword, uiAuthPasswordLen, g_uiAuthPassword);
+    }
+  }
+
+  if (controllerLocalSettingsRestoreAllowed &&
+      wifiConfiguredMode != nullptr &&
+      *wifiConfiguredMode == WIFI_CONFIG_HOME &&
+      (wifiClientSsid == nullptr || wifiClientPassword == nullptr ||
+       wifiClientSsid[0] == '\0' || wifiClientPassword[0] == '\0')) {
+    *errorMsg = "Error: Client mode requires WiFi SSID and password";
+    return false;
+  }
 
   /* Parse car profiles */
   int carStart = json.indexOf("\"cars\"");
@@ -585,14 +1392,18 @@ static void appendSchemaNumberField(
 }
 
 static void appendSchemaStringField(
-  String& out, bool& first, const char* id, const char* label, int32_t maxLen) {
+  String& out, bool& first, const char* id, const char* label, int32_t maxLen, bool secret = false) {
   if (!first) out += ",";
   first = false;
   char buf[200];
   snprintf(buf, sizeof(buf),
-           "{\"id\":\"%s\",\"label\":\"%s\",\"type\":\"string\",\"maxLen\":%ld}",
+           "{\"id\":\"%s\",\"label\":\"%s\",\"type\":\"string\",\"maxLen\":%ld",
            id, label, (long)maxLen);
   out += buf;
+  if (secret) {
+    out += ",\"secret\":true";
+  }
+  out += "}";
 }
 
 static void appendSchemaEnumField(
@@ -609,6 +1420,7 @@ static void appendSchemaEnumField(
 }
 
 static String buildSchemaJson() {
+  loadWiFiNetworkSettingsIfNeeded();
   String json;
   json.reserve(5500);
 
@@ -640,12 +1452,21 @@ static String buildSchemaJson() {
   appendSchemaEnumField(json, first, "raceViewMode", "Race Mode",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"FULL\"},{\"value\":2,\"label\":\"SIMPLE\"}]");
   appendSchemaEnumField(json, first, "language", "Language",
-                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"},{\"value\":4,\"label\":\"ESP\"},{\"value\":5,\"label\":\"DEU\"},{\"value\":6,\"label\":\"ITA\"}]");
+                        "[{\"value\":0,\"label\":\"NOR\"},{\"value\":1,\"label\":\"ENG\"},{\"value\":2,\"label\":\"CS\"},{\"value\":3,\"label\":\"ACD\"},{\"value\":4,\"label\":\"ESP\"},{\"value\":5,\"label\":\"DEU\"},{\"value\":6,\"label\":\"ITA\"},{\"value\":7,\"label\":\"NLD\"},{\"value\":8,\"label\":\"POR\"}]");
   appendSchemaEnumField(json, first, "textCase", "Text Case",
                         "[{\"value\":0,\"label\":\"UPPER\"},{\"value\":1,\"label\":\"Pascal\"}]");
   appendSchemaEnumField(json, first, "listFontSize", "Font Size",
                         "[{\"value\":0,\"label\":\"LARGE\"},{\"value\":1,\"label\":\"small\"}]");
   appendSchemaIntField(json, first, "startupDelay", "Startup Delay", STARTUP_DELAY_MIN, STARTUP_DELAY_MAX, 1, "x10ms");
+  appendSchemaEnumField(json, first, "wifiMode", "WiFi Mode",
+                        "[{\"value\":0,\"label\":\"AP\"},{\"value\":1,\"label\":\"CLIENT\"}]");
+  appendSchemaStringField(json, first, "wifiStaSsid", "Client WiFi SSID", WIFI_STA_SSID_MAX_LEN);
+  appendSchemaStringField(json, first, "wifiStaPassword", "Client WiFi Password", WIFI_STA_PASS_MAX_LEN, true);
+  appendSchemaEnumField(json, first, "wifiStaPasswordClear", "Clear Saved Client WiFi Password",
+                        "[{\"value\":0,\"label\":\"KEEP\"},{\"value\":1,\"label\":\"CLEAR\"}]");
+  appendSchemaStringField(json, first, "uiAuthPassword", "Controller Login Password", UI_AUTH_PASS_MAX_LEN, true);
+  appendSchemaEnumField(json, first, "uiAuthResetDefault", "Reset Controller Login To Default",
+                        "[{\"value\":0,\"label\":\"KEEP\"},{\"value\":1,\"label\":\"RESET\"}]");
   appendSchemaEnumField(json, first, "statusSlot0", "Status Slot 1",
                         "[{\"value\":0,\"label\":\"BLANK\"},{\"value\":1,\"label\":\"OUTPUT\"},{\"value\":2,\"label\":\"THROTTLE\"},{\"value\":3,\"label\":\"CAR\"},{\"value\":4,\"label\":\"CURR\"},{\"value\":5,\"label\":\"VOLTAGE\"}]");
   appendSchemaEnumField(json, first, "statusSlot1", "Status Slot 2",
@@ -687,6 +1508,7 @@ static uint8_t getRequestedCarIndex() {
 }
 
 static String buildStateJson(uint8_t carIndex) {
+  loadWiFiNetworkSettingsIfNeeded();
   if (carIndex >= CAR_MAX_COUNT) carIndex = (uint8_t)g_storedVar.selectedCarNumber;
   const CarParam_type& c = g_storedVar.carParam[carIndex];
 
@@ -717,6 +1539,7 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"textCase\":%u,", g_storedVar.textCase); json += buf;
   snprintf(buf, sizeof(buf), "\"listFontSize\":%u,", g_storedVar.listFontSize); json += buf;
   snprintf(buf, sizeof(buf), "\"startupDelay\":%u,", g_storedVar.startupDelay); json += buf;
+  snprintf(buf, sizeof(buf), "\"wifiMode\":%u,", g_wifiConfiguredMode); json += buf;
   snprintf(buf, sizeof(buf), "\"statusSlot0\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[0])); json += buf;
   snprintf(buf, sizeof(buf), "\"statusSlot1\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[1])); json += buf;
   snprintf(buf, sizeof(buf), "\"statusSlot2\":%u,", normalizeStatusSlotForUi(g_storedVar.statusSlot[2])); json += buf;
@@ -725,7 +1548,14 @@ static String buildStateJson(uint8_t carIndex) {
   appendJsonEscaped(json, g_storedVar.screensaverLine1);
   json += "\",\"screensaverLine2\":\"";
   appendJsonEscaped(json, g_storedVar.screensaverLine2);
-  json += "\"},";
+  json += "\",\"wifiStaSsid\":\"";
+  appendJsonEscaped(json, g_wifiClientSsid);
+  snprintf(buf, sizeof(buf),
+           "\",\"wifiStaPasswordSet\":%u,\"wifiStaPasswordClear\":0,\"uiAuthPasswordSet\":%u,\"uiAuthResetDefault\":0,\"uiAuthDefault\":%u},",
+           g_wifiClientPassword[0] != '\0' ? 1U : 0U,
+           g_uiAuthPassword[0] != '\0' ? 1U : 0U,
+           areCurrentUiAuthCredentialsDefault() ? 1U : 0U);
+  json += buf;
 
   json += "\"car\":{";
   json += "\"carName\":\"";
@@ -749,8 +1579,26 @@ static String buildStateJson(uint8_t carIndex) {
 
 static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t* appliedCarIndex) {
   StoredVar_type updated = g_storedVar;
+  loadWiFiNetworkSettingsIfNeeded();
+  uint16_t wifiConfiguredMode = g_wifiConfiguredMode;
+  char wifiClientSsid[WIFI_STA_SSID_MAX_LEN + 1];
+  char wifiClientPassword[WIFI_STA_PASS_MAX_LEN + 1];
+  char requestedWiFiPassword[WIFI_STA_PASS_MAX_LEN + 1];
+  char uiAuthUsername[UI_AUTH_USER_MAX_LEN + 1];
+  char uiAuthPassword[UI_AUTH_PASS_MAX_LEN + 1];
+  char requestedUiAuthPassword[UI_AUTH_PASS_MAX_LEN + 1];
+  copyBoundedString(wifiClientSsid, sizeof(wifiClientSsid), g_wifiClientSsid);
+  copyBoundedString(wifiClientPassword, sizeof(wifiClientPassword), g_wifiClientPassword);
+  copyBoundedString(uiAuthUsername, sizeof(uiAuthUsername), g_uiAuthUsername);
+  copyBoundedString(uiAuthPassword, sizeof(uiAuthPassword), g_uiAuthPassword);
+  requestedWiFiPassword[0] = '\0';
+  requestedUiAuthPassword[0] = '\0';
   int32_t v;
   uint8_t carIndex = updated.selectedCarNumber;
+  bool wifiPasswordProvided = false;
+  bool wifiPasswordClearRequested = false;
+  bool uiAuthPasswordProvided = false;
+  bool uiAuthResetDefaultRequested = false;
 
   if (parseJsonInt(json, "carIndex", v)) {
     if (!inRange(v, 0, CAR_MAX_COUNT - 1)) {
@@ -830,6 +1678,16 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     if (!inRange(v, STARTUP_DELAY_MIN, STARTUP_DELAY_MAX)) { *errorMsg = "Error: invalid startupDelay"; return false; }
     updated.startupDelay = (uint16_t)v;
   }
+  if (parseJsonInt(json, "wifiMode", v)) {
+    if (!inRange(v, WIFI_CONFIG_AP, WIFI_CONFIG_HOME)) { *errorMsg = "Error: invalid wifiMode"; return false; }
+    wifiConfiguredMode = (uint16_t)v;
+  }
+  if (parseJsonStr(json, "uiAuthUsername", uiAuthUsername, sizeof(uiAuthUsername))) {
+    uiAuthUsername[sizeof(uiAuthUsername) - 1] = '\0';
+    if (uiAuthUsername[0] == '\0') {
+      getDefaultUiAuthUsername(uiAuthUsername, sizeof(uiAuthUsername));
+    }
+  }
   if (parseJsonInt(json, "statusSlot0", v)) {
     if (v == STATUS_CURRENT_MA) v = STATUS_CURRENT;
     if (!inRange(v, STATUS_BLANK, STATUS_VOLTAGE)) { *errorMsg = "Error: invalid statusSlot0"; return false; }
@@ -859,6 +1717,50 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
   if (parseJsonStr(json, "screensaverLine2", tempStr, SCREENSAVER_TEXT_MAX)) {
     strncpy(updated.screensaverLine2, tempStr, SCREENSAVER_TEXT_MAX);
     updated.screensaverLine2[SCREENSAVER_TEXT_MAX - 1] = '\0';
+  }
+  if (parseJsonStr(json, "wifiStaSsid", wifiClientSsid, sizeof(wifiClientSsid))) {
+    wifiClientSsid[sizeof(wifiClientSsid) - 1] = '\0';
+  }
+  if (parseJsonStr(json, "wifiStaPassword", requestedWiFiPassword, sizeof(requestedWiFiPassword))) {
+    requestedWiFiPassword[sizeof(requestedWiFiPassword) - 1] = '\0';
+    wifiPasswordProvided = true;
+  }
+  if (parseJsonInt(json, "wifiStaPasswordClear", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid wifiStaPasswordClear"; return false; }
+    wifiPasswordClearRequested = (v != 0);
+  }
+  if (parseJsonStr(json, "uiAuthPassword", requestedUiAuthPassword, sizeof(requestedUiAuthPassword))) {
+    requestedUiAuthPassword[sizeof(requestedUiAuthPassword) - 1] = '\0';
+    uiAuthPasswordProvided = true;
+  }
+  if (parseJsonInt(json, "uiAuthResetDefault", v)) {
+    if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid uiAuthResetDefault"; return false; }
+    uiAuthResetDefaultRequested = (v != 0);
+  }
+  if (wifiPasswordClearRequested && wifiPasswordProvided && requestedWiFiPassword[0] != '\0') {
+    *errorMsg = "Error: enter password or choose clear, not both";
+    return false;
+  }
+  if (uiAuthResetDefaultRequested && uiAuthPasswordProvided && requestedUiAuthPassword[0] != '\0') {
+    *errorMsg = "Error: enter controller login password or choose reset, not both";
+    return false;
+  }
+  if (wifiPasswordClearRequested) {
+    wifiClientPassword[0] = '\0';
+  } else if (wifiPasswordProvided && requestedWiFiPassword[0] != '\0') {
+    copyBoundedString(wifiClientPassword, sizeof(wifiClientPassword), requestedWiFiPassword);
+  }
+  if (uiAuthResetDefaultRequested) {
+    getDefaultUiAuthUsername(uiAuthUsername, sizeof(uiAuthUsername));
+    getDefaultUiAuthPassword(uiAuthPassword, sizeof(uiAuthPassword));
+  } else if (uiAuthPasswordProvided && requestedUiAuthPassword[0] != '\0') {
+    copyBoundedString(uiAuthPassword, sizeof(uiAuthPassword), requestedUiAuthPassword);
+  }
+
+  if (wifiConfiguredMode == WIFI_CONFIG_HOME &&
+      (wifiClientSsid[0] == '\0' || wifiClientPassword[0] == '\0')) {
+    *errorMsg = "Error: Client mode requires WiFi SSID and password";
+    return false;
   }
 
   CarParam_type car = updated.carParam[carIndex];
@@ -936,6 +1838,10 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
 
   updated.carParam[carIndex] = car;
   g_storedVar = updated;
+  g_wifiConfiguredMode = wifiConfiguredMode;
+  copyBoundedString(g_wifiClientSsid, sizeof(g_wifiClientSsid), wifiClientSsid);
+  copyBoundedString(g_wifiClientPassword, sizeof(g_wifiClientPassword), wifiClientPassword);
+  setCurrentUiAuthCredentials(uiAuthUsername, uiAuthPassword);
 
   if (appliedCarIndex != nullptr) *appliedCarIndex = carIndex;
   return true;
@@ -948,8 +1854,34 @@ static size_t g_otaWritten = 0;
 static bool g_otaInProgress = false;
 static bool g_otaTargetSpiffs = false;
 static bool g_otaSessionOk = false;
+static bool g_otaRestartRequested = true;
+static bool g_otaRestartDeferredPending = false;
+static uint32_t g_otaRestartDeferredUntilMs = 0;
+static uint32_t g_otaLastUiUpdateMs = 0;
+static size_t g_otaLastUiShownKb = 0;
+static const uint32_t OTA_DEFERRED_RESTART_GRACE_MS = 180000UL;
+
+static void clearOtaDeferredRestartState() {
+  g_otaRestartDeferredPending = false;
+  g_otaRestartDeferredUntilMs = 0;
+}
+
+static bool isOtaDeferredRestartActive() {
+  if (!g_otaRestartDeferredPending) {
+    return false;
+  }
+  if ((int32_t)(millis() - g_otaRestartDeferredUntilMs) >= 0) {
+    clearOtaDeferredRestartState();
+    return false;
+  }
+  return true;
+}
 
 /* Documentation helpers (served from SPIFFS) */
+static const char* getPublicUiPath() {
+  return "/ui/public.html";
+}
+
 static const char* getUiPath() {
   return "/ui/index.html";
 }
@@ -960,6 +1892,8 @@ static const char* getDocsPathForLanguage(uint16_t lang) {
     case LANG_ESP: return "/docs/es/index.html";
     case LANG_DEU: return "/docs/de/index.html";
     case LANG_ITA: return "/docs/it/index.html";
+    case LANG_NLD: return "/docs/nl/index.html";
+    case LANG_POR: return "/docs/pt/index.html";
     default:       return "/docs/en/index.html";
   }
 }
@@ -990,6 +1924,31 @@ static bool streamFileFromSpiffs(const char* path, const char* contentType) {
 
 static bool streamHtmlFromSpiffs(const char* path) {
   return streamFileFromSpiffs(path, "text/html; charset=utf-8");
+}
+
+static void sendPublicUiFallback() {
+  g_wifiServer->send(200, "text/html; charset=utf-8", FPSTR(PUBLIC_UI_FALLBACK_HTML));
+}
+
+static bool requireControllerAuth() {
+  loadWiFiNetworkSettingsIfNeeded();
+  if (g_wifiServer == nullptr) {
+    return false;
+  }
+  if (g_wifiServer->authenticate([](HTTPAuthMethod mode, String enteredUsernameOrReq, String params[]) -> String* {
+        (void)params;
+        if (mode != BASIC_AUTH) {
+          return nullptr;
+        }
+        if (!stringsEqualIgnoreCase(enteredUsernameOrReq.c_str(), g_uiAuthUsername)) {
+          return nullptr;
+        }
+        return new String(g_uiAuthPassword);
+      })) {
+    return true;
+  }
+  g_wifiServer->requestAuthentication(BASIC_AUTH, "ESPEED32 Controller");
+  return false;
 }
 
 int centerX8x8(const char* text) {
@@ -1049,6 +2008,7 @@ static void serviceUsbSerialCommands() {
  * @brief Handle a single USB serial backup/restore command.
  * Protocol:
  *   "VERSION"        → "<id>,v<major>.<minor>\n"  e.g. "F0A4,v4.4"
+ *   "INFO"           → "<bytecount>\n<json>"
  *   "BACKUP"         → "<bytecount>\n<json>"
  *   "RESTORE\n<len>" → read len bytes, parse, save; reply "OK..." or "ERR:..."
  *   "SCHEMA"         → "<bytecount>\n<json>"
@@ -1081,6 +2041,9 @@ static void handleSerialCommand(const String& cmd) {
             SW_MAJOR_VERSION, SW_MINOR_VERSION);
     Serial.println(resp);
     Serial.flush();
+
+  } else if (cmd == "INFO") {
+    sendSerialLengthPrefixedPayload(buildInfoJson());
 
   } else if (cmd == "BACKUP") {
     String json = buildJsonBackup();
@@ -1164,6 +2127,11 @@ static void handleSerialCommand(const String& cmd) {
     sendSerialLengthPrefixedPayload(buildTelemetryConfigSnapshotJson());
 
   } else if (cmd == "APPLY") {
+    uint16_t previousWiFiMode = g_wifiConfiguredMode;
+    char previousWiFiSsid[WIFI_STA_SSID_MAX_LEN + 1];
+    char previousWiFiPassword[WIFI_STA_PASS_MAX_LEN + 1];
+    copyBoundedString(previousWiFiSsid, sizeof(previousWiFiSsid), g_wifiClientSsid);
+    copyBoundedString(previousWiFiPassword, sizeof(previousWiFiPassword), g_wifiClientPassword);
     String lenStr = Serial.readStringUntil('\n');
     int32_t len = lenStr.toInt();
     if (len <= 0 || len > 8192) {
@@ -1185,6 +2153,7 @@ static void handleSerialCommand(const String& cmd) {
       Serial.println("ERR:" + errorMsg);
       return;
     }
+    scheduleWiFiPortalRestartIfNeeded(previousWiFiMode, previousWiFiSsid, previousWiFiPassword);
 
     String outState = buildStateJson(carIndex);
     Serial.println("OK");
@@ -1215,16 +2184,38 @@ static void handleSerialCommand(const String& cmd) {
     String json(jsonBuf);
     StoredVar_type tempVar;
     String errorMsg;
+    String warningMsg;
     uint16_t tempAntiSpinStep = g_antiSpinStepMs;
     uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
     uint16_t tempAdcVoltageRange = g_adcVoltageRange_mV;
-    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange, &errorMsg)) {
+    uint16_t tempWiFiMode = getConfiguredWiFiMode();
+    char tempWiFiSsid[WIFI_STA_SSID_MAX_LEN + 1];
+    char tempWiFiPassword[WIFI_STA_PASS_MAX_LEN + 1];
+    char tempUiAuthUsername[UI_AUTH_USER_MAX_LEN + 1];
+    char tempUiAuthPassword[UI_AUTH_PASS_MAX_LEN + 1];
+    getConfiguredWiFiClientSsid(tempWiFiSsid, sizeof(tempWiFiSsid));
+    getConfiguredWiFiClientPassword(tempWiFiPassword, sizeof(tempWiFiPassword));
+    getCurrentUiAuthUsername(tempUiAuthUsername, sizeof(tempUiAuthUsername));
+    getCurrentUiAuthPassword(tempUiAuthPassword, sizeof(tempUiAuthPassword));
+    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange,
+                             &tempWiFiMode, tempWiFiSsid, sizeof(tempWiFiSsid),
+                             tempWiFiPassword, sizeof(tempWiFiPassword),
+                             tempUiAuthUsername, sizeof(tempUiAuthUsername),
+                             tempUiAuthPassword, sizeof(tempUiAuthPassword),
+                             &errorMsg, &warningMsg)) {
       g_storedVar = tempVar;
       g_antiSpinStepMs = tempAntiSpinStep;
       g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
       applyAdcVoltageRangeMilliVolts(tempAdcVoltageRange);
+      setConfiguredWiFiMode(tempWiFiMode);
+      setConfiguredWiFiClientCredentials(tempWiFiSsid, tempWiFiPassword);
+      setCurrentUiAuthCredentials(tempUiAuthUsername, tempUiAuthPassword);
       saveEEPROM(g_storedVar);
-      Serial.println("OK - Settings restored");
+      if (warningMsg.length() > 0) {
+        Serial.println("OK - Settings restored (" + warningMsg + ")");
+      } else {
+        Serial.println("OK - Settings restored");
+      }
       Serial.flush();
       delay(500);
       ESP.restart();
@@ -1236,21 +2227,114 @@ static void handleSerialCommand(const String& cmd) {
 
 /* HTTP route handlers */
 
-static void handleInfo() {
+static String buildInfoJson() {
+  loadWiFiNetworkSettingsIfNeeded();
+  buildWifiSuffixIfNeeded();
   char ver[8];
+  char dataVer[8];
+  char host[24];
+  char infoSsid[WIFI_STA_SSID_MAX_LEN + 10];
+  char ipText[24];
+  char spiffsRelease[16];
+  char sensorInfo[40];
+  char chipInfo[48];
+  char wifiMacStr[24];
+  char btMacStr[24];
+  char buildInfo[32];
+  uint8_t wifiMac[6] = {0};
+  uint8_t btMac[6] = {0};
+  bool wifiOk = readMacAddress(ESP_MAC_WIFI_STA, wifiMac);
+  bool btOk = readMacAddress(ESP_MAC_BT, btMac);
+  infoSsid[0] = '\0';
+  ipText[0] = '\0';
+  spiffsRelease[0] = '\0';
+
   sprintf(ver, "%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  sprintf(dataVer, "v%d", STORED_VAR_VERSION);
+  getWiFiPortalHostName(host, sizeof(host));
+  HAL_GetTriggerSensorInfo(sensorInfo, sizeof(sensorInfo));
+
+  if (g_wifiActiveMode == WIFI_PORTAL_HOME) {
+    copyBoundedString(infoSsid, sizeof(infoSsid),
+                      g_wifiConnectedSsid[0] != '\0' ? g_wifiConnectedSsid : g_wifiClientSsid);
+    copyBoundedString(ipText, sizeof(ipText), WiFi.localIP().toString().c_str());
+  } else if (g_wifiActiveMode == WIFI_PORTAL_AP) {
+    getWiFiPortalSsid(infoSsid, sizeof(infoSsid));
+    copyBoundedString(ipText, sizeof(ipText), WiFi.softAPIP().toString().c_str());
+  } else if (g_wifiConfiguredMode == WIFI_CONFIG_HOME) {
+    copyBoundedString(infoSsid, sizeof(infoSsid), g_wifiClientSsid);
+  } else {
+    getWiFiPortalSsid(infoSsid, sizeof(infoSsid));
+  }
+
+  String chipModel = String(ESP.getChipModel());
+  snprintf(chipInfo, sizeof(chipInfo), "%s r%d c%d %uMB",
+           chipModel.c_str(),
+           ESP.getChipRevision(),
+           ESP.getChipCores(),
+           (unsigned int)(ESP.getFlashChipSize() / (1024UL * 1024UL)));
+  if (wifiOk) {
+    snprintf(wifiMacStr, sizeof(wifiMacStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+             wifiMac[0], wifiMac[1], wifiMac[2], wifiMac[3], wifiMac[4], wifiMac[5]);
+  } else {
+    copyBoundedString(wifiMacStr, sizeof(wifiMacStr), "unavailable");
+  }
+  if (btOk) {
+    snprintf(btMacStr, sizeof(btMacStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+             btMac[0], btMac[1], btMac[2], btMac[3], btMac[4], btMac[5]);
+  } else {
+    copyBoundedString(btMacStr, sizeof(btMacStr), "unavailable");
+  }
+  snprintf(buildInfo, sizeof(buildInfo), "%s %s", __DATE__, __TIME__);
+  readSpiffsRelease(spiffsRelease, sizeof(spiffsRelease));
 
   String json;
-  json.reserve(128);
+  json.reserve(700);
   json += "{\"deviceId\":\"";
   json += g_wifiSuffix;
   json += "\",\"version\":\"";
   json += ver;
+  json += "\",\"dataVersion\":\"";
+  appendJsonEscaped(json, dataVer);
+  json += "\",\"spiffsRelease\":\"";
+  appendJsonEscaped(json, spiffsRelease);
+  json += "\",\"halSensor\":\"";
+  appendJsonEscaped(json, sensorInfo);
+  json += "\",\"chip\":\"";
+  appendJsonEscaped(json, chipInfo);
+  json += "\",\"wifiMac\":\"";
+  appendJsonEscaped(json, wifiMacStr);
+  json += "\",\"btMac\":\"";
+  appendJsonEscaped(json, btMacStr);
+  json += "\",\"build\":\"";
+  appendJsonEscaped(json, buildInfo);
   json += "\",\"docsPath\":\"";
   json += getDefaultDocsPath();
-  json += "\"}";
+  json += "\",\"wifiMode\":";
+  json += String(g_wifiConfiguredMode);
+  json += ",\"portalMode\":";
+  json += String(getActiveWiFiPortalMode());
+  json += ",\"wifiFallback\":";
+  json += String(isWiFiPortalApFallbackActive() ? 1 : 0);
+  json += ",\"hostName\":\"";
+  appendJsonEscaped(json, host);
+  json += "\",\"ssid\":\"";
+  appendJsonEscaped(json, infoSsid);
+  json += "\",\"ipAddress\":\"";
+  appendJsonEscaped(json, ipText);
+  json += "\",\"screensaverLine1\":\"";
+  appendJsonEscaped(json, g_storedVar.screensaverLine1);
+  json += "\",\"screensaverLine2\":\"";
+  appendJsonEscaped(json, g_storedVar.screensaverLine2);
+  json += "\",\"authDefault\":";
+  json += String(areCurrentUiAuthCredentialsDefault() ? 1 : 0);
+  json += "}";
 
-  g_wifiServer->send(200, "application/json", json);
+  return json;
+}
+
+static void handleInfo() {
+  g_wifiServer->send(200, "application/json", buildInfoJson());
 }
 
 static void handleSchema() {
@@ -1269,7 +2353,15 @@ static void handleApply() {
     return;
   }
 
+  String saveArg = g_wifiServer->arg("save");
+  bool saveAfter = saveArg == "1" || saveArg == "true" || saveArg == "on";
+
   String errorMsg;
+  uint16_t previousWiFiMode = g_wifiConfiguredMode;
+  char previousWiFiSsid[WIFI_STA_SSID_MAX_LEN + 1];
+  char previousWiFiPassword[WIFI_STA_PASS_MAX_LEN + 1];
+  copyBoundedString(previousWiFiSsid, sizeof(previousWiFiSsid), g_wifiClientSsid);
+  copyBoundedString(previousWiFiPassword, sizeof(previousWiFiPassword), g_wifiClientPassword);
   uint8_t carIndex = g_storedVar.selectedCarNumber;
   if (!parseAndApplyWebPatch(payload, &errorMsg, &carIndex)) {
     String out = "{\"ok\":false,\"error\":\"";
@@ -1279,10 +2371,17 @@ static void handleApply() {
     return;
   }
 
-  String out = "{\"ok\":true,\"state\":";
+  if (saveAfter) {
+    saveEEPROM(g_storedVar);
+  }
+
+  String out = "{\"ok\":true,\"saved\":";
+  out += String(saveAfter ? 1 : 0);
+  out += ",\"state\":";
   out += buildStateJson(carIndex);
   out += "}";
   g_wifiServer->send(200, "application/json", out);
+  scheduleWiFiPortalRestartIfNeeded(previousWiFiMode, previousWiFiSsid, previousWiFiPassword);
 }
 
 static void handleSave() {
@@ -1831,12 +2930,15 @@ static void handleTelemetryExportJson() {
 }
 
 static void handleRoot() {
-  if (!streamHtmlFromSpiffs(getUiPath())) {
-    sendUiFallback();
+  if (!streamHtmlFromSpiffs(getPublicUiPath())) {
+    sendPublicUiFallback();
   }
 }
 
 static void handleUi() {
+  if (!requireControllerAuth()) {
+    return;
+  }
   if (!streamHtmlFromSpiffs(getUiPath())) {
     sendUiFallback();
   }
@@ -1852,6 +2954,8 @@ static void handleDocsDefault() {
   if (!streamHtmlFromSpiffs(defaultPath) &&
       !streamHtmlFromSpiffs("/docs/en/index.html") &&
       !streamHtmlFromSpiffs("/docs/no/index.html") &&
+      !streamHtmlFromSpiffs("/docs/nl/index.html") &&
+      !streamHtmlFromSpiffs("/docs/pt/index.html") &&
       !streamHtmlFromSpiffs("/docs/es/index.html") &&
       !streamHtmlFromSpiffs("/docs/de/index.html") &&
       !streamHtmlFromSpiffs("/docs/it/index.html")) {
@@ -1868,6 +2972,18 @@ static void handleDocsEn() {
 static void handleDocsNo() {
   if (!streamHtmlFromSpiffs("/docs/no/index.html")) {
     sendDocsMissing("/docs/no/index.html");
+  }
+}
+
+static void handleDocsNl() {
+  if (!streamHtmlFromSpiffs("/docs/nl/index.html")) {
+    sendDocsMissing("/docs/nl/index.html");
+  }
+}
+
+static void handleDocsPt() {
+  if (!streamHtmlFromSpiffs("/docs/pt/index.html")) {
+    sendDocsMissing("/docs/pt/index.html");
   }
 }
 
@@ -1919,17 +3035,42 @@ static void handleRestore() {
 
   StoredVar_type tempVar;
   String errorMsg;
+  String warningMsg;
 
   uint16_t tempAntiSpinStep = g_antiSpinStepMs;
   uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
   uint16_t tempAdcVoltageRange = g_adcVoltageRange_mV;
-  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange, &errorMsg)) {
+  uint16_t tempWiFiMode = getConfiguredWiFiMode();
+  char tempWiFiSsid[WIFI_STA_SSID_MAX_LEN + 1];
+  char tempWiFiPassword[WIFI_STA_PASS_MAX_LEN + 1];
+  char tempUiAuthUsername[UI_AUTH_USER_MAX_LEN + 1];
+  char tempUiAuthPassword[UI_AUTH_PASS_MAX_LEN + 1];
+  getConfiguredWiFiClientSsid(tempWiFiSsid, sizeof(tempWiFiSsid));
+  getConfiguredWiFiClientPassword(tempWiFiPassword, sizeof(tempWiFiPassword));
+  getCurrentUiAuthUsername(tempUiAuthUsername, sizeof(tempUiAuthUsername));
+  getCurrentUiAuthPassword(tempUiAuthPassword, sizeof(tempUiAuthPassword));
+  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange,
+                           &tempWiFiMode, tempWiFiSsid, sizeof(tempWiFiSsid),
+                           tempWiFiPassword, sizeof(tempWiFiPassword),
+                           tempUiAuthUsername, sizeof(tempUiAuthUsername),
+                           tempUiAuthPassword, sizeof(tempUiAuthPassword),
+                           &errorMsg, &warningMsg)) {
     g_storedVar = tempVar;
     g_antiSpinStepMs = tempAntiSpinStep;
     g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
     applyAdcVoltageRangeMilliVolts(tempAdcVoltageRange);
+    setConfiguredWiFiMode(tempWiFiMode);
+    setConfiguredWiFiClientCredentials(tempWiFiSsid, tempWiFiPassword);
+    setCurrentUiAuthCredentials(tempUiAuthUsername, tempUiAuthPassword);
     saveEEPROM(g_storedVar);
-    g_wifiServer->send(200, "text/plain", "OK - Settings restored! Restarting...");
+    String response = "OK - Settings restored!";
+    if (warningMsg.length() > 0) {
+      response += " ";
+      response += warningMsg;
+      response += ".";
+    }
+    response += " Restarting...";
+    g_wifiServer->send(200, "text/plain", response);
     g_uploadBuffer = "";
     delay(1000);
     ESP.restart();
@@ -1952,8 +3093,11 @@ static void handleOtaUpload() {
     g_otaTargetSpiffs = (uri == "/ota-spiffs");
     g_otaTotal = upload.totalSize;  /* May be 0 if browser doesn't send content-length */
     g_otaWritten = 0;
+    g_otaLastUiUpdateMs = 0;
+    g_otaLastUiShownKb = 0;
     g_otaInProgress = true;
     g_otaSessionOk = true;
+    g_otaRestartRequested = otaRequestWantsRestart();
 
     /* Show update in progress on OLED */
     obdFill(&g_obd, OBD_WHITE, 1);
@@ -1992,9 +3136,17 @@ static void handleOtaUpload() {
     }
     if (Update.write(upload.buf, upload.currentSize) == upload.currentSize) {
       g_otaWritten += upload.currentSize;
-      /* Update progress on OLED */
-      sprintf(msgStr, "%u KB", (unsigned int)(g_otaWritten / 1024));
-      obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_8x8, OBD_BLACK, 1);
+      /* Throttle OLED writes during OTA to avoid wasting time on I2C updates. */
+      uint32_t now = millis();
+      size_t shownKb = g_otaWritten / 1024U;
+      if (g_otaLastUiUpdateMs == 0 ||
+          (uint32_t)(now - g_otaLastUiUpdateMs) >= 250U ||
+          shownKb >= (g_otaLastUiShownKb + 16U)) {
+        sprintf(msgStr, "%u KB", (unsigned int)shownKb);
+        obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_8x8, OBD_BLACK, 1);
+        g_otaLastUiUpdateMs = now;
+        g_otaLastUiShownKb = shownKb;
+      }
     } else {
       g_otaSessionOk = false;
     }
@@ -2017,6 +3169,18 @@ static void handleOtaUpload() {
       }
     }
     g_otaInProgress = false;
+  } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    Update.abort();
+    g_otaSessionOk = false;
+    g_otaInProgress = false;
+    if (g_otaTargetSpiffs) {
+      if (!g_spiffsMounted) {
+        g_spiffsMounted = SPIFFS.begin(false);
+      }
+      clearOtaDeferredRestartState();
+    }
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 0, 24, (char*)"OTA ABORT!", FONT_12x16, OBD_BLACK, 1);
   }
 }
 
@@ -2026,6 +3190,7 @@ static void handleOtaUpload() {
 static void handleOta() {
   bool otaOk = g_otaSessionOk && !Update.hasError();
   if (!otaOk) {
+    clearOtaDeferredRestartState();
     if (g_otaTargetSpiffs && !g_spiffsMounted) {
       g_spiffsMounted = SPIFFS.begin(false);
     }
@@ -2035,14 +3200,30 @@ static void handleOta() {
       g_wifiServer->send(400, "text/plain", "Error: firmware update failed");
     }
   } else {
-    if (g_otaTargetSpiffs) {
-      g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restarting...");
+    if (!g_otaRestartRequested) {
+      if (g_otaTargetSpiffs) {
+        if (!g_spiffsMounted) {
+          g_spiffsMounted = SPIFFS.begin(false);
+        }
+        g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restart deferred.");
+      } else {
+        g_otaRestartDeferredPending = true;
+        g_otaRestartDeferredUntilMs = millis() + OTA_DEFERRED_RESTART_GRACE_MS;
+        g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restart deferred.");
+      }
     } else {
-      g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+      clearOtaDeferredRestartState();
+      requestWiFiAutoStartOnNextBoot();
+      if (g_otaTargetSpiffs) {
+        g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restarting...");
+      } else {
+        g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+      }
+      delay(1000);
+      ESP.restart();
     }
-    delay(1000);
-    ESP.restart();
   }
+  g_otaRestartRequested = true;
 }
 
 static const uint8_t WIFI_QR_VERSION = 3;
@@ -2147,6 +3328,16 @@ static bool qrAppendBits(uint8_t out[WIFI_QR_DATA_CODEWORDS], int* bitLen,
     (*bitLen)++;
   }
   return true;
+}
+
+static bool otaRequestWantsRestart() {
+  if (g_wifiServer == nullptr || !g_wifiServer->hasArg("restart")) {
+    return true;
+  }
+  String raw = g_wifiServer->arg("restart");
+  raw.trim();
+  raw.toLowerCase();
+  return !(raw == "0" || raw == "false" || raw == "no" || raw == "off");
 }
 
 static uint8_t qrGfMultiply(uint8_t x, uint8_t y) {
@@ -2513,19 +3704,6 @@ static void drawWiFiQrMatrix(const uint8_t modules[WIFI_QR_SIZE][WIFI_QR_SIZE]) 
   }
 }
 
-static void buildWifiSuffixIfNeeded() {
-  if (g_wifiSuffix[0] != '\0') {
-    return;
-  }
-  uint8_t wifiMac[6] = {0};
-  if (readMacAddress(ESP_MAC_WIFI_STA, wifiMac)) {
-    sprintf(g_wifiSuffix, "%02X%02X", wifiMac[4], wifiMac[5]);
-  } else {
-    uint64_t mac = ESP.getEfuseMac();
-    sprintf(g_wifiSuffix, "%02X%02X", (uint8_t)(mac >> 8), (uint8_t)(mac));
-  }
-}
-
 void getWiFiPortalSsid(char* out, size_t outLen) {
   if (out == nullptr || outLen == 0) {
     return;
@@ -2534,7 +3712,70 @@ void getWiFiPortalSsid(char* out, size_t outLen) {
   snprintf(out, outLen, "%s_%s", WIFI_SSID, g_wifiSuffix);
 }
 
+void getWiFiPortalHostName(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return;
+  }
+  buildWifiHostNameIfNeeded();
+  copyBoundedString(out, outLen, g_wifiHostName);
+}
+
+uint16_t getConfiguredWiFiMode() {
+  loadWiFiNetworkSettingsIfNeeded();
+  return g_wifiConfiguredMode;
+}
+
+void setConfiguredWiFiMode(uint16_t mode) {
+  loadWiFiNetworkSettingsIfNeeded();
+  g_wifiConfiguredMode = (mode == WIFI_CONFIG_HOME) ? WIFI_CONFIG_HOME : WIFI_CONFIG_AP;
+}
+
+uint16_t getActiveWiFiPortalMode() {
+  return g_wifiActiveMode;
+}
+
+bool isWiFiPortalApFallbackActive() {
+  return g_wifiApFallbackActive;
+}
+
+bool hasConfiguredWiFiClientCredentials() {
+  return hasWiFiClientCredentials();
+}
+
+void getConfiguredWiFiClientSsid(char* out, size_t outLen) {
+  loadWiFiNetworkSettingsIfNeeded();
+  copyBoundedString(out, outLen, g_wifiClientSsid);
+}
+
+void getConfiguredWiFiClientPassword(char* out, size_t outLen) {
+  loadWiFiNetworkSettingsIfNeeded();
+  copyBoundedString(out, outLen, g_wifiClientPassword);
+}
+
+void setConfiguredWiFiClientCredentials(const char* ssid, const char* password) {
+  loadWiFiNetworkSettingsIfNeeded();
+  copyBoundedString(g_wifiClientSsid, sizeof(g_wifiClientSsid), ssid);
+  copyBoundedString(g_wifiClientPassword, sizeof(g_wifiClientPassword), password);
+}
+
+void saveWiFiNetworkSettings() {
+  writeWiFiNetworkSettingsToPrefs();
+}
+
+void resetWiFiNetworkSettings() {
+  stopWiFiPortal();
+  loadWiFiNetworkSettingsIfNeeded();
+  g_wifiConfiguredMode = WIFI_CONFIG_AP;
+  g_wifiClientSsid[0] = '\0';
+  g_wifiClientPassword[0] = '\0';
+  applyDefaultUiAuthCredentials();
+  writeWiFiNetworkSettingsToPrefs();
+}
+
 IPAddress getWiFiPortalIP() {
+  if (g_wifiActiveMode == WIFI_PORTAL_HOME) {
+    return WiFi.localIP();
+  }
   return WiFi.softAPIP();
 }
 
@@ -2545,22 +3786,26 @@ static void registerWebRoutes() {
 
   g_wifiServer->on("/", handleRoot);
   g_wifiServer->on("/index.html", HTTP_GET, handleRoot);
+  g_wifiServer->on("/ui/public.html", HTTP_GET, handleRoot);
   g_wifiServer->on("/ui", HTTP_GET, handleUi);
   g_wifiServer->on("/ui/", HTTP_GET, handleUi);
   g_wifiServer->on("/ui/index.html", HTTP_GET, handleUi);
-  g_wifiServer->on("/api/info", HTTP_GET, handleInfo);
-  g_wifiServer->on("/api/schema", HTTP_GET, handleSchema);
-  g_wifiServer->on("/api/state", HTTP_GET, handleState);
-  g_wifiServer->on("/api/apply", HTTP_POST, handleApply);
-  g_wifiServer->on("/api/save", HTTP_POST, handleSave);
-  g_wifiServer->on("/api/telemetry/status", HTTP_GET, handleTelemetryStatus);
-  g_wifiServer->on("/api/telemetry/live", HTTP_GET, handleTelemetryLive);
-  g_wifiServer->on("/api/telemetry/start", HTTP_POST, handleTelemetryStart);
-  g_wifiServer->on("/api/telemetry/stop", HTTP_POST, handleTelemetryStop);
-  g_wifiServer->on("/api/telemetry/clear", HTTP_POST, handleTelemetryClear);
-  g_wifiServer->on("/api/telemetry/export.csv", HTTP_GET, handleTelemetryExportCsv);
-  g_wifiServer->on("/api/telemetry/export.json", HTTP_GET, handleTelemetryExportJson);
-  g_wifiServer->on("/backup", HTTP_GET, handleBackup);
+  g_wifiServer->on("/controller", HTTP_GET, handleUi);
+  g_wifiServer->on("/controller/", HTTP_GET, handleUi);
+  g_wifiServer->on("/controller/index.html", HTTP_GET, handleUi);
+  g_wifiServer->on("/api/info", HTTP_GET, []() { if (!requireControllerAuth()) return; handleInfo(); });
+  g_wifiServer->on("/api/schema", HTTP_GET, []() { if (!requireControllerAuth()) return; handleSchema(); });
+  g_wifiServer->on("/api/state", HTTP_GET, []() { if (!requireControllerAuth()) return; handleState(); });
+  g_wifiServer->on("/api/apply", HTTP_POST, []() { if (!requireControllerAuth()) return; handleApply(); });
+  g_wifiServer->on("/api/save", HTTP_POST, []() { if (!requireControllerAuth()) return; handleSave(); });
+  g_wifiServer->on("/api/telemetry/status", HTTP_GET, []() { if (!requireControllerAuth()) return; handleTelemetryStatus(); });
+  g_wifiServer->on("/api/telemetry/live", HTTP_GET, []() { if (!requireControllerAuth()) return; handleTelemetryLive(); });
+  g_wifiServer->on("/api/telemetry/start", HTTP_POST, []() { if (!requireControllerAuth()) return; handleTelemetryStart(); });
+  g_wifiServer->on("/api/telemetry/stop", HTTP_POST, []() { if (!requireControllerAuth()) return; handleTelemetryStop(); });
+  g_wifiServer->on("/api/telemetry/clear", HTTP_POST, []() { if (!requireControllerAuth()) return; handleTelemetryClear(); });
+  g_wifiServer->on("/api/telemetry/export.csv", HTTP_GET, []() { if (!requireControllerAuth()) return; handleTelemetryExportCsv(); });
+  g_wifiServer->on("/api/telemetry/export.json", HTTP_GET, []() { if (!requireControllerAuth()) return; handleTelemetryExportJson(); });
+  g_wifiServer->on("/backup", HTTP_GET, []() { if (!requireControllerAuth()) return; handleBackup(); });
   g_wifiServer->on("/docs", HTTP_GET, handleDocsDefault);
   g_wifiServer->on("/docs/", HTTP_GET, handleDocsDefault);
   g_wifiServer->on("/docs/index.html", HTTP_GET, handleDocsDefault);
@@ -2570,6 +3815,12 @@ static void registerWebRoutes() {
   g_wifiServer->on("/docs/no", HTTP_GET, handleDocsNo);
   g_wifiServer->on("/docs/no/", HTTP_GET, handleDocsNo);
   g_wifiServer->on("/docs/no/index.html", HTTP_GET, handleDocsNo);
+  g_wifiServer->on("/docs/nl", HTTP_GET, handleDocsNl);
+  g_wifiServer->on("/docs/nl/", HTTP_GET, handleDocsNl);
+  g_wifiServer->on("/docs/nl/index.html", HTTP_GET, handleDocsNl);
+  g_wifiServer->on("/docs/pt", HTTP_GET, handleDocsPt);
+  g_wifiServer->on("/docs/pt/", HTTP_GET, handleDocsPt);
+  g_wifiServer->on("/docs/pt/index.html", HTTP_GET, handleDocsPt);
   g_wifiServer->on("/docs/es", HTTP_GET, handleDocsEs);
   g_wifiServer->on("/docs/es/", HTTP_GET, handleDocsEs);
   g_wifiServer->on("/docs/es/index.html", HTTP_GET, handleDocsEs);
@@ -2581,9 +3832,15 @@ static void registerWebRoutes() {
   g_wifiServer->on("/docs/it/index.html", HTTP_GET, handleDocsIt);
   g_wifiServer->on("/docs/assets/curve_examples.png", HTTP_GET, handleDocsCurveAsset);
   g_wifiServer->on("/docs/assets/trig_cal.png", HTTP_GET, handleDocsTriggerAsset);
-  g_wifiServer->on("/restore", HTTP_POST, handleRestore, handleRestoreUpload);
-  g_wifiServer->on("/ota", HTTP_POST, handleOta, handleOtaUpload);
-  g_wifiServer->on("/ota-spiffs", HTTP_POST, handleOta, handleOtaUpload);
+  g_wifiServer->on("/restore", HTTP_POST,
+                   []() { if (!requireControllerAuth()) return; handleRestore(); },
+                   []() { if (!requireControllerAuth()) return; handleRestoreUpload(); });
+  g_wifiServer->on("/ota-fw", HTTP_POST,
+                   []() { if (!requireControllerAuth()) return; handleOta(); },
+                   []() { if (!requireControllerAuth()) return; handleOtaUpload(); });
+  g_wifiServer->on("/ota-spiffs", HTTP_POST,
+                   []() { if (!requireControllerAuth()) return; handleOta(); },
+                   []() { if (!requireControllerAuth()) return; handleOtaUpload(); });
 }
 
 bool isWiFiPortalActive() {
@@ -2591,14 +3848,28 @@ bool isWiFiPortalActive() {
 }
 
 bool isOtaInProgress() {
-  return g_otaInProgress;
+  return g_otaInProgress || isOtaDeferredRestartActive();
 }
 
-bool startWiFiPortal() {
-  if (g_wifiServer != nullptr) {
-    return true;
+static void stopWiFiTransportOnly() {
+  if (g_mdnsActive) {
+    MDNS.end();
+    g_mdnsActive = false;
   }
 
+  if (g_wifiActiveMode == WIFI_PORTAL_AP) {
+    WiFi.softAPdisconnect(true);
+  } else if (g_wifiActiveMode == WIFI_PORTAL_HOME) {
+    WiFi.disconnect();
+  }
+
+  WiFi.mode(WIFI_OFF);
+  g_wifiActiveMode = WIFI_PORTAL_OFF;
+  g_wifiApFallbackActive = false;
+  g_wifiConnectedSsid[0] = '\0';
+}
+
+static bool startWiFiApTransport() {
   char ssid[20];
   getWiFiPortalSsid(ssid, sizeof(ssid));
 
@@ -2608,13 +3879,73 @@ bool startWiFiPortal() {
     return false;
   }
   delay(100);
+  g_wifiActiveMode = WIFI_PORTAL_AP;
+  return true;
+}
 
+static bool startWiFiHomeTransportAttempt() {
+  WiFi.persistent(false);
+  WiFi.disconnect(true, false, 250);
+  WiFi.mode(WIFI_OFF);
+  delay(120);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.setAutoReconnect(true);
+  WiFi.setHostname(g_wifiHostName);
+  delay(50);
+  WiFi.begin(g_wifiClientSsid, g_wifiClientPassword);
+
+  uint32_t startedAt = millis();
+  while ((millis() - startedAt) < WIFI_STA_CONNECT_TIMEOUT_MS) {
+    wl_status_t status = WiFi.status();
+    if (status == WL_CONNECTED) {
+      break;
+    }
+    if (status == WL_CONNECT_FAILED) {
+      break;
+    }
+    delay(100);
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.disconnect(true, false, 250);
+    WiFi.mode(WIFI_OFF);
+    delay(120);
+    return false;
+  }
+
+  copyBoundedString(g_wifiConnectedSsid, sizeof(g_wifiConnectedSsid), WiFi.SSID().c_str());
+  if (MDNS.begin(g_wifiHostName)) {
+    g_mdnsActive = true;
+  }
+  g_wifiActiveMode = WIFI_PORTAL_HOME;
+  return true;
+}
+
+static bool startWiFiHomeTransport() {
+  if (!hasWiFiClientCredentials()) {
+    return false;
+  }
+
+  buildWifiHostNameIfNeeded();
+
+  for (uint8_t attempt = 0; attempt < 2; attempt++) {
+    if (startWiFiHomeTransportAttempt()) {
+      return true;
+    }
+    delay(200);
+  }
+
+  return false;
+}
+
+static bool startWiFiServerOnly() {
   g_spiffsMounted = SPIFFS.begin(false);
 
   g_wifiServer = new WebServer(80);
   if (g_wifiServer == nullptr) {
-    WiFi.softAPdisconnect(true);
-    WiFi.mode(WIFI_OFF);
+    stopWiFiTransportOnly();
     if (g_spiffsMounted) {
       SPIFFS.end();
       g_spiffsMounted = false;
@@ -2627,6 +3958,32 @@ bool startWiFiPortal() {
   return true;
 }
 
+bool startWiFiPortal() {
+  if (g_wifiServer != nullptr) {
+    return true;
+  }
+
+  loadWiFiNetworkSettingsIfNeeded();
+  g_wifiApFallbackActive = false;
+  g_wifiConnectedSsid[0] = '\0';
+
+  bool networkReady = false;
+  if (g_wifiConfiguredMode == WIFI_CONFIG_HOME && hasWiFiClientCredentials()) {
+    networkReady = startWiFiHomeTransport();
+  }
+
+  if (!networkReady) {
+    g_wifiApFallbackActive = (g_wifiConfiguredMode == WIFI_CONFIG_HOME);
+    networkReady = startWiFiApTransport();
+  }
+
+  if (!networkReady) {
+    return false;
+  }
+
+  return startWiFiServerOnly();
+}
+
 void serviceWiFiPortal() {
   if (g_wifiServer != nullptr) {
     g_wifiServer->handleClient();
@@ -2636,12 +3993,24 @@ void serviceWiFiPortal() {
 void serviceConnectivityPortal() {
   serviceWiFiPortal();
   serviceUsbSerialCommands();
+  isOtaDeferredRestartActive();
+  if (g_wifiRestartPending && !isOtaInProgress() &&
+      (int32_t)(millis() - g_wifiRestartAtMs) >= 0) {
+    g_wifiRestartPending = false;
+    if (isWiFiPortalActive()) {
+      stopWiFiPortal();
+      startWiFiPortal();
+    }
+  }
 }
 
 void stopWiFiPortal() {
-  if (g_otaInProgress) {
+  if (isOtaInProgress()) {
     return;
   }
+
+  g_wifiRestartPending = false;
+  g_wifiRestartAtMs = 0;
 
   telemetryStopLogging();
 
@@ -2651,8 +4020,7 @@ void stopWiFiPortal() {
     g_wifiServer = nullptr;
   }
 
-  WiFi.softAPdisconnect(true);
-  WiFi.mode(WIFI_OFF);
+  stopWiFiTransportOnly();
 
   if (g_spiffsMounted) {
     SPIFFS.end();
@@ -2662,55 +4030,133 @@ void stopWiFiPortal() {
 
 
 /**
- * @brief Main WiFi backup/restore screen - called from settings menu
- * @details Starts WiFi AP, runs HTTP server, shows info on OLED.
- *          Returns when user presses encoder button or brake button.
+ * @brief Shared dismissable 2-line message screen.
  */
-void showWiFiPortalScreen() {
-  char msgStr[32];
-  bool wasAlreadyActive = isWiFiPortalActive();
+static void showDismissableMessageScreen(const char* title, const char* line1, const char* line2) {
+  obdFill(&g_obd, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+  if (line1 != nullptr && line1[0] != '\0') {
+    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)line1, FONT_6x8, OBD_BLACK, 1);
+  }
+  if (line2 != nullptr && line2[0] != '\0') {
+    obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)line2, FONT_6x8, OBD_BLACK, 1);
+  }
 
-  if (!startWiFiPortal()) {
-    obdFill(&g_obd, OBD_WHITE, 1);
-    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)"WiFi start failed", FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Press to exit", FONT_8x8, OBD_BLACK, 1);
-    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
-        break;
-      }
-      vTaskDelay(1);
+  while (!g_rotaryEncoder.isEncoderButtonClicked()) {
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      break;
     }
-    obdFill(&g_obd, OBD_WHITE, 1);
+    vTaskDelay(1);
+  }
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+static void drawWrappedFont6x8Lines(uint8_t startRow, uint8_t maxRows, const char* text) {
+  if (text == nullptr || text[0] == '\0' || startRow >= 8 || maxRows == 0) {
     return;
   }
 
-  char ssid[20];
-  getWiFiPortalSsid(ssid, sizeof(ssid));
-  IPAddress ip = getWiFiPortalIP();
+  const uint8_t rowsAvailable = (maxRows < (uint8_t)(8 - startRow)) ? maxRows : (uint8_t)(8 - startRow);
+  const size_t charsPerLine = 21;
+  size_t textLen = strlen(text);
+  for (uint8_t row = 0; row < rowsAvailable; row++) {
+    size_t offset = (size_t)row * charsPerLine;
+    if (offset >= textLen) {
+      break;
+    }
+    size_t remaining = textLen - offset;
+    size_t chunkLen = (remaining < charsPerLine) ? remaining : charsPerLine;
+    char line[22];
+    memcpy(line, text + offset, chunkLen);
+    line[chunkLen] = '\0';
+    obdWriteString(&g_obd, 0, 0, (startRow + row) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+  }
+}
 
-  /* Display WiFi info on OLED (FONT_6x8 = 21 chars/line) */
+static void drawWiFiPortalScreenPage(uint8_t pageIndex, const IPAddress& ip) {
+  char line[40];
   obdFill(&g_obd, OBD_WHITE, 1);
-  const char* wifiTitle = "WiFi info";
-  obdWriteString(&g_obd, 0, centerX8x8(wifiTitle), 0, (char*)wifiTitle, FONT_8x8, OBD_BLACK, 1);
 
-  sprintf(msgStr, "SSID: %s", ssid);
-  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  if (pageIndex != 0) {
+    char userLine[UI_AUTH_USER_MAX_LEN + 7];
+    char passLine[UI_AUTH_PASS_MAX_LEN + 7];
+    const char* title = "Login 2/2";
+    snprintf(userLine, sizeof(userLine), "User: %s", g_uiAuthUsername);
+    snprintf(passLine, sizeof(passLine), "Pass: %s", g_uiAuthPassword);
+    obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+    drawWrappedFont6x8Lines(2, 2, userLine);
+    drawWrappedFont6x8Lines(4, 3, passLine);
+    return;
+  }
 
-  sprintf(msgStr, "Pass: %s", WIFI_PASS);
-  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+  if (g_wifiActiveMode == WIFI_PORTAL_HOME) {
+    const char* shownSsid = (g_wifiConnectedSsid[0] != '\0') ? g_wifiConnectedSsid : g_wifiClientSsid;
+    const char* title = "Client 1/2";
+    obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+    snprintf(line, sizeof(line), "SSID: %.15s", shownSsid);
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Open in browser", FONT_6x8, OBD_BLACK, 1);
+    snprintf(line, sizeof(line), "%s", ip.toString().c_str());
+    obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+  } else {
+    char ssid[20];
+    const char* title = g_wifiApFallbackActive ? "Fallback 1/2" : "AP 1/2";
+    getWiFiPortalSsid(ssid, sizeof(ssid));
+    obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+    snprintf(line, sizeof(line), "SSID: %s", ssid);
+    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    snprintf(line, sizeof(line), "Pass: %s", WIFI_PASS);
+    obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+    obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Open in browser", FONT_6x8, OBD_BLACK, 1);
+    snprintf(line, sizeof(line), "%s", ip.toString().c_str());
+    obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+  }
+}
 
-  obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Open in browser:", FONT_6x8, OBD_BLACK, 1);
-  sprintf(msgStr, "%s", ip.toString().c_str());
-  obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+/**
+ * @brief Main WiFi info screen - called from settings menu
+ * @details Starts configured WiFi transport and shows connection details on OLED.
+ *          Returns when user presses encoder button or brake button.
+ */
+void showWiFiPortalScreen() {
+  bool wasAlreadyActive = isWiFiPortalActive();
 
-  /* Service loop - handle HTTP requests until user exits */
+  if (!startWiFiPortal()) {
+    showDismissableMessageScreen("WiFi failed", "Could not start", "Press to exit");
+    return;
+  }
+
+  IPAddress ip = getWiFiPortalIP();
+  uint8_t pageIndex = 0;
+  g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+  setUiEncoderBoundaries(0, 1, false);
+  resetUiEncoder(pageIndex);
+  drawWiFiPortalScreenPage(pageIndex, ip);
+
   while (true) {
     serviceConnectivityPortal();
 
-    /* Block exit during OTA to prevent bricking */
-    if (!g_otaInProgress) {
+    if (!isOtaInProgress()) {
+      if (g_rotaryEncoder.encoderChanged()) {
+        uint8_t nextPage = (uint8_t)readUiEncoder();
+        if (nextPage > 1) {
+          nextPage = 1;
+        }
+        if (nextPage != pageIndex) {
+          pageIndex = nextPage;
+          drawWiFiPortalScreenPage(pageIndex, ip);
+        }
+      }
+
       if (g_rotaryEncoder.isEncoderButtonClicked()) {
+        if (pageIndex == 0) {
+          pageIndex = 1;
+          resetUiEncoder(pageIndex);
+          drawWiFiPortalScreenPage(pageIndex, ip);
+          delay(120);
+          continue;
+        }
         break;
       }
 
@@ -2734,17 +4180,15 @@ void showWiFiQrScreen() {
   bool wasAlreadyActive = isWiFiPortalActive();
 
   if (!startWiFiPortal()) {
-    obdFill(&g_obd, OBD_WHITE, 1);
-    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)"WiFi start failed", FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Press to exit", FONT_8x8, OBD_BLACK, 1);
-    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
-        break;
-      }
-      vTaskDelay(1);
+    showDismissableMessageScreen("WiFi failed", "Could not start", "Press to exit");
+    return;
+  }
+
+  if (g_wifiActiveMode != WIFI_PORTAL_AP) {
+    if (!wasAlreadyActive) {
+      stopWiFiPortal();
     }
-    obdFill(&g_obd, OBD_WHITE, 1);
+    showDismissableMessageScreen("QR unavailable", "QR works only", "in AP mode");
     return;
   }
 
@@ -2755,20 +4199,10 @@ void showWiFiQrScreen() {
   getWiFiPortalSsid(ssid, sizeof(ssid));
   if (!buildWiFiQrPayload(ssid, WIFI_PASS, payload) ||
       !buildWiFiQrMatrix(payload, modules)) {
-    obdFill(&g_obd, OBD_WHITE, 1);
-    obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)"QR build failed", FONT_8x8, OBD_BLACK, 1);
-    obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Press to exit", FONT_8x8, OBD_BLACK, 1);
-    while (!g_rotaryEncoder.isEncoderButtonClicked()) {
-      if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
-        delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
-        break;
-      }
-      vTaskDelay(1);
-    }
+    showDismissableMessageScreen("QR failed", "Could not build", "Press to exit");
     if (!wasAlreadyActive) {
       stopWiFiPortal();
     }
-    obdFill(&g_obd, OBD_WHITE, 1);
     return;
   }
 
@@ -2777,7 +4211,7 @@ void showWiFiQrScreen() {
   while (true) {
     serviceConnectivityPortal();
 
-    if (!g_otaInProgress) {
+    if (!isOtaInProgress()) {
       if (g_rotaryEncoder.isEncoderButtonClicked()) {
         break;
       }
@@ -2793,6 +4227,44 @@ void showWiFiQrScreen() {
 
   if (!wasAlreadyActive) {
     stopWiFiPortal();
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+void showWiFiHomeSetupScreen() {
+  loadWiFiNetworkSettingsIfNeeded();
+
+  char line[32];
+  obdFill(&g_obd, OBD_WHITE, 1);
+  const char* title = "Client setup";
+  obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
+
+  if (g_wifiClientSsid[0] != '\0') {
+    snprintf(line, sizeof(line), "SSID: %.15s", g_wifiClientSsid);
+  } else {
+    snprintf(line, sizeof(line), "SSID: (not set)");
+  }
+  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+
+  snprintf(line, sizeof(line), "Pass: %s", g_wifiClientPassword[0] != '\0' ? "saved" : "empty");
+  obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"Set via web UI", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 7 * HEIGHT8x8, (char*)"or USB serial", FONT_6x8, OBD_BLACK, 1);
+
+  while (true) {
+    serviceConnectivityPortal();
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      break;
+    }
+
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      delay(BUTTON_SHORT_PRESS_DEBOUNCE_MS);
+      break;
+    }
+
+    vTaskDelay(1);
   }
 
   obdFill(&g_obd, OBD_WHITE, 1);

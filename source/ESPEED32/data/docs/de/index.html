@@ -1,3 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 Benutzerhandbuch (DE)</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#151a1f;
+    --paper:#1f262e;
+    --ink:#eef2f7;
+    --muted:#b8c7d8;
+    --line:#39495a;
+    --accent:#ff6b5d;
+    --accent-2:#59b9dd;
+    --chip:#283340;
+    --chip-border:#405061;
+    --code-bg:#242f3b;
+    --code-border:#3b4b5b;
+    --pre-bg:#1a232c;
+    --pre-border:#324254;
+    --th-bg:#2a3441;
+    --ghost:#283340;
+    --shadow:0 10px 24px rgba(0,0,0,.35);
+  }
+}
+html[data-theme="light"]{
+  --bg:#f3f1eb;
+  --paper:#fffdfa;
+  --ink:#191919;
+  --muted:#57534e;
+  --line:#d6d0c4;
+  --accent:#b42318;
+  --accent-2:#1f6a8a;
+  --chip:#efe9dc;
+  --chip-border:#dccfb6;
+  --code-bg:#f5f0e6;
+  --code-border:#e0d7c6;
+  --pre-bg:#f7fafc;
+  --pre-border:#cfd8dc;
+  --th-bg:#efe9dc;
+  --ghost:#eee7da;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+}
+html[data-theme="dark"]{
+  --bg:#151a1f;
+  --paper:#1f262e;
+  --ink:#eef2f7;
+  --muted:#b8c7d8;
+  --line:#39495a;
+  --accent:#ff6b5d;
+  --accent-2:#59b9dd;
+  --chip:#283340;
+  --chip-border:#405061;
+  --code-bg:#242f3b;
+  --code-border:#3b4b5b;
+  --pre-bg:#1a232c;
+  --pre-border:#324254;
+  --th-bg:#2a3441;
+  --ghost:#283340;
+  --shadow:0 10px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--ink);
+  font-family:"Segoe UI",Tahoma,Verdana,sans-serif;
+  background:
+    linear-gradient(120deg,rgba(180,35,24,.08),rgba(31,106,138,.08)),
+    repeating-linear-gradient(0deg,transparent 0 30px,rgba(25,25,25,.02) 30px 31px),
+    var(--bg);
+}
+main{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+header{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:30px;line-height:1.1}
+p.lead{margin:0;color:var(--muted)}
+nav.top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+a.btn{display:inline-block;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
+a.primary{background:var(--accent);color:#fff}
+a.secondary{background:var(--accent-2);color:#fff}
+a.ghost{background:var(--ghost);color:var(--ink)}
+.lang-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-radius:10px;background:var(--ghost)}
+.lang-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.lang-tools select{min-width:180px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;cursor:pointer}
+section{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{margin:0 0 10px;font-size:20px}
+h3{margin:14px 0 8px;font-size:16px}
+h4{margin:12px 0 6px;font-size:15px}
+h2,h3,h4,details.doc-fold summary{scroll-margin-top:16px}
+p{margin:8px 0;line-height:1.45}
+ul,ol{margin:8px 0 0 20px;padding:0}
+li{margin:4px 0;line-height:1.4}
+code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1px 5px}
+pre{margin:8px 0 0;padding:12px;border-radius:10px;border:1px solid var(--pre-border);background:var(--pre-bg);overflow:auto;line-height:1.3}
+.small{font-size:13px;color:var(--muted)}
+.sources{margin:8px 0 0 18px;padding:0}
+.sources li{font-size:13px;color:var(--muted);line-height:1.35}
+.warn{color:var(--accent);font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--th-bg)}
+.badge{display:inline-block;background:var(--chip);border:1px solid var(--chip-border);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--ink)}
+.theme-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.theme-tools label{font-size:13px;color:var(--muted);font-weight:700}
+.theme-tools select{padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+figure.doc-media{margin:10px 0 0}
+figure.doc-media img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+figure.doc-media figcaption{margin-top:6px;font-size:13px;color:var(--muted)}
+details.doc-fold{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);overflow:hidden;padding:0 12px 12px}
+details.doc-fold summary{cursor:pointer;list-style:none;font-size:16px;font-weight:700;padding:12px 38px 12px 12px;position:relative;background:var(--ghost);margin:0 -12px;border-bottom:1px solid var(--line)}
+details.doc-fold summary::-webkit-details-marker{display:none}
+details.doc-fold summary::after{content:'+';position:absolute;right:12px;top:10px;font-size:20px;color:var(--muted)}
+details.doc-fold[open] summary::after{content:'-'}
+details.doc-fold>:not(summary){margin-top:8px}
+.anchor-target .heading-anchor{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left:8px;
+  color:var(--muted);
+  text-decoration:none;
+  opacity:.65;
+  transition:opacity .15s ease,color .15s ease;
+}
+.anchor-target:hover .heading-anchor,
+.anchor-target:focus-within .heading-anchor,
+.heading-anchor:focus{
+  opacity:1;
+  color:var(--accent);
+}
+.heading-anchor::before{
+  content:"\1F4CE";
+  font-size:.85em;
+  line-height:1;
+}
+@media (max-width:760px){
+  h1{font-size:24px}
+  .lang-tools{width:100%}
+  .lang-tools select{flex:1;min-width:0}
+  table{font-size:13px}
+}</style>
+</head>
+<body>
 <main>
   <header>
     <h1>ESPEED32 Benutzerhandbuch</h1>
@@ -484,3 +647,180 @@
   </section>
 
 </main>
+<script>
+(function(){
+  var key = "espeed32-doc-theme";
+  var root = document.documentElement;
+  var themeSelect = document.getElementById("theme-select");
+  var langSelect = document.getElementById("lang-select");
+
+  var path = (window.location.pathname || "").toLowerCase();
+  var activeLang = (root.getAttribute("lang") || "en").toLowerCase();
+  if (path.indexOf("/docs/no") !== -1) activeLang = "no";
+  else if (path.indexOf("/docs/en") !== -1) activeLang = "en";
+  else if (path.indexOf("/docs/nl") !== -1) activeLang = "nl";
+  else if (path.indexOf("/docs/pt") !== -1) activeLang = "pt";
+  else if (path.indexOf("/docs/es") !== -1) activeLang = "es";
+  else if (path.indexOf("/docs/de") !== -1) activeLang = "de";
+  else if (path.indexOf("/docs/it") !== -1) activeLang = "it";
+
+  var languageOptions = [
+    { value: "no", label: "\uD83C\uDDF3\uD83C\uDDF4 Norsk" },
+    { value: "en", label: "\uD83C\uDDEC\uD83C\uDDE7 English" },
+    { value: "nl", label: "\uD83C\uDDF3\uD83C\uDDF1 Nederlands" },
+    { value: "pt", label: "\uD83C\uDDF5\uD83C\uDDF9 Portugues" },
+    { value: "es", label: "\uD83C\uDDEA\uD83C\uDDF8 Espa\u00F1ol" },
+    { value: "de", label: "\uD83C\uDDE9\uD83C\uDDEA Deutsch" },
+    { value: "it", label: "\uD83C\uDDEE\uD83C\uDDF9 Italiano" }
+  ];
+
+  function apply(mode){
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+  }
+
+  if (themeSelect) {
+    var saved = localStorage.getItem(key);
+    if (saved !== "light" && saved !== "dark" && saved !== "system") saved = "system";
+    themeSelect.value = saved;
+    apply(saved);
+    themeSelect.addEventListener("change", function(){
+      localStorage.setItem(key, themeSelect.value);
+      apply(themeSelect.value);
+    });
+  } else {
+    apply("system");
+  }
+
+  var anchorLabels = {
+    en: "Link to this heading",
+    no: "Lenke til denne overskriften",
+    nl: "Link naar deze kop",
+    pt: "Link para este titulo",
+    es: "Enlace a este titulo",
+    de: "Link zu dieser Uberschrift",
+    it: "Link a questo titolo"
+  };
+
+  function slugify(text){
+    var slug = String(text || "").toLowerCase();
+    slug = slug
+      .replace(/[æ]/g, "ae")
+      .replace(/[ø]/g, "o")
+      .replace(/[å]/g, "a")
+      .replace(/[ä]/g, "a")
+      .replace(/[ö]/g, "o")
+      .replace(/[ü]/g, "u")
+      .replace(/[ß]/g, "ss")
+      .replace(/[ñ]/g, "n");
+    if (slug.normalize) slug = slug.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    slug = slug.replace(/^\d+[\.\)]\s*/, "");
+    slug = slug.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return slug || "section";
+  }
+
+  function collectUsedIds(){
+    var used = {};
+    var nodes = document.querySelectorAll("[id]");
+    for (var i = 0; i < nodes.length; i++) {
+      var id = nodes[i].id;
+      if (!id) continue;
+      used[id] = (used[id] || 0) + 1;
+    }
+    return used;
+  }
+
+  function makeUniqueId(base, used){
+    if (!used[base]) {
+      used[base] = 1;
+      return base;
+    }
+    var index = 2;
+    var next = base + "-" + index;
+    while (used[next]) {
+      index += 1;
+      next = base + "-" + index;
+    }
+    used[next] = 1;
+    return next;
+  }
+
+  function addHeadingAnchors(){
+    var used = collectUsedIds();
+    var label = anchorLabels[activeLang] || anchorLabels.en;
+    var targets = document.querySelectorAll("h2, h3, h4, details.doc-fold > summary");
+    for (var i = 0; i < targets.length; i++) {
+      var target = targets[i];
+      target.classList.add("anchor-target");
+      if (!target.id) target.id = makeUniqueId(slugify(target.textContent), used);
+      if (target.querySelector(".heading-anchor")) continue;
+      var link = document.createElement("a");
+      link.className = "heading-anchor";
+      link.href = "#" + target.id;
+      link.setAttribute("aria-label", label);
+      link.setAttribute("title", label);
+      link.addEventListener("click", function(event){
+        event.stopPropagation();
+      });
+      target.appendChild(link);
+    }
+  }
+
+  function openAncestorDetails(node){
+    var current = node;
+    while (current) {
+      if (current.tagName === "DETAILS") current.open = true;
+      current = current.parentElement;
+    }
+  }
+
+  function getHashTarget(){
+    var hash = window.location.hash || "";
+    if (!hash || hash.charAt(0) !== "#") return null;
+    var id = hash.slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch (err) {}
+    return document.getElementById(id);
+  }
+
+  function revealHashTarget(){
+    var target = getHashTarget();
+    if (!target) return;
+    openAncestorDetails(target);
+    target.scrollIntoView();
+  }
+
+  function docsHrefForLang(lang){
+    var url = new URL(window.location.href);
+    var lowerPath = url.pathname.toLowerCase();
+    var docsIndex = lowerPath.indexOf("/docs");
+    if (docsIndex === -1) return new URL("../" + lang + "/index.html", url.href).href;
+    url.pathname = url.pathname.slice(0, docsIndex) + "/docs/" + lang + "/index.html";
+    url.hash = "";
+    return url.toString();
+  }
+
+  function initLanguageSelect(){
+    if (!langSelect) return;
+    for (var i = 0; i < languageOptions.length; i++) {
+      var config = languageOptions[i];
+      var option = document.createElement("option");
+      option.value = config.value;
+      option.textContent = config.label;
+      langSelect.appendChild(option);
+    }
+    langSelect.value = activeLang;
+    langSelect.addEventListener("change", function(){
+      window.location.href = docsHrefForLang(langSelect.value);
+    });
+  }
+
+  addHeadingAnchors();
+  revealHashTarget();
+  window.addEventListener("hashchange", revealHashTarget);
+  initLanguageSelect();
+})();</script>
+<script src="/ui/chat-widget.js"></script>
+</body>
+</html>

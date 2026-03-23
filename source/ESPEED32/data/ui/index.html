@@ -579,6 +579,7 @@ form{margin:0}
 .subsection[open] summary{margin-bottom:8px}
 .btn.disabled{opacity:.55;pointer-events:none}
 .update-stack{display:grid;gap:12px}
+.update-panel-wide{grid-column:1 / -1}
 .update-actions{display:grid;gap:8px}
 .update-actions .btn{width:100%;min-width:0;margin:0}
 .update-actions form{margin:0}
@@ -1083,7 +1084,7 @@ form{margin:0}
 <h2>Repo &amp; Release</h2>
 <div class="card repo-card">
 <p class="tiny"><b>Main repository for espeed32.com:</b> <a href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">nerdweeg/ESPEED32</a></p>
-<div id="release-info" class="tiny">Latest firmware release (official repo nerdweeg/ESPEED32): checking...</div>
+<div id="release-info" class="tiny">Official releases (nerdweeg/ESPEED32): checking...</div>
 <p class="tiny">Original upstream project: <a href="https://github.com/MakerFabio/ESPEED32" target="_blank" rel="noopener">MakerFabio/ESPEED32</a></p>
 </div>
 </section>
@@ -1095,6 +1096,7 @@ form{margin:0}
 <div class="controller-spec"><span class="controller-spec-label">Device ID</span><span class="controller-spec-value"><code id="about-device-id">----</code></span></div>
 <div class="controller-spec"><span class="controller-spec-label">Firmware</span><span class="controller-spec-value"><code id="about-firmware">-</code></span></div>
 <div class="controller-spec"><span class="controller-spec-label">Data</span><span class="controller-spec-value"><code id="about-data">-</code></span></div>
+<div class="controller-spec"><span class="controller-spec-label">Filesystem/UI</span><span class="controller-spec-value"><code id="about-spiffs-release">-</code></span></div>
 <div class="controller-spec"><span class="controller-spec-label">HAL Sensor</span><span class="controller-spec-value" id="about-sensor">-</span></div>
 <div class="controller-spec"><span class="controller-spec-label">Chip</span><span class="controller-spec-value" id="about-chip">-</span></div>
 <div class="controller-spec"><span class="controller-spec-label">WiFi MAC</span><span class="controller-spec-value"><code id="about-wifi-mac">-</code></span></div>
@@ -1242,7 +1244,7 @@ form{margin:0}
 </section>
 <div class="update-stack">
 <section id="fw-section" class="panel update-panel">
-<h2>Firmware Update (.bin)</h2>
+<h2>Automatic Update Firmware and File System</h2>
 <div class="update-actions">
 <div class="row">
 <label for="fw-release-select">Firmware Version</label>
@@ -1250,53 +1252,61 @@ form{margin:0}
 <option value="">Loading latest...</option>
 </select>
 </div>
-<p id="fw-release-note" class="tiny">Choose which release the auto update buttons should install. Manual upload still uses the local file you choose.</p>
+<p id="fw-release-note" class="tiny">Choose which release automatic update should install. Both firmware and filesystem will be updated together.</p>
 <p id="fw-release-source" class="tiny" style="display:none"></p>
-<form id="of">
-<input type="file" id="fw" accept=".bin">
-<button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
-</form>
-<button type="button" class="btn dl" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update Selected</button>
-<p id="fw-auto-desc" class="tiny">Downloads the selected official firmware release and installs it automatically.</p>
-<p class="tiny">Manual upload: download any firmware <code>.bin</code> you want, then upload that file here.</p>
+<button type="button" class="btn dl" id="btn-fw-auto" onclick="autoUpdateFirmware()">Install Selected Release</button>
+<p id="fw-auto-desc" class="tiny">Downloads the selected release pair, uploads firmware first and filesystem second, then reboots once at the end.</p>
+<p class="tiny">Recommended when you want a matched official release without downloading files manually.</p>
 </div>
-<div id="fw-progress" class="progress-wrap" aria-live="polite">
-<div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
-<div class="progress-track"><div id="fw-progress-fill" class="progress-fill"></div></div>
-</div>
-<p class="warn">Do not disconnect power during update.</p>
 <p id="ota-note" style="display:none" class="warn"></p>
-<div id="ost" class="st"></div>
+<div id="auto-fw-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="auto-fw-progress-label">Firmware stage idle</span><span id="auto-fw-progress-pct">0%</span></div>
+<div class="progress-track"><div id="auto-fw-progress-fill" class="progress-fill"></div></div>
+</div>
+<div id="auto-spiffs-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="auto-spiffs-progress-label">Filesystem stage idle</span><span id="auto-spiffs-progress-pct">0%</span></div>
+<div class="progress-track"><div id="auto-spiffs-progress-fill" class="progress-fill"></div></div>
+</div>
+<div id="auto-ota-status" class="st"></div>
+<p class="warn">Do not disconnect power during update.</p>
 </section>
 <section id="spiffs-section" class="panel update-panel">
-<h2>Filesystem Update (SPIFFS .bin)</h2>
+<h2>Manual Update Firmware and File System</h2>
 <div class="update-actions">
-<form id="sf">
+<div class="row">
+<label for="fw">Firmware File</label>
+<input type="file" id="fw" accept=".bin">
+</div>
+<div class="row">
+<label for="spiffs">Filesystem File</label>
 <input type="file" id="spiffs" accept=".bin">
-<button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem (.bin)</button>
-</form>
-<button type="button" class="btn dl" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update Selected</button>
-<p id="spiffs-auto-desc" class="tiny">Downloads the filesystem image for the selected release and installs it automatically.</p>
-<p class="tiny">Manual upload: download any SPIFFS <code>.bin</code> you want, then upload that file here.</p>
 </div>
-<div id="spiffs-progress" class="progress-wrap" aria-live="polite">
-<div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
-<div class="progress-track"><div id="spiffs-progress-fill" class="progress-fill"></div></div>
+<button type="button" class="btn ota" id="btn-ota-upload" onclick="uploadSelectedUpdatePair()">Install Selected Files</button>
+<p id="spiffs-auto-desc" class="tiny">Select both files from the same release. The controller uploads firmware first and filesystem second, then reboots once at the end.</p>
+<p class="tiny">Use this if you already downloaded a matched firmware + SPIFFS pair.</p>
 </div>
-<p class="warn">Use this when UI/docs changed in <code>data/</code>. Device restarts after upload.</p>
 <p id="spiffs-note" style="display:none" class="warn"></p>
-<div id="sst" class="st"></div>
+<div id="manual-fw-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="manual-fw-progress-label">Firmware stage idle</span><span id="manual-fw-progress-pct">0%</span></div>
+<div class="progress-track"><div id="manual-fw-progress-fill" class="progress-fill"></div></div>
+</div>
+<div id="manual-spiffs-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="manual-spiffs-progress-label">Filesystem stage idle</span><span id="manual-spiffs-progress-pct">0%</span></div>
+<div class="progress-track"><div id="manual-spiffs-progress-fill" class="progress-fill"></div></div>
+</div>
+<div id="manual-ota-status" class="st"></div>
+<p class="warn">Do not disconnect power during update.</p>
 </section>
 </div>
 </main>
 </div>
 <div id="fw-backup-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="fw-backup-modal-title" aria-describedby="fw-backup-modal-text">
 <div class="modal-card">
-<h3 id="fw-backup-modal-title">Backup Config Before OTA?</h3>
-<p id="fw-backup-modal-text">Recommended: download a config backup before OTA firmware update, so restore is easier if settings change or something goes wrong.</p>
+<h3 id="fw-backup-modal-title">Backup Config Before Update?</h3>
+<p id="fw-backup-modal-text">Recommended: download a config backup before installing a firmware + filesystem pair, so restore is easier if settings change or something goes wrong.</p>
 <div class="modal-actions">
 <button type="button" class="btn dl" id="btn-fw-backup-modal-download">Download Config Backup</button>
-<button type="button" class="btn ota" id="btn-fw-backup-modal-continue">Continue Firmware Update Without Backup</button>
+<button type="button" class="btn ota" id="btn-fw-backup-modal-continue">Continue Update Without Backup</button>
 <button type="button" class="btn aux" id="btn-fw-backup-modal-cancel">Cancel</button>
 </div>
 </div>
@@ -1304,7 +1314,7 @@ form{margin:0}
 <script>
 var port=null,usb=false,usbReady=false,_b='',_r=null,_pump=null;
 var E=new TextEncoder(),D=new TextDecoder();
-var info={deviceId:'----',version:'-',dataVersion:'-',halSensor:'-',chip:'-',wifiMac:'-',btMac:'-',build:'-',hostName:'-',ssid:'',ipAddress:'',wifiMode:null,portalMode:null,wifiFallback:null,docsPath:'docs/en/',authDefault:false,screensaverLine1:'',screensaverLine2:''};
+var info={deviceId:'----',version:'-',dataVersion:'-',spiffsRelease:'-',halSensor:'-',chip:'-',wifiMac:'-',btMac:'-',build:'-',hostName:'-',ssid:'',ipAddress:'',wifiMode:null,portalMode:null,wifiFallback:null,docsPath:'docs/en/',authDefault:false,screensaverLine1:'',screensaverLine2:''};
 var infoLoadedFromApi=false;
 var infoLoadedFromUsb=false;
 var schema=null,state=null,editorLoaded=false,editorTab='global',editorCarIndex=null;
@@ -1341,6 +1351,7 @@ var releaseFetchTried=false;
 var otaBusy=false;
 var backupDownloadedThisSession=false;
 var firmwareBackupPromptResolver=null;
+var otaBackupPromptStatusId='auto-ota-status';
 var AUTO_UPDATE_FIRMWARE_URL='https://downloads.espeed32.com/firmware.bin';
 var AUTO_UPDATE_SPIFFS_URL='https://downloads.espeed32.com/spiffs.bin';
 var RELEASES_INDEX_URL='https://downloads.espeed32.com/releases.json';
@@ -1516,6 +1527,7 @@ function mergeInfoPayload(j){
   if(j.deviceId) info.deviceId=j.deviceId;
   if(j.version) info.version=j.version;
   if(j.dataVersion) info.dataVersion=j.dataVersion;
+  if(j.spiffsRelease!=null) info.spiffsRelease=j.spiffsRelease;
   if(j.halSensor) info.halSensor=j.halSensor;
   if(j.chip) info.chip=j.chip;
   if(j.wifiMac) info.wifiMac=j.wifiMac;
@@ -1558,6 +1570,7 @@ function renderControllerAbout(){
   setText('about-device-id',info.deviceId||'----');
   setText('about-firmware',info.version||'-');
   setText('about-data',info.dataVersion||'-');
+  setText('about-spiffs-release',info.spiffsRelease||'-');
   setText('about-sensor',info.halSensor||'-');
   setText('about-chip',info.chip||'-');
   setText('about-wifi-mac',info.wifiMac||'-');
@@ -1583,7 +1596,8 @@ function renderControllerAbout(){
   }
 }
 
-function ss(id,c,m){var e=document.getElementById(id);e.className='st '+c;e.textContent=m;e.style.display='block';}
+function ss(id,c,m){var e=document.getElementById(id);if(!e) return;e.className='st '+c;e.textContent=m;e.style.display='block';}
+function clearStatus(id){var e=document.getElementById(id);if(!e) return;e.className='st';e.textContent='';e.style.display='none';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];});}
 
 function formatBytes(n){
@@ -1676,8 +1690,15 @@ function canRunValidFirmwareCheck(){
 function updateHeaderFirmwareNote(){
   var el=document.getElementById('ver-note');
   if(!el) return;
-  var show=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
-  el.textContent=show?' (new firmware available)':'';
+  var showUpdate=canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
+  var firmwareRelease=normalizeInstalledReleaseVersion(info.version);
+  var spiffsRelease=normalizeInstalledReleaseVersion(info.spiffsRelease);
+  var showMismatch=!!(firmwareRelease && spiffsRelease && firmwareRelease!==spiffsRelease);
+  if(showMismatch){
+    el.textContent=' (filesystem mismatch)';
+  }else{
+    el.textContent=showUpdate?' (new firmware available)':'';
+  }
 }
 
 function readReleaseCache(){
@@ -1828,6 +1849,48 @@ function getSelectedReleaseDownloadUrl(kind){
   return kind==='spiffs'?String(selected.spiffsUrl||'').trim():String(selected.firmwareUrl||'').trim();
 }
 
+function normalizeInstalledReleaseVersion(value){
+  var out=normalizeReleaseVersionId(value||'');
+  if(!out || out==='latest' || out==='-') return '';
+  return out;
+}
+
+function getSelectedReleaseInstallPlan(entry){
+  var target=normalizeReleaseVersionId(entry && entry.version ? entry.version : '');
+  var canCompare=!!(target && target!=='latest');
+  var installedFirmware=normalizeInstalledReleaseVersion(info.version);
+  var installedSpiffs=normalizeInstalledReleaseVersion(info.spiffsRelease);
+  var firmwareMatches=canCompare && !!installedFirmware && installedFirmware===target;
+  var spiffsMatches=canCompare && !!installedSpiffs && installedSpiffs===target;
+  return {
+    targetVersion:target,
+    canCompare:canCompare,
+    installedFirmware:installedFirmware,
+    installedSpiffs:installedSpiffs,
+    firmwareMatches:firmwareMatches,
+    spiffsMatches:spiffsMatches,
+    needsFirmware:!firmwareMatches,
+    needsSpiffs:!spiffsMatches
+  };
+}
+
+function describeAutoUpdatePlan(entry,plan){
+  var selectedLabel=formatSelectedReleaseLabel(entry);
+  if(plan.canCompare && !plan.needsFirmware && !plan.needsSpiffs){
+    return 'Selected release '+selectedLabel+' is already installed on this controller.';
+  }
+  if(plan.canCompare && !plan.needsFirmware && plan.needsSpiffs){
+    return 'Firmware already matches '+selectedLabel+'. Automatic update will download and install only the filesystem/UI image, then reboot once at the end.';
+  }
+  if(plan.canCompare && plan.needsFirmware && !plan.needsSpiffs){
+    return 'Filesystem/UI already matches '+selectedLabel+'. Automatic update will download and install only the firmware image, then reboot once at the end.';
+  }
+  if(entry && !entry.isLatest){
+    return 'Downloads release '+selectedLabel+', uploads firmware first and filesystem second, then reboots once at the end.';
+  }
+  return 'Downloads the selected official release pair, uploads firmware first and filesystem second, then reboots once at the end.';
+}
+
 function updateReleaseVersionUi(){
   var select=document.getElementById('fw-release-select');
   var note=document.getElementById('fw-release-note');
@@ -1842,7 +1905,7 @@ function updateReleaseVersionUi(){
     select.appendChild(loadingOpt);
     select.disabled=true;
     note.textContent=releaseFetchTried
-      ?'Version list unavailable right now. Auto update will use the latest available release.'
+      ?'Version list unavailable right now. Automatic update will use the latest available release pair.'
       :'Checks available releases and defaults to the latest version.';
     source.style.display='none';
     source.textContent='';
@@ -1861,10 +1924,11 @@ function updateReleaseVersionUi(){
   source.textContent='';
 
   var selected=getSelectedReleaseMeta();
+  var plan=getSelectedReleaseInstallPlan(selected);
   var singleLatestFallback=(availableReleases.length<2 && selected && selected.version==='latest');
   note.textContent=singleLatestFallback
-    ?'Version list unavailable right now. Auto update will use the latest available release. Manual upload still uses the local file you choose.'
-    :'This selector controls both auto update buttons. Manual upload still uses the local file you choose.';
+    ?'Version list unavailable right now. Automatic update will use the latest available release pair.'
+    :'This selector controls which firmware + filesystem pair automatic update installs.';
 
   if(selected && selected.source){
     source.style.display='block';
@@ -1894,9 +1958,9 @@ function updateReleaseInfoUi(){
   var selected=getSelectedReleaseMeta();
   if(!selected && !latestReleaseTag && !latestReleaseUrl){
     if(!releaseFetchTried){
-      el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): checking...';
+      el.textContent='Official releases (nerdweeg/ESPEED32): checking...';
     }else{
-      el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): unavailable.';
+      el.textContent='Official releases (nerdweeg/ESPEED32): unavailable.';
     }
     updateReleaseVersionUi();
     updateFirmwareUiState();
@@ -1907,7 +1971,7 @@ function updateReleaseInfoUi(){
   if(latestReleaseTag || latestReleaseUrl){
     var latestLine=document.createElement('div');
     latestLine.className='release-line';
-    latestLine.appendChild(document.createTextNode('Latest firmware release: '));
+    latestLine.appendChild(document.createTextNode('Latest official release: '));
     if(latestReleaseUrl){
       var a=document.createElement('a');
       a.href=latestReleaseUrl;
@@ -1933,6 +1997,20 @@ function updateReleaseInfoUi(){
     el.appendChild(deviceLine);
   }
 
+  if(info.spiffsRelease && info.spiffsRelease!=='-'){
+    var fsLine=document.createElement('div');
+    fsLine.className='release-line';
+    fsLine.appendChild(document.createTextNode('Device filesystem/UI: '+normalizeVersionTag(info.spiffsRelease)));
+    el.appendChild(fsLine);
+  }
+
+  if(plan.canCompare && plan.installedFirmware && plan.installedSpiffs && plan.installedFirmware!==plan.installedSpiffs){
+    var mismatch=document.createElement('div');
+    mismatch.className='warn';
+    mismatch.textContent='This controller is running firmware '+normalizeVersionTag(plan.installedFirmware)+' with filesystem/UI '+normalizeVersionTag(plan.installedSpiffs)+'. Automatic update can finish the missing stage for the selected release.';
+    el.appendChild(mismatch);
+  }
+
   if(selected){
     var selectedLine=document.createElement('div');
     selectedLine.className='release-line';
@@ -1944,7 +2022,7 @@ function updateReleaseInfoUi(){
 
     var updateTitle=document.createElement('div');
     updateTitle.className='release-line';
-    updateTitle.appendChild(document.createTextNode('Downloads for '+formatSelectedReleaseLabel(selected)+':'));
+    updateTitle.appendChild(document.createTextNode('Matched downloads for '+formatSelectedReleaseLabel(selected)+':'));
     el.appendChild(updateTitle);
 
     var list=document.createElement('ul');
@@ -1972,7 +2050,7 @@ function updateReleaseInfoUi(){
 
     var note=document.createElement('div');
     note.className='release-note tiny';
-    note.appendChild(document.createTextNode('The selector below controls both auto update buttons. Manual upload always uses the file you choose locally.'));
+    note.appendChild(document.createTextNode(describeAutoUpdatePlan(selected,plan)+' Manual update always uses the two local files you choose.'));
     el.appendChild(note);
   }
 
@@ -3739,8 +3817,9 @@ function openFirmwareBackupPrompt(){
   document.body.style.overflow='hidden';
 }
 
-function confirmFirmwareBackupBeforeOta(){
+function confirmFirmwareBackupBeforeOta(statusId){
   if(backupDownloadedThisSession) return Promise.resolve(true);
+  otaBackupPromptStatusId=statusId||'auto-ota-status';
   return new Promise(function(resolve){
     firmwareBackupPromptResolver=resolve;
     openFirmwareBackupPrompt();
@@ -3755,48 +3834,46 @@ function updateFirmwareUiState(){
   var autoDesc=document.getElementById('fw-auto-desc');
   var note=document.getElementById('ota-note');
   var fsInput=document.getElementById('spiffs');
-  var fsBtn=document.getElementById('btn-spiffs-upload');
-  var fsAutoBtn=document.getElementById('btn-spiffs-auto');
-  var fsAutoDesc=document.getElementById('spiffs-auto-desc');
+  var manualDesc=document.getElementById('spiffs-auto-desc');
   var fsNote=document.getElementById('spiffs-note');
-  if(!input || !btn || !releaseSelect || !autoBtn || !autoDesc || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsAutoDesc || !fsNote) return;
+  if(!input || !btn || !releaseSelect || !autoBtn || !autoDesc || !note || !fsInput || !manualDesc || !fsNote) return;
 
   var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
-  var reason=busyReason || otaUploadUnavailableReason('Firmware update');
-  var fsReason=busyReason || otaUploadUnavailableReason('Filesystem update');
-  var autoReason=busyReason || autoUpdateUnavailableReason('Firmware update','firmware');
-  var fsAutoReason=busyReason || autoUpdateUnavailableReason('Filesystem update','spiffs');
+  var manualBaseReason=busyReason || otaUploadUnavailableReason('Manual update');
+  var autoReason=busyReason || autoUpdateUnavailableReason('Automatic update','firmware') || autoUpdateUnavailableReason('Automatic update','spiffs');
   var selected=getSelectedReleaseMeta();
+  var plan=getSelectedReleaseInstallPlan(selected);
   var selectedLabel=formatSelectedReleaseLabel(selected);
   var hasReleaseChoice=(availableReleases.length>1);
+  var bothFilesSelected=!!(input.files && input.files[0] && fsInput.files && fsInput.files[0]);
 
-  var disabled=(reason!=='');
-  var fsDisabled=(fsReason!=='');
+  if(!autoReason && plan.canCompare && !plan.needsFirmware && !plan.needsSpiffs){
+    autoReason='Selected release '+selectedLabel+' is already installed on this controller.';
+  }
+
+  var disabled=(manualBaseReason!=='');
   var autoDisabled=(autoReason!=='');
-  var fsAutoDisabled=(fsAutoReason!=='');
 
   input.disabled=disabled;
+  fsInput.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
-  note.style.display=reason!==''?'block':'none';
-  note.textContent=reason;
+  if(!manualBaseReason && !bothFilesSelected){
+    btn.disabled=true;
+    btn.classList.add('disabled');
+  }
   releaseSelect.disabled=otaBusy || !availableReleases.length || !hasReleaseChoice;
+  note.style.display=autoReason!==''?'block':'none';
+  note.textContent=autoReason;
   autoBtn.disabled=autoDisabled;
   autoBtn.classList.toggle('disabled',autoDisabled);
-  autoDesc.textContent=autoReason || (selected && !selected.isLatest
-    ?('Downloads firmware version '+selectedLabel+' and installs it automatically.')
-    :('Downloads the latest official firmware'+((selectedLabel && selectedLabel!=='Latest available')?' ('+selectedLabel.replace(/^Latest \((.*)\)$/,'$1')+')':'')+' and installs it automatically.'));
+  autoDesc.textContent=autoReason || describeAutoUpdatePlan(selected,plan);
 
-  fsInput.disabled=fsDisabled;
-  fsBtn.disabled=fsDisabled;
-  fsBtn.classList.toggle('disabled',fsDisabled);
-  fsNote.style.display=fsReason!==''?'block':'none';
-  fsNote.textContent=fsReason;
-  fsAutoBtn.disabled=fsAutoDisabled;
-  fsAutoBtn.classList.toggle('disabled',fsAutoDisabled);
-  fsAutoDesc.textContent=fsAutoReason || (selected && !selected.isLatest
-    ?('Downloads the filesystem image for version '+selectedLabel+' and installs it automatically.')
-    :('Downloads the latest official filesystem image'+((selectedLabel && selectedLabel!=='Latest available')?' ('+selectedLabel.replace(/^Latest \((.*)\)$/,'$1')+')':'')+' and installs it automatically.'));
+  fsNote.style.display=manualBaseReason!==''?'block':'none';
+  fsNote.textContent=manualBaseReason;
+  manualDesc.textContent=manualBaseReason || (bothFilesSelected
+    ?'Ready to install the selected firmware + filesystem pair. The controller will upload both stages, then reboot once at the end.'
+    :'Select both files from the same release. The controller will upload both stages, then reboot once at the end.');
 }
 
 function setUsbReadyState(ready,msg){
@@ -4431,7 +4508,7 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
     var xhr=new XMLHttpRequest();
     var lastPercent=0;
     xhr.open('POST',endpoint,true);
-    xhr.timeout=240000;
+    xhr.timeout=900000;
 
     xhr.upload.onprogress=function(ev){
       if(ev.lengthComputable && ev.total>0){
@@ -4458,6 +4535,10 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
       }
     };
 
+    xhr.onabort=function(){
+      reject(new Error('Upload aborted'));
+    };
+
     xhr.ontimeout=function(){
       reject(new Error('Upload timed out'));
     };
@@ -4468,86 +4549,198 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
   });
 }
 
-async function runOtaUpload(opts){
-  var progressPrefix=opts.progressPrefix;
-  clearProgress(progressPrefix);
+function sleepMs(ms){
+  return new Promise(function(resolve){ setTimeout(resolve,ms); });
+}
+
+function describeOtaFailure(errMsg,usedDownloadService){
+  var low=String(errMsg||'').toLowerCase();
+  if(low.indexOf('network error during upload')!==-1 ||
+     low.indexOf('upload timed out')!==-1 ||
+     low.indexOf('upload aborted')!==-1){
+    return errMsg+' The browser lost connection to the controller while sending the file. Keep the controller on the same WiFi, leave this page open, and run the update pair again.';
+  }
+  if(!usedDownloadService) return errMsg;
+  if(low.indexOf('failed to fetch')!==-1 ||
+     low.indexOf('download failed')!==-1 ||
+     low.indexOf('missing release url')!==-1){
+    return errMsg+' Automatic update downloads both .bin files in your browser from the ESPEED32 download service before uploading them to the controller. If that download failed, the download service or your browser/network connection is the likely problem.';
+  }
+  return errMsg;
+}
+
+async function resolveOtaBinary(opts){
+  clearProgress(opts.progressPrefix);
+  if(opts.fileBlob){
+    var localName=String(opts.fileName||'update.bin');
+    setProgress(opts.progressPrefix,'Ready: '+localName,0);
+    return {blob:opts.fileBlob,fileName:localName};
+  }
+  ss(opts.statusId,'',opts.downloadStatus||'Downloading update...');
+  return await downloadBinaryWithProgress(opts.downloadUrl,opts.progressPrefix,opts.fileName||'update.bin');
+}
+
+async function uploadPreparedBinary(opts){
+  if(!opts.blob) throw new Error('Missing update file');
+  setProgress(opts.progressPrefix,'Starting upload...',0);
+  ss(opts.statusId,'',opts.uploadStatus||'Uploading update...');
+  var res=await uploadBinaryWithProgress(opts.endpoint,opts.blob,opts.fileName,opts.progressPrefix);
+  var ok=(res.status>=200 && res.status<300 && res.text.indexOf('OK')===0);
+  if(!ok){
+    setProgress(opts.progressPrefix,'Upload failed',null);
+    throw new Error(res.text||('HTTP '+res.status));
+  }
+  var restarting=/restarting/i.test(res.text||'');
+  setProgress(opts.progressPrefix,restarting?'Upload complete. Device restarting...':'Upload complete. Restart deferred.',100);
+  ss(opts.statusId,'ok',res.text||'OK');
+}
+
+async function waitForControllerReturn(stageLabel,statusId){
+  ss(statusId,'','Waiting for controller restart after '+stageLabel.toLowerCase()+'...');
+  await sleepMs(2500);
+  var deadline=Date.now()+90000;
+  while(Date.now()<deadline){
+    try{
+      var r=await fetch('/api/info?ts='+(Date.now()),{cache:'no-store'});
+      if(r.ok){
+        ss(statusId,'ok',stageLabel+' complete.');
+        return;
+      }
+    }catch(_){ }
+    await sleepMs(1500);
+  }
+  throw new Error('Controller did not come back online after '+stageLabel.toLowerCase()+'.');
+}
+
+async function runCombinedOtaUpdate(config){
+  var hasFirmware=!!config.firmware;
+  var hasSpiffs=!!config.spiffs;
+  if(!hasFirmware && !hasSpiffs){
+    throw new Error('No update stages selected');
+  }
+  if(hasFirmware) clearProgress(config.firmware.progressPrefix);
+  if(hasSpiffs) clearProgress(config.spiffs.progressPrefix);
+  clearStatus(config.statusId);
   setOtaBusy(true);
+  var activeStage='starting';
+  var firmwareStaged=false;
   try{
-    var blob=opts.fileBlob||null;
-    var fileName=String(opts.fileName||'update.bin');
+    if(hasFirmware){
+      activeStage='firmware-download';
+      var firmwarePayload=await resolveOtaBinary(config.firmware);
 
-    if(opts.downloadUrl){
-      ss(opts.statusId,'',opts.downloadStatus||'Downloading latest release...');
-      var dl=await downloadBinaryWithProgress(opts.downloadUrl,progressPrefix,opts.fileName||'update.bin');
-      blob=dl.blob;
-      fileName=dl.fileName||fileName;
-      if(!/\.bin$/i.test(fileName)) fileName=String(opts.fileName||'update.bin');
+      activeStage='firmware-upload';
+      await uploadPreparedBinary({
+        endpoint:hasSpiffs?'/ota-fw?restart=0':'/ota-fw?restart=1',
+        blob:firmwarePayload.blob,
+        fileName:firmwarePayload.fileName||'ESPEED32.ino.bin',
+        progressPrefix:config.firmware.progressPrefix,
+        statusId:config.statusId,
+        uploadStatus:'Uploading firmware...'
+      });
+      firmwareStaged=hasSpiffs;
     }
 
-    if(!blob) throw new Error('Missing update file');
-    setProgress(progressPrefix,'Starting upload...',0);
-    ss(opts.statusId,'',opts.uploadStatus||'Uploading update...');
-    var res=await uploadBinaryWithProgress(opts.endpoint,blob,fileName,progressPrefix);
-    var ok=(res.status>=200 && res.status<300 && res.text.indexOf('OK')===0);
+    if(hasSpiffs){
+      activeStage='spiffs-download';
+      var spiffsPayload=await resolveOtaBinary(config.spiffs);
 
-    if(ok){
-      setProgress(progressPrefix,'Upload complete. Device restarting...',100);
-      ss(opts.statusId,'ok',res.text||'OK');
-    }else{
-      setProgress(progressPrefix,'Upload failed',null);
-      ss(opts.statusId,'err',res.text||('HTTP '+res.status));
+      activeStage='spiffs-upload';
+      await uploadPreparedBinary({
+        endpoint:'/ota-spiffs?restart=1',
+        blob:spiffsPayload.blob,
+        fileName:spiffsPayload.fileName||'espeed32_spiffs.bin',
+        progressPrefix:config.spiffs.progressPrefix,
+        statusId:config.statusId,
+        uploadStatus:'Uploading filesystem image...'
+      });
     }
+
+    activeStage='final-restart';
+    await waitForControllerReturn(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'),
+                                  config.statusId);
+    ss(config.statusId,'ok',(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'))+' complete. Reloading page...');
+    setTimeout(function(){ location.reload(); }, 1200);
   }catch(e){
     var errMsg=(e&&e.message)?e.message:String(e);
-    if(opts.downloadUrl){
-      var low=errMsg.toLowerCase();
-      if(low.indexOf('failed to fetch')!==-1 ||
-         low.indexOf('networkerror')!==-1 ||
-         low.indexOf('network error')!==-1 ||
-         low.indexOf('download failed')!==-1 ||
-         low.indexOf('missing release url')!==-1){
-        errMsg+=' Auto update downloads the .bin in your browser from the ESPEED32 download service, then uploads it to the controller. If that fetch failed, the download service or your browser/network connection is the likely problem. Download the .bin manually first, then use Upload.';
-      }
+    errMsg=describeOtaFailure(errMsg,!!config.usedDownloadService);
+    if(firmwareStaged && hasSpiffs && (activeStage.indexOf('spiffs')===0 || activeStage==='final-restart')){
+      errMsg+=' Firmware is already staged. Run the update pair again before power cycling or rebooting.';
     }
-    setProgress(progressPrefix,'Transfer failed',null);
-    ss(opts.statusId,'err',errMsg);
+    ss(config.statusId,'err',errMsg);
   }finally{
     setOtaBusy(false);
   }
 }
 
 async function autoUpdateFirmware(){
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Firmware update','firmware');
+  var selected=getSelectedReleaseMeta();
+  var plan=getSelectedReleaseInstallPlan(selected);
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Automatic update','firmware');
+  if(!blocked){
+    blocked=autoUpdateUnavailableReason('Automatic update','spiffs');
+  }
+  if(!blocked && plan.canCompare && !plan.needsFirmware && !plan.needsSpiffs){
+    blocked='Selected release '+formatSelectedReleaseLabel(selected)+' is already installed on this controller.';
+  }
   if(blocked){
-    ss('ost','err',blocked);
+    ss('auto-ota-status','err',blocked);
     return;
   }
-  if(!(await confirmFirmwareBackupBeforeOta())) return;
-  await runOtaUpload({
-    endpoint:'/ota',
-    downloadUrl:getSelectedReleaseDownloadUrl('firmware'),
-    fileName:'ESPEED32.ino.bin',
-    progressPrefix:'fw',
-    statusId:'ost',
-    downloadStatus:'Downloading selected firmware...',
-    uploadStatus:'Uploading firmware...'
-  });
+  if(!(await confirmFirmwareBackupBeforeOta('auto-ota-status'))) return;
+  var config={
+    usedDownloadService:true,
+    statusId:'auto-ota-status'
+  };
+  if(!plan.canCompare || plan.needsFirmware){
+    config.firmware={
+      downloadUrl:getSelectedReleaseDownloadUrl('firmware'),
+      fileName:'ESPEED32.ino.bin',
+      progressPrefix:'auto-fw',
+      downloadStatus:'Downloading selected firmware...'
+    };
+  }
+  if(!plan.canCompare || plan.needsSpiffs){
+    config.spiffs={
+      downloadUrl:getSelectedReleaseDownloadUrl('spiffs'),
+      fileName:'espeed32_spiffs.bin',
+      progressPrefix:'auto-spiffs',
+      downloadStatus:'Downloading selected filesystem image...'
+    };
+  }
+  await runCombinedOtaUpdate(config);
 }
 
-async function autoUpdateSpiffs(){
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Filesystem update','spiffs');
+async function uploadSelectedUpdatePair(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Manual update');
   if(blocked){
-    ss('sst','err',blocked);
+    ss('manual-ota-status','err',blocked);
     return;
   }
-  await runOtaUpload({
-    endpoint:'/ota-spiffs',
-    downloadUrl:getSelectedReleaseDownloadUrl('spiffs'),
-    fileName:'espeed32_spiffs.bin',
-    progressPrefix:'spiffs',
-    statusId:'sst',
-    downloadStatus:'Downloading selected filesystem image...',
-    uploadStatus:'Uploading filesystem image...'
+  var fwFile=document.getElementById('fw').files[0];
+  var spiffsFile=document.getElementById('spiffs').files[0];
+  if(!fwFile || !spiffsFile){
+    ss('manual-ota-status','err','Select both firmware and filesystem .bin files first.');
+    return;
+  }
+  if(!/\.bin$/i.test(fwFile.name) || !/\.bin$/i.test(spiffsFile.name)){
+    ss('manual-ota-status','err','Only .bin files are allowed.');
+    return;
+  }
+  if(!(await confirmFirmwareBackupBeforeOta('manual-ota-status'))) return;
+  await runCombinedOtaUpdate({
+    usedDownloadService:false,
+    statusId:'manual-ota-status',
+    firmware:{
+      fileBlob:fwFile,
+      fileName:fwFile.name,
+      progressPrefix:'manual-fw'
+    },
+    spiffs:{
+      fileBlob:spiffsFile,
+      fileName:spiffsFile.name,
+      progressPrefix:'manual-spiffs'
+    }
   });
 }
 
@@ -4576,49 +4769,8 @@ document.getElementById('uf').onsubmit=async function(e){
   }
 };
 
-document.getElementById('of').onsubmit=async function(e){
-  e.preventDefault();
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Firmware update');
-  if(blocked){
-    ss('ost','err',blocked);
-    return;
-  }
-  var f=document.getElementById('fw').files[0];
-  if(!f){alert('Select a .bin file');return;}
-  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  if(!(await confirmFirmwareBackupBeforeOta())) return;
-  await runOtaUpload({
-    endpoint:'/ota',
-    fileBlob:f,
-    fileName:f.name,
-    progressPrefix:'fw',
-    statusId:'ost',
-    uploadStatus:'Uploading firmware...'
-  });
-};
-
-document.getElementById('sf').onsubmit=async function(e){
-  e.preventDefault();
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Filesystem update');
-  if(blocked){
-    ss('sst','err',blocked);
-    return;
-  }
-  var f=document.getElementById('spiffs').files[0];
-  if(!f){alert('Select a SPIFFS .bin file');return;}
-  if(!f.name.toLowerCase().endsWith('.bin')){alert('Only .bin files allowed');return;}
-  await runOtaUpload({
-    endpoint:'/ota-spiffs',
-    fileBlob:f,
-    fileName:f.name,
-    progressPrefix:'spiffs',
-    statusId:'sst',
-    uploadStatus:'Uploading filesystem image...'
-  });
-};
-
 document.getElementById('btn-fw-backup-modal-download').onclick=async function(){
-  await doBackup('ost');
+  await doBackup(otaBackupPromptStatusId);
   if(backupDownloadedThisSession) closeFirmwareBackupPrompt(false);
 };
 
@@ -4629,6 +4781,13 @@ document.getElementById('btn-fw-backup-modal-continue').onclick=function(){
 document.getElementById('btn-fw-backup-modal-cancel').onclick=function(){
   closeFirmwareBackupPrompt(false);
 };
+
+['fw','spiffs'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el){
+    el.addEventListener('change',updateFirmwareUiState);
+  }
+});
 
 hostedMode=detectHostedMode();
 initThemeControls();

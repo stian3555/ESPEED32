@@ -24,6 +24,7 @@ void showAboutScreen() {
   char lines[ABOUT_MAX_LINES][22];
   uint8_t lineCount = 0;
   char line[40];
+  char spiffsRelease[16];
 
   auto addLine = [&](const char* txt) {
     if (lineCount >= ABOUT_MAX_LINES || txt == nullptr) return;
@@ -64,6 +65,12 @@ void showAboutScreen() {
   addField("Firmware", line);
   snprintf(line, sizeof(line), "v%d", STORED_VAR_VERSION);
   addField("Data", line);
+  spiffsRelease[0] = '\0';
+  if (getSpiffsReleaseString(spiffsRelease, sizeof(spiffsRelease))) {
+    addField("FS/UI", spiffsRelease);
+  } else {
+    addField("FS/UI", "-");
+  }
   HAL_GetTriggerSensorInfo(line, sizeof(line));
   addField("HAL sensor", line);
   if (wifiOk) {

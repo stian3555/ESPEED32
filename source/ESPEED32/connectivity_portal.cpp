@@ -54,6 +54,7 @@ static const char* PREF_KEY_WIFI_STA_PASS = "wifi_sta_pass";
 static const char* PREF_KEY_UI_AUTH_USER = "ui_auth_user";
 static const char* PREF_KEY_UI_AUTH_PASS = "ui_auth_pass";
 static const char* PREF_KEY_WIFI_BACKUP_SECRET = "wifi_bkp_sec";
+static const char* PREF_KEY_OTA_WIFI_BOOT = "ota_wifi_boot";
 static const uint32_t WIFI_STA_CONNECT_TIMEOUT_MS = 8000UL;
 static const size_t WIFI_BACKUP_SECRET_LEN = 32;
 static const size_t WIFI_BACKUP_SECRET_HEX_LEN = WIFI_BACKUP_SECRET_LEN * 2;
@@ -78,6 +79,10 @@ static void sendSerialLengthPrefixedPayload(const String& payload);
 static const char* getBackupReleaseModeName(uint16_t mode);
 static bool parseJsonStr(const String& json, const char* key, char* outStr, int maxLen);
 static void copyBoundedString(char* out, size_t outLen, const char* in);
+static bool otaRequestWantsRestart();
+static void clearOtaDeferredRestartState();
+static bool isOtaDeferredRestartActive();
+static bool readSpiffsRelease(char* out, size_t outLen);
 
 static void scheduleWiFiPortalRestartIfNeeded(uint16_t previousConfiguredMode,
                                               const char* previousWiFiSsid,
@@ -125,6 +130,49 @@ static void buildWifiHostNameIfNeeded() {
   }
   suffixLower[4] = '\0';
   snprintf(g_wifiHostName, sizeof(g_wifiHostName), "espeed32-%s", suffixLower);
+}
+
+static bool readSpiffsRelease(char* out, size_t outLen) {
+  if (out == nullptr || outLen == 0) {
+    return false;
+  }
+  out[0] = '\0';
+
+  bool mountedHere = false;
+  if (!g_spiffsMounted) {
+    if (!SPIFFS.begin(false)) {
+      return false;
+    }
+    mountedHere = true;
+  }
+
+  File manifest = SPIFFS.open("/ui/release.json", "r");
+  if (!manifest) {
+    if (mountedHere) {
+      SPIFFS.end();
+    }
+    return false;
+  }
+
+  String json = manifest.readString();
+  manifest.close();
+
+  if (mountedHere) {
+    SPIFFS.end();
+  }
+
+  char release[16];
+  if (parseJsonStr(json, "spiffsRelease", release, sizeof(release)) ||
+      parseJsonStr(json, "release", release, sizeof(release))) {
+    copyBoundedString(out, outLen, release);
+    return release[0] != '\0';
+  }
+
+  return false;
+}
+
+bool getSpiffsReleaseString(char* out, size_t outLen) {
+  return readSpiffsRelease(out, outLen);
 }
 
 static void getBackupControllerId(char* out, size_t outLen) {
@@ -227,6 +275,28 @@ static void writeWiFiNetworkSettingsToPrefs() {
   pref.remove(PREF_KEY_UI_AUTH_USER);
   pref.putString(PREF_KEY_UI_AUTH_PASS, g_uiAuthPassword);
   pref.end();
+}
+
+void requestWiFiAutoStartOnNextBoot() {
+  Preferences pref;
+  if (!pref.begin("stored_var", false)) {
+    return;
+  }
+  pref.putBool(PREF_KEY_OTA_WIFI_BOOT, true);
+  pref.end();
+}
+
+bool consumeWiFiAutoStartOnNextBootRequest() {
+  Preferences pref;
+  if (!pref.begin("stored_var", false)) {
+    return false;
+  }
+  bool enabled = pref.getBool(PREF_KEY_OTA_WIFI_BOOT, false);
+  if (enabled) {
+    pref.putBool(PREF_KEY_OTA_WIFI_BOOT, false);
+  }
+  pref.end();
+  return enabled;
 }
 
 static void copyBoundedString(char* out, size_t outLen, const char* in) {
@@ -594,7 +664,7 @@ static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
 <p>Missing SPIFFS file: <code>/ui/index.html</code></p>
 <p>This page is intentionally minimal.</p>
 <p><a href="/backup">Download Config Backup (.json)</a></p>
-<form method="POST" action="/ota" enctype="multipart/form-data">
+<form method="POST" action="/ota-fw" enctype="multipart/form-data">
   <p><b>Firmware Recovery (.bin)</b></p>
   <input type="file" name="file" accept=".bin" required>
   <button type="submit">Upload Firmware</button>
@@ -1784,6 +1854,28 @@ static size_t g_otaWritten = 0;
 static bool g_otaInProgress = false;
 static bool g_otaTargetSpiffs = false;
 static bool g_otaSessionOk = false;
+static bool g_otaRestartRequested = true;
+static bool g_otaRestartDeferredPending = false;
+static uint32_t g_otaRestartDeferredUntilMs = 0;
+static uint32_t g_otaLastUiUpdateMs = 0;
+static size_t g_otaLastUiShownKb = 0;
+static const uint32_t OTA_DEFERRED_RESTART_GRACE_MS = 180000UL;
+
+static void clearOtaDeferredRestartState() {
+  g_otaRestartDeferredPending = false;
+  g_otaRestartDeferredUntilMs = 0;
+}
+
+static bool isOtaDeferredRestartActive() {
+  if (!g_otaRestartDeferredPending) {
+    return false;
+  }
+  if ((int32_t)(millis() - g_otaRestartDeferredUntilMs) >= 0) {
+    clearOtaDeferredRestartState();
+    return false;
+  }
+  return true;
+}
 
 /* Documentation helpers (served from SPIFFS) */
 static const char* getPublicUiPath() {
@@ -2143,6 +2235,7 @@ static String buildInfoJson() {
   char host[24];
   char infoSsid[WIFI_STA_SSID_MAX_LEN + 10];
   char ipText[24];
+  char spiffsRelease[16];
   char sensorInfo[40];
   char chipInfo[48];
   char wifiMacStr[24];
@@ -2154,6 +2247,7 @@ static String buildInfoJson() {
   bool btOk = readMacAddress(ESP_MAC_BT, btMac);
   infoSsid[0] = '\0';
   ipText[0] = '\0';
+  spiffsRelease[0] = '\0';
 
   sprintf(ver, "%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
   sprintf(dataVer, "v%d", STORED_VAR_VERSION);
@@ -2192,15 +2286,18 @@ static String buildInfoJson() {
     copyBoundedString(btMacStr, sizeof(btMacStr), "unavailable");
   }
   snprintf(buildInfo, sizeof(buildInfo), "%s %s", __DATE__, __TIME__);
+  readSpiffsRelease(spiffsRelease, sizeof(spiffsRelease));
 
   String json;
-  json.reserve(640);
+  json.reserve(700);
   json += "{\"deviceId\":\"";
   json += g_wifiSuffix;
   json += "\",\"version\":\"";
   json += ver;
   json += "\",\"dataVersion\":\"";
   appendJsonEscaped(json, dataVer);
+  json += "\",\"spiffsRelease\":\"";
+  appendJsonEscaped(json, spiffsRelease);
   json += "\",\"halSensor\":\"";
   appendJsonEscaped(json, sensorInfo);
   json += "\",\"chip\":\"";
@@ -2996,8 +3093,11 @@ static void handleOtaUpload() {
     g_otaTargetSpiffs = (uri == "/ota-spiffs");
     g_otaTotal = upload.totalSize;  /* May be 0 if browser doesn't send content-length */
     g_otaWritten = 0;
+    g_otaLastUiUpdateMs = 0;
+    g_otaLastUiShownKb = 0;
     g_otaInProgress = true;
     g_otaSessionOk = true;
+    g_otaRestartRequested = otaRequestWantsRestart();
 
     /* Show update in progress on OLED */
     obdFill(&g_obd, OBD_WHITE, 1);
@@ -3036,9 +3136,17 @@ static void handleOtaUpload() {
     }
     if (Update.write(upload.buf, upload.currentSize) == upload.currentSize) {
       g_otaWritten += upload.currentSize;
-      /* Update progress on OLED */
-      sprintf(msgStr, "%u KB", (unsigned int)(g_otaWritten / 1024));
-      obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_8x8, OBD_BLACK, 1);
+      /* Throttle OLED writes during OTA to avoid wasting time on I2C updates. */
+      uint32_t now = millis();
+      size_t shownKb = g_otaWritten / 1024U;
+      if (g_otaLastUiUpdateMs == 0 ||
+          (uint32_t)(now - g_otaLastUiUpdateMs) >= 250U ||
+          shownKb >= (g_otaLastUiShownKb + 16U)) {
+        sprintf(msgStr, "%u KB", (unsigned int)shownKb);
+        obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, msgStr, FONT_8x8, OBD_BLACK, 1);
+        g_otaLastUiUpdateMs = now;
+        g_otaLastUiShownKb = shownKb;
+      }
     } else {
       g_otaSessionOk = false;
     }
@@ -3061,6 +3169,18 @@ static void handleOtaUpload() {
       }
     }
     g_otaInProgress = false;
+  } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    Update.abort();
+    g_otaSessionOk = false;
+    g_otaInProgress = false;
+    if (g_otaTargetSpiffs) {
+      if (!g_spiffsMounted) {
+        g_spiffsMounted = SPIFFS.begin(false);
+      }
+      clearOtaDeferredRestartState();
+    }
+    obdFill(&g_obd, OBD_WHITE, 1);
+    obdWriteString(&g_obd, 0, 0, 24, (char*)"OTA ABORT!", FONT_12x16, OBD_BLACK, 1);
   }
 }
 
@@ -3070,6 +3190,7 @@ static void handleOtaUpload() {
 static void handleOta() {
   bool otaOk = g_otaSessionOk && !Update.hasError();
   if (!otaOk) {
+    clearOtaDeferredRestartState();
     if (g_otaTargetSpiffs && !g_spiffsMounted) {
       g_spiffsMounted = SPIFFS.begin(false);
     }
@@ -3079,14 +3200,30 @@ static void handleOta() {
       g_wifiServer->send(400, "text/plain", "Error: firmware update failed");
     }
   } else {
-    if (g_otaTargetSpiffs) {
-      g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restarting...");
+    if (!g_otaRestartRequested) {
+      if (g_otaTargetSpiffs) {
+        if (!g_spiffsMounted) {
+          g_spiffsMounted = SPIFFS.begin(false);
+        }
+        g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restart deferred.");
+      } else {
+        g_otaRestartDeferredPending = true;
+        g_otaRestartDeferredUntilMs = millis() + OTA_DEFERRED_RESTART_GRACE_MS;
+        g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restart deferred.");
+      }
     } else {
-      g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+      clearOtaDeferredRestartState();
+      requestWiFiAutoStartOnNextBoot();
+      if (g_otaTargetSpiffs) {
+        g_wifiServer->send(200, "text/plain", "OK - SPIFFS updated! Restarting...");
+      } else {
+        g_wifiServer->send(200, "text/plain", "OK - Firmware updated! Restarting...");
+      }
+      delay(1000);
+      ESP.restart();
     }
-    delay(1000);
-    ESP.restart();
   }
+  g_otaRestartRequested = true;
 }
 
 static const uint8_t WIFI_QR_VERSION = 3;
@@ -3191,6 +3328,16 @@ static bool qrAppendBits(uint8_t out[WIFI_QR_DATA_CODEWORDS], int* bitLen,
     (*bitLen)++;
   }
   return true;
+}
+
+static bool otaRequestWantsRestart() {
+  if (g_wifiServer == nullptr || !g_wifiServer->hasArg("restart")) {
+    return true;
+  }
+  String raw = g_wifiServer->arg("restart");
+  raw.trim();
+  raw.toLowerCase();
+  return !(raw == "0" || raw == "false" || raw == "no" || raw == "off");
 }
 
 static uint8_t qrGfMultiply(uint8_t x, uint8_t y) {
@@ -3688,7 +3835,7 @@ static void registerWebRoutes() {
   g_wifiServer->on("/restore", HTTP_POST,
                    []() { if (!requireControllerAuth()) return; handleRestore(); },
                    []() { if (!requireControllerAuth()) return; handleRestoreUpload(); });
-  g_wifiServer->on("/ota", HTTP_POST,
+  g_wifiServer->on("/ota-fw", HTTP_POST,
                    []() { if (!requireControllerAuth()) return; handleOta(); },
                    []() { if (!requireControllerAuth()) return; handleOtaUpload(); });
   g_wifiServer->on("/ota-spiffs", HTTP_POST,
@@ -3701,7 +3848,7 @@ bool isWiFiPortalActive() {
 }
 
 bool isOtaInProgress() {
-  return g_otaInProgress;
+  return g_otaInProgress || isOtaDeferredRestartActive();
 }
 
 static void stopWiFiTransportOnly() {
@@ -3743,7 +3890,10 @@ static bool startWiFiHomeTransportAttempt() {
   delay(120);
 
   WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.setAutoReconnect(true);
   WiFi.setHostname(g_wifiHostName);
+  delay(50);
   WiFi.begin(g_wifiClientSsid, g_wifiClientPassword);
 
   uint32_t startedAt = millis();
@@ -3761,6 +3911,7 @@ static bool startWiFiHomeTransportAttempt() {
   if (WiFi.status() != WL_CONNECTED) {
     WiFi.disconnect(true, false, 250);
     WiFi.mode(WIFI_OFF);
+    delay(120);
     return false;
   }
 
@@ -3770,6 +3921,23 @@ static bool startWiFiHomeTransportAttempt() {
   }
   g_wifiActiveMode = WIFI_PORTAL_HOME;
   return true;
+}
+
+static bool startWiFiHomeTransport() {
+  if (!hasWiFiClientCredentials()) {
+    return false;
+  }
+
+  buildWifiHostNameIfNeeded();
+
+  for (uint8_t attempt = 0; attempt < 2; attempt++) {
+    if (startWiFiHomeTransportAttempt()) {
+      return true;
+    }
+    delay(200);
+  }
+
+  return false;
 }
 
 static bool startWiFiServerOnly() {
@@ -3825,7 +3993,8 @@ void serviceWiFiPortal() {
 void serviceConnectivityPortal() {
   serviceWiFiPortal();
   serviceUsbSerialCommands();
-  if (g_wifiRestartPending && !g_otaInProgress &&
+  isOtaDeferredRestartActive();
+  if (g_wifiRestartPending && !isOtaInProgress() &&
       (int32_t)(millis() - g_wifiRestartAtMs) >= 0) {
     g_wifiRestartPending = false;
     if (isWiFiPortalActive()) {
@@ -3836,7 +4005,7 @@ void serviceConnectivityPortal() {
 }
 
 void stopWiFiPortal() {
-  if (g_otaInProgress) {
+  if (isOtaInProgress()) {
     return;
   }
 
@@ -3890,10 +4059,7 @@ static void drawWrappedFont6x8Lines(uint8_t startRow, uint8_t maxRows, const cha
 
   const uint8_t rowsAvailable = (maxRows < (uint8_t)(8 - startRow)) ? maxRows : (uint8_t)(8 - startRow);
   const size_t charsPerLine = 21;
-  WiFi.setSleep(false);
-  WiFi.setAutoReconnect(true);
   size_t textLen = strlen(text);
-  delay(50);
   for (uint8_t row = 0; row < rowsAvailable; row++) {
     size_t offset = (size_t)row * charsPerLine;
     if (offset >= textLen) {
@@ -3907,7 +4073,6 @@ static void drawWrappedFont6x8Lines(uint8_t startRow, uint8_t maxRows, const cha
     obdWriteString(&g_obd, 0, 0, (startRow + row) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
   }
 }
-    delay(120);
 
 static void drawWiFiPortalScreenPage(uint8_t pageIndex, const IPAddress& ip) {
   char line[40];
@@ -3919,23 +4084,6 @@ static void drawWiFiPortalScreenPage(uint8_t pageIndex, const IPAddress& ip) {
     const char* title = "Login 2/2";
     snprintf(userLine, sizeof(userLine), "User: %s", g_uiAuthUsername);
     snprintf(passLine, sizeof(passLine), "Pass: %s", g_uiAuthPassword);
-static bool startWiFiHomeTransport() {
-  if (!hasWiFiClientCredentials()) {
-    return false;
-  }
-
-  buildWifiHostNameIfNeeded();
-
-  for (uint8_t attempt = 0; attempt < 2; attempt++) {
-    if (startWiFiHomeTransportAttempt()) {
-      return true;
-    }
-    delay(200);
-  }
-
-  return false;
-}
-
     obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
     drawWrappedFont6x8Lines(2, 2, userLine);
     drawWrappedFont6x8Lines(4, 3, passLine);
@@ -3989,7 +4137,7 @@ void showWiFiPortalScreen() {
   while (true) {
     serviceConnectivityPortal();
 
-    if (!g_otaInProgress) {
+    if (!isOtaInProgress()) {
       if (g_rotaryEncoder.encoderChanged()) {
         uint8_t nextPage = (uint8_t)readUiEncoder();
         if (nextPage > 1) {
@@ -4063,7 +4211,7 @@ void showWiFiQrScreen() {
   while (true) {
     serviceConnectivityPortal();
 
-    if (!g_otaInProgress) {
+    if (!isOtaInProgress()) {
       if (g_rotaryEncoder.isEncoderButtonClicked()) {
         break;
       }

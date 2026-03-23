@@ -47,6 +47,9 @@ void getConfiguredWiFiClientPassword(char* out, size_t outLen);
 void setConfiguredWiFiClientCredentials(const char* ssid, const char* password);
 void saveWiFiNetworkSettings();
 void resetWiFiNetworkSettings();
+void requestWiFiAutoStartOnNextBoot();
+bool consumeWiFiAutoStartOnNextBootRequest();
+bool getSpiffsReleaseString(char* out, size_t outLen);
 
 /* Shared OLED helper for centered 8x8 titles */
 int centerX8x8(const char* text);

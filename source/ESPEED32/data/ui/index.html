@@ -1956,6 +1956,7 @@ function updateReleaseInfoUi(){
   updateHeaderFirmwareNote();
 
   var selected=getSelectedReleaseMeta();
+  var plan=getSelectedReleaseInstallPlan(selected);
   if(!selected && !latestReleaseTag && !latestReleaseUrl){
     if(!releaseFetchTried){
       el.textContent='Official releases (nerdweeg/ESPEED32): checking...';

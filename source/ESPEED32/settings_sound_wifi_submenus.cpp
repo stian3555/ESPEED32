@@ -255,8 +255,15 @@ void showWiFiSettings() {
   uint8_t itemBack = 5;
   uint8_t numItems = 6;
 
+  auto getShownPortalMode = [&]() -> uint16_t {
+    if (isWiFiPortalActive()) {
+      return getActiveWiFiPortalMode();
+    }
+    return (getConfiguredWiFiMode() == WIFI_CONFIG_HOME) ? WIFI_PORTAL_HOME : WIFI_PORTAL_AP;
+  };
+
   auto updateMenuLayout = [&]() {
-    bool showQr = (getConfiguredWiFiMode() == WIFI_CONFIG_AP);
+    bool showQr = (getShownPortalMode() == WIFI_PORTAL_AP);
     itemQr = 3;
     itemTimer = showQr ? 4 : 3;
     itemBack = showQr ? 5 : 4;
@@ -338,6 +345,7 @@ void showWiFiSettings() {
         } else {
           startTimedWiFiPortal(getWiFiTimedMinutes());
         }
+        updateMenuLayout();
       } else if (sel == ITEM_MODE) {
         uint16_t nextMode = (getConfiguredWiFiMode() == WIFI_CONFIG_HOME) ? WIFI_CONFIG_AP : WIFI_CONFIG_HOME;
         if (nextMode == WIFI_CONFIG_HOME && !hasConfiguredWiFiClientCredentials()) {
@@ -366,7 +374,7 @@ void showWiFiSettings() {
         resetUiEncoder(sel);
         lastInteraction = millis();
         screensaverActive = false;
-      } else if (getConfiguredWiFiMode() == WIFI_CONFIG_AP && sel == itemQr) {
+      } else if (getShownPortalMode() == WIFI_PORTAL_AP && sel == itemQr) {
         showWiFiQrScreen();
         g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
         updateMenuLayout();
@@ -417,9 +425,9 @@ void showWiFiSettings() {
 
       bool s1 = (!editing && sel == ITEM_INFO);
       bool sMode = (!editing && sel == ITEM_MODE);
-      bool showQr = (getConfiguredWiFiMode() == WIFI_CONFIG_AP);
+      bool showQr = (getShownPortalMode() == WIFI_PORTAL_AP);
       obdWriteString(&g_obd, 0, 0, 1 * lineH, (char*)lblMode[lang], menuFont, sMode ? OBD_WHITE : OBD_BLACK, 1);
-      const char* modeValue = (getConfiguredWiFiMode() == WIFI_CONFIG_HOME) ? "CLIENT" : "AP";
+      const char* modeValue = (getShownPortalMode() == WIFI_PORTAL_HOME) ? "CLIENT" : "AP";
       uint8_t modeX = OLED_WIDTH - (uint8_t)(strlen(modeValue) * WIDTH8x8);
       obdWriteString(&g_obd, 0, modeX, 1 * lineH, (char*)modeValue, menuFont, sMode ? OBD_WHITE : OBD_BLACK, 1);
 

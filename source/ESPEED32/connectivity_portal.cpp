@@ -3736,12 +3736,11 @@ static bool startWiFiApTransport() {
   return true;
 }
 
-static bool startWiFiHomeTransport() {
-  if (!hasWiFiClientCredentials()) {
-    return false;
-  }
-
-  buildWifiHostNameIfNeeded();
+static bool startWiFiHomeTransportAttempt() {
+  WiFi.persistent(false);
+  WiFi.disconnect(true, false, 250);
+  WiFi.mode(WIFI_OFF);
+  delay(120);
 
   WiFi.mode(WIFI_STA);
   WiFi.setHostname(g_wifiHostName);
@@ -3749,14 +3748,18 @@ static bool startWiFiHomeTransport() {
 
   uint32_t startedAt = millis();
   while ((millis() - startedAt) < WIFI_STA_CONNECT_TIMEOUT_MS) {
-    if (WiFi.status() == WL_CONNECTED) {
+    wl_status_t status = WiFi.status();
+    if (status == WL_CONNECTED) {
+      break;
+    }
+    if (status == WL_CONNECT_FAILED) {
       break;
     }
     delay(100);
   }
 
   if (WiFi.status() != WL_CONNECTED) {
-    WiFi.disconnect();
+    WiFi.disconnect(true, false, 250);
     WiFi.mode(WIFI_OFF);
     return false;
   }
@@ -3887,7 +3890,10 @@ static void drawWrappedFont6x8Lines(uint8_t startRow, uint8_t maxRows, const cha
 
   const uint8_t rowsAvailable = (maxRows < (uint8_t)(8 - startRow)) ? maxRows : (uint8_t)(8 - startRow);
   const size_t charsPerLine = 21;
+  WiFi.setSleep(false);
+  WiFi.setAutoReconnect(true);
   size_t textLen = strlen(text);
+  delay(50);
   for (uint8_t row = 0; row < rowsAvailable; row++) {
     size_t offset = (size_t)row * charsPerLine;
     if (offset >= textLen) {
@@ -3901,6 +3907,7 @@ static void drawWrappedFont6x8Lines(uint8_t startRow, uint8_t maxRows, const cha
     obdWriteString(&g_obd, 0, 0, (startRow + row) * HEIGHT8x8, line, FONT_6x8, OBD_BLACK, 1);
   }
 }
+    delay(120);
 
 static void drawWiFiPortalScreenPage(uint8_t pageIndex, const IPAddress& ip) {
   char line[40];
@@ -3912,6 +3919,23 @@ static void drawWiFiPortalScreenPage(uint8_t pageIndex, const IPAddress& ip) {
     const char* title = "Login 2/2";
     snprintf(userLine, sizeof(userLine), "User: %s", g_uiAuthUsername);
     snprintf(passLine, sizeof(passLine), "Pass: %s", g_uiAuthPassword);
+static bool startWiFiHomeTransport() {
+  if (!hasWiFiClientCredentials()) {
+    return false;
+  }
+
+  buildWifiHostNameIfNeeded();
+
+  for (uint8_t attempt = 0; attempt < 2; attempt++) {
+    if (startWiFiHomeTransportAttempt()) {
+      return true;
+    }
+    delay(200);
+  }
+
+  return false;
+}
+
     obdWriteString(&g_obd, 0, centerX8x8(title), 0, (char*)title, FONT_8x8, OBD_BLACK, 1);
     drawWrappedFont6x8Lines(2, 2, userLine);
     drawWrappedFont6x8Lines(4, 3, passLine);

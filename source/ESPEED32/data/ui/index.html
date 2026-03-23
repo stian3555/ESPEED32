@@ -1248,8 +1248,8 @@ form{margin:0}
 <input type="file" id="fw" accept=".bin">
 <button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
 </form>
-<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Latest Release, Internet Required)</button>
-<p class="tiny" id="fw-auto-desc">Auto update requires internet on this device to download from GitHub, then uploads to the controller.</p>
+<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Client Mode + Internet Required)</button>
+<p class="tiny" id="fw-auto-desc">Auto update downloads the latest release in your browser, then uploads it to the controller over Client WiFi.</p>
 </div>
 <div id="fw-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
@@ -1266,8 +1266,8 @@ form{margin:0}
 <input type="file" id="spiffs" accept=".bin">
 <button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem (.bin)</button>
 </form>
-<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Latest Release, Internet Required)</button>
-<p class="tiny" id="spiffs-auto-desc">Auto update requires internet on this device to download from GitHub, then uploads to the controller.</p>
+<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Client Mode + Internet Required)</button>
+<p class="tiny" id="spiffs-auto-desc">Auto update downloads the latest release in your browser, then uploads it to the controller over Client WiFi.</p>
 </div>
 <div id="spiffs-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
@@ -3466,21 +3466,40 @@ function initTelemetryUi(){
   startTelemetryPollingIfAvailable(false);
 }
 
-function otaUpdateUnavailableReason(label){
+function otaUploadUnavailableReason(label){
   if(hostedMode){
     return label+' unavailable in hosted mode. Open controller WiFi page to upload.';
   }
   if(usb){
     return label+' unavailable while USB WebSerial is connected. Disconnect USB to use WiFi OTA.';
   }
+  if(!infoLoadedFromApi){
+    return label+' requires the live controller WiFi page.';
+  }
   return '';
 }
 
-function canShowAutoUpdateControls(){
-  if(hostedMode) return false;
-  if(usb) return false;
-  if(typeof navigator!=='undefined' && navigator.onLine===false) return false;
-  return true;
+function autoUpdateUnavailableReason(label){
+  var baseReason=otaUploadUnavailableReason(label);
+  if(baseReason) return baseReason;
+  var portalMode=Number(info.portalMode||0);
+  if(portalMode!==2){
+    if(portalMode===1 && info.wifiFallback){
+      return label+' unavailable while AP fallback is active. Fix Client WiFi settings, reconnect on Client, then try again.';
+    }
+    if(portalMode===1){
+      return label+' unavailable in AP mode. Switch the controller to Client mode first.';
+    }
+    return label+' unavailable until WiFi is started in Client mode.';
+  }
+  if(typeof navigator!=='undefined' && navigator.onLine===false){
+    return label+' requires internet on this browser device to download the release from GitHub.';
+  }
+  return '';
+}
+
+function canDisplayAutoUpdateControls(){
+  return !hostedMode;
 }
 
 function loadBackupSessionState(){
@@ -3538,11 +3557,11 @@ function updateFirmwareUiState(){
   if(!input || !btn || !autoBtn || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsNote || !fwAutoDesc || !spiffsAutoDesc) return;
 
   var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
-  var reason=busyReason || otaUpdateUnavailableReason('Firmware update');
-  var fsReason=busyReason || otaUpdateUnavailableReason('Filesystem update');
-  var showAutoControls=canShowAutoUpdateControls();
-  var autoReason=reason;
-  var fsAutoReason=fsReason;
+  var reason=busyReason || otaUploadUnavailableReason('Firmware update');
+  var fsReason=busyReason || otaUploadUnavailableReason('Filesystem update');
+  var showAutoControls=canDisplayAutoUpdateControls();
+  var autoReason=busyReason || autoUpdateUnavailableReason('Firmware update');
+  var fsAutoReason=busyReason || autoUpdateUnavailableReason('Filesystem update');
 
   if(showAutoControls){
     if(!autoReason && !latestFirmwareBinUrl){
@@ -3584,9 +3603,26 @@ function updateFirmwareUiState(){
   }else if(usb){
     fwAutoDesc.textContent='Auto update requires WiFi OTA mode. Disconnect USB first, then use the controller WiFi page.';
     spiffsAutoDesc.textContent='Auto update requires WiFi OTA mode. Disconnect USB first, then use the controller WiFi page.';
+  }else if(!infoLoadedFromApi){
+    fwAutoDesc.textContent='Auto update needs the live controller WiFi page with device API access.';
+    spiffsAutoDesc.textContent='Auto update needs the live controller WiFi page with device API access.';
+  }else if(Number(info.portalMode||0)!==2){
+    if(Number(info.portalMode||0)===1 && info.wifiFallback){
+      fwAutoDesc.textContent='Auto update is disabled while AP fallback is active. Fix Client WiFi settings, then reconnect on Client mode.';
+      spiffsAutoDesc.textContent='Auto update is disabled while AP fallback is active. Fix Client WiFi settings, then reconnect on Client mode.';
+    }else if(Number(info.portalMode||0)===1){
+      fwAutoDesc.textContent='Auto update is disabled in AP mode. Switch WiFi to Client mode, reconnect using the Client IP, then try again.';
+      spiffsAutoDesc.textContent='Auto update is disabled in AP mode. Switch WiFi to Client mode, reconnect using the Client IP, then try again.';
+    }else{
+      fwAutoDesc.textContent='Start WiFi in Client mode to use auto update.';
+      spiffsAutoDesc.textContent='Start WiFi in Client mode to use auto update.';
+    }
+  }else if(typeof navigator!=='undefined' && navigator.onLine===false){
+    fwAutoDesc.textContent='Auto update needs internet on this browser device to download the release from GitHub.';
+    spiffsAutoDesc.textContent='Auto update needs internet on this browser device to download the release from GitHub.';
   }else{
-    fwAutoDesc.textContent='Auto update requires internet on this device to download from GitHub, then uploads over controller WiFi.';
-    spiffsAutoDesc.textContent='Auto update requires internet on this device to download from GitHub, then uploads over controller WiFi.';
+    fwAutoDesc.textContent='Auto update downloads the latest firmware release in your browser, then uploads it over Client WiFi. Manual .bin upload still works in AP or Client mode.';
+    spiffsAutoDesc.textContent='Auto update downloads the latest SPIFFS release in your browser, then uploads it over Client WiFi. Manual .bin upload still works in AP or Client mode.';
   }
 }
 
@@ -4308,11 +4344,11 @@ async function runOtaUpload(opts){
 }
 
 async function autoUpdateFirmware(){
-  if(!canShowAutoUpdateControls()){
-    ss('ost','err','Auto update is available only on the controller WiFi page with internet access and no USB connection.');
+  if(!canDisplayAutoUpdateControls()){
+    ss('ost','err','Auto update is available only on the live controller WiFi page.');
     return;
   }
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Firmware update');
   if(blocked){
     ss('ost','err',blocked);
     return;
@@ -4334,11 +4370,11 @@ async function autoUpdateFirmware(){
 }
 
 async function autoUpdateSpiffs(){
-  if(!canShowAutoUpdateControls()){
-    ss('sst','err','Auto update is available only on the controller WiFi page with internet access and no USB connection.');
+  if(!canDisplayAutoUpdateControls()){
+    ss('sst','err','Auto update is available only on the live controller WiFi page.');
     return;
   }
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Filesystem update');
   if(blocked){
     ss('sst','err',blocked);
     return;
@@ -4385,7 +4421,7 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('of').onsubmit=async function(e){
   e.preventDefault();
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Firmware update');
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Firmware update');
   if(blocked){
     ss('ost','err',blocked);
     return;
@@ -4406,7 +4442,7 @@ document.getElementById('of').onsubmit=async function(e){
 
 document.getElementById('sf').onsubmit=async function(e){
   e.preventDefault();
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUpdateUnavailableReason('Filesystem update');
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Filesystem update');
   if(blocked){
     ss('sst','err',blocked);
     return;

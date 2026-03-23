@@ -387,16 +387,39 @@ function initThemeControls(){
 
 function hostedDocsPath(){
   var lang=((navigator && navigator.language)?navigator.language:'en').toLowerCase();
-  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return '../docs/no/index.html';
-  if(lang.indexOf('nl')===0) return '../docs/nl/index.html';
-  if(lang.indexOf('pt')===0) return '../docs/pt/index.html';
-  if(lang.indexOf('es')===0) return '../docs/es/index.html';
-  if(lang.indexOf('de')===0) return '../docs/de/index.html';
-  if(lang.indexOf('it')===0) return '../docs/it/index.html';
-  return '../docs/en/index.html';
+  var docsBase=(location.pathname.indexOf('/ui/')===0)?'../docs/':'/docs/';
+  if(lang.indexOf('no')===0 || lang.indexOf('nb')===0 || lang.indexOf('nn')===0) return docsBase+'no/index.html';
+  if(lang.indexOf('nl')===0) return docsBase+'nl/index.html';
+  if(lang.indexOf('pt')===0) return docsBase+'pt/index.html';
+  if(lang.indexOf('es')===0) return docsBase+'es/index.html';
+  if(lang.indexOf('de')===0) return docsBase+'de/index.html';
+  if(lang.indexOf('it')===0) return docsBase+'it/index.html';
+  return docsBase+'en/index.html';
 }
 
-function applyModeLinks(){
+function isLikelyDeviceHost(h){
+  return h==='192.168.4.1' || h==='localhost' || h==='127.0.0.1' || /\.local$/i.test(h||'');
+}
+
+async function isControllerHostedPage(){
+  if(isLikelyDeviceHost(location.hostname||'')) return true;
+  try{
+    var controller=new AbortController();
+    var timeout=setTimeout(function(){ controller.abort(); },1200);
+    var res=await fetch('/api/info?ts='+(Date.now()),{
+      cache:'no-store',
+      signal:controller.signal
+    });
+    clearTimeout(timeout);
+    if(!res.ok) return false;
+    var data=await res.json();
+    return !!(data && (data.deviceId || data.version));
+  }catch(_){
+    return false;
+  }
+}
+
+async function applyModeLinks(){
   var panelLink=document.getElementById('panel-link');
   var docsLink=document.getElementById('docs-link');
   var subtitle=document.getElementById('hero-subtitle');
@@ -423,19 +446,37 @@ function applyModeLinks(){
     return;
   }
 
+  var controllerHosted=await isControllerHostedPage();
+  if(controllerHosted){
+    if(panelLink){
+      panelLink.href='/controller';
+      panelLink.textContent='Open Controller Panel';
+    }
+    if(docsLink){
+      docsLink.href='/docs';
+      docsLink.textContent='Open User Guide';
+    }
+    if(subtitle) subtitle.textContent='Controller Home';
+    if(heroCopy) heroCopy.textContent='Learn what ESPEED32 is, open the controller page, or jump straight to the user guide. Controller settings and tools stay protected behind login.';
+    if(modeNote) modeNote.textContent='Controller login credentials are shown on the controller WiFi info page.';
+    if(panelCopy) panelCopy.textContent='Use the protected controller UI for telemetry, advanced config, backup, restore, and firmware updates.';
+    if(accessCopy) accessCopy.innerHTML='On the controller WiFi page, sensitive tools are protected by controller login. Use username <code>espeed32</code>; the current password is shown physically on the controller WiFi info screen.';
+    return;
+  }
+
   if(panelLink){
-    panelLink.href='/controller';
-    panelLink.textContent='Open Controller Panel';
+    panelLink.href='/ui/index.html?mode=hosted';
+    panelLink.textContent='Open Setup Page';
   }
   if(docsLink){
     docsLink.href='/docs';
     docsLink.textContent='Open User Guide';
   }
-  if(subtitle) subtitle.textContent='Controller Home';
-  if(heroCopy) heroCopy.textContent='Learn what ESPEED32 is, open the controller page, or jump straight to the user guide. Controller settings and tools stay protected behind login.';
-  if(modeNote) modeNote.textContent='Controller login credentials are shown on the controller WiFi info page.';
-  if(panelCopy) panelCopy.textContent='Use the protected controller UI for telemetry, advanced config, backup, restore, and firmware updates.';
-  if(accessCopy) accessCopy.innerHTML='On the controller WiFi page, sensitive tools are protected by controller login. Use username <code>espeed32</code>; the current password is shown physically on the controller WiFi info screen.';
+  if(subtitle) subtitle.textContent='Hosted Setup';
+  if(heroCopy) heroCopy.textContent='Learn what ESPEED32 is, open the setup page for USB-based controller access, or jump straight to the user guide.';
+  if(modeNote) modeNote.textContent='The setup page works best in Chrome or Edge when you want to connect over USB.';
+  if(panelCopy) panelCopy.textContent='Open the setup page for backup, restore, telemetry, advanced settings, and USB-based maintenance.';
+  if(accessCopy) accessCopy.textContent='This hosted page is a starting point. Continue to the setup page to work over USB, or open the controller directly over WiFi when you are on the same network.';
 }
 
 initThemeControls();

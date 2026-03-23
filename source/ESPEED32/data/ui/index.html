@@ -1248,8 +1248,9 @@ form{margin:0}
 <input type="file" id="fw" accept=".bin">
 <button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
 </form>
-<button type="button" class="btn aux" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update (Client Mode + Internet Required)</button>
-<p class="tiny" id="fw-auto-desc">Auto update downloads the latest release in your browser, then uploads it to the controller over Client WiFi.</p>
+<button type="button" class="btn dl" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update to Latest</button>
+<p id="fw-auto-desc" class="tiny">Downloads the latest official firmware and installs it automatically.</p>
+<p class="tiny">Download the latest firmware <code>.bin</code> from <b>Repo &amp; Release</b>, then upload it here.</p>
 </div>
 <div id="fw-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
@@ -1266,8 +1267,9 @@ form{margin:0}
 <input type="file" id="spiffs" accept=".bin">
 <button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem (.bin)</button>
 </form>
-<button type="button" class="btn aux" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update SPIFFS (Client Mode + Internet Required)</button>
-<p class="tiny" id="spiffs-auto-desc">Auto update downloads the latest release in your browser, then uploads it to the controller over Client WiFi.</p>
+<button type="button" class="btn dl" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update to Latest</button>
+<p id="spiffs-auto-desc" class="tiny">Downloads the latest official filesystem image and installs it automatically.</p>
+<p class="tiny">Download the latest SPIFFS <code>.bin</code> from <b>Repo &amp; Release</b>, then upload it here.</p>
 </div>
 <div id="spiffs-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
@@ -1329,6 +1331,8 @@ var releaseFetchTried=false;
 var otaBusy=false;
 var backupDownloadedThisSession=false;
 var firmwareBackupPromptResolver=null;
+var AUTO_UPDATE_FIRMWARE_URL='https://downloads.espeed32.com/firmware.bin';
+var AUTO_UPDATE_SPIFFS_URL='https://downloads.espeed32.com/spiffs.bin';
 var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
 var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
@@ -3482,24 +3486,10 @@ function otaUploadUnavailableReason(label){
 function autoUpdateUnavailableReason(label){
   var baseReason=otaUploadUnavailableReason(label);
   if(baseReason) return baseReason;
-  var portalMode=Number(info.portalMode||0);
-  if(portalMode!==2){
-    if(portalMode===1 && info.wifiFallback){
-      return label+' unavailable while AP fallback is active. Fix Client WiFi settings, reconnect on Client, then try again.';
-    }
-    if(portalMode===1){
-      return label+' unavailable in AP mode. Switch the controller to Client mode first.';
-    }
-    return label+' unavailable until WiFi is started in Client mode.';
-  }
-  if(typeof navigator!=='undefined' && navigator.onLine===false){
-    return label+' requires internet on this browser device to download the release from GitHub.';
+  if(Number(info.portalMode||0)!==2){
+    return label+' requires Client mode with internet access on this device.';
   }
   return '';
-}
-
-function canDisplayAutoUpdateControls(){
-  return !hostedMode;
 }
 
 function loadBackupSessionState(){
@@ -3547,30 +3537,20 @@ function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
   var autoBtn=document.getElementById('btn-fw-auto');
+  var autoDesc=document.getElementById('fw-auto-desc');
   var note=document.getElementById('ota-note');
   var fsInput=document.getElementById('spiffs');
   var fsBtn=document.getElementById('btn-spiffs-upload');
   var fsAutoBtn=document.getElementById('btn-spiffs-auto');
+  var fsAutoDesc=document.getElementById('spiffs-auto-desc');
   var fsNote=document.getElementById('spiffs-note');
-  var fwAutoDesc=document.getElementById('fw-auto-desc');
-  var spiffsAutoDesc=document.getElementById('spiffs-auto-desc');
-  if(!input || !btn || !autoBtn || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsNote || !fwAutoDesc || !spiffsAutoDesc) return;
+  if(!input || !btn || !autoBtn || !autoDesc || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsAutoDesc || !fsNote) return;
 
   var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
   var reason=busyReason || otaUploadUnavailableReason('Firmware update');
   var fsReason=busyReason || otaUploadUnavailableReason('Filesystem update');
-  var showAutoControls=canDisplayAutoUpdateControls();
   var autoReason=busyReason || autoUpdateUnavailableReason('Firmware update');
   var fsAutoReason=busyReason || autoUpdateUnavailableReason('Filesystem update');
-
-  if(showAutoControls){
-    if(!autoReason && !latestFirmwareBinUrl){
-      autoReason=releaseFetchTried?'Latest firmware .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
-    }
-    if(!fsAutoReason && !latestSpiffsBinUrl){
-      fsAutoReason=releaseFetchTried?'Latest SPIFFS .bin URL could not be detected from release metadata.':'Checking latest release metadata...';
-    }
-  }
 
   var disabled=(reason!=='');
   var fsDisabled=(fsReason!=='');
@@ -3580,50 +3560,20 @@ function updateFirmwareUiState(){
   input.disabled=disabled;
   btn.disabled=disabled;
   btn.classList.toggle('disabled',disabled);
-  autoBtn.style.display=showAutoControls?'':'none';
-  fwAutoDesc.style.display=showAutoControls?'block':'none';
+  note.style.display=reason!==''?'block':'none';
+  note.textContent=reason;
   autoBtn.disabled=autoDisabled;
   autoBtn.classList.toggle('disabled',autoDisabled);
-  note.style.display=(reason!=='' || autoReason!==reason)?'block':'none';
-  note.textContent=(autoReason!==reason)?autoReason:reason;
+  autoDesc.textContent=autoReason || 'Downloads the latest official firmware and installs it automatically.';
 
   fsInput.disabled=fsDisabled;
   fsBtn.disabled=fsDisabled;
   fsBtn.classList.toggle('disabled',fsDisabled);
-  fsAutoBtn.style.display=showAutoControls?'':'none';
-  spiffsAutoDesc.style.display=showAutoControls?'block':'none';
+  fsNote.style.display=fsReason!==''?'block':'none';
+  fsNote.textContent=fsReason;
   fsAutoBtn.disabled=fsAutoDisabled;
   fsAutoBtn.classList.toggle('disabled',fsAutoDisabled);
-  fsNote.style.display=(fsReason!=='' || fsAutoReason!==fsReason)?'block':'none';
-  fsNote.textContent=(fsAutoReason!==fsReason)?fsAutoReason:fsReason;
-
-  if(hostedMode){
-    fwAutoDesc.textContent='Auto update works only on the controller WiFi page (typically 192.168.4.1), not on hosted espeed32.com.';
-    spiffsAutoDesc.textContent='Auto update works only on the controller WiFi page (typically 192.168.4.1), not on hosted espeed32.com.';
-  }else if(usb){
-    fwAutoDesc.textContent='Auto update requires WiFi OTA mode. Disconnect USB first, then use the controller WiFi page.';
-    spiffsAutoDesc.textContent='Auto update requires WiFi OTA mode. Disconnect USB first, then use the controller WiFi page.';
-  }else if(!infoLoadedFromApi){
-    fwAutoDesc.textContent='Auto update needs the live controller WiFi page with device API access.';
-    spiffsAutoDesc.textContent='Auto update needs the live controller WiFi page with device API access.';
-  }else if(Number(info.portalMode||0)!==2){
-    if(Number(info.portalMode||0)===1 && info.wifiFallback){
-      fwAutoDesc.textContent='Auto update is disabled while AP fallback is active. Fix Client WiFi settings, then reconnect on Client mode.';
-      spiffsAutoDesc.textContent='Auto update is disabled while AP fallback is active. Fix Client WiFi settings, then reconnect on Client mode.';
-    }else if(Number(info.portalMode||0)===1){
-      fwAutoDesc.textContent='Auto update is disabled in AP mode. Switch WiFi to Client mode, reconnect using the Client IP, then try again.';
-      spiffsAutoDesc.textContent='Auto update is disabled in AP mode. Switch WiFi to Client mode, reconnect using the Client IP, then try again.';
-    }else{
-      fwAutoDesc.textContent='Start WiFi in Client mode to use auto update.';
-      spiffsAutoDesc.textContent='Start WiFi in Client mode to use auto update.';
-    }
-  }else if(typeof navigator!=='undefined' && navigator.onLine===false){
-    fwAutoDesc.textContent='Auto update needs internet on this browser device to download the release from GitHub.';
-    spiffsAutoDesc.textContent='Auto update needs internet on this browser device to download the release from GitHub.';
-  }else{
-    fwAutoDesc.textContent='Auto update downloads the latest firmware release in your browser, then uploads it over Client WiFi. Manual .bin upload still works in AP or Client mode.';
-    spiffsAutoDesc.textContent='Auto update downloads the latest SPIFFS release in your browser, then uploads it over Client WiFi. Manual .bin upload still works in AP or Client mode.';
-  }
+  fsAutoDesc.textContent=fsAutoReason || 'Downloads the latest official filesystem image and installs it automatically.';
 }
 
 function setUsbReadyState(ready,msg){
@@ -4333,7 +4283,7 @@ async function runOtaUpload(opts){
          low.indexOf('network error')!==-1 ||
          low.indexOf('download failed')!==-1 ||
          low.indexOf('missing release url')!==-1){
-        errMsg+=' Auto update needs internet on this device. If you are connected only to ESPEED32 WiFi, download the .bin manually first, then use Upload.';
+        errMsg+=' Auto update downloads the .bin in your browser from the ESPEED32 download service, then uploads it to the controller. If that fetch failed, the download service or your browser/network connection is the likely problem. Download the .bin manually first, then use Upload.';
       }
     }
     setProgress(progressPrefix,'Transfer failed',null);
@@ -4344,52 +4294,36 @@ async function runOtaUpload(opts){
 }
 
 async function autoUpdateFirmware(){
-  if(!canDisplayAutoUpdateControls()){
-    ss('ost','err','Auto update is available only on the live controller WiFi page.');
-    return;
-  }
   var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Firmware update');
   if(blocked){
     ss('ost','err',blocked);
     return;
   }
-  if(!latestFirmwareBinUrl){
-    ss('ost','err',releaseFetchTried?'Latest firmware URL is unavailable.':'Still checking latest release metadata...');
-    return;
-  }
   if(!(await confirmFirmwareBackupBeforeOta())) return;
   await runOtaUpload({
     endpoint:'/ota',
-    downloadUrl:latestFirmwareBinUrl,
+    downloadUrl:AUTO_UPDATE_FIRMWARE_URL,
     fileName:'ESPEED32.ino.bin',
     progressPrefix:'fw',
     statusId:'ost',
-    downloadStatus:'Downloading latest firmware release...',
+    downloadStatus:'Downloading latest firmware...',
     uploadStatus:'Uploading firmware...'
   });
 }
 
 async function autoUpdateSpiffs(){
-  if(!canDisplayAutoUpdateControls()){
-    ss('sst','err','Auto update is available only on the live controller WiFi page.');
-    return;
-  }
   var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Filesystem update');
   if(blocked){
     ss('sst','err',blocked);
     return;
   }
-  if(!latestSpiffsBinUrl){
-    ss('sst','err',releaseFetchTried?'Latest SPIFFS URL is unavailable.':'Still checking latest release metadata...');
-    return;
-  }
   await runOtaUpload({
     endpoint:'/ota-spiffs',
-    downloadUrl:latestSpiffsBinUrl,
+    downloadUrl:AUTO_UPDATE_SPIFFS_URL,
     fileName:'espeed32_spiffs.bin',
     progressPrefix:'spiffs',
     statusId:'sst',
-    downloadStatus:'Downloading latest SPIFFS release...',
+    downloadStatus:'Downloading latest filesystem image...',
     uploadStatus:'Uploading filesystem image...'
   });
 }

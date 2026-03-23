@@ -1744,7 +1744,7 @@ function updateReleaseInfoUi(){
 
     var itemFw=document.createElement('li');
     var dl=document.createElement('a');
-    dl.href=latestFirmwareBinUrl||latestReleaseUrl;
+    dl.href=AUTO_UPDATE_FIRMWARE_URL;
     dl.target='_blank';
     dl.rel='noopener';
     dl.textContent='Download firmware '+normalizeVersionTag(latestReleaseTag)+' (.bin)';
@@ -1753,7 +1753,7 @@ function updateReleaseInfoUi(){
 
     var itemFs=document.createElement('li');
     var dlFs=document.createElement('a');
-    dlFs.href=latestSpiffsBinUrl||latestReleaseUrl;
+    dlFs.href=AUTO_UPDATE_SPIFFS_URL;
     dlFs.target='_blank';
     dlFs.rel='noopener';
     dlFs.textContent='Download SPIFFS '+normalizeVersionTag(latestReleaseTag)+' (.bin)';

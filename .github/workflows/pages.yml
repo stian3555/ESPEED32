@@ -67,9 +67,9 @@ jobs:
           </html>
           EOF
 
-          # Publish hosted UI at /ui/ and make it the landing page (/)
+          # Publish hosted UI at /ui/ and use the public landing page at /
           cp -R source/ESPEED32/data/ui/. site/ui/
-          cp source/ESPEED32/data/ui/index.html site/index.html
+          cp source/ESPEED32/data/ui/public.html site/index.html
 
           SITE_URL=""
 

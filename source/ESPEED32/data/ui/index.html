@@ -1244,13 +1244,21 @@ form{margin:0}
 <section id="fw-section" class="panel update-panel">
 <h2>Firmware Update (.bin)</h2>
 <div class="update-actions">
+<div class="row">
+<label for="fw-release-select">Firmware Version</label>
+<select id="fw-release-select" onchange="onReleaseVersionChange(this.value)">
+<option value="">Loading latest...</option>
+</select>
+</div>
+<p id="fw-release-note" class="tiny">Choose which release the auto update buttons should install. Manual upload still uses the local file you choose.</p>
+<p id="fw-release-source" class="tiny" style="display:none"></p>
 <form id="of">
 <input type="file" id="fw" accept=".bin">
 <button type="submit" class="btn ota" id="btn-ota-upload">Upload Firmware (.bin)</button>
 </form>
-<button type="button" class="btn dl" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update to Latest</button>
-<p id="fw-auto-desc" class="tiny">Downloads the latest official firmware and installs it automatically.</p>
-<p class="tiny">Download the latest firmware <code>.bin</code> from <b>Repo &amp; Release</b>, then upload it here.</p>
+<button type="button" class="btn dl" id="btn-fw-auto" onclick="autoUpdateFirmware()">Auto Update Selected</button>
+<p id="fw-auto-desc" class="tiny">Downloads the selected official firmware release and installs it automatically.</p>
+<p class="tiny">Manual upload: download any firmware <code>.bin</code> you want, then upload that file here.</p>
 </div>
 <div id="fw-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="fw-progress-label">Idle</span><span id="fw-progress-pct">0%</span></div>
@@ -1267,9 +1275,9 @@ form{margin:0}
 <input type="file" id="spiffs" accept=".bin">
 <button type="submit" class="btn ota" id="btn-spiffs-upload">Upload Filesystem (.bin)</button>
 </form>
-<button type="button" class="btn dl" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update to Latest</button>
-<p id="spiffs-auto-desc" class="tiny">Downloads the latest official filesystem image and installs it automatically.</p>
-<p class="tiny">Download the latest SPIFFS <code>.bin</code> from <b>Repo &amp; Release</b>, then upload it here.</p>
+<button type="button" class="btn dl" id="btn-spiffs-auto" onclick="autoUpdateSpiffs()">Auto Update Selected</button>
+<p id="spiffs-auto-desc" class="tiny">Downloads the filesystem image for the selected release and installs it automatically.</p>
+<p class="tiny">Manual upload: download any SPIFFS <code>.bin</code> you want, then upload that file here.</p>
 </div>
 <div id="spiffs-progress" class="progress-wrap" aria-live="polite">
 <div class="progress-head"><span id="spiffs-progress-label">Idle</span><span id="spiffs-progress-pct">0%</span></div>
@@ -1327,15 +1335,18 @@ var latestReleaseTag='';
 var latestReleaseUrl='';
 var latestFirmwareBinUrl='';
 var latestSpiffsBinUrl='';
+var availableReleases=[];
+var selectedReleaseVersion='';
 var releaseFetchTried=false;
 var otaBusy=false;
 var backupDownloadedThisSession=false;
 var firmwareBackupPromptResolver=null;
 var AUTO_UPDATE_FIRMWARE_URL='https://downloads.espeed32.com/firmware.bin';
 var AUTO_UPDATE_SPIFFS_URL='https://downloads.espeed32.com/spiffs.bin';
+var RELEASES_INDEX_URL='https://downloads.espeed32.com/releases.json';
+var LATEST_METADATA_URL='https://downloads.espeed32.com/latest.json';
 var RELEASE_CACHE_KEY='espeed32_latest_release_v2';
 var RELEASE_CACHE_TTL_MS=6*60*60*1000;
-var RELEASE_API_URL='https://api.github.com/repos/nerdweeg/ESPEED32/releases/latest';
 var BACKUP_SESSION_KEY='espeed32_backup_downloaded_v1';
 var TELEMETRY_POLL_INTERVAL_KEY='espeed32_telemetry_poll_interval_v2';
 var UI_THEME_KEY='espeed32-ui-theme';
@@ -1669,19 +1680,12 @@ function updateHeaderFirmwareNote(){
   el.textContent=show?' (new firmware available)':'';
 }
 
-function buildDirectAssetUrl(tag,fileName){
-  var t=String(tag||'').trim();
-  var f=String(fileName||'').trim();
-  if(!t || !f) return '';
-  return 'https://github.com/nerdweeg/ESPEED32/releases/download/'+encodeURIComponent(t)+'/'+encodeURIComponent(f);
-}
-
 function readReleaseCache(){
   try{
     var raw=localStorage.getItem(RELEASE_CACHE_KEY);
     if(!raw) return null;
     var c=JSON.parse(raw);
-    if(!c || !c.tag || !c.url || !c.ts) return null;
+    if(!c || !c.ts) return null;
     if((Date.now()-Number(c.ts))>RELEASE_CACHE_TTL_MS) return null;
     return c;
   }catch(_){
@@ -1689,10 +1693,197 @@ function readReleaseCache(){
   }
 }
 
-function writeReleaseCache(tag,url,fwUrl,spiffsUrl){
+function writeReleaseCache(){
   try{
-    localStorage.setItem(RELEASE_CACHE_KEY,JSON.stringify({tag:tag,url:url,fwUrl:fwUrl||'',spiffsUrl:spiffsUrl||'',ts:Date.now()}));
+    localStorage.setItem(RELEASE_CACHE_KEY,JSON.stringify({
+      latestTag:latestReleaseTag||'',
+      latestUrl:latestReleaseUrl||'',
+      latestFirmwareUrl:latestFirmwareBinUrl||'',
+      latestSpiffsUrl:latestSpiffsBinUrl||'',
+      selectedReleaseVersion:selectedReleaseVersion||'',
+      releases:availableReleases,
+      ts:Date.now()
+    }));
   }catch(_){ }
+}
+
+function normalizeReleaseVersionId(value){
+  var out=String(value||'').trim();
+  if(/^v/i.test(out)) out=out.slice(1);
+  return out.toLowerCase()==='latest'?'latest':out;
+}
+
+function formatReleaseVersionLabel(entry){
+  if(!entry) return 'Latest available';
+  if(entry.version && entry.version!=='latest') return entry.version;
+  var normalizedTag=normalizeReleaseVersionId(entry.tag||'');
+  return normalizedTag && normalizedTag!=='latest' ? normalizedTag : 'Latest available';
+}
+
+function formatReleaseChoiceLabel(entry){
+  var base=formatReleaseVersionLabel(entry);
+  if(entry && entry.isLatest && base!=='Latest available') return 'Latest ('+base+')';
+  return base;
+}
+
+function formatSelectedReleaseLabel(entry){
+  if(!entry) return 'Latest available';
+  if(entry.isLatest){
+    var latestLabel=formatReleaseVersionLabel(entry);
+    return latestLabel==='Latest available' ? latestLabel : 'Latest ('+latestLabel+')';
+  }
+  return formatReleaseVersionLabel(entry);
+}
+
+function normalizeReleaseEntry(item){
+  if(!item) return null;
+
+  var version=normalizeReleaseVersionId(item.version || item.tag || '');
+  if(!version) version='latest';
+
+  var tag=String(item.tag||'').trim();
+  if(!tag){
+    tag=(version!=='latest')?('v'+version):'Latest';
+  }
+
+  var source=String(item.source||'').trim();
+  if(!source){
+    source=(version!=='latest')
+      ?('https://github.com/nerdweeg/ESPEED32/releases/tag/v'+encodeURIComponent(version))
+      :'https://github.com/nerdweeg/ESPEED32/releases/latest';
+  }
+
+  var firmwareUrl=String(item.firmwareUrl||'').trim();
+  if(!firmwareUrl){
+    firmwareUrl=(version!=='latest')
+      ?('https://downloads.espeed32.com/releases/'+encodeURIComponent(version)+'/firmware.bin')
+      :AUTO_UPDATE_FIRMWARE_URL;
+  }
+
+  var spiffsUrl=String(item.spiffsUrl||'').trim();
+  if(!spiffsUrl){
+    spiffsUrl=(version!=='latest')
+      ?('https://downloads.espeed32.com/releases/'+encodeURIComponent(version)+'/spiffs.bin')
+      :AUTO_UPDATE_SPIFFS_URL;
+  }
+
+  return {
+    version:version,
+    tag:tag,
+    name:String(item.name||'').trim(),
+    publishedAt:String(item.publishedAt||'').trim(),
+    source:source,
+    firmwareUrl:firmwareUrl,
+    spiffsUrl:spiffsUrl,
+    isLatest:false
+  };
+}
+
+function applyReleaseSelection(releases,latestVersion,preferredVersion){
+  availableReleases=Array.isArray(releases)?releases.slice():[];
+
+  var latestId=normalizeReleaseVersionId(latestVersion);
+  var latestEntry=null;
+  for(var i=0;i<availableReleases.length;i++){
+    availableReleases[i].isLatest=!!(latestId && availableReleases[i].version===latestId);
+    if(!latestEntry && availableReleases[i].isLatest) latestEntry=availableReleases[i];
+  }
+  if(!latestEntry && availableReleases.length){
+    latestEntry=availableReleases[0];
+    latestEntry.isLatest=true;
+  }
+
+  latestReleaseTag=latestEntry?String(latestEntry.tag||'').trim():'';
+  latestReleaseUrl=latestEntry?String(latestEntry.source||'').trim():'';
+  latestFirmwareBinUrl=latestEntry?String(latestEntry.firmwareUrl||'').trim():'';
+  latestSpiffsBinUrl=latestEntry?String(latestEntry.spiffsUrl||'').trim():'';
+
+  var wanted=normalizeReleaseVersionId(preferredVersion || selectedReleaseVersion);
+  var selected=null;
+  for(var j=0;j<availableReleases.length;j++){
+    if(availableReleases[j].version===wanted){
+      selected=availableReleases[j];
+      break;
+    }
+  }
+  if(!selected) selected=latestEntry || (availableReleases.length?availableReleases[0]:null);
+  selectedReleaseVersion=selected?selected.version:'';
+}
+
+function getSelectedReleaseMeta(){
+  for(var i=0;i<availableReleases.length;i++){
+    if(availableReleases[i].version===selectedReleaseVersion){
+      return availableReleases[i];
+    }
+  }
+  for(var j=0;j<availableReleases.length;j++){
+    if(availableReleases[j].isLatest) return availableReleases[j];
+  }
+  return availableReleases.length?availableReleases[0]:null;
+}
+
+function getSelectedReleaseDownloadUrl(kind){
+  var selected=getSelectedReleaseMeta();
+  if(!selected) return '';
+  return kind==='spiffs'?String(selected.spiffsUrl||'').trim():String(selected.firmwareUrl||'').trim();
+}
+
+function updateReleaseVersionUi(){
+  var select=document.getElementById('fw-release-select');
+  var note=document.getElementById('fw-release-note');
+  var source=document.getElementById('fw-release-source');
+  if(!select || !note || !source) return;
+
+  select.textContent='';
+  if(!availableReleases.length){
+    var loadingOpt=document.createElement('option');
+    loadingOpt.value='';
+    loadingOpt.textContent=releaseFetchTried?'Latest available':'Loading latest...';
+    select.appendChild(loadingOpt);
+    select.disabled=true;
+    note.textContent=releaseFetchTried
+      ?'Version list unavailable right now. Auto update will use the latest available release.'
+      :'Checks available releases and defaults to the latest version.';
+    source.style.display='none';
+    source.textContent='';
+    return;
+  }
+
+  for(var i=0;i<availableReleases.length;i++){
+    var entry=availableReleases[i];
+    var opt=document.createElement('option');
+    opt.value=entry.version;
+    opt.textContent=formatReleaseChoiceLabel(entry);
+    select.appendChild(opt);
+  }
+
+  select.value=selectedReleaseVersion;
+  source.textContent='';
+
+  var selected=getSelectedReleaseMeta();
+  var singleLatestFallback=(availableReleases.length<2 && selected && selected.version==='latest');
+  note.textContent=singleLatestFallback
+    ?'Version list unavailable right now. Auto update will use the latest available release. Manual upload still uses the local file you choose.'
+    :'This selector controls both auto update buttons. Manual upload still uses the local file you choose.';
+
+  if(selected && selected.source){
+    source.style.display='block';
+    source.appendChild(document.createTextNode('Source release: '));
+    var link=document.createElement('a');
+    link.href=selected.source;
+    link.target='_blank';
+    link.rel='noopener';
+    link.textContent=selected.tag || formatSelectedReleaseLabel(selected);
+    source.appendChild(link);
+  }else{
+    source.style.display='none';
+  }
+}
+
+function onReleaseVersionChange(value){
+  selectedReleaseVersion=normalizeReleaseVersionId(value);
+  updateReleaseVersionUi();
+  updateReleaseInfoUi();
 }
 
 function updateReleaseInfoUi(){
@@ -1700,27 +1891,36 @@ function updateReleaseInfoUi(){
   if(!el) return;
   updateHeaderFirmwareNote();
 
-  if(!latestReleaseTag || !latestReleaseUrl){
+  var selected=getSelectedReleaseMeta();
+  if(!selected && !latestReleaseTag && !latestReleaseUrl){
     if(!releaseFetchTried){
       el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): checking...';
     }else{
-      el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): unavailable (offline or rate-limited).';
+      el.textContent='Latest firmware release (official repo nerdweeg/ESPEED32): unavailable.';
     }
+    updateReleaseVersionUi();
     updateFirmwareUiState();
     return;
   }
 
   el.textContent='';
-  var latestLine=document.createElement('div');
-  latestLine.className='release-line';
-  latestLine.appendChild(document.createTextNode('Latest firmware release: '));
-  var a=document.createElement('a');
-  a.href=latestReleaseUrl;
-  a.target='_blank';
-  a.rel='noopener';
-  a.textContent=latestReleaseTag;
-  latestLine.appendChild(a);
-  el.appendChild(latestLine);
+  if(latestReleaseTag || latestReleaseUrl){
+    var latestLine=document.createElement('div');
+    latestLine.className='release-line';
+    latestLine.appendChild(document.createTextNode('Latest firmware release: '));
+    if(latestReleaseUrl){
+      var a=document.createElement('a');
+      a.href=latestReleaseUrl;
+      a.target='_blank';
+      a.rel='noopener';
+      a.textContent=latestReleaseTag || 'latest';
+      latestLine.appendChild(a);
+    }else{
+      latestLine.appendChild(document.createTextNode(latestReleaseTag || 'latest'));
+    }
+    el.appendChild(latestLine);
+  }
+
   var hasDeviceVersion=!!(info.version && info.version!=='-');
   var updateAvailable=hasDeviceVersion && canRunValidFirmwareCheck() && isReleaseNewerThanDevice(latestReleaseTag,info.version);
 
@@ -1733,10 +1933,18 @@ function updateReleaseInfoUi(){
     el.appendChild(deviceLine);
   }
 
-  if(updateAvailable){
+  if(selected){
+    var selectedLine=document.createElement('div');
+    selectedLine.className='release-line';
+    selectedLine.appendChild(document.createTextNode('Selected update: '+formatSelectedReleaseLabel(selected)));
+    if(selected.publishedAt){
+      selectedLine.appendChild(document.createTextNode(' • '+selected.publishedAt.slice(0,10)));
+    }
+    el.appendChild(selectedLine);
+
     var updateTitle=document.createElement('div');
     updateTitle.className='release-line';
-    updateTitle.appendChild(document.createTextNode('Latest release assets for '+normalizeVersionTag(latestReleaseTag)+':'));
+    updateTitle.appendChild(document.createTextNode('Downloads for '+formatSelectedReleaseLabel(selected)+':'));
     el.appendChild(updateTitle);
 
     var list=document.createElement('ul');
@@ -1744,19 +1952,19 @@ function updateReleaseInfoUi(){
 
     var itemFw=document.createElement('li');
     var dl=document.createElement('a');
-    dl.href=AUTO_UPDATE_FIRMWARE_URL;
+    dl.href=selected.firmwareUrl || AUTO_UPDATE_FIRMWARE_URL;
     dl.target='_blank';
     dl.rel='noopener';
-    dl.textContent='Download firmware '+normalizeVersionTag(latestReleaseTag)+' (.bin)';
+    dl.textContent='Download firmware '+formatSelectedReleaseLabel(selected)+' (.bin)';
     itemFw.appendChild(dl);
     list.appendChild(itemFw);
 
     var itemFs=document.createElement('li');
     var dlFs=document.createElement('a');
-    dlFs.href=AUTO_UPDATE_SPIFFS_URL;
+    dlFs.href=selected.spiffsUrl || AUTO_UPDATE_SPIFFS_URL;
     dlFs.target='_blank';
     dlFs.rel='noopener';
-    dlFs.textContent='Download SPIFFS '+normalizeVersionTag(latestReleaseTag)+' (.bin)';
+    dlFs.textContent='Download SPIFFS '+formatSelectedReleaseLabel(selected)+' (.bin)';
     itemFs.appendChild(dlFs);
     list.appendChild(itemFs);
 
@@ -1764,22 +1972,38 @@ function updateReleaseInfoUi(){
 
     var note=document.createElement('div');
     note.className='release-note tiny';
-    note.appendChild(document.createTextNode('These files are from the latest release, not the current device version shown above.'));
+    note.appendChild(document.createTextNode('The selector below controls both auto update buttons. Manual upload always uses the file you choose locally.'));
     el.appendChild(note);
   }
 
+  updateReleaseVersionUi();
   updateFirmwareUiState();
 }
 
 async function loadLatestReleaseInfo(){
   var cached=readReleaseCache();
   if(cached){
-    latestReleaseTag=String(cached.tag||'').trim();
-    latestReleaseUrl=String(cached.url||'').trim();
-    latestFirmwareBinUrl=String(cached.fwUrl||'').trim()||buildDirectAssetUrl(latestReleaseTag,'ESPEED32.ino.bin');
-    latestSpiffsBinUrl=String(cached.spiffsUrl||'').trim()||buildDirectAssetUrl(latestReleaseTag,'espeed32_spiffs.bin');
-    releaseFetchTried=true;
-    updateReleaseInfoUi();
+    if(Array.isArray(cached.releases) && cached.releases.length){
+      applyReleaseSelection(cached.releases, cached.latestTag || cached.latestReleaseVersion || '', cached.selectedReleaseVersion || '');
+      releaseFetchTried=true;
+      updateReleaseInfoUi();
+    }else if(cached.tag || cached.url || cached.fwUrl || cached.spiffsUrl){
+      var legacyEntry=normalizeReleaseEntry({
+        tag:cached.tag,
+        source:cached.url,
+        firmwareUrl:cached.fwUrl,
+        spiffsUrl:cached.spiffsUrl
+      });
+      if(legacyEntry){
+        applyReleaseSelection([legacyEntry], legacyEntry.version, 'latest');
+        releaseFetchTried=true;
+        updateReleaseInfoUi();
+      }else{
+        updateReleaseInfoUi();
+      }
+    }else{
+      updateReleaseInfoUi();
+    }
   }else{
     updateReleaseInfoUi();
   }
@@ -1791,55 +2015,42 @@ async function loadLatestReleaseInfo(){
   }
 
   try{
-    var r=await fetch(RELEASE_API_URL,{
-      headers:{'Accept':'application/vnd.github+json'},
-      cache:'no-store'
-    });
+    var r=await fetch(RELEASES_INDEX_URL,{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
     var j=await r.json();
-    var tag=String(j.tag_name||j.name||'').trim();
-    var url=String(j.html_url||'').trim();
-    var fwUrl=buildDirectAssetUrl(tag,'ESPEED32.ino.bin');
-    var spiffsUrl=buildDirectAssetUrl(tag,'espeed32_spiffs.bin');
-    var fwExact=false;
-    var spiffsExact=false;
-    var fwGeneric=false;
-    var spiffsGeneric=false;
-    if(Array.isArray(j.assets)){
-      for(var i=0;i<j.assets.length;i++){
-        var a=j.assets[i];
-        var n=String((a&&a.name)||'').trim().toLowerCase();
-        var u=String((a&&a.browser_download_url)||'').trim();
-        if(!u) continue;
-        if(n==='espeed32.ino.bin'){
-          fwUrl=u;
-          fwExact=true;
-          continue;
-        }
-        if(n==='espeed32_spiffs.bin'){
-          spiffsUrl=u;
-          spiffsExact=true;
-          continue;
-        }
-
-        if(!fwExact && !fwGeneric && n.indexOf('spiffs')===-1 && /\.bin$/i.test(n) && n.indexOf('bootloader')===-1 && n.indexOf('partitions')===-1 && n.indexOf('merged')===-1){
-          fwUrl=u;
-          fwGeneric=true;
-          continue;
-        }
-        if(!spiffsExact && !spiffsGeneric && n.indexOf('spiffs')!==-1 && /\.bin$/i.test(n)){
-          spiffsUrl=u;
-          spiffsGeneric=true;
-        }
+    var releases=[];
+    var payloadLatest=normalizeReleaseVersionId(j && j.latest);
+    if(Array.isArray(j && j.releases)){
+      for(var i=0;i<j.releases.length;i++){
+        var normalized=normalizeReleaseEntry(j.releases[i]);
+        if(normalized) releases.push(normalized);
       }
     }
-    if(!tag || !url) throw new Error('invalid payload');
-    latestReleaseTag=tag;
-    latestReleaseUrl=url;
-    latestFirmwareBinUrl=fwUrl;
-    latestSpiffsBinUrl=spiffsUrl;
+    if(!releases.length) throw new Error('invalid payload');
+    applyReleaseSelection(releases,payloadLatest,payloadLatest);
     releaseFetchTried=true;
-    writeReleaseCache(tag,url,fwUrl,spiffsUrl);
+    writeReleaseCache();
+    updateReleaseInfoUi();
+    return;
+  }catch(_){ }
+
+  try{
+    var latestResp=await fetch(LATEST_METADATA_URL,{cache:'no-store'});
+    if(!latestResp.ok) throw new Error('HTTP '+latestResp.status);
+    var latestJson=await latestResp.json();
+    var latestEntry=normalizeReleaseEntry({
+      version:latestJson.latest || latestJson.version || '',
+      tag:latestJson.tag || '',
+      name:latestJson.name || '',
+      publishedAt:latestJson.publishedAt || '',
+      source:latestJson.source || '',
+      firmwareUrl:latestJson.firmwareUrl || AUTO_UPDATE_FIRMWARE_URL,
+      spiffsUrl:latestJson.spiffsUrl || AUTO_UPDATE_SPIFFS_URL
+    });
+    if(!latestEntry) throw new Error('invalid latest payload');
+    applyReleaseSelection([latestEntry],latestEntry.version,'latest');
+    releaseFetchTried=true;
+    writeReleaseCache();
     updateReleaseInfoUi();
   }catch(_){
     releaseFetchTried=true;
@@ -3483,11 +3694,14 @@ function otaUploadUnavailableReason(label){
   return '';
 }
 
-function autoUpdateUnavailableReason(label){
+function autoUpdateUnavailableReason(label,kind){
   var baseReason=otaUploadUnavailableReason(label);
   if(baseReason) return baseReason;
   if(Number(info.portalMode||0)!==2){
     return label+' requires Client mode with internet access on this device.';
+  }
+  if(!getSelectedReleaseDownloadUrl(kind||'firmware')){
+    return label+' release metadata is still loading.';
   }
   return '';
 }
@@ -3536,6 +3750,7 @@ function confirmFirmwareBackupBeforeOta(){
 function updateFirmwareUiState(){
   var input=document.getElementById('fw');
   var btn=document.getElementById('btn-ota-upload');
+  var releaseSelect=document.getElementById('fw-release-select');
   var autoBtn=document.getElementById('btn-fw-auto');
   var autoDesc=document.getElementById('fw-auto-desc');
   var note=document.getElementById('ota-note');
@@ -3544,13 +3759,16 @@ function updateFirmwareUiState(){
   var fsAutoBtn=document.getElementById('btn-spiffs-auto');
   var fsAutoDesc=document.getElementById('spiffs-auto-desc');
   var fsNote=document.getElementById('spiffs-note');
-  if(!input || !btn || !autoBtn || !autoDesc || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsAutoDesc || !fsNote) return;
+  if(!input || !btn || !releaseSelect || !autoBtn || !autoDesc || !note || !fsInput || !fsBtn || !fsAutoBtn || !fsAutoDesc || !fsNote) return;
 
   var busyReason=otaBusy?'Another update is already running. Wait for completion.':'';
   var reason=busyReason || otaUploadUnavailableReason('Firmware update');
   var fsReason=busyReason || otaUploadUnavailableReason('Filesystem update');
-  var autoReason=busyReason || autoUpdateUnavailableReason('Firmware update');
-  var fsAutoReason=busyReason || autoUpdateUnavailableReason('Filesystem update');
+  var autoReason=busyReason || autoUpdateUnavailableReason('Firmware update','firmware');
+  var fsAutoReason=busyReason || autoUpdateUnavailableReason('Filesystem update','spiffs');
+  var selected=getSelectedReleaseMeta();
+  var selectedLabel=formatSelectedReleaseLabel(selected);
+  var hasReleaseChoice=(availableReleases.length>1);
 
   var disabled=(reason!=='');
   var fsDisabled=(fsReason!=='');
@@ -3562,9 +3780,12 @@ function updateFirmwareUiState(){
   btn.classList.toggle('disabled',disabled);
   note.style.display=reason!==''?'block':'none';
   note.textContent=reason;
+  releaseSelect.disabled=otaBusy || !availableReleases.length || !hasReleaseChoice;
   autoBtn.disabled=autoDisabled;
   autoBtn.classList.toggle('disabled',autoDisabled);
-  autoDesc.textContent=autoReason || 'Downloads the latest official firmware and installs it automatically.';
+  autoDesc.textContent=autoReason || (selected && !selected.isLatest
+    ?('Downloads firmware version '+selectedLabel+' and installs it automatically.')
+    :('Downloads the latest official firmware'+((selectedLabel && selectedLabel!=='Latest available')?' ('+selectedLabel.replace(/^Latest \((.*)\)$/,'$1')+')':'')+' and installs it automatically.'));
 
   fsInput.disabled=fsDisabled;
   fsBtn.disabled=fsDisabled;
@@ -3573,7 +3794,9 @@ function updateFirmwareUiState(){
   fsNote.textContent=fsReason;
   fsAutoBtn.disabled=fsAutoDisabled;
   fsAutoBtn.classList.toggle('disabled',fsAutoDisabled);
-  fsAutoDesc.textContent=fsAutoReason || 'Downloads the latest official filesystem image and installs it automatically.';
+  fsAutoDesc.textContent=fsAutoReason || (selected && !selected.isLatest
+    ?('Downloads the filesystem image for version '+selectedLabel+' and installs it automatically.')
+    :('Downloads the latest official filesystem image'+((selectedLabel && selectedLabel!=='Latest available')?' ('+selectedLabel.replace(/^Latest \((.*)\)$/,'$1')+')':'')+' and installs it automatically.'));
 }
 
 function setUsbReadyState(ready,msg){
@@ -4294,7 +4517,7 @@ async function runOtaUpload(opts){
 }
 
 async function autoUpdateFirmware(){
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Firmware update');
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Firmware update','firmware');
   if(blocked){
     ss('ost','err',blocked);
     return;
@@ -4302,28 +4525,28 @@ async function autoUpdateFirmware(){
   if(!(await confirmFirmwareBackupBeforeOta())) return;
   await runOtaUpload({
     endpoint:'/ota',
-    downloadUrl:AUTO_UPDATE_FIRMWARE_URL,
+    downloadUrl:getSelectedReleaseDownloadUrl('firmware'),
     fileName:'ESPEED32.ino.bin',
     progressPrefix:'fw',
     statusId:'ost',
-    downloadStatus:'Downloading latest firmware...',
+    downloadStatus:'Downloading selected firmware...',
     uploadStatus:'Uploading firmware...'
   });
 }
 
 async function autoUpdateSpiffs(){
-  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Filesystem update');
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':autoUpdateUnavailableReason('Filesystem update','spiffs');
   if(blocked){
     ss('sst','err',blocked);
     return;
   }
   await runOtaUpload({
     endpoint:'/ota-spiffs',
-    downloadUrl:AUTO_UPDATE_SPIFFS_URL,
+    downloadUrl:getSelectedReleaseDownloadUrl('spiffs'),
     fileName:'espeed32_spiffs.bin',
     progressPrefix:'spiffs',
     statusId:'sst',
-    downloadStatus:'Downloading latest filesystem image...',
+    downloadStatus:'Downloading selected filesystem image...',
     uploadStatus:'Uploading filesystem image...'
   });
 }

@@ -3,7 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESPEED32</title>
+<title>ESPEED32 Slot Car Controller | Setup, Telemetry, Docs</title>
+<meta id="meta-description" name="description" content="ESPEED32 is an open-source ESP32 slot car controller project for DIY builders, with browser-based setup, telemetry, firmware updates, backup and restore, per-car profiles, and multilingual documentation.">
+<meta id="meta-robots" name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta name="theme-color" content="#17518f">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" id="canonical-link" href="https://espeed32.com/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ESPEED32">
+<meta property="og:title" id="og-title" content="ESPEED32 Slot Car Controller">
+<meta property="og:description" id="og-description" content="Open-source ESP32 slot car controller project for DIY builders with setup tools, telemetry, firmware updates, tuning, and multilingual documentation.">
+<meta property="og:url" id="og-url" content="https://espeed32.com/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" id="twitter-title" content="ESPEED32 Slot Car Controller">
+<meta name="twitter:description" id="twitter-description" content="Open-source ESP32 slot car controller project for DIY builders with setup tools, telemetry, firmware updates, tuning, and multilingual documentation.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "ESPEED32",
+      "url": "https://espeed32.com/",
+      "inLanguage": "en",
+      "description": "ESPEED32 is an open-source ESP32 slot car controller project for DIY builders with browser-based setup, telemetry, firmware updates, tuning, and built-in user documentation."
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "ESPEED32",
+      "url": "https://espeed32.com/",
+      "codeRepository": "https://github.com/nerdweeg/ESPEED32",
+      "programmingLanguage": [
+        "C++",
+        "JavaScript",
+        "HTML",
+        "CSS"
+      ],
+      "description": "Open-source ESP32 slot car controller project with firmware, setup UI, telemetry, backup and restore, firmware update tools, and multilingual docs."
+    }
+  ]
+}
+</script>
 <script>
 (function(){
   try{
@@ -179,7 +220,7 @@ h1{
   font-size:15px;
 }
 .hero-copy{
-  max-width:760px;
+  max-width:860px;
   margin:14px auto 0;
   text-align:center;
   line-height:1.5;
@@ -215,6 +256,7 @@ h1{
   font-size:13px;
   line-height:1.35;
 }
+.mode-note:empty{display:none}
 .layout-grid{
   display:grid;
   gap:12px;
@@ -238,8 +280,13 @@ h1{
   box-shadow:0 7px 20px rgba(0,0,0,.2);
 }
 .panel.primary{grid-column:span 7}
-.panel.secondary{grid-column:span 5}
+.panel.secondary{
+  grid-column:span 5;
+  display:flex;
+  flex-direction:column;
+}
 .panel.full{grid-column:span 12}
+.panel.secondary .card{flex:1}
 h2{
   color:var(--heading);
   font-size:16px;
@@ -308,9 +355,9 @@ h2{
 <body>
 <div class="page-shell">
   <header class="hero">
-    <h1>ESPEED32</h1>
-    <p class="sub" id="hero-subtitle">Controller Home</p>
-    <p class="hero-copy" id="hero-copy">Learn what ESPEED32 is, open the controller page, or jump straight to the user guide. Controller settings and tools stay protected behind login.</p>
+    <h1>ESPEED32 Slot Car Controller</h1>
+    <p class="sub" id="hero-subtitle">ESP32-based handheld controller project</p>
+    <p class="hero-copy" id="hero-copy">Open the controller tools or jump straight to the user guide.</p>
     <div class="hero-tools">
       <div class="theme-tools">
         <label for="theme-select">Theme</label>
@@ -321,36 +368,45 @@ h2{
         </select>
       </div>
     </div>
-    <p class="mode-note" id="mode-note">Controller login credentials are shown on the controller WiFi info page.</p>
+    <p class="mode-note" id="mode-note">USB/WebSerial works best in Chrome or Edge.</p>
   </header>
 
   <main class="layout-grid">
     <section class="panel full">
       <h2>About ESPEED32</h2>
       <div class="card">
-        <p><b>ESPEED32</b> is a handheld slot car controller project built around ESP32 hardware.</p>
+        <p><strong>ESPEED32</strong> is an open-source slot car controller project built around ESP32 hardware for DIY builders who want flexible setup, tuning, flashing, troubleshooting, and day-to-day racing use.</p>
+        <p>The project combines controller firmware, a browser-based setup UI, on-device WiFi access, and multilingual documentation so builders and drivers can manage the controller from a laptop, tablet, or phone.</p>
         <ul class="list">
           <li>PWM motor control with adjustable frequency, throttle curve, anti-spin, and brake behavior.</li>
           <li>Magnetic trigger support, calibration, and per-car profile storage.</li>
-          <li>Built-in backup/restore, telemetry, firmware updates, storage updates, and an onboard user guide.</li>
+          <li>Built-in backup and restore, telemetry, firmware updates, storage updates, and an onboard user guide.</li>
         </ul>
       </div>
     </section>
 
     <section class="panel primary">
-      <h2>Open ESPEED32 UI</h2>
+      <h2>Controller Tools and Docs</h2>
       <div class="card">
-        <p id="panel-copy">Use the protected controller UI for telemetry, advanced config, backup, restore, and firmware updates.</p>
-        <a id="panel-link" class="btn ul" href="/controller">Open Controller Panel</a>
-        <a id="docs-link" class="btn doc" href="/docs" target="_blank" rel="noopener">Open User Guide</a>
+        <p id="panel-copy">Open the controller tools page for USB-based access, live tuning, telemetry, backup and restore, and firmware maintenance.</p>
+        <a id="panel-link" class="btn ul" href="/ui/index.html?mode=hosted">Manage Your Controller</a>
+        <a id="docs-link" class="btn doc" href="/docs">Open User Guide</a>
       </div>
     </section>
 
     <section class="panel secondary">
-      <h2>Access Model</h2>
+      <h2>How Access Works</h2>
       <div class="card">
-        <p id="access-copy">On the controller WiFi page, sensitive tools are protected by controller login. Use username <code>espeed32</code>; the current password is shown physically on the controller WiFi info screen.</p>
-        <p class="tiny">If you open this page from a local file, the main UI continues with USB connection instead.</p>
+        <p id="access-copy">The hosted controller tools page is best for USB/WebSerial access. When you open the controller over WiFi, sensitive tools stay behind controller login and the current password is shown on the device screen.</p>
+        <p class="tiny">If you open this page from a local file, the setup UI and bundled user guide still work from the same folder.</p>
+      </div>
+    </section>
+
+    <section class="panel full">
+      <h2>Project Resources</h2>
+      <div class="card">
+        <p>The main ESPEED32 repository includes firmware sources, build scripts, hardware context, and the documentation used by both the hosted site and the controller itself.</p>
+        <a class="btn aux" href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">View Source on GitHub</a>
       </div>
     </section>
   </main>
@@ -358,6 +414,50 @@ h2{
 </div>
 <script>
 var UI_THEME_KEY='espeed32-ui-theme';
+var SEO_INDEX_VALUE='index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+var SEO_NOINDEX_VALUE='noindex,nofollow,noarchive';
+var SEO_CANONICAL_URL='https://espeed32.com/';
+var SEO_TEXT={
+  hosted:{
+    title:'ESPEED32 Slot Car Controller | Setup, Telemetry, Docs',
+    socialTitle:'ESPEED32 Slot Car Controller',
+    description:'ESPEED32 is an open-source ESP32 slot car controller project for DIY builders, with browser-based setup, telemetry, firmware updates, backup and restore, per-car profiles, and multilingual documentation.',
+    robots:SEO_INDEX_VALUE,
+    canonical:SEO_CANONICAL_URL
+  },
+  controller:{
+    title:'ESPEED32 Controller Home | Panel, Telemetry, Docs',
+    socialTitle:'ESPEED32 Controller Home',
+    description:'Access the protected ESPEED32 controller panel, telemetry, backup and restore, firmware updates, and the onboard user guide over WiFi.',
+    robots:SEO_NOINDEX_VALUE,
+    canonical:SEO_CANONICAL_URL
+  },
+  local:{
+    title:'ESPEED32 Local Controller Access | USB, Telemetry, Docs',
+    socialTitle:'ESPEED32 Local Controller Access',
+    description:'Open the ESPEED32 controller tools locally for USB or WebSerial access, backup and restore, telemetry, firmware maintenance, and the bundled user guide.',
+    robots:SEO_NOINDEX_VALUE,
+    canonical:SEO_CANONICAL_URL
+  }
+};
+
+function setElementAttr(id,name,value){
+  var el=document.getElementById(id);
+  if(el && value) el.setAttribute(name,value);
+}
+
+function applySeoState(mode){
+  var state=SEO_TEXT[mode] || SEO_TEXT.hosted;
+  document.title=state.title;
+  setElementAttr('meta-description','content',state.description);
+  setElementAttr('meta-robots','content',state.robots);
+  setElementAttr('canonical-link','href',state.canonical);
+  setElementAttr('og-title','content',state.socialTitle);
+  setElementAttr('og-description','content',state.description);
+  setElementAttr('og-url','content',state.canonical);
+  setElementAttr('twitter-title','content',state.socialTitle);
+  setElementAttr('twitter-description','content',state.description);
+}
 
 function initThemeControls(){
   var root=document.documentElement;
@@ -430,24 +530,26 @@ async function applyModeLinks(){
   var localFile=(location.protocol==='file:');
 
   if(localFile){
+    applySeoState('local');
     if(panelLink){
       panelLink.href='index.html?mode=hosted';
-      panelLink.textContent='Open Setup Page';
+      panelLink.textContent='Manage Your Controller';
     }
     if(docsLink){
       docsLink.href=hostedDocsPath();
       docsLink.textContent='Open Local User Guide';
     }
-    if(subtitle) subtitle.textContent='Local Setup';
-    if(heroCopy) heroCopy.textContent='Open the setup page below and connect over USB to manage your controller, or read the guide saved with this copy.';
-    if(modeNote) modeNote.textContent='Use the setup page below to continue, or open the user guide from this folder.';
-    if(panelCopy) panelCopy.textContent='Open the setup page from this folder, then connect over USB for backup, restore, telemetry, and advanced settings.';
-    if(accessCopy) accessCopy.textContent='This local page is a starting point. To change settings, continue to the setup page and connect over USB, or open the controller directly over WiFi.';
+    if(subtitle) subtitle.textContent='Local Controller Access';
+    if(heroCopy) heroCopy.textContent='Open the controller tools from this folder.';
+    if(modeNote) modeNote.textContent='';
+    if(panelCopy) panelCopy.textContent='Open the controller tools page from this folder, then connect over USB for backup, restore, telemetry, and advanced settings.';
+    if(accessCopy) accessCopy.textContent='Use the local controller tools page to change settings over USB, or open the controller directly over WiFi.';
     return;
   }
 
   var controllerHosted=await isControllerHostedPage();
   if(controllerHosted){
+    applySeoState('controller');
     if(panelLink){
       panelLink.href='/controller';
       panelLink.textContent='Open Controller Panel';
@@ -457,30 +559,32 @@ async function applyModeLinks(){
       docsLink.textContent='Open User Guide';
     }
     if(subtitle) subtitle.textContent='Controller Home';
-    if(heroCopy) heroCopy.textContent='Learn what ESPEED32 is, open the controller page, or jump straight to the user guide. Controller settings and tools stay protected behind login.';
-    if(modeNote) modeNote.textContent='Controller login credentials are shown on the controller WiFi info page.';
+    if(heroCopy) heroCopy.textContent='Open the controller panel or the user guide.';
+    if(modeNote) modeNote.textContent='Login details are shown on the controller WiFi screen.';
     if(panelCopy) panelCopy.textContent='Use the protected controller UI for telemetry, advanced config, backup, restore, and firmware updates.';
     if(accessCopy) accessCopy.innerHTML='On the controller WiFi page, sensitive tools are protected by controller login. Use username <code>espeed32</code>; the current password is shown physically on the controller WiFi info screen.';
     return;
   }
 
+  applySeoState('hosted');
   if(panelLink){
     panelLink.href='/ui/index.html?mode=hosted';
-    panelLink.textContent='Open Setup Page';
+    panelLink.textContent='Manage Your Controller';
   }
   if(docsLink){
     docsLink.href='/docs';
     docsLink.textContent='Open User Guide';
   }
-  if(subtitle) subtitle.textContent='Hosted Setup';
-  if(heroCopy) heroCopy.textContent='Learn what ESPEED32 is, open the setup page for USB-based controller access, or jump straight to the user guide.';
-  if(modeNote) modeNote.textContent='The setup page works best in Chrome or Edge when you want to connect over USB.';
-  if(panelCopy) panelCopy.textContent='Open the setup page for backup, restore, telemetry, advanced settings, and USB-based maintenance.';
-  if(accessCopy) accessCopy.textContent='This hosted page is a starting point. Continue to the setup page to work over USB, or open the controller directly over WiFi when you are on the same network.';
+  if(subtitle) subtitle.textContent='Hosted Controller Access';
+  if(heroCopy) heroCopy.textContent='Open the controller tools or the user guide.';
+  if(modeNote) modeNote.textContent='USB/WebSerial works best in Chrome or Edge.';
+  if(panelCopy) panelCopy.textContent='Open the controller tools page for backup, restore, telemetry, advanced settings, and USB-based maintenance.';
+  if(accessCopy) accessCopy.textContent='Use the hosted controller tools page to work over USB, or open the controller directly over WiFi when you are on the same network.';
 }
 
 initThemeControls();
 applyModeLinks();
 </script>
+<script src="/ui/chat-widget.js"></script>
 </body>
 </html>

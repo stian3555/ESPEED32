@@ -11,6 +11,7 @@ extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern char msgStr[50];
 extern uint16_t g_carSel;
+extern uint16_t g_antiSpinDisplayMode;
 extern Menu_type g_mainMenu;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern uint8_t g_encoderMainSelector;
@@ -28,6 +29,48 @@ static void formatExtPotLabel(char* out, size_t outSize, int8_t potIndex) {
   if (!out || outSize == 0) return;
   if (potIndex >= 0) snprintf(out, outSize, "POT%d", (int)potIndex + 1);
   else snprintf(out, outSize, "POT");
+}
+
+static void formatActiveBrakeStatus(char* out, size_t outSize, uint8_t activeBrakeKind, uint8_t activeBrakePct) {
+  if (!out || outSize == 0) return;
+
+  activeBrakePct = (uint8_t)constrain((int)activeBrakePct, 0, 100);
+
+  switch (activeBrakeKind) {
+    case ACTIVE_BRAKE_BASE:
+      snprintf(out, outSize, "B%03u%%", (unsigned int)activeBrakePct);
+      break;
+    case ACTIVE_BRAKE_ALT:
+      snprintf(out, outSize, "A%03u%%", (unsigned int)activeBrakePct);
+      break;
+    case ACTIVE_BRAKE_QUICK:
+      snprintf(out, outSize, "Q%03u%%", (unsigned int)activeBrakePct);
+      break;
+    case ACTIVE_BRAKE_DRAG:
+      snprintf(out, outSize, "D%03u%%", (unsigned int)activeBrakePct);
+      break;
+    default:
+      snprintf(out, outSize, "NONE ");
+      break;
+  }
+}
+
+
+static void formatAntiSpinValue(char* out, size_t outSize, uint16_t antiSpinMs) {
+  if (!out || outSize == 0) return;
+
+  switch (g_antiSpinDisplayMode) {
+    case ANTISPIN_UI_MODE_PERCENT:
+      snprintf(out, outSize, "%4u%%", (unsigned int)antiSpinMsToPercent(antiSpinMs));
+      break;
+    case ANTISPIN_UI_MODE_TEXT:
+      snprintf(out, outSize, "%5s", antiSpinTextLevelToLabel(antiSpinMsToTextLevel(antiSpinMs)));
+      break;
+    case ANTISPIN_UI_MODE_MS:
+    default:
+      snprintf(out, outSize, "%3ums", (unsigned int)antiSpinMs);
+      break;
+  }
 }
 
 /**
@@ -58,7 +101,7 @@ void displayStatusLine() {
 
   if (isWiFiPortalActive()) {
     for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
-      if (g_storedVar.statusSlot[s] == STATUS_BLANK) {
+      if (normalizeStatusSlotValue(g_storedVar.statusSlot[s]) == STATUS_BLANK) {
         wifiSlot = (int8_t)s;
         break;
       }
@@ -71,7 +114,7 @@ void displayStatusLine() {
   }
 
   for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
-    uint16_t slot = g_storedVar.statusSlot[s];
+    uint16_t slot = normalizeStatusSlotValue(g_storedVar.statusSlot[s]);
     uint8_t color = OBD_BLACK;
 
     if (wifiSlot == (int8_t)s) {
@@ -117,6 +160,9 @@ void displayStatusLine() {
         sprintf(buf, "%2d.%01dV", v / 1000, (v % 1000) / 100);
         break;
       }
+      case STATUS_ACTIVE_BRAKE:
+        formatActiveBrakeStatus(buf, sizeof(buf), g_escVar.activeBrakeKind, g_escVar.activeBrake_pct);
+        break;
       default:  /* STATUS_BLANK */
         strcpy(buf, "     ");
         break;
@@ -216,6 +262,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   static bool lastBrakeUsesPot = false;
   static bool lastSensiUsesPot = false;
   static uint16_t lastAntis = 999;
+  static uint16_t lastAntisMode = 0xFFFF;
   static uint16_t lastCurve = 999;
   static uint8_t lastSelectedItem = 255;
   static bool lastIsEditing = false;
@@ -234,6 +281,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
     lastBrakeUsesPot = false;
     lastSensiUsesPot = false;
     lastAntis = 999;
+    lastAntisMode = 0xFFFF;
     lastCurve = 999;
 
     lastSelectedItem = selectedItem;
@@ -289,15 +337,16 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   }
 
   /* ANTIS - left column, lower */
-  if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis) {
+  if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis || g_antiSpinDisplayMode != lastAntisMode) {
     /* Label - using language-specific text, dynamically centered */
     const char* antisLabel = getRaceLabel(g_storedVar.language, 2);
     uint8_t labelWidth = strlen(antisLabel) * 6;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)antisLabel, FONT_6x8, colorAntis, 1);
-    /* Value - "999ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
-    sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
-    obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
+    formatAntiSpinValue(msgStr, sizeof(msgStr), g_storedVar.carParam[g_carSel].antiSpin);
+    uint8_t valueWidth = (uint8_t)strlen(msgStr) * WIDTH8x8;
+    obdWriteString(&g_obd, 0, col1_center - (valueWidth / 2), 34, msgStr, FONT_8x8, colorAntis, 1);
     lastAntis = g_storedVar.carParam[g_carSel].antiSpin;
+    lastAntisMode = g_antiSpinDisplayMode;
   }
 
   /* CURVE - right column, lower */
@@ -538,6 +587,9 @@ void printMainMenu(MenuState_enum currMenuState)
               uint16_t sensiRaw = getEffectiveSensiRaw();
               sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
             }
+          }
+          else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 2)) == 0) {
+            formatAntiSpinValue(msgStr, sizeof(msgStr), g_storedVar.carParam[g_carSel].antiSpin);
           }
           else {
             /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */

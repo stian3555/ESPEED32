@@ -76,7 +76,7 @@
       <li><code>ACD</code>: ACD-Stil, wo es direkte Entsprechungen gibt (<code>SENSI</code> und <code>CHOKE</code> fuer LIMIT).</li>
       <li><code>DISPLAY -&gt; CASE</code> waehlt, ob Labels in <code>UPPER</code> oder <code>Pascal</code> angezeigt werden.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> stellt die Listen- und Menueansicht auf <code>LARGE</code> oder <code>small</code>.</li>
-      <li><code>ANZEIGE -&gt; ANTIS.STEP</code> setzt den globalen Encoder-Schritt fuer den <code>ANTIS</code>-Wert.</li>
+      <li><code>ANZEIGE -&gt; ANTISPIN</code> oeffnet das Antispin-Einstellungsmenu, in dem du die Anzeigeeinheit (<code>MS</code> / <code>%</code> / <code>TEXT</code>) und die Encoder-Schrittweite je Einheit festlegst.</li>
     </ul>
     <h3>Race View (LIST vs GRID)</h3>
     <ul>
@@ -93,7 +93,8 @@
     </figure>
     <h3>Statuszeile und ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 feste Slots. Jeder Slot kann <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> oder leer anzeigen. <code>CURR</code> zeigt mA unter 1000 und A darueber.</li>
+      <li><code>STATUS BAR</code>: 4 feste Slots. Jeder Slot kann <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, <code>BREMS</code> oder leer anzeigen. <code>CURR</code> zeigt mA unter 1000 und A darueber.</li>
+      <li><code>BREMS</code> in der Statuszeile zeigt Bremsart und Wert in Echtzeit: <code>Bxxx%</code> = normales <code>BRAKE</code>, <code>Axxx%</code> = <code>Alt.Brake</code>, <code>Qxxx%</code> = <code>Rel.Brake QUICK</code>, <code>Dxxx%</code> = <code>Rel.Brake DRAG</code>, <code>NONE</code> = aktuell keine Bremse aktiv. Der Code kann sich waehrend der Fahrt schnell aendern.</li>
       <li>Wenn WiFi aktiv ist, zeigt die Statuszeile <code>WIFI</code>. Zuerst wird ein freier Slot benutzt; wenn keiner frei ist, wird Slot 4 temporaer ueberschrieben.</li>
       <li><code>ABOUT</code> zeigt Firmware-/Datenversion, erkannten Trigger-Sensor, Chip-Infos, Flash/Heap, MAC-Adressen und Build-Datum/-Zeit.</li>
     </ul>
@@ -155,7 +156,7 @@
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremskraft bei losgelassenem Trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (und &lt;= LIMIT)</td><td>20</td><td>Minimale Motorleistung bei erster Triggerbewegung.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-Spin Rampe. Hoeherer Wert = weicherer Leistungsaufbau. Encoder-Schritt wird global in <code>ANZEIGE -&gt; ANTIS.STEP</code> eingestellt.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-Spin-Rampenzeit oberhalb des Low-Speed-Bypass. Hoeherer Wert = laengerer/langsamerer Leistungsaufbau. Kein reiner Trigger-Delay. Anzeigeeinheit und Encoder-Schritt werden in <code>ANZEIGE -&gt; ANTISPIN</code> eingestellt (MS / % / TEXT).</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Trigger-Kennlinie. 50 = linear.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Sanfte Startzone. 0 = aus / altes Verhalten. Oberhalb von 0 laeuft der erste Triggerweg von 0 bis SENSI hoch, bevor die normale CURVE uebernimmt.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-Frequenz des Motors.</td></tr>
@@ -166,6 +167,14 @@
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
+    <h3>ANTIS in der Praxis</h3>
+    <ul>
+      <li><code>ANTIS</code> ist kein kompletter Trigger-Delay. Das Auto soll noch reagieren, sobald du am Trigger ziehst.</li>
+      <li>Bei niedrigem Output wird Anti-Spin uebergangen. Der allererste Bereich kann sich deshalb weiter direkt anfuehlen.</li>
+      <li>Sobald der Output hoch genug ist, begrenzt <code>ANTIS</code>, wie schnell die Leistung ansteigen darf.</li>
+      <li>Hoeheres <code>ANTIS</code> = laengere/langsamere Rampe vom Anti-Spin-Startpunkt in Richtung angeforderter Output.</li>
+      <li>Es wirkt nur beim steigenden Output. Trigger lupfen, rollen und bremsen bleiben direkt.</li>
+    </ul>
     <h3>Typische Startwerte</h3>
     <p class="small">Das sind Startpunkte, keine festen Regeln. Sie sollen dich schnell in die richtige Richtung bringen, danach nur noch einen Parameter nach dem anderen aendern.</p>
     <p class="small">Die passenden Werte haengen weiterhin stark vom konkreten Auto, Motor, Reifen, Streckengrip und auch von deinem persoenlichen Fahrstil ab.</p>
@@ -216,7 +225,7 @@
         <li><code>BRAKE</code>: linearer Brems/Drag-Befehl in %. Das reale Bremsgefuehl haengt von Motor, Reifen und Streckengrip ab.</li>
         <li><code>SENSI</code>: linearer Mindest-Output in %, aber kein linearer Gain-Regler ueber den ganzen Triggerweg, weil <code>CURVE</code> den Rest formt.</li>
         <li><code>FADE</code>: linear in % des Triggerwegs. Es wirkt nur ganz unten und uebergibt danach an <code>CURVE</code>.</li>
-        <li><code>ANTIS</code>: ist hauptsaechlich eine Zeitvorgabe in ms. Wenn Anti-Spin aktiv ist, ergibt ein hoeherer Wert eine laengere/weichere Rampe, aber das Gesamtgefuehl ist nicht perfekt linear, weil sich auch die Low-Speed-Bypass-Schwelle mitveraendert.</li>
+        <li><code>ANTIS</code>: ist hauptsaechlich eine Zeitvorgabe in ms und kein reiner Delay. Wenn Anti-Spin aktiv ist, ergibt ein hoeherer Wert eine laengere/weichere Rampe, aber das Gesamtgefuehl ist nicht perfekt linear, weil sich auch die Low-Speed-Bypass-Schwelle mitveraendert.</li>
       </ul>
     </details>
     <details class="doc-fold">
@@ -427,7 +436,11 @@
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA/NLD/POR)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
-|  |  |- ANTIS.STEP (1-50 ms, default 5)
+|  |  |- ANTISPIN
+|  |  |  |- REG.TYP (MS / % / TEXT, Standard MS)
+|  |  |  |- SCHR MS (1-50 ms, Standard 5)  [ausgeblendet im TEXT-Modus]
+|  |  |  |- SCHR % (1-100 %, Standard 1)   [nur im %-Modus sichtbar]
+|  |  |  `- ZURUCK
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2

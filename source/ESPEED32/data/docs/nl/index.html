@@ -257,7 +257,8 @@ details.doc-fold>:not(summary){margin-top:8px}
     </figure>
     <h3>Statusbalk en ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 vaste slots. Elke slot kan <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> of leeg tonen. <code>CURR</code> toont mA onder 1000 en A daarboven.</li>
+      <li><code>STATUS BAR</code>: 4 vaste slots. Elke slot kan <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, <code>REM</code> of leeg tonen. <code>CURR</code> toont mA onder 1000 en A daarboven.</li>
+      <li><code>REM</code> in de statusbalk toont het actieve remtype en de waarde in real time: <code>Bxxx%</code> = normale <code>BRAKE</code>, <code>Axxx%</code> = <code>Alt.Brake</code>, <code>Qxxx%</code> = <code>Rel.Brake QUICK</code>, <code>Dxxx%</code> = <code>Rel.Brake DRAG</code>, <code>NONE</code> = op dat moment geen rem actief. De code kan tijdens het rijden snel wisselen.</li>
       <li>Wanneer WiFi actief is toont de statusbalk <code>WIFI</code>. Hiervoor wordt de eerste lege slot gebruikt; als er geen lege slot is, wordt slot 4 tijdelijk overschreven.</li>
       <li><code>ABOUT</code> toont firmware-/dataversie, gedetecteerde triggersensor, chipdetails, flash/heap, MAC-adressen en builddatum/-tijd.</li>
     </ul>
@@ -319,7 +320,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Remkracht wanneer de trigger wordt losgelaten.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (en &lt;= LIMIT)</td><td>20</td><td>Minimale motoroutput bij de eerste meetbare triggerbeweging.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Duur van anti-spin-ramp. Hogere waarde = zachtere opbouw van vermogen. De encoderstap wordt globaal ingesteld in <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Tijd van de anti-spin-ramp boven de low-output-bypass. Hogere waarde = langere/langzamere opbouw van vermogen. Het is geen pure trigger-delay. De encoderstap wordt globaal ingesteld in <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle-mapping. 50 = lineair. &lt;50 zachtere start, &gt;50 scherpere start.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Soft-start-zone. 0 = uitgeschakeld / oud gedrag. Boven 0 loopt het eerste deel van de triggerslag van 0 naar SENSI voordat normale CURVE het overneemt.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frequentie van de motor. Een hogere waarde maakt de respons onderin vaak zachter.</td></tr>
@@ -330,6 +331,14 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>CAR</code></td><td>0-19 profielen</td><td>CAR0</td><td>Selecteer of beheer profiel, kopieer instellingen en reset car params.</td></tr>
       </tbody>
     </table>
+    <h3>ANTIS in de praktijk</h3>
+    <ul>
+      <li><code>ANTIS</code> is geen volledige trigger-delay. De auto hoort nog steeds te reageren zodra je aan de trigger trekt.</li>
+      <li>Bij lage output wordt anti-spin overgeslagen. Daardoor kan het allereerste deel nog steeds direct aanvoelen.</li>
+      <li>Zodra de output hoog genoeg is, beperkt <code>ANTIS</code> hoe snel het vermogen mag oplopen.</li>
+      <li>Meer <code>ANTIS</code> = een langere/langzamere ramp vanaf het anti-spin-startpunt richting de gevraagde output.</li>
+      <li>Het werkt alleen bij stijgende output. Trigger lossen, uitrollen en remmen blijven direct.</li>
+    </ul>
     <h3>Typische beginwaarden</h3>
     <p class="small">Dit zijn startpunten, geen regels. Gebruik ze om in de buurt te komen en stel daarna telkens maar een parameter tegelijk bij.</p>
     <p class="small">De juiste waarden hangen nog steeds sterk af van de specifieke auto, motor, banden, baangrip en jouw persoonlijke rijstijl.</p>
@@ -380,7 +389,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <li><code>BRAKE</code>: lineair rem-/dragcommando in %. Het echte remgevoel hangt af van motor, banden en baangrip.</li>
         <li><code>SENSI</code>: lineaire minimale outputvloer in %, maar geen lineaire gain-knop over de hele triggerslag omdat <code>CURVE</code> de rest vormt.</li>
         <li><code>FADE</code>: lineair in % van de triggerslag. Het beinvloedt alleen het eerste deel van de trigger en geeft daarna de controle weer door aan <code>CURVE</code>.</li>
-        <li><code>ANTIS</code>: vooral een tijdsinstelling in ms. Zodra anti-spin actief is geeft een hogere waarde een langere of zwakkere ramp, maar het totale gevoel is niet perfect lineair omdat de bypassdrempel bij lage snelheid ook verschuift met de instelling.</li>
+        <li><code>ANTIS</code>: vooral een tijdsinstelling in ms, geen pure delay. Zodra anti-spin actief is geeft een hogere waarde een langere of zwakkere ramp, maar het totale gevoel is niet perfect lineair omdat de bypassdrempel bij lage snelheid ook verschuift met de instelling.</li>
       </ul>
     </details>
     <details class="doc-fold">

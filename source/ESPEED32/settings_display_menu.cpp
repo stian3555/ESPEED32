@@ -26,7 +26,7 @@ extern void initSettingsMenuItems();
 extern void initDisplayMenuItems();
 
 /**
- * Display settings submenu: VIEW, LANG, CASE, FSIZE, ANTIS.STEP, STATUS, BACK.
+ * Display settings submenu: VIEW, LANG, CASE, FSIZE, ANTISPIN, STATUS, BACK.
  * Handles value editing for display-related parameters.
  */
 void showDisplaySettings() {
@@ -101,6 +101,17 @@ void showDisplaySettings() {
       if (menuState == ITEM_SELECTION) {
         if (sel == DISPLAY_ITEMS_COUNT) {  /* BACK */
           break;
+        }
+        if (sel == DISPLAY_ITEMS_COUNT - 2) {  /* ANTISPIN submenu */
+          showAntiSpinSettings();
+          if (isEscapeToMainRequested()) break;
+          initDisplayMenuItems();
+          g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+          setUiEncoderBoundaries(1, DISPLAY_ITEMS_COUNT, false);
+          resetUiEncoder(sel);
+          obdFill(&g_obd, OBD_WHITE, 1);
+          prevSel = 0;
+          continue;
         }
         /* STATUS submenu lives right before BACK. */
         if (sel == DISPLAY_ITEMS_COUNT - 1) {

@@ -17,7 +17,7 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 6
-#define SW_MINOR_VERSION 3
+#define SW_MINOR_VERSION 4
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
@@ -26,7 +26,7 @@
 #define MENU_ITEMS_COUNT    11    /* Number of possible items in main menu (including optional STATS and CAR) */
 #define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL., BACK) */
-#define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTIS.STEP, STATUS, BACK) */
+#define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTISPIN, STATUS, BACK) */
 #define HARDWARE_ITEMS_COUNT 5    /* Number of items in hardware submenu (ENC INV, EXT POT, TRIGGER, TEST, BACK) */
 #define POWER_SAVE_TIMEOUT_DEFAULT 5    /* [min] Default auto power save delay (0=manual only) */
 #define POWER_SAVE_TIMEOUT_MAX     10   /* [min] Maximum auto power save delay */
@@ -68,6 +68,8 @@
 #define BRAKE_DEFAULT             95    /* [%] Brake strength */
 #define ANTISPIN_DEFAULT          30    /* [ms] Anti-spin ramp time */
 #define ANTISPIN_STEP_DEFAULT      5    /* [ms] Default encoder step when editing ANTIS */
+#define ANTISPIN_STEP_PCT_DEFAULT  1    /* [%] Default encoder step when editing ANTIS in percent mode */
+#define ANTISPIN_UI_MODE_DEFAULT   0    /* Default ANTIS UI/edit scale = ms */
 #define ENCODER_INVERT_DEFAULT     0    /* Encoder rotation follows default hardware direction */
 #define MAX_SPEED_DEFAULT         100   /* [%] Maximum motor speed */
 #define THROTTLE_CURVE_INPUT_THROTTLE_DEFAULT   (THROTTLE_NORMALIZED / 2)  /* Throttle curve vertex X */
@@ -90,6 +92,8 @@
 #define ANTISPIN_MAX_VALUE        999   /* [ms] Maximum anti-spin time */
 #define ANTISPIN_STEP_MIN           1   /* [ms] Minimum ANTIS encoder step */
 #define ANTISPIN_STEP_MAX          50   /* [ms] Maximum ANTIS encoder step */
+#define ANTISPIN_STEP_PCT_MIN       1   /* [%] Minimum ANTIS encoder step in percent mode */
+#define ANTISPIN_STEP_PCT_MAX     100   /* [%] Maximum ANTIS encoder step in percent mode */
 #define FREQ_MIN_VALUE            1000  /* [Hz] Minimum PWM frequency */
 #define QUICK_BRAKE_THRESHOLD_MAX 50    /* [%] Maximum quick brake threshold */
 #define QUICK_BRAKE_STRENGTH_MAX  100   /* [%] Maximum quick brake strength */
@@ -97,6 +101,98 @@
 #define RELEASE_BRAKE_QUICK        1    /* Release brake uses full quick-brake cut */
 #define RELEASE_BRAKE_DRAG         2    /* Release brake blends output with drag while releasing */
 #define MAX_UINT16                32767 /* Maximum 16-bit unsigned value */
+
+/* ANTIS UI/edit display modes */
+#define ANTISPIN_UI_MODE_MS        0
+#define ANTISPIN_UI_MODE_PERCENT   1
+#define ANTISPIN_UI_MODE_TEXT      2
+
+/* ANTIS text-level display/edit values */
+#define ANTISPIN_TEXT_OFF          0
+#define ANTISPIN_TEXT_LOW          1
+#define ANTISPIN_TEXT_MED          2
+#define ANTISPIN_TEXT_HIGH         3
+
+static inline uint16_t antiSpinPercentToMs(uint16_t percent) {
+  if (percent > 100U) percent = 100U;
+  return (uint16_t)((((uint32_t)percent * (uint32_t)ANTISPIN_MAX_VALUE) + 50U) / 100U);
+}
+
+static inline uint16_t antiSpinMsToPercent(uint16_t antiSpinMs) {
+  if (antiSpinMs > ANTISPIN_MAX_VALUE) antiSpinMs = ANTISPIN_MAX_VALUE;
+  return (uint16_t)((((uint32_t)antiSpinMs * 100U) + ((uint32_t)ANTISPIN_MAX_VALUE / 2U)) / (uint32_t)ANTISPIN_MAX_VALUE);
+}
+
+static inline uint16_t antiSpinTextLevelToMs(uint16_t level) {
+  switch (level) {
+    case ANTISPIN_TEXT_OFF:
+      return 0;
+    case ANTISPIN_TEXT_LOW:
+      return antiSpinPercentToMs(33U);
+    case ANTISPIN_TEXT_MED:
+      return antiSpinPercentToMs(66U);
+    case ANTISPIN_TEXT_HIGH:
+    default:
+      return ANTISPIN_MAX_VALUE;
+  }
+}
+
+static inline uint16_t antiSpinMsToTextLevel(uint16_t antiSpinMs) {
+  if (antiSpinMs == 0U) {
+    return ANTISPIN_TEXT_OFF;
+  }
+
+  uint16_t percent = antiSpinMsToPercent(antiSpinMs);
+  if (percent <= 33U) return ANTISPIN_TEXT_LOW;
+  if (percent <= 66U) return ANTISPIN_TEXT_MED;
+  return ANTISPIN_TEXT_HIGH;
+}
+
+static inline uint16_t antiSpinUiMaxValue(uint16_t uiMode) {
+  switch (uiMode) {
+    case ANTISPIN_UI_MODE_PERCENT:
+      return 100U;
+    case ANTISPIN_UI_MODE_TEXT:
+      return ANTISPIN_TEXT_HIGH;
+    case ANTISPIN_UI_MODE_MS:
+    default:
+      return ANTISPIN_MAX_VALUE;
+  }
+}
+
+static inline uint16_t antiSpinMsToUiValue(uint16_t antiSpinMs, uint16_t uiMode) {
+  switch (uiMode) {
+    case ANTISPIN_UI_MODE_PERCENT:
+      return antiSpinMsToPercent(antiSpinMs);
+    case ANTISPIN_UI_MODE_TEXT:
+      return antiSpinMsToTextLevel(antiSpinMs);
+    case ANTISPIN_UI_MODE_MS:
+    default:
+      return (antiSpinMs > ANTISPIN_MAX_VALUE) ? ANTISPIN_MAX_VALUE : antiSpinMs;
+  }
+}
+
+static inline uint16_t antiSpinUiValueToMs(uint16_t uiValue, uint16_t uiMode) {
+  switch (uiMode) {
+    case ANTISPIN_UI_MODE_PERCENT:
+      return antiSpinPercentToMs(uiValue);
+    case ANTISPIN_UI_MODE_TEXT:
+      return antiSpinTextLevelToMs(uiValue);
+    case ANTISPIN_UI_MODE_MS:
+    default:
+      return (uiValue > ANTISPIN_MAX_VALUE) ? ANTISPIN_MAX_VALUE : uiValue;
+  }
+}
+
+static inline const char* antiSpinTextLevelToLabel(uint16_t level) {
+  switch (level) {
+    case ANTISPIN_TEXT_OFF:  return "OFF";
+    case ANTISPIN_TEXT_LOW:  return "LOW";
+    case ANTISPIN_TEXT_MED:  return "MED";
+    case ANTISPIN_TEXT_HIGH:
+    default:                 return "HIGH";
+  }
+}
 
 /* Display Font Sizes */
 #define HEIGHT12x16     16
@@ -182,15 +278,24 @@ void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define STATUS_CURRENT  4   /* Hybrid motor current (5 chars, e.g. "850mA" / "2.7A ") */
 #define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
 #define STATUS_CURRENT_MA  6   /* Legacy stored value; normalized to STATUS_CURRENT */
+#define STATUS_ACTIVE_BRAKE 7   /* Active brake type/value (5 chars, e.g. "Q060%") */
 
 static inline uint16_t normalizeStatusSlotValue(uint16_t slotValue) {
-  return (slotValue == STATUS_CURRENT_MA) ? STATUS_CURRENT : slotValue;
+  if (slotValue == STATUS_CURRENT_MA) return STATUS_CURRENT;
+  return (slotValue <= STATUS_ACTIVE_BRAKE) ? slotValue : STATUS_BLANK;
 }
 /* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
 #define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
 #define STATUS_SLOT1_DEFAULT STATUS_THROTTLE
 #define STATUS_SLOT2_DEFAULT STATUS_CAR
 #define STATUS_SLOT3_DEFAULT STATUS_VOLTAGE
+
+/* Active brake runtime state */
+#define ACTIVE_BRAKE_NONE  0   /* No brake command is currently active */
+#define ACTIVE_BRAKE_BASE  1   /* Normal trigger-released brake */
+#define ACTIVE_BRAKE_ALT   2   /* Alternate brake while brake button is held */
+#define ACTIVE_BRAKE_QUICK 3   /* Release-brake QUICK mode is active */
+#define ACTIVE_BRAKE_DRAG  4   /* Release-brake DRAG mode is active */
 
 /* Lap Detection */
 #define LAP_MAX_COUNT        20    /* Max stored lap times */
@@ -310,6 +415,8 @@ typedef struct {
   uint16_t motorCurrent_mA;   /* [mA] Motor current */
   uint16_t effectiveBrake_pct; /* [%] Active brake value after external overrides */
   uint16_t effectiveSensi_raw; /* [0.5%] Active SENSI value after external overrides */
+  uint8_t activeBrakeKind;     /* ACTIVE_BRAKE_* runtime state */
+  uint8_t activeBrake_pct;     /* [%] Brake value currently being applied */
   /* Lap detection */
   uint16_t lapCount;                    /* Total laps completed */
   uint32_t lapTimes[LAP_MAX_COUNT];     /* Circular buffer: last 20 lap times [ms] */

@@ -257,7 +257,8 @@ details.doc-fold>:not(summary){margin-top:8px}
     </figure>
     <h3>Barra de estado e ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 posicoes fixas. Cada posicao pode mostrar <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> ou vazio. <code>CURR</code> mostra mA abaixo de 1000 e A acima disso.</li>
+      <li><code>STATUS BAR</code>: 4 posicoes fixas. Cada posicao pode mostrar <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, <code>FREIO</code> ou vazio. <code>CURR</code> mostra mA abaixo de 1000 e A acima disso.</li>
+      <li><code>FREIO</code> na barra de estado mostra o tipo/valor de travagem ativo em tempo real: <code>Bxxx%</code> = <code>BRAKE</code> normal, <code>Axxx%</code> = <code>Alt.Brake</code>, <code>Qxxx%</code> = <code>Rel.Brake QUICK</code>, <code>Dxxx%</code> = <code>Rel.Brake DRAG</code>, <code>NONE</code> = nenhuma travagem ativa nesse momento. O codigo pode mudar rapidamente enquanto conduz.</li>
       <li>Enquanto o WiFi esta ativo, a barra de estado mostra <code>WIFI</code>. Usa a primeira posicao vazia; se nao existir, substitui temporariamente a posicao 4.</li>
       <li><code>ABOUT</code> mostra a versao de firmware/dados, o sensor de gatilho detetado, detalhes do chip, flash/heap, enderecos MAC e data/hora da build.</li>
     </ul>
@@ -319,7 +320,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Forca de travagem quando o gatilho e largado.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (e &lt;= LIMIT)</td><td>20</td><td>Output minimo do motor no primeiro movimento detetavel do gatilho.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Duracao da rampa anti-spin. Valor mais alto = subida de potencia mais suave. O passo do encoder e definido globalmente em <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Tempo da rampa anti-spin acima do bypass de baixa saida. Valor mais alto = subida de potencia mais longa/lenta. Nao e um delay puro do gatilho. O passo do encoder e definido globalmente em <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapeamento da throttle. 50 = linear. &lt;50 arranque mais suave, &gt;50 arranque mais agressivo.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona de soft-start. 0 = desligado / comportamento antigo. Acima de 0, a primeira parte do curso sobe de 0 ate SENSI antes de CURVE assumir o controlo.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>Frequencia PWM do motor. Um valor mais alto costuma suavizar a resposta em baixa.</td></tr>
@@ -330,6 +331,14 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>CAR</code></td><td>0-19 perfis</td><td>CAR0</td><td>Selecionar/gerir perfil, copiar valores e repor car params.</td></tr>
       </tbody>
     </table>
+    <h3>ANTIS na pratica</h3>
+    <ul>
+      <li><code>ANTIS</code> nao e um delay total do gatilho. O carro deve continuar a responder quando comecas a puxar o gatilho.</li>
+      <li>Em baixa saida, o anti-spin e ignorado. Por isso a primeira parte ainda pode parecer direta.</li>
+      <li>Quando a saida ja e suficientemente alta, <code>ANTIS</code> limita a rapidez com que a potencia pode subir.</li>
+      <li>Mais <code>ANTIS</code> = rampa mais longa/lenta desde o ponto de inicio do anti-spin ate ao output pedido.</li>
+      <li>So atua quando a potencia sobe. Largar o gatilho, deixar rolar e travar continuam imediatos.</li>
+    </ul>
     <h3>Valores iniciais tipicos</h3>
     <p class="small">Estes valores sao pontos de partida, nao regras. Use-os para chegar perto do ideal e ajuste apenas um parametro de cada vez.</p>
     <p class="small">Os valores certos continuam a depender do carro, motor, pneus, aderencia da pista e estilo de conducao.</p>
@@ -380,7 +389,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <li><code>BRAKE</code>: comando linear de travagem/drag em %. A sensacao real depende do motor, pneus e aderencia da pista.</li>
         <li><code>SENSI</code>: nivel minimo de output linear em %, mas nao um ganho linear ao longo de todo o curso do gatilho, porque <code>CURVE</code> define o resto.</li>
         <li><code>FADE</code>: linear em % do curso do gatilho. Afeta apenas a primeira parte e depois entrega novamente o controlo a <code>CURVE</code>.</li>
-        <li><code>ANTIS</code>: sobretudo uma definicao temporal em ms. Um valor maior cria uma rampa mais longa e mais fraca, mas a sensacao geral nao e perfeitamente linear porque o limiar de bypass em baixa velocidade tambem muda.</li>
+        <li><code>ANTIS</code>: sobretudo uma definicao temporal em ms, nao um delay puro. Um valor maior cria uma rampa mais longa e mais fraca, mas a sensacao geral nao e perfeitamente linear porque o limiar de bypass em baixa velocidade tambem muda.</li>
       </ul>
     </details>
     <details class="doc-fold">

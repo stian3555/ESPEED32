@@ -8,6 +8,9 @@ extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern char msgStr[50];
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
+extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_antiSpinStepPct;
+extern uint16_t g_antiSpinDisplayMode;
 
 extern bool consumeScreensaverWakeInput(bool wakeTriggered);
 extern bool refreshIdleInteractionFromControls(uint32_t* lastInteraction, bool* screensaverActive, uint16_t* lastEncoderPos);
@@ -46,6 +49,31 @@ static void formatConfiguredMenuLabel(const char* source, char* buffer, size_t b
   }
   buffer[out] = '\0';
 }
+
+static const uint8_t STATUS_SLOT_SELECTABLE_VALUES[] = {
+  STATUS_BLANK,
+  STATUS_OUTPUT,
+  STATUS_THROTTLE,
+  STATUS_CAR,
+  STATUS_CURRENT,
+  STATUS_VOLTAGE,
+  STATUS_ACTIVE_BRAKE
+};
+
+static uint8_t getStatusSlotOptionIndex(uint16_t slotValue) {
+  uint16_t normalized = normalizeStatusSlotValue(slotValue);
+  for (uint8_t i = 0; i < (uint8_t)(sizeof(STATUS_SLOT_SELECTABLE_VALUES) / sizeof(STATUS_SLOT_SELECTABLE_VALUES[0])); i++) {
+    if (STATUS_SLOT_SELECTABLE_VALUES[i] == normalized) return i;
+  }
+  return 0;
+}
+
+static uint16_t getStatusSlotValueFromOptionIndex(uint16_t optionIndex) {
+  const uint8_t optionCount = (uint8_t)(sizeof(STATUS_SLOT_SELECTABLE_VALUES) / sizeof(STATUS_SLOT_SELECTABLE_VALUES[0]));
+  if (optionIndex >= optionCount) return STATUS_BLANK;
+  return STATUS_SLOT_SELECTABLE_VALUES[optionIndex];
+}
+
 
 /**
  * Character-by-character text editor for screensaver lines.
@@ -388,6 +416,245 @@ void showScreensaverSettings() {
 }
 
 
+void showAntiSpinSettings() {
+  const char* lblTypeUpper[9]    = {"REGTYPE",   "REG.TYPE", "REG.TYPE", "REG.TYPE", "TIPO REG", "REG.TYP",  "TIPO REG", "REG.TYPE", "TIPO REG"};
+  const char* lblTypePascal[9]   = {"Regtype",   "Reg.type", "Reg.type", "Reg.type", "Tipo reg", "Reg.typ",  "Tipo reg", "Reg.type", "Tipo reg"};
+  const char* lblStepMsUpper[9]  = {"STEG MS",   "STEP MS",  "STEP MS",  "STEP MS",  "PASO MS",  "SCHR MS",  "PASSO MS", "STAP MS",  "PASSO MS"};
+  const char* lblStepMsPascal[9] = {"Steg ms",   "Step ms",  "Step ms",  "Step ms",  "Paso ms",  "Schr ms",  "Passo ms", "Stap ms",  "Passo ms"};
+  const char* lblStepPctUpper[9] = {"STEG %",    "STEP %",   "STEP %",   "STEP %",   "PASO %",   "SCHR %",   "PASSO %",  "STAP %",   "PASSO %"};
+  const char* lblStepPctPascal[9]= {"Steg %",    "Step %",   "Step %",   "Step %",   "Paso %",   "Schr %",   "Passo %",  "Stap %",   "Passo %"};
+  const char* const* lblType     = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblTypePascal : lblTypeUpper;
+  const char* const* lblStepMs   = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStepMsPascal : lblStepMsUpper;
+  const char* const* lblStepPct  = (g_storedVar.textCase == TEXT_CASE_PASCAL) ? lblStepPctPascal : lblStepPctUpper;
+
+  const uint8_t ITEM_TYPE = 0;
+  const uint8_t ITEM_STEP = 1;
+  const uint8_t menuFont = FONT_8x8;
+  const uint8_t lineH = HEIGHT8x8;
+
+  int8_t sel = 0;
+  bool editing = false;
+  uint8_t editingItem = 0xFF;
+  uint16_t tempMode = g_antiSpinDisplayMode;
+  uint16_t tempStepMs = g_antiSpinStepMs;
+  uint16_t tempStepPct = g_antiSpinStepPct;
+  bool needRedraw = true;
+
+  auto getShownMode = [&]() -> uint16_t {
+    return (editing && editingItem == ITEM_TYPE) ? tempMode : g_antiSpinDisplayMode;
+  };
+
+  auto getMenuCount = [&](uint16_t mode) -> uint8_t {
+    return (mode == ANTISPIN_UI_MODE_TEXT) ? 2 : 3;
+  };
+
+  auto getBackItem = [&](uint16_t mode) -> uint8_t {
+    return (mode == ANTISPIN_UI_MODE_TEXT) ? 1 : 2;
+  };
+
+  auto getModeLabel = [&](uint16_t mode) -> const char* {
+    switch (mode) {
+      case ANTISPIN_UI_MODE_PERCENT:
+        return "%";
+      case ANTISPIN_UI_MODE_TEXT:
+        return "TEXT";
+      case ANTISPIN_UI_MODE_MS:
+      default:
+        return "MS";
+    }
+  };
+
+  auto resetBrowseEncoder = [&]() {
+    uint8_t numItems = getMenuCount(g_antiSpinDisplayMode);
+    if (sel >= (int8_t)numItems) {
+      sel = (int8_t)(numItems - 1);
+    }
+    g_rotaryEncoder.setAcceleration(MENU_ACCELERATION);
+    setUiEncoderBoundaries(0, numItems - 1, false);
+    resetUiEncoder(sel);
+  };
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+  resetBrowseEncoder();
+
+  uint32_t lastInteraction = millis();
+  bool screensaverActive = false;
+  uint16_t screensaverEncoderPos = (uint16_t)readUiEncoder();
+
+  while (true) {
+    bool wakeUp = refreshIdleInteractionFromControls(&lastInteraction, &screensaverActive, &screensaverEncoderPos);
+    if (wakeUp) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      needRedraw = true;
+    }
+
+    if (consumeScreensaverWakeInput(wakeUp)) { continue; }
+
+    if (!wakeUp && g_storedVar.screensaverTimeout > 0 &&
+        millis() - lastInteraction > (g_storedVar.screensaverTimeout * 1000UL)) {
+      if (g_escVar.trigger_norm == 0) {
+        if (!screensaverActive) {
+          screensaverActive = true;
+          screensaverEncoderPos = readUiEncoder();
+          showScreensaver();
+        }
+        if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+          obdFill(&g_obd, OBD_WHITE, 1);
+          needRedraw = true;
+        }
+        delay(10);
+        continue;
+      }
+    }
+
+    if (!wakeUp && screensaverActive) {
+      if (serviceIdlePowerTransitions(&lastInteraction, &screensaverActive)) {
+        obdFill(&g_obd, OBD_WHITE, 1);
+        needRedraw = true;
+      }
+      delay(10);
+      continue;
+    }
+
+    if (g_rotaryEncoder.encoderChanged()) {
+      lastInteraction = millis();
+      if (editing) {
+        uint16_t v = (uint16_t)readUiEncoder();
+        if (editingItem == ITEM_TYPE) {
+          tempMode = constrain(v, ANTISPIN_UI_MODE_MS, ANTISPIN_UI_MODE_TEXT);
+        } else if (getShownMode() == ANTISPIN_UI_MODE_MS) {
+          tempStepMs = constrain(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX);
+        } else {
+          tempStepPct = constrain(v, ANTISPIN_STEP_PCT_MIN, ANTISPIN_STEP_PCT_MAX);
+        }
+      } else {
+        sel = (int8_t)readUiEncoder();
+      }
+      needRedraw = true;
+    }
+
+    if (g_rotaryEncoder.isEncoderButtonClicked()) {
+      lastInteraction = millis();
+      uint16_t shownMode = getShownMode();
+      uint8_t backItem = getBackItem(shownMode);
+
+      if (editing) {
+        if (editingItem == ITEM_TYPE) {
+          g_antiSpinDisplayMode = tempMode;
+        } else if (g_antiSpinDisplayMode == ANTISPIN_UI_MODE_MS) {
+          g_antiSpinStepMs = tempStepMs;
+        } else if (g_antiSpinDisplayMode == ANTISPIN_UI_MODE_PERCENT) {
+          g_antiSpinStepPct = tempStepPct;
+        }
+        editing = false;
+        editingItem = 0xFF;
+        saveEEPROM(g_storedVar);
+        resetBrowseEncoder();
+      } else if (sel == ITEM_TYPE) {
+        editing = true;
+        editingItem = ITEM_TYPE;
+        tempMode = g_antiSpinDisplayMode;
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        setUiEncoderBoundaries(ANTISPIN_UI_MODE_MS, ANTISPIN_UI_MODE_TEXT, false);
+        resetUiEncoder(tempMode);
+      } else if (shownMode != ANTISPIN_UI_MODE_TEXT && sel == ITEM_STEP) {
+        editing = true;
+        editingItem = ITEM_STEP;
+        tempStepMs = g_antiSpinStepMs;
+        tempStepPct = g_antiSpinStepPct;
+        g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
+        if (shownMode == ANTISPIN_UI_MODE_MS) {
+          setUiEncoderBoundaries(ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX, false);
+          resetUiEncoder(tempStepMs);
+        } else {
+          setUiEncoderBoundaries(ANTISPIN_STEP_PCT_MIN, ANTISPIN_STEP_PCT_MAX, false);
+          resetUiEncoder(tempStepPct);
+        }
+      } else if (sel == backItem) {
+        break;
+      }
+
+      needRedraw = true;
+      delay(120);
+    }
+
+    static bool brakeBtnInAntiSpin = false;
+    static uint32_t lastBrakeBtnAntiSpinTime = 0;
+    if (digitalRead(BUTT_PIN) == BUTTON_PRESSED) {
+      lastInteraction = millis();
+      if (!brakeBtnInAntiSpin && millis() - lastBrakeBtnAntiSpinTime > BUTTON_SHORT_PRESS_DEBOUNCE_MS) {
+        brakeBtnInAntiSpin = true;
+        lastBrakeBtnAntiSpinTime = millis();
+        if (editing) {
+          editing = false;
+          editingItem = 0xFF;
+          resetBrowseEncoder();
+          needRedraw = true;
+        } else {
+          while (digitalRead(BUTT_PIN) == BUTTON_PRESSED) { vTaskDelay(5); }
+          break;
+        }
+      }
+    } else {
+      brakeBtnInAntiSpin = false;
+    }
+
+    if (needRedraw) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+
+      uint16_t shownMode = getShownMode();
+      bool showStep = (shownMode != ANTISPIN_UI_MODE_TEXT);
+      uint8_t backItem = getBackItem(shownMode);
+
+      char typeLabel[16];
+      formatConfiguredMenuLabel(lblType[g_storedVar.language], typeLabel, sizeof(typeLabel));
+      bool sType = (!editing && sel == ITEM_TYPE);
+      bool eType = (editing && editingItem == ITEM_TYPE);
+      obdWriteString(&g_obd, 0, 0, 0, typeLabel, menuFont, (sType || eType) ? OBD_WHITE : OBD_BLACK, 1);
+      snprintf(msgStr, sizeof(msgStr), "%4s", getModeLabel(shownMode));
+      uint8_t typeX = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
+      obdWriteString(&g_obd, 0, typeX, 0, msgStr, menuFont, (sType || eType) ? OBD_WHITE : OBD_BLACK, 1);
+
+      if (showStep) {
+        char stepLabel[16];
+        const char* rawStepLabel = (shownMode == ANTISPIN_UI_MODE_MS) ? lblStepMs[g_storedVar.language] : lblStepPct[g_storedVar.language];
+        formatConfiguredMenuLabel(rawStepLabel, stepLabel, sizeof(stepLabel));
+        bool sStep = (!editing && sel == ITEM_STEP);
+        bool eStep = (editing && editingItem == ITEM_STEP);
+        obdWriteString(&g_obd, 0, 0, 1 * lineH, stepLabel, menuFont, (sStep || eStep) ? OBD_WHITE : OBD_BLACK, 1);
+        if (shownMode == ANTISPIN_UI_MODE_MS) {
+          snprintf(msgStr, sizeof(msgStr), "%2ums", editing && editingItem == ITEM_STEP ? tempStepMs : g_antiSpinStepMs);
+        } else {
+          snprintf(msgStr, sizeof(msgStr), "%3u%%", editing && editingItem == ITEM_STEP ? tempStepPct : g_antiSpinStepPct);
+        }
+        uint8_t stepX = OLED_WIDTH - (uint8_t)(strlen(msgStr) * WIDTH8x8);
+        obdWriteString(&g_obd, 0, stepX, 1 * lineH, msgStr, menuFont, (sStep || eStep) ? OBD_WHITE : OBD_BLACK, 1);
+      }
+
+      bool sBack = (!editing && sel == backItem);
+      obdWriteString(&g_obd, 0, 0, backItem * lineH, (char*)getBackLabel(g_storedVar.language), menuFont, sBack ? OBD_WHITE : OBD_BLACK, 1);
+
+      if (shownMode == ANTISPIN_UI_MODE_TEXT) {
+        snprintf(msgStr, sizeof(msgStr), "%s/%s/%s/%s",
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_OFF),
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_LOW),
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_MED),
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_HIGH));
+        msgStr[21] = '\0';
+        obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
+      }
+
+      needRedraw = false;
+    }
+
+    if (checkRaceModeEscape()) { requestEscapeToMain(); break; }
+    vTaskDelay(10);
+  }
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+}
+
+
 /**
  * Status line slot settings submenu.
  * Items: SLOT 1-4 (select content per fixed column) + BACK.
@@ -396,10 +663,11 @@ void showScreensaverSettings() {
  */
 void showStatusSettings() {
   /* ST_ITEMS: 4 slots + BACK */
-  const uint8_t ST_ITEMS    = STATUS_SLOTS + 1;
-  /* Slot content range: STATUS_BLANK..STATUS_VOLTAGE */
-  const uint8_t ST_SLOT_MAX = STATUS_VOLTAGE;
-  const uint8_t ST_LABEL_CHARS = 4;
+  const uint8_t ST_ITEMS = STATUS_SLOTS + 1;
+  /* Highest normalized slot id used for labels/lookups; legacy STATUS_CURRENT_MA is normalized away. */
+  const uint8_t ST_SLOT_MAX = STATUS_ACTIVE_BRAKE;
+  const uint8_t ST_SLOT_OPTION_MAX = (uint8_t)((sizeof(STATUS_SLOT_SELECTABLE_VALUES) / sizeof(STATUS_SLOT_SELECTABLE_VALUES[0])) - 1U);
+  const uint8_t ST_LABEL_CHARS = 5;
   const uint8_t ST_LABEL_PIXELS = ST_LABEL_CHARS * 6;
 
   uint8_t lang = g_storedVar.language;
@@ -420,15 +688,15 @@ void showStatusSettings() {
 
   /* Content type labels shown right-justified in menu. */
   const char* slotLabelsByLang[9][ST_SLOT_MAX + 1] = {
-    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "CORR", "VOLT"}
+    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT", "AMPE", "BREMS"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT", "CURR", "BRAKE"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT", "CURR", "BRAKE"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT", "CURR", "BRAKE"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "FRENO"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "BREMS"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "FRENO"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "REM"},
+    {"---", "OUT%", "GAS", "AUTO", "CORR", "VOLT", "CORR", "FREIO"}
   };
   const char** slotLabels = slotLabelsByLang[lang];
 
@@ -508,7 +776,7 @@ void showStatusSettings() {
       if (state == ITEM_SELECTION) {
         sel = (uint8_t)ep;
       } else {
-        g_storedVar.statusSlot[sel - 1] = ep;
+        g_storedVar.statusSlot[sel - 1] = getStatusSlotValueFromOptionIndex(ep);
         forceRedraw = true;
       }
     }
@@ -555,8 +823,8 @@ void showStatusSettings() {
         origValue = normalizeStatusSlotValue(g_storedVar.statusSlot[sel - 1]);
         g_storedVar.statusSlot[sel - 1] = origValue;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        setUiEncoderBoundaries(0, ST_SLOT_MAX, false);
-        resetUiEncoder(origValue);
+        setUiEncoderBoundaries(0, ST_SLOT_OPTION_MAX, false);
+        resetUiEncoder(getStatusSlotOptionIndex(origValue));
         state       = VALUE_SELECTION;
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel     = 0xFF;

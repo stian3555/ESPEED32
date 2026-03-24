@@ -11,6 +11,7 @@ extern OBDISP g_obd;
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
 extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_antiSpinDisplayMode;
 extern uint16_t g_encoderInvertEnabled;
 extern Menu_type g_mainMenu;
 extern Menu_type g_settingsMenu;
@@ -148,8 +149,14 @@ void initMenuItems() {
   sprintf(g_mainMenu.item[++i].name, "%s", getMenuName(lang, 2));  /* ANTIS */
   g_mainMenu.item[i].value = (void *)&g_storedVar.carParam[g_carSel].antiSpin;
   g_mainMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_mainMenu.item[i].unit, "ms");
-  g_mainMenu.item[i].maxValue = ANTISPIN_MAX_VALUE;
+  if (g_antiSpinDisplayMode == ANTISPIN_UI_MODE_PERCENT) {
+    sprintf(g_mainMenu.item[i].unit, "%%");
+  } else if (g_antiSpinDisplayMode == ANTISPIN_UI_MODE_MS) {
+    sprintf(g_mainMenu.item[i].unit, "ms");
+  } else {
+    sprintf(g_mainMenu.item[i].unit, "");
+  }
+  g_mainMenu.item[i].maxValue = antiSpinUiMaxValue(g_antiSpinDisplayMode);
   g_mainMenu.item[i].minValue = 0;
   g_mainMenu.item[i].callback = ITEM_NO_CALLBACK;
 
@@ -360,12 +367,12 @@ void initDisplayMenuItems() {
   g_settingsMenu.item[i].minValue = FONT_SIZE_LARGE;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
-  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 4));  /* ANTIS.STEP */
-  g_settingsMenu.item[i].value = (void *)&g_antiSpinStepMs;
+  sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 4));  /* ANTISPIN - opens submenu */
+  g_settingsMenu.item[i].value = ITEM_NO_VALUE;
   g_settingsMenu.item[i].type = VALUE_TYPE_INTEGER;
-  sprintf(g_settingsMenu.item[i].unit, "ms");
-  g_settingsMenu.item[i].maxValue = ANTISPIN_STEP_MAX;
-  g_settingsMenu.item[i].minValue = ANTISPIN_STEP_MIN;
+  sprintf(g_settingsMenu.item[i].unit, "");
+  g_settingsMenu.item[i].maxValue = 0;
+  g_settingsMenu.item[i].minValue = 0;
   g_settingsMenu.item[i].callback = ITEM_NO_CALLBACK;
 
   sprintf(g_settingsMenu.item[++i].name, "%s", getDisplayMenuName(lang, 5));  /* STATUS - opens submenu */

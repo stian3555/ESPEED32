@@ -257,7 +257,8 @@ details.doc-fold>:not(summary){margin-top:8px}
     </figure>
     <h3>Status bar and ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 fixed slots. Each slot can show <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, or blank. <code>CURR</code> shows mA below 1000 and A above.</li>
+      <li><code>STATUS BAR</code>: 4 fixed slots. Each slot can show <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, <code>BRAKE</code>, or blank. <code>CURR</code> shows mA below 1000 and A above.</li>
+      <li><code>BRAKE</code> in the status bar shows the active brake mode/value in real time: <code>Bxxx%</code> = normal <code>BRAKE</code>, <code>Axxx%</code> = <code>Alt.Brake</code>, <code>Qxxx%</code> = <code>Rel.Brake QUICK</code>, <code>Dxxx%</code> = <code>Rel.Brake DRAG</code>, <code>NONE</code> = no brake currently active. The code can change quickly while driving.</li>
       <li>While WiFi is active, the status bar shows <code>WIFI</code>. It uses the first blank slot if available; otherwise slot 4 is temporarily overridden.</li>
       <li><code>ABOUT</code> shows firmware/data version, detected trigger sensor, chip details, flash/heap, MAC addresses, and build date/time.</li>
     </ul>
@@ -319,7 +320,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Brake force when trigger is released.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (and &lt;= LIMIT)</td><td>20</td><td>Minimum motor output at first measurable trigger movement.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-spin ramp duration. Higher value = softer power buildup. Encoder step is set globally in <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Anti-spin ramp time above the low-output bypass. Higher value = longer/slower power buildup. It is not a pure trigger delay. Encoder step is set globally in <code>DISPLAY -&gt; ANTIS.STEP</code>.</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Throttle mapping. 50 = linear. &lt;50 softer start, &gt;50 sharper start.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Soft-start zone. 0 = disabled / old behavior. Above 0, the first part of trigger travel ramps from 0 up to SENSI before normal CURVE takes over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>Motor PWM frequency. Higher value often softens low-end response.</td></tr>
@@ -330,6 +331,14 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
       </tbody>
     </table>
+    <h3>ANTIS in practice</h3>
+    <ul>
+      <li><code>ANTIS</code> is not a full trigger delay. The car should still react when you start pulling the trigger.</li>
+      <li>At low output, anti-spin is bypassed. So the very first part can still feel direct.</li>
+      <li>Once output is high enough, <code>ANTIS</code> limits how fast power is allowed to rise.</li>
+      <li>Higher <code>ANTIS</code> = a longer/slower ramp from the anti-spin start point up toward the requested output.</li>
+      <li>It only acts on increasing power. Lifting the trigger, coasting, and braking stay immediate.</li>
+    </ul>
     <h3>Typical starting values</h3>
     <p class="small">These are starting points, not rules. Use them to get close, then fine-tune one parameter at a time.</p>
     <p class="small">The right values still depend heavily on the specific car, motor, tires, track grip, and your personal driving style.</p>
@@ -380,7 +389,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <li><code>BRAKE</code>: linear brake/drag command in %. Real braking feel depends on motor, tires, and track grip.</li>
         <li><code>SENSI</code>: linear minimum output floor in %, but not a linear gain knob across the whole trigger travel because <code>CURVE</code> shapes the rest.</li>
         <li><code>FADE</code>: linear in trigger-travel %. It only affects the first part of the trigger and then hands control over to <code>CURVE</code>.</li>
-        <li><code>ANTIS</code>: mainly a time setting in ms. Once anti-spin is active, a higher value gives a longer/weaker ramp, but the overall feel is not perfectly linear because the low-speed bypass threshold also shifts with the setting.</li>
+        <li><code>ANTIS</code>: mainly a time setting in ms, not a pure delay. Once anti-spin is active, a higher value gives a longer/weaker ramp, but the overall feel is not perfectly linear because the low-speed bypass threshold also shifts with the setting.</li>
       </ul>
     </details>
     <details class="doc-fold">

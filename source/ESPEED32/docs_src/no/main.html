@@ -77,7 +77,7 @@
       <li><code>ACD</code>: ACD-stil der det finnes direkte treff (<code>SENSI</code> og <code>CHOKE</code> for limit). <code>ANTIS</code> beholdes som antispinn siden ACD-manualen ikke bruker en egen Choke2-term.</li>
       <li><code>DISPLAY -&gt; CASE</code> velger om etiketter vises i <code>UPPER</code> eller <code>Pascal</code>.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> velger mellom <code>LARGE</code> og <code>small</code> for liste- og menyvisning.</li>
-      <li><code>SKJERM -&gt; ANTIS.STEP</code> setter globalt encoder-steg for <code>ANTIS</code>-verdien.</li>
+      <li><code>SKJERM -&gt; ANTISPINN</code> åpner antispinn-innstillingsmenyen der du velger visningsenhet (<code>MS</code> / <code>%</code> / <code>TEXT</code>) og encoder-steg for hver enhet.</li>
     </ul>
     <h3>Race view (LIST vs GRID)</h3>
     <ul>
@@ -94,7 +94,8 @@
     </figure>
     <h3>Statuslinje og ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code> eller blankt. <code>AMPE</code> viser mA under 1000 og A over.</li>
+      <li><code>STATUS BAR</code>: 4 faste felter. Hvert felt kan vise <code>OUT%</code>, <code>GASS</code>, <code>BIL</code>, <code>AMPE</code>, <code>VOLT</code>, <code>BREMS</code> eller blankt. <code>AMPE</code> viser mA under 1000 og A over.</li>
+      <li><code>BREMS</code> i statuslinjen viser aktiv bremsetype og verdi i sanntid: <code>Bxxx%</code> = vanlig <code>BRAKE</code>, <code>Axxx%</code> = <code>Alt.Brake</code>, <code>Qxxx%</code> = <code>Rel.Brake QUICK</code>, <code>Dxxx%</code> = <code>Rel.Brake DRAG</code>, <code>NONE</code> = ingen brems er aktiv akkurat da. Koden kan veksle raskt mens du kjorer.</li>
       <li>Når WiFi er aktivt vises <code>WIFI</code> i statuslinjen. Først brukes ledig felt; hvis ingen er ledige overstyres felt 4 midlertidig.</li>
       <li><code>ABOUT</code> viser firmware/data-versjon, detektert trigger-sensor, chip-info, flash/heap, MAC-adresser og build-dato/tid.</li>
     </ul>
@@ -156,7 +157,7 @@
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Bremsekraft ved sluppet trigger.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (og &lt;= LIMIT)</td><td>20</td><td>Min. motoreffekt ved første triggerbevegelse.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid. Høyere verdi = mykere effektoppbygging. Encoder-steg settes globalt i <code>SKJERM -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Antispinn-rampetid over lavfarts-bypass. Høyere verdi = lengre/tregere effektoppbygging. Det er ikke ren trigger-delay. Visningsenhet og encoder-steg konfigureres i <code>SKJERM -&gt; ANTISPINN</code> (MS / % / TEXT).</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Gasskurve. 50 = lineær. &lt;50 mykere start, &gt;50 skarpere start.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Myk startsone. 0 = av / gammel oppføring. Over 0 rampes første del av triggeren fra 0 opp til SENSI før vanlig CURVE tar over.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>PWM-frekvens til motor. Høyere frekvens gir ofte mykere lavgass.</td></tr>
@@ -167,6 +168,14 @@
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
+    <h3>ANTIS i praksis</h3>
+    <ul>
+      <li><code>ANTIS</code> er ikke en full trigger-delay. Bilen skal fortsatt reagere når du begynner å dra triggeren.</li>
+      <li>På lav output bypasses antispinn. Derfor kan den aller første delen fortsatt kjennes direkte.</li>
+      <li>Når output er høy nok, begrenser <code>ANTIS</code> hvor raskt effekten får bygge seg opp.</li>
+      <li>Høyere <code>ANTIS</code> = lengre/tregere rampe fra antispinn-startpunktet opp mot ønsket output.</li>
+      <li>Den virker bare når effekten øker. Slipp av trigger, rulling og brems skal fortsatt være umiddelbart.</li>
+    </ul>
     <h3>Typiske startverdier</h3>
     <p class="small">Dette er startpunkter, ikke fasit. Bruk dem for å komme nær, og finjuster deretter en parameter om gangen.</p>
     <p class="small">Riktige verdier avhenger fortsatt mye av selve bilen, motor, dekk, grep i banen og din personlige kjørestil.</p>
@@ -217,7 +226,7 @@
         <li><code>BRAKE</code>: lineær bremse/drag-kommando i %. Faktisk bremsefølelse avhenger av motor, dekk og grep i banen.</li>
         <li><code>SENSI</code>: lineært minimumsnivå for output i %, men ikke en lineær gain-knott gjennom hele trigger-vandringen siden <code>CURVE</code> former resten.</li>
         <li><code>FADE</code>: lineær i % av trigger-vandringen. Den virker bare helt i starten og gir deretter kontrollen videre til <code>CURVE</code>.</li>
-        <li><code>ANTIS</code>: er hovedsakelig en tidsinnstilling i ms. Når antispinn er aktivt gir høyere verdi lengre/mykere rampe, men totalfølelsen er ikke helt lineær fordi lavfarts-bypass også flytter seg med innstillingen.</li>
+        <li><code>ANTIS</code>: er hovedsakelig en tidsinnstilling i ms, ikke en ren delay. Når antispinn er aktivt gir høyere verdi lengre/mykere rampe, men totalfølelsen er ikke helt lineær fordi lavfarts-bypass også flytter seg med innstillingen.</li>
       </ul>
     </details>
     <details class="doc-fold">
@@ -430,7 +439,11 @@
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA/NLD/POR)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
-|  |  |- ANTIS.STEP (1-50 ms, default 5)
+|  |  |- ANTISPINN
+|  |  |  |- REG.TYPE (MS / % / TEXT, standard MS)
+|  |  |  |- STEG MS (1-50 ms, standard 5)  [skjult i TEXT-modus]
+|  |  |  |- STEG % (1-100 %, standard 1)   [vises kun i %-modus]
+|  |  |  `- TILBAKE
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2

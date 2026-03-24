@@ -8,6 +8,8 @@
 extern StoredVar_type g_storedVar;
 extern uint16_t g_statsEnabled;
 extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_antiSpinStepPct;
+extern uint16_t g_antiSpinDisplayMode;
 extern uint16_t g_encoderInvertEnabled;
 extern ESC_type g_escVar;
 extern OBDISP g_obd;
@@ -273,6 +275,8 @@ static void doResetSettings() {
   g_storedVar.listFontSize         = FONT_SIZE_DEFAULT;
   g_storedVar.startupDelay         = STARTUP_DELAY_DEFAULT;
   g_antiSpinStepMs                 = ANTISPIN_STEP_DEFAULT;
+  g_antiSpinStepPct                = ANTISPIN_STEP_PCT_DEFAULT;
+  g_antiSpinDisplayMode            = ANTISPIN_UI_MODE_DEFAULT;
   g_encoderInvertEnabled           = ENCODER_INVERT_DEFAULT;
   strncpy(g_storedVar.screensaverLine1, SCREENSAVER_LINE1_DEFAULT, SCREENSAVER_TEXT_MAX - 1);
   g_storedVar.screensaverLine1[SCREENSAVER_TEXT_MAX - 1] = '\0';

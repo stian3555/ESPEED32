@@ -76,7 +76,7 @@
       <li><code>ACD</code>: estilo ACD donde hay equivalencia directa (<code>SENSI</code> y <code>CHOKE</code> para LIMIT).</li>
       <li><code>DISPLAY -&gt; CASE</code> decide si las etiquetas se muestran en <code>UPPER</code> o <code>Pascal</code>.</li>
       <li><code>DISPLAY -&gt; FONT SIZE</code> cambia la vista de listas y menus entre <code>LARGE</code> y <code>small</code>.</li>
-      <li><code>PANTALLA -&gt; ANTIS.STEP</code> ajusta el paso global del encoder para el valor <code>ANTIS</code>.</li>
+      <li><code>PANTALLA -&gt; ANTISPIN</code> abre el submenu de configuracion antispin donde seleccionas la unidad de visualizacion (<code>MS</code> / <code>%</code> / <code>TEXT</code>) y el paso del encoder para cada unidad.</li>
     </ul>
     <h3>Vista de carrera (LIST vs GRID)</h3>
     <ul>
@@ -93,7 +93,8 @@
     </figure>
     <h3>Barra de estado y ABOUT</h3>
     <ul>
-      <li><code>STATUS BAR</code>: 4 slots fijos. Cada slot puede mostrar <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code> o vacio. <code>CURR</code> muestra mA por debajo de 1000 y A por encima.</li>
+      <li><code>STATUS BAR</code>: 4 slots fijos. Cada slot puede mostrar <code>OUT%</code>, <code>THRO</code>, <code>CAR</code>, <code>CURR</code>, <code>VOLT</code>, <code>FRENO</code> o vacio. <code>CURR</code> muestra mA por debajo de 1000 y A por encima.</li>
+      <li><code>FRENO</code> en la barra de estado muestra el tipo/valor de freno activo en tiempo real: <code>Bxxx%</code> = <code>BRAKE</code> normal, <code>Axxx%</code> = <code>Alt.Brake</code>, <code>Qxxx%</code> = <code>Rel.Brake QUICK</code>, <code>Dxxx%</code> = <code>Rel.Brake DRAG</code>, <code>NONE</code> = ningun freno activo en ese momento. El codigo puede cambiar rapido mientras conduces.</li>
       <li>Cuando WiFi esta activo, la barra de estado muestra <code>WIFI</code>. Primero usa un slot libre; si no hay ninguno, el slot 4 se sobreescribe temporalmente.</li>
       <li><code>ABOUT</code> muestra version de firmware/datos, sensor de trigger detectado, informacion del chip, flash/heap, direcciones MAC y fecha/hora de compilacion.</li>
     </ul>
@@ -168,7 +169,7 @@
       <tbody>
         <tr><td><code>BRAKE</code></td><td>0-100 %</td><td>95</td><td>Frenado con trigger suelto.</td></tr>
         <tr><td><code>SENSI</code></td><td>0-90 % (y &lt;= LIMIT)</td><td>20</td><td>Potencia minima al primer movimiento de trigger.</td></tr>
-        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Rampa anti-spin. Valor alto = entrega de potencia mas suave. El paso del encoder se ajusta globalmente en <code>PANTALLA -&gt; ANTIS.STEP</code>.</td></tr>
+        <tr><td><code>ANTIS</code></td><td>0-999 ms</td><td>30</td><td>Tiempo de rampa anti-spin por encima del bypass de baja salida. Valor alto = subida de potencia mas larga/lenta. No es un delay puro del trigger. Unidad de visualizacion y paso del encoder se configuran en <code>PANTALLA -&gt; ANTISPIN</code> (MS / % / TEXT).</td></tr>
         <tr><td><code>CURVE</code></td><td>10-90 %</td><td>50</td><td>Mapa de trigger. 50 = lineal.</td></tr>
         <tr><td><code>FADE</code></td><td>0-30 %</td><td>0</td><td>Zona de salida suave. 0 = desactivado / comportamiento antiguo. Por encima de 0, la primera parte del trigger sube de 0 a SENSI antes de que siga la CURVE normal.</td></tr>
         <tr><td><code>PWM_F</code></td><td>1.0-5.0 kHz</td><td>4.0</td><td>Frecuencia PWM del motor.</td></tr>
@@ -179,6 +180,14 @@
         <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
       </tbody>
     </table>
+    <h3>ANTIS en la practica</h3>
+    <ul>
+      <li><code>ANTIS</code> no es un delay total del trigger. El coche debe seguir respondiendo cuando empiezas a tirar del trigger.</li>
+      <li>A baja salida, anti-spin se salta. Por eso la primera parte todavia puede sentirse directa.</li>
+      <li>Cuando la salida ya es suficientemente alta, <code>ANTIS</code> limita la rapidez con la que puede subir la potencia.</li>
+      <li>Mas <code>ANTIS</code> = rampa mas larga/lenta desde el punto de inicio de anti-spin hasta el output pedido.</li>
+      <li>Solo actua cuando la potencia sube. Soltar trigger, rodar y frenar siguen siendo inmediatos.</li>
+    </ul>
     <h3>FADE en la practica</h3>
     <ul>
       <li><code>FADE</code> crea una rampa suave <code>0 -&gt; SENSI</code> al inicio del recorrido del trigger.</li>
@@ -211,7 +220,7 @@
       <li><code>BRAKE</code>: mando lineal de freno/drag en %. La sensacion real de frenado depende del motor, neumaticos y grip de la pista.</li>
       <li><code>SENSI</code>: suelo minimo lineal de output en %, pero no es una ganancia lineal a lo largo de todo el recorrido porque <code>CURVE</code> modela el resto.</li>
       <li><code>FADE</code>: lineal en % de recorrido del trigger. Solo trabaja al principio y luego deja el control a <code>CURVE</code>.</li>
-      <li><code>ANTIS</code>: es sobre todo un ajuste de tiempo en ms. Cuando anti-spin esta activo, un valor mayor da una rampa mas larga/suave, pero la sensacion total no es perfectamente lineal porque tambien cambia el umbral de bypass a baja velocidad.</li>
+      <li><code>ANTIS</code>: es sobre todo un ajuste de tiempo en ms, no un delay puro. Cuando anti-spin esta activo, un valor mayor da una rampa mas larga/suave, pero la sensacion total no es perfectamente lineal porque tambien cambia el umbral de bypass a baja velocidad.</li>
     </ul>
     <h3>Ejemplos de CURVE</h3>
     <p class="small">Estas figuras muestran primero la forma de respuesta, antes de pasar a la frecuencia PWM y al limite de duty.</p>
@@ -415,7 +424,11 @@
 |  |  |- LANGUAGE (NOR/ENG/CS/ACD/ESP/DEU/ITA/NLD/POR)
 |  |  |- CASE (UPPER/Pascal)
 |  |  |- FONT SIZE (LARGE/small)
-|  |  |- ANTIS.STEP (1-50 ms, default 5)
+|  |  |- ANTISPIN
+|  |  |  |- TIPO REG (MS / % / TEXT, predeterminado MS)
+|  |  |  |- PASO MS (1-50 ms, predeterminado 5)  [oculto en modo TEXT]
+|  |  |  |- PASO % (1-100 %, predeterminado 1)   [solo visible en modo %]
+|  |  |  `- ATRAS
 |  |  |- STATUS BAR
 |  |  |  |- SLOT 1
 |  |  |  |- SLOT 2

@@ -326,7 +326,7 @@ const char* STR_COPY_FROM[] = {
 };
 const char* STR_COPY_TO[] = {
   "-KOPIER TIL:-", "-COPY TO:-", "-COPY TO:-", "-COPY TO:-",
-  "-COPIAR A:-", "-KOPIER ZU:-", "-COPIA A:-", "-KOPIE NAAR-", "-COPIAR PARA-"
+  "-COPIAR A:-", "-KOPIER ZU:-", "-COPIA A:-", "-KOPIE NAAR:-", "-COPIAR PARA:-"
 };
 const char* STR_ALL[] = {"ALLE", "ALL", "ALL", "ALL", "TODO", "ALLE", "TUTT", "ALLE", "TODOS"};
 const char* STR_COPIED_ALL[] = {

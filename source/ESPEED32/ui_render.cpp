@@ -588,7 +588,7 @@ void printMainMenu(MenuState_enum currMenuState)
               sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
             }
           }
-          else if (menuIndex == 2) {
+          else if (strcmp(g_mainMenu.item[menuIndex].name, getMenuName(g_storedVar.language, 2)) == 0) {
             formatAntiSpinValue(msgStr, sizeof(msgStr), g_storedVar.carParam[g_carSel].antiSpin);
           }
           else {

@@ -3017,6 +3017,12 @@ static void handleDocsTriggerAsset() {
   }
 }
 
+static void handleFaviconSvg() {
+  if (!streamFileFromSpiffs("/favicon.svg", "image/svg+xml")) {
+    g_wifiServer->send(404, "text/plain", "Missing asset: /favicon.svg");
+  }
+}
+
 static void handleRestoreUpload() {
   HTTPUpload& upload = g_wifiServer->upload();
   if (upload.status == UPLOAD_FILE_START) {
@@ -3832,6 +3838,11 @@ static void registerWebRoutes() {
   g_wifiServer->on("/docs/it/index.html", HTTP_GET, handleDocsIt);
   g_wifiServer->on("/docs/assets/curve_examples.png", HTTP_GET, handleDocsCurveAsset);
   g_wifiServer->on("/docs/assets/trig_cal.png", HTTP_GET, handleDocsTriggerAsset);
+  g_wifiServer->on("/favicon.svg", HTTP_GET, handleFaviconSvg);
+  g_wifiServer->on("/favicon.ico", HTTP_GET, []() {
+    g_wifiServer->sendHeader("Location", "/favicon.svg");
+    g_wifiServer->send(302, "text/plain", "");
+  });
   g_wifiServer->on("/restore", HTTP_POST,
                    []() { if (!requireControllerAuth()) return; handleRestore(); },
                    []() { if (!requireControllerAuth()) return; handleRestoreUpload(); });

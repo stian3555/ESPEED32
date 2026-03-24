@@ -17,6 +17,8 @@
 extern StoredVar_type g_storedVar;
 extern ESC_type g_escVar;
 extern uint16_t g_antiSpinStepMs;
+extern uint16_t g_antiSpinStepPct;
+extern uint16_t g_antiSpinDisplayMode;
 extern uint16_t g_encoderInvertEnabled;
 extern uint16_t g_carSel;
 extern OBDISP g_obd;
@@ -741,6 +743,8 @@ a{color:#7ed6ff}
  */
 static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
                                         uint16_t antiSpinStepMs,
+                                        uint16_t antiSpinStepPct,
+                                        uint16_t antiSpinDisplayMode,
                                         uint16_t encoderInvertEnabled,
                                         uint16_t adcVoltageRange_mV,
                                         uint16_t wifiConfiguredMode,
@@ -764,7 +768,10 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
   sprintf(buf, "  \"screensaverTimeout\": %u,\n", storedVar.screensaverTimeout); json += buf;
   sprintf(buf, "  \"soundBoot\": %u,\n", storedVar.soundBoot);         json += buf;
   sprintf(buf, "  \"soundRace\": %u,\n", storedVar.soundRace);         json += buf;
-  sprintf(buf, "  \"antiSpinStep\": %u,\n", antiSpinStepMs);           json += buf;
+  sprintf(buf, "  \"antiSpinStep\": %u,\n", antiSpinStepMs);           json += buf; /* legacy alias for ms-step */
+  sprintf(buf, "  \"antiSpinStepMs\": %u,\n", antiSpinStepMs);         json += buf;
+  sprintf(buf, "  \"antiSpinStepPct\": %u,\n", antiSpinStepPct);       json += buf;
+  sprintf(buf, "  \"antiSpinDisplayMode\": %u,\n", antiSpinDisplayMode); json += buf;
   sprintf(buf, "  \"encoderInvert\": %u,\n", encoderInvertEnabled ? 1 : 0); json += buf;
   sprintf(buf, "  \"adcVoltageRangeMv\": %u,\n", adcVoltageRange_mV);  json += buf;
   sprintf(buf, "  \"gridCarSelectEnabled\": %u,\n", storedVar.gridCarSelectEnabled); json += buf;
@@ -825,6 +832,8 @@ static String buildJsonBackup() {
   loadWiFiNetworkSettingsIfNeeded();
   return buildJsonBackupFromConfig(g_storedVar,
                                    g_antiSpinStepMs,
+                                   g_antiSpinStepPct,
+                                   g_antiSpinDisplayMode,
                                    g_encoderInvertEnabled,
                                    g_adcVoltageRange_mV,
                                    g_wifiConfiguredMode,
@@ -991,6 +1000,7 @@ static bool inRange(int32_t val, int32_t minVal, int32_t maxVal) {
  * @return true if valid, false with error message
  */
 static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_t* antiSpinStepMs,
+                                 uint16_t* antiSpinStepPct, uint16_t* antiSpinDisplayMode,
                                  uint16_t* encoderInvertEnabled, uint16_t* adcVoltageRangeMv,
                                  uint16_t* wifiConfiguredMode, char* wifiClientSsid,
                                  size_t wifiClientSsidLen, char* wifiClientPassword,
@@ -1043,6 +1053,12 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
   if (antiSpinStepMs != nullptr) {
     *antiSpinStepMs = g_antiSpinStepMs;
   }
+  if (antiSpinStepPct != nullptr) {
+    *antiSpinStepPct = g_antiSpinStepPct;
+  }
+  if (antiSpinDisplayMode != nullptr) {
+    *antiSpinDisplayMode = g_antiSpinDisplayMode;
+  }
   if (encoderInvertEnabled != nullptr) {
     *encoderInvertEnabled = g_encoderInvertEnabled ? 1 : 0;
   }
@@ -1089,6 +1105,21 @@ static bool parseAndValidateJson(const String& json, StoredVar_type* sv, uint16_
       parseJsonInt(json, "antiSpinStep", v) &&
       inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) {
     *antiSpinStepMs = (uint16_t)v;
+  }
+  if (antiSpinStepMs != nullptr &&
+      parseJsonInt(json, "antiSpinStepMs", v) &&
+      inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) {
+    *antiSpinStepMs = (uint16_t)v;
+  }
+  if (antiSpinStepPct != nullptr &&
+      parseJsonInt(json, "antiSpinStepPct", v) &&
+      inRange(v, ANTISPIN_STEP_PCT_MIN, ANTISPIN_STEP_PCT_MAX)) {
+    *antiSpinStepPct = (uint16_t)v;
+  }
+  if (antiSpinDisplayMode != nullptr &&
+      parseJsonInt(json, "antiSpinDisplayMode", v) &&
+      inRange(v, ANTISPIN_UI_MODE_MS, ANTISPIN_UI_MODE_TEXT)) {
+    *antiSpinDisplayMode = (uint16_t)v;
   }
   if (encoderInvertEnabled != nullptr &&
       parseJsonInt(json, "encoderInvert", v) &&
@@ -1443,7 +1474,10 @@ static String buildSchemaJson() {
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaEnumField(json, first, "soundRace", "Race Sound",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
-  appendSchemaIntField(json, first, "antiSpinStep", "ANTIS Step", ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX, 1, "ms");
+  appendSchemaEnumField(json, first, "antiSpinDisplayMode", "ANTIS Display",
+                        "[{\"value\":0,\"label\":\"MS\"},{\"value\":1,\"label\":\"%\"},{\"value\":2,\"label\":\"TEXT\"}]");
+  appendSchemaIntField(json, first, "antiSpinStepMs", "ANTIS Step (ms)", ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX, 1, "ms");
+  appendSchemaIntField(json, first, "antiSpinStepPct", "ANTIS Step (%)", ANTISPIN_STEP_PCT_MIN, ANTISPIN_STEP_PCT_MAX, 1, "%");
   appendSchemaEnumField(json, first, "encoderInvert", "ENC INV",
                         "[{\"value\":0,\"label\":\"OFF\"},{\"value\":1,\"label\":\"ON\"}]");
   appendSchemaIntField(json, first, "adcVoltageRangeMv", "VIN CAL ADC", ADC_VOLTAGE_RANGE_MIN_MVOLTS, ADC_VOLTAGE_RANGE_MAX_MVOLTS, 1, "mV");
@@ -1530,7 +1564,9 @@ static String buildStateJson(uint8_t carIndex) {
   snprintf(buf, sizeof(buf), "\"deepSleepTimeout\":%u,", g_storedVar.deepSleepTimeout); json += buf;
   snprintf(buf, sizeof(buf), "\"soundBoot\":%u,", g_storedVar.soundBoot); json += buf;
   snprintf(buf, sizeof(buf), "\"soundRace\":%u,", g_storedVar.soundRace); json += buf;
-  snprintf(buf, sizeof(buf), "\"antiSpinStep\":%u,", g_antiSpinStepMs); json += buf;
+  snprintf(buf, sizeof(buf), "\"antiSpinDisplayMode\":%u,", g_antiSpinDisplayMode); json += buf;
+  snprintf(buf, sizeof(buf), "\"antiSpinStepMs\":%u,", g_antiSpinStepMs); json += buf;
+  snprintf(buf, sizeof(buf), "\"antiSpinStepPct\":%u,", g_antiSpinStepPct); json += buf;
   snprintf(buf, sizeof(buf), "\"encoderInvert\":%u,", g_encoderInvertEnabled ? 1 : 0); json += buf;
   snprintf(buf, sizeof(buf), "\"adcVoltageRangeMv\":%u,", g_adcVoltageRange_mV); json += buf;
   snprintf(buf, sizeof(buf), "\"gridCarSelectEnabled\":%u,", g_storedVar.gridCarSelectEnabled); json += buf;
@@ -1639,9 +1675,17 @@ static bool parseAndApplyWebPatch(const String& json, String* errorMsg, uint8_t*
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid soundRace"; return false; }
     updated.soundRace = (uint16_t)v;
   }
-  if (parseJsonInt(json, "antiSpinStep", v)) {
-    if (!inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) { *errorMsg = "Error: invalid antiSpinStep"; return false; }
+  if (parseJsonInt(json, "antiSpinDisplayMode", v)) {
+    if (!inRange(v, ANTISPIN_UI_MODE_MS, ANTISPIN_UI_MODE_TEXT)) { *errorMsg = "Error: invalid antiSpinDisplayMode"; return false; }
+    g_antiSpinDisplayMode = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "antiSpinStep", v) || parseJsonInt(json, "antiSpinStepMs", v)) {
+    if (!inRange(v, ANTISPIN_STEP_MIN, ANTISPIN_STEP_MAX)) { *errorMsg = "Error: invalid antiSpinStepMs"; return false; }
     g_antiSpinStepMs = (uint16_t)v;
+  }
+  if (parseJsonInt(json, "antiSpinStepPct", v)) {
+    if (!inRange(v, ANTISPIN_STEP_PCT_MIN, ANTISPIN_STEP_PCT_MAX)) { *errorMsg = "Error: invalid antiSpinStepPct"; return false; }
+    g_antiSpinStepPct = (uint16_t)v;
   }
   if (parseJsonInt(json, "encoderInvert", v)) {
     if (!inRange(v, 0, 1)) { *errorMsg = "Error: invalid encoderInvert"; return false; }
@@ -2186,6 +2230,8 @@ static void handleSerialCommand(const String& cmd) {
     String errorMsg;
     String warningMsg;
     uint16_t tempAntiSpinStep = g_antiSpinStepMs;
+    uint16_t tempAntiSpinStepPct = g_antiSpinStepPct;
+    uint16_t tempAntiSpinDisplayMode = g_antiSpinDisplayMode;
     uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
     uint16_t tempAdcVoltageRange = g_adcVoltageRange_mV;
     uint16_t tempWiFiMode = getConfiguredWiFiMode();
@@ -2197,7 +2243,8 @@ static void handleSerialCommand(const String& cmd) {
     getConfiguredWiFiClientPassword(tempWiFiPassword, sizeof(tempWiFiPassword));
     getCurrentUiAuthUsername(tempUiAuthUsername, sizeof(tempUiAuthUsername));
     getCurrentUiAuthPassword(tempUiAuthPassword, sizeof(tempUiAuthPassword));
-    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange,
+    if (parseAndValidateJson(json, &tempVar, &tempAntiSpinStep, &tempAntiSpinStepPct, &tempAntiSpinDisplayMode,
+                             &tempEncoderInvert, &tempAdcVoltageRange,
                              &tempWiFiMode, tempWiFiSsid, sizeof(tempWiFiSsid),
                              tempWiFiPassword, sizeof(tempWiFiPassword),
                              tempUiAuthUsername, sizeof(tempUiAuthUsername),
@@ -2205,6 +2252,8 @@ static void handleSerialCommand(const String& cmd) {
                              &errorMsg, &warningMsg)) {
       g_storedVar = tempVar;
       g_antiSpinStepMs = tempAntiSpinStep;
+      g_antiSpinStepPct = tempAntiSpinStepPct;
+      g_antiSpinDisplayMode = tempAntiSpinDisplayMode;
       g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
       applyAdcVoltageRangeMilliVolts(tempAdcVoltageRange);
       setConfiguredWiFiMode(tempWiFiMode);
@@ -3044,6 +3093,8 @@ static void handleRestore() {
   String warningMsg;
 
   uint16_t tempAntiSpinStep = g_antiSpinStepMs;
+  uint16_t tempAntiSpinStepPct = g_antiSpinStepPct;
+  uint16_t tempAntiSpinDisplayMode = g_antiSpinDisplayMode;
   uint16_t tempEncoderInvert = g_encoderInvertEnabled ? 1 : 0;
   uint16_t tempAdcVoltageRange = g_adcVoltageRange_mV;
   uint16_t tempWiFiMode = getConfiguredWiFiMode();
@@ -3055,7 +3106,8 @@ static void handleRestore() {
   getConfiguredWiFiClientPassword(tempWiFiPassword, sizeof(tempWiFiPassword));
   getCurrentUiAuthUsername(tempUiAuthUsername, sizeof(tempUiAuthUsername));
   getCurrentUiAuthPassword(tempUiAuthPassword, sizeof(tempUiAuthPassword));
-  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempEncoderInvert, &tempAdcVoltageRange,
+  if (parseAndValidateJson(g_uploadBuffer, &tempVar, &tempAntiSpinStep, &tempAntiSpinStepPct, &tempAntiSpinDisplayMode,
+                           &tempEncoderInvert, &tempAdcVoltageRange,
                            &tempWiFiMode, tempWiFiSsid, sizeof(tempWiFiSsid),
                            tempWiFiPassword, sizeof(tempWiFiPassword),
                            tempUiAuthUsername, sizeof(tempUiAuthUsername),
@@ -3063,6 +3115,8 @@ static void handleRestore() {
                            &errorMsg, &warningMsg)) {
     g_storedVar = tempVar;
     g_antiSpinStepMs = tempAntiSpinStep;
+    g_antiSpinStepPct = tempAntiSpinStepPct;
+    g_antiSpinDisplayMode = tempAntiSpinDisplayMode;
     g_encoderInvertEnabled = tempEncoderInvert ? 1 : 0;
     applyAdcVoltageRangeMilliVolts(tempAdcVoltageRange);
     setConfiguredWiFiMode(tempWiFiMode);

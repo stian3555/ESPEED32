@@ -347,6 +347,21 @@ h2{
   color:var(--text-muted);
   font-size:13px;
 }
+.release-badge{
+  display:inline-block;
+  margin-top:7px;
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:600;
+  background:var(--bg-accent);
+  border:1px solid var(--panel-border);
+  color:var(--text-muted);
+  letter-spacing:.2px;
+}
+.release-badge a{color:var(--card-link);text-decoration:none}
+.release-badge a:hover{text-decoration:underline}
+.release-badge:empty{display:none}
 @media (max-width:860px){
   .panel.primary,.panel.secondary,.panel.full{grid-column:span 12}
 }
@@ -357,6 +372,7 @@ h2{
   <header class="hero">
     <h1>ESPEED32 Slot Car Controller</h1>
     <p class="sub" id="hero-subtitle">ESP32-based handheld controller project</p>
+    <p class="release-badge" id="release-badge"></p>
     <p class="hero-copy" id="hero-copy">Open the controller tools or jump straight to the user guide.</p>
     <div class="hero-tools">
       <div class="theme-tools">
@@ -406,6 +422,7 @@ h2{
       <h2>Project Resources</h2>
       <div class="card">
         <p>The main ESPEED32 repository includes firmware sources, build scripts, hardware context, and the documentation used by both the hosted site and the controller itself.</p>
+        <p class="tiny" id="resources-release"></p>
         <a class="btn aux" href="https://github.com/nerdweeg/ESPEED32" target="_blank" rel="noopener">View Source on GitHub</a>
       </div>
     </section>
@@ -584,6 +601,39 @@ async function applyModeLinks(){
 
 initThemeControls();
 applyModeLinks();
+fetchLatestRelease();
+
+function fetchLatestRelease(){
+  var RELEASES_URL='https://downloads.espeed32.com/releases.json';
+  fetch(RELEASES_URL+'?ts='+(Date.now()),{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(data){
+      if(!data) return;
+      var list=Array.isArray(data.releases)?data.releases:(Array.isArray(data)?data:[]);
+      var latest=null;
+      if(data.latestVersion){
+        var id=String(data.latestVersion).replace(/^v/,'');
+        for(var i=0;i<list.length;i++){
+          if(String(list[i].version||'').replace(/^v/,'')==id){latest=list[i];break;}
+        }
+      }
+      if(!latest && list.length) latest=list[0];
+      if(!latest) return;
+      var tag=String(latest.tag||latest.version||'').trim();
+      var url=String(latest.source||'').trim()||('https://github.com/nerdweeg/ESPEED32/releases/tag/'+encodeURIComponent(tag));
+      if(!tag) return;
+
+      var badge=document.getElementById('release-badge');
+      if(badge){
+        badge.innerHTML='Latest release: <a href="'+url+'" target="_blank" rel="noopener">'+tag+'</a>';
+      }
+      var resEl=document.getElementById('resources-release');
+      if(resEl){
+        resEl.innerHTML='Latest release: <a href="'+url+'" target="_blank" rel="noopener">'+tag+'</a> &mdash; see GitHub for changelog and download links.';
+      }
+    })
+    .catch(function(){});
+}
 </script>
 <script src="/ui/chat-widget.js"></script>
 </body>

@@ -2049,10 +2049,6 @@ function updateReleaseInfoUi(){
 
     el.appendChild(list);
 
-    var note=document.createElement('div');
-    note.className='release-note tiny';
-    note.appendChild(document.createTextNode(describeAutoUpdatePlan(selected,plan)+' Manual update always uses the two local files you choose.'));
-    el.appendChild(note);
   }
 
   updateReleaseVersionUi();

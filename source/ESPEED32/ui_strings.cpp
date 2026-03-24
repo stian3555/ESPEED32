@@ -41,15 +41,15 @@ const char* POWER_MENU_NAMES[][6] = {
 
 /* Display submenu item names: [language][item] */
 const char* DISPLAY_MENU_NAMES[][7] = {
-  /* NOR */ {"RACEMODUS", "SPRAK", "STYL", "SKRIFTSTRL", "ANTIS.STEP", "STATUSLINJE", "TILBAKE"},
-  /* ENG */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "ANTIS.STEP", "STATUS BAR", "BACK"},
-  /* CS  */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "ANTIS.STEP", "STATUS BAR", "BACK"},
-  /* ACD */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "ANTIS.STEP", "STATUS BAR", "BACK"},
-  /* ESP */ {"MODO RACE", "IDIOMA", "ESTILO", "TAM TEXTO", "ANTIS.STEP", "BARRA EST", "ATRAS"},
-  /* DEU */ {"RACE MODUS", "SPRACHE", "STIL", "SCHRIFT", "ANTIS.STEP", "STATUSLEISTE", "ZURUCK"},
-  /* ITA */ {"MODO GARA", "LINGUA", "STILE", "DIM TESTO", "ANTIS.STEP", "BARRA STATO", "INDIETRO"},
-  /* NLD */ {"RACE MODUS", "TAAL", "STIJL", "TEKSTGRT", "ANTIS.STEP", "STATUSBALK", "TERUG"},
-  /* POR */ {"MODO RACE", "IDIOMA", "ESTILO", "TAM TEXTO", "ANTIS.STEP", "BARRA EST", "VOLTAR"}
+  /* NOR */ {"RACEMODUS", "SPRAK", "STYL", "SKRIFTSTRL", "ANTISPINN", "STATUSLINJE", "TILBAKE"},
+  /* ENG */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "ANTISPIN", "STATUS BAR", "BACK"},
+  /* CS  */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "ANTISPIN", "STATUS BAR", "BACK"},
+  /* ACD */ {"RACE MODE", "LANGUAGE", "CASE", "FONT SIZE", "ANTISPIN", "STATUS BAR", "BACK"},
+  /* ESP */ {"MODO RACE", "IDIOMA", "ESTILO", "TAM TEXTO", "ANTISPIN", "BARRA EST", "ATRAS"},
+  /* DEU */ {"RACE MODUS", "SPRACHE", "STIL", "SCHRIFT", "ANTISPIN", "STATUSLEISTE", "ZURUCK"},
+  /* ITA */ {"MODO GARA", "LINGUA", "STILE", "DIM TESTO", "ANTISPIN", "BARRA STATO", "INDIETRO"},
+  /* NLD */ {"RACE MODUS", "TAAL", "STIJL", "TEKSTGRT", "ANTISPIN", "STATUSBALK", "TERUG"},
+  /* POR */ {"MODO RACE", "IDIOMA", "ESTILO", "TAM TEXTO", "ANTISPIN", "BARRA EST", "VOLTAR"}
 };
 
 /* Race mode parameter labels: [language][param] */
@@ -200,15 +200,15 @@ const char* POWER_MENU_NAMES_PASCAL[][6] = {
 
 /* Display submenu item names - Pascal Case: [language][item] */
 const char* DISPLAY_MENU_NAMES_PASCAL[][7] = {
-  /* NOR */ {"Racemodus", "Sprak", "Styl", "Skriftstrl", "Antis.Step", "Statuslinje", "Tilbake"},
-  /* ENG */ {"Race Mode", "Language", "Case", "Font Size", "Antis.Step", "Status bar", "Back"},
-  /* CS  */ {"Race Mode", "Language", "Case", "Font Size", "Antis.Step", "Status bar", "Back"},
-  /* ACD */ {"Race Mode", "Language", "Case", "Font Size", "Antis.Step", "Status bar", "Back"},
-  /* ESP */ {"Modo Race", "Idioma", "Estilo", "Tam texto", "Antis.Step", "Barra est", "Atras"},
-  /* DEU */ {"Race Modus", "Sprache", "Stil", "Schrift", "Antis.Step", "Statusleiste", "Zuruck"},
-  /* ITA */ {"Modo Gara", "Lingua", "Stile", "Dim testo", "Antis.Step", "Barra stato", "Indietro"},
-  /* NLD */ {"Race Modus", "Taal", "Stijl", "Tekstgrt", "Antis.Step", "Statusbalk", "Terug"},
-  /* POR */ {"Modo Race", "Idioma", "Estilo", "Tam texto", "Antis.Step", "Barra est", "Voltar"}
+  /* NOR */ {"Racemodus", "Sprak", "Styl", "Skriftstrl", "Antispinn", "Statuslinje", "Tilbake"},
+  /* ENG */ {"Race Mode", "Language", "Case", "Font Size", "Antispin", "Status bar", "Back"},
+  /* CS  */ {"Race Mode", "Language", "Case", "Font Size", "Antispin", "Status bar", "Back"},
+  /* ACD */ {"Race Mode", "Language", "Case", "Font Size", "Antispin", "Status bar", "Back"},
+  /* ESP */ {"Modo Race", "Idioma", "Estilo", "Tam texto", "Antispin", "Barra est", "Atras"},
+  /* DEU */ {"Race Modus", "Sprache", "Stil", "Schrift", "Antispin", "Statusleiste", "Zuruck"},
+  /* ITA */ {"Modo Gara", "Lingua", "Stile", "Dim testo", "Antispin", "Barra stato", "Indietro"},
+  /* NLD */ {"Race Modus", "Taal", "Stijl", "Tekstgrt", "Antispin", "Statusbalk", "Terug"},
+  /* POR */ {"Modo Race", "Idioma", "Estilo", "Tam texto", "Antispin", "Barra est", "Voltar"}
 };
 
 /* Race mode parameter labels - Pascal Case: [language][param] */

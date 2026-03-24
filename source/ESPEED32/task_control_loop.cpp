@@ -138,6 +138,7 @@ void Task2code(void *pvParameters) {
         bool inReleaseZone = (releaseZone_norm > 0) && (g_escVar.trigger_norm < releaseZone_norm);
         bool brakeButtonPressed = (digitalRead(BUTT_PIN) == BUTTON_PRESSED);
         bool releaseActive = false;
+        uint8_t activeBrakeKind = ACTIVE_BRAKE_NONE;
         uint8_t appliedBrakePct = 0;
 
         if (g_escVar.trigger_norm == 0) {
@@ -147,6 +148,9 @@ void Task2code(void *pvParameters) {
           if (brakeButtonPressed) {
             /* Use brakeButtonReduction as alternate brake value (not a reduction) */
             effectiveBrake = g_storedVar.carParam[g_carSel].brakeButtonReduction;
+            activeBrakeKind = ACTIVE_BRAKE_ALT;
+          } else {
+            activeBrakeKind = ACTIVE_BRAKE_BASE;
           }
           HalfBridge_SetPwmDrag(0, effectiveBrake);
           g_escVar.outputSpeed_pct = 0;
@@ -161,6 +165,7 @@ void Task2code(void *pvParameters) {
             /* QUICK mode: cut output and apply brake in the release zone */
             HalfBridge_SetPwmDrag(0, g_storedVar.carParam[g_carSel].quickBrakeStrength);
             g_escVar.outputSpeed_pct = 0;
+            activeBrakeKind = ACTIVE_BRAKE_QUICK;
             appliedBrakePct = (uint8_t)constrain((int)g_storedVar.carParam[g_carSel].quickBrakeStrength, 0, 100);
             throttleAntiSpin3(0);  /* Keep anti-spin timer updated */
           } else {
@@ -169,11 +174,15 @@ void Task2code(void *pvParameters) {
             g_escVar.outputSpeed_pct = throttleAntiSpin3(g_escVar.outputSpeed_pct);
             uint16_t dragPct = applyDragBrake ? g_storedVar.carParam[g_carSel].quickBrakeStrength : 0;
             HalfBridge_SetPwmDrag(g_escVar.outputSpeed_pct, dragPct);
+            activeBrakeKind = applyDragBrake ? ACTIVE_BRAKE_DRAG : ACTIVE_BRAKE_NONE;
             appliedBrakePct = (uint8_t)constrain((int)dragPct, 0, 100);
           }
           /* Update last interaction time to prevent screensaver while driving */
           g_lastEncoderInteraction = millis();
         }
+
+        g_escVar.activeBrakeKind = activeBrakeKind;
+        g_escVar.activeBrake_pct = appliedBrakePct;
 
         uint8_t triggerPct = (uint8_t)(((uint32_t)g_escVar.trigger_norm * 100U) / THROTTLE_NORMALIZED);
         uint8_t outputPct = (uint8_t)constrain((int)g_escVar.outputSpeed_pct, 0, 100);
@@ -195,6 +204,9 @@ void Task2code(void *pvParameters) {
                                (uint8_t)releaseBrakeMode,
                                telemetryFlags);
         prevTriggerNorm = g_escVar.trigger_norm;
+      } else {
+        g_escVar.activeBrakeKind = ACTIVE_BRAKE_NONE;
+        g_escVar.activeBrake_pct = 0;
       }
     }
   }

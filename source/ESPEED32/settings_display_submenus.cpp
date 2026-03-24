@@ -47,6 +47,30 @@ static void formatConfiguredMenuLabel(const char* source, char* buffer, size_t b
   buffer[out] = '\0';
 }
 
+static const uint8_t STATUS_SLOT_SELECTABLE_VALUES[] = {
+  STATUS_BLANK,
+  STATUS_OUTPUT,
+  STATUS_THROTTLE,
+  STATUS_CAR,
+  STATUS_CURRENT,
+  STATUS_VOLTAGE,
+  STATUS_ACTIVE_BRAKE
+};
+
+static uint8_t getStatusSlotOptionIndex(uint16_t slotValue) {
+  uint16_t normalized = normalizeStatusSlotValue(slotValue);
+  for (uint8_t i = 0; i < (uint8_t)(sizeof(STATUS_SLOT_SELECTABLE_VALUES) / sizeof(STATUS_SLOT_SELECTABLE_VALUES[0])); i++) {
+    if (STATUS_SLOT_SELECTABLE_VALUES[i] == normalized) return i;
+  }
+  return 0;
+}
+
+static uint16_t getStatusSlotValueFromOptionIndex(uint16_t optionIndex) {
+  const uint8_t optionCount = (uint8_t)(sizeof(STATUS_SLOT_SELECTABLE_VALUES) / sizeof(STATUS_SLOT_SELECTABLE_VALUES[0]));
+  if (optionIndex >= optionCount) return STATUS_BLANK;
+  return STATUS_SLOT_SELECTABLE_VALUES[optionIndex];
+}
+
 /**
  * Character-by-character text editor for screensaver lines.
  * Inspired by the rename car editor but for longer strings (up to 21 chars).
@@ -396,10 +420,11 @@ void showScreensaverSettings() {
  */
 void showStatusSettings() {
   /* ST_ITEMS: 4 slots + BACK */
-  const uint8_t ST_ITEMS    = STATUS_SLOTS + 1;
-  /* Slot content range: STATUS_BLANK..STATUS_VOLTAGE */
-  const uint8_t ST_SLOT_MAX = STATUS_VOLTAGE;
-  const uint8_t ST_LABEL_CHARS = 4;
+  const uint8_t ST_ITEMS = STATUS_SLOTS + 1;
+  /* Highest normalized slot id used for labels/lookups; legacy STATUS_CURRENT_MA is normalized away. */
+  const uint8_t ST_SLOT_MAX = STATUS_ACTIVE_BRAKE;
+  const uint8_t ST_SLOT_OPTION_MAX = (uint8_t)((sizeof(STATUS_SLOT_SELECTABLE_VALUES) / sizeof(STATUS_SLOT_SELECTABLE_VALUES[0])) - 1U);
+  const uint8_t ST_LABEL_CHARS = 5;
   const uint8_t ST_LABEL_PIXELS = ST_LABEL_CHARS * 6;
 
   uint8_t lang = g_storedVar.language;
@@ -420,15 +445,15 @@ void showStatusSettings() {
 
   /* Content type labels shown right-justified in menu. */
   const char* slotLabelsByLang[9][ST_SLOT_MAX + 1] = {
-    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT"},
-    {"---", "OUT%", "GAS", "AUTO", "CORR", "VOLT"}
+    {"---", "OUT%", "GASS", "BIL", "AMPE", "VOLT", "AMPE", "BREMS"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT", "CURR", "BRAKE"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT", "CURR", "BRAKE"},
+    {"---", "OUT%", "THRO", "CAR", "CURR", "VOLT", "CURR", "BRAKE"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "FRENO"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "BREMS"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "FRENO"},
+    {"---", "OUT%", "GAS", "AUTO", "AMP", "VOLT", "AMP", "REM"},
+    {"---", "OUT%", "GAS", "AUTO", "CORR", "VOLT", "CORR", "FREIO"}
   };
   const char** slotLabels = slotLabelsByLang[lang];
 
@@ -508,7 +533,7 @@ void showStatusSettings() {
       if (state == ITEM_SELECTION) {
         sel = (uint8_t)ep;
       } else {
-        g_storedVar.statusSlot[sel - 1] = ep;
+        g_storedVar.statusSlot[sel - 1] = getStatusSlotValueFromOptionIndex(ep);
         forceRedraw = true;
       }
     }
@@ -555,8 +580,8 @@ void showStatusSettings() {
         origValue = normalizeStatusSlotValue(g_storedVar.statusSlot[sel - 1]);
         g_storedVar.statusSlot[sel - 1] = origValue;
         g_rotaryEncoder.setAcceleration(SEL_ACCELERATION);
-        setUiEncoderBoundaries(0, ST_SLOT_MAX, false);
-        resetUiEncoder(origValue);
+        setUiEncoderBoundaries(0, ST_SLOT_OPTION_MAX, false);
+        resetUiEncoder(getStatusSlotOptionIndex(origValue));
         state       = VALUE_SELECTION;
         obdFill(&g_obd, OBD_WHITE, 1);
         prevSel     = 0xFF;

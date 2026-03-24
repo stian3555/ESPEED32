@@ -182,15 +182,24 @@ void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define STATUS_CURRENT  4   /* Hybrid motor current (5 chars, e.g. "850mA" / "2.7A ") */
 #define STATUS_VOLTAGE  5   /* Input voltage (5 chars, e.g. " 3.7V") */
 #define STATUS_CURRENT_MA  6   /* Legacy stored value; normalized to STATUS_CURRENT */
+#define STATUS_ACTIVE_BRAKE 7   /* Active brake type/value (5 chars, e.g. "Q060%") */
 
 static inline uint16_t normalizeStatusSlotValue(uint16_t slotValue) {
-  return (slotValue == STATUS_CURRENT_MA) ? STATUS_CURRENT : slotValue;
+  if (slotValue == STATUS_CURRENT_MA) return STATUS_CURRENT;
+  return (slotValue <= STATUS_ACTIVE_BRAKE) ? slotValue : STATUS_BLANK;
 }
 /* Default slot assignments: OUTPUT | CAR | VOLTAGE | blank */
 #define STATUS_SLOT0_DEFAULT STATUS_OUTPUT
 #define STATUS_SLOT1_DEFAULT STATUS_THROTTLE
 #define STATUS_SLOT2_DEFAULT STATUS_CAR
 #define STATUS_SLOT3_DEFAULT STATUS_VOLTAGE
+
+/* Active brake runtime state */
+#define ACTIVE_BRAKE_NONE  0   /* No brake command is currently active */
+#define ACTIVE_BRAKE_BASE  1   /* Normal trigger-released brake */
+#define ACTIVE_BRAKE_ALT   2   /* Alternate brake while brake button is held */
+#define ACTIVE_BRAKE_QUICK 3   /* Release-brake QUICK mode is active */
+#define ACTIVE_BRAKE_DRAG  4   /* Release-brake DRAG mode is active */
 
 /* Lap Detection */
 #define LAP_MAX_COUNT        20    /* Max stored lap times */
@@ -310,6 +319,8 @@ typedef struct {
   uint16_t motorCurrent_mA;   /* [mA] Motor current */
   uint16_t effectiveBrake_pct; /* [%] Active brake value after external overrides */
   uint16_t effectiveSensi_raw; /* [0.5%] Active SENSI value after external overrides */
+  uint8_t activeBrakeKind;     /* ACTIVE_BRAKE_* runtime state */
+  uint8_t activeBrake_pct;     /* [%] Brake value currently being applied */
   /* Lap detection */
   uint16_t lapCount;                    /* Total laps completed */
   uint32_t lapTimes[LAP_MAX_COUNT];     /* Circular buffer: last 20 lap times [ms] */

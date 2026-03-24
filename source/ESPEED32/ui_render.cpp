@@ -30,6 +30,30 @@ static void formatExtPotLabel(char* out, size_t outSize, int8_t potIndex) {
   else snprintf(out, outSize, "POT");
 }
 
+static void formatActiveBrakeStatus(char* out, size_t outSize, uint8_t activeBrakeKind, uint8_t activeBrakePct) {
+  if (!out || outSize == 0) return;
+
+  activeBrakePct = (uint8_t)constrain((int)activeBrakePct, 0, 100);
+
+  switch (activeBrakeKind) {
+    case ACTIVE_BRAKE_BASE:
+      snprintf(out, outSize, "B%03u%%", (unsigned int)activeBrakePct);
+      break;
+    case ACTIVE_BRAKE_ALT:
+      snprintf(out, outSize, "A%03u%%", (unsigned int)activeBrakePct);
+      break;
+    case ACTIVE_BRAKE_QUICK:
+      snprintf(out, outSize, "Q%03u%%", (unsigned int)activeBrakePct);
+      break;
+    case ACTIVE_BRAKE_DRAG:
+      snprintf(out, outSize, "D%03u%%", (unsigned int)activeBrakePct);
+      break;
+    default:
+      snprintf(out, outSize, "NONE ");
+      break;
+  }
+}
+
 /**
  * @brief Display bottom status line with throttle, car name and voltage
  * @details Common function used by both main menu and screensaver
@@ -71,7 +95,7 @@ void displayStatusLine() {
   }
 
   for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
-    uint16_t slot = g_storedVar.statusSlot[s];
+    uint16_t slot = normalizeStatusSlotValue(g_storedVar.statusSlot[s]);
     uint8_t color = OBD_BLACK;
 
     if (wifiSlot == (int8_t)s) {
@@ -117,6 +141,9 @@ void displayStatusLine() {
         sprintf(buf, "%2d.%01dV", v / 1000, (v % 1000) / 100);
         break;
       }
+      case STATUS_ACTIVE_BRAKE:
+        formatActiveBrakeStatus(buf, sizeof(buf), g_escVar.activeBrakeKind, g_escVar.activeBrake_pct);
+        break;
       default:  /* STATUS_BLANK */
         strcpy(buf, "     ");
         break;

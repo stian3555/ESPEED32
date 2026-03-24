@@ -184,6 +184,16 @@ static inline uint16_t antiSpinUiValueToMs(uint16_t uiValue, uint16_t uiMode) {
   }
 }
 
+static inline const char* antiSpinTextLevelToLabel(uint16_t level) {
+  switch (level) {
+    case ANTISPIN_TEXT_OFF:  return "OFF";
+    case ANTISPIN_TEXT_LOW:  return "LOW";
+    case ANTISPIN_TEXT_MED:  return "MED";
+    case ANTISPIN_TEXT_HIGH:
+    default:                 return "HIGH";
+  }
+}
+
 /* Display Font Sizes */
 #define HEIGHT12x16     16
 #define HEIGHT8x8       8

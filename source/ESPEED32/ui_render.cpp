@@ -55,19 +55,6 @@ static void formatActiveBrakeStatus(char* out, size_t outSize, uint8_t activeBra
   }
 }
 
-static const char* getAntiSpinTextValueLabel(uint16_t level) {
-  switch (level) {
-    case ANTISPIN_TEXT_OFF:
-      return "OFF";
-    case ANTISPIN_TEXT_LOW:
-      return "LOW";
-    case ANTISPIN_TEXT_MED:
-      return "MED";
-    case ANTISPIN_TEXT_HIGH:
-    default:
-      return "HIGH";
-  }
-}
 
 static void formatAntiSpinValue(char* out, size_t outSize, uint16_t antiSpinMs) {
   if (!out || outSize == 0) return;
@@ -77,7 +64,7 @@ static void formatAntiSpinValue(char* out, size_t outSize, uint16_t antiSpinMs) 
       snprintf(out, outSize, "%4u%%", (unsigned int)antiSpinMsToPercent(antiSpinMs));
       break;
     case ANTISPIN_UI_MODE_TEXT:
-      snprintf(out, outSize, "%5s", getAntiSpinTextValueLabel(antiSpinMsToTextLevel(antiSpinMs)));
+      snprintf(out, outSize, "%5s", antiSpinTextLevelToLabel(antiSpinMsToTextLevel(antiSpinMs)));
       break;
     case ANTISPIN_UI_MODE_MS:
     default:
@@ -114,7 +101,7 @@ void displayStatusLine() {
 
   if (isWiFiPortalActive()) {
     for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
-      if (g_storedVar.statusSlot[s] == STATUS_BLANK) {
+      if (normalizeStatusSlotValue(g_storedVar.statusSlot[s]) == STATUS_BLANK) {
         wifiSlot = (int8_t)s;
         break;
       }

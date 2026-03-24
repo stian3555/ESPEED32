@@ -74,19 +74,6 @@ static uint16_t getStatusSlotValueFromOptionIndex(uint16_t optionIndex) {
   return STATUS_SLOT_SELECTABLE_VALUES[optionIndex];
 }
 
-static const char* getAntiSpinTextValueLabel(uint16_t level) {
-  switch (level) {
-    case ANTISPIN_TEXT_OFF:
-      return "OFF";
-    case ANTISPIN_TEXT_LOW:
-      return "LOW";
-    case ANTISPIN_TEXT_MED:
-      return "MED";
-    case ANTISPIN_TEXT_HIGH:
-    default:
-      return "HIGH";
-  }
-}
 
 /**
  * Character-by-character text editor for screensaver lines.
@@ -649,10 +636,10 @@ void showAntiSpinSettings() {
 
       if (shownMode == ANTISPIN_UI_MODE_TEXT) {
         snprintf(msgStr, sizeof(msgStr), "%s/%s/%s/%s",
-                 getAntiSpinTextValueLabel(ANTISPIN_TEXT_OFF),
-                 getAntiSpinTextValueLabel(ANTISPIN_TEXT_LOW),
-                 getAntiSpinTextValueLabel(ANTISPIN_TEXT_MED),
-                 getAntiSpinTextValueLabel(ANTISPIN_TEXT_HIGH));
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_OFF),
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_LOW),
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_MED),
+                 antiSpinTextLevelToLabel(ANTISPIN_TEXT_HIGH));
         msgStr[21] = '\0';
         obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, msgStr, FONT_6x8, OBD_BLACK, 1);
       }

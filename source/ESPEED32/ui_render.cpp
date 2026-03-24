@@ -11,6 +11,7 @@ extern ESC_type g_escVar;
 extern OBDISP g_obd;
 extern char msgStr[50];
 extern uint16_t g_carSel;
+extern uint16_t g_antiSpinDisplayMode;
 extern Menu_type g_mainMenu;
 extern AiEsp32RotaryEncoder g_rotaryEncoder;
 extern uint8_t g_encoderMainSelector;
@@ -50,6 +51,37 @@ static void formatActiveBrakeStatus(char* out, size_t outSize, uint8_t activeBra
       break;
     default:
       snprintf(out, outSize, "NONE ");
+      break;
+  }
+}
+
+static const char* getAntiSpinTextValueLabel(uint16_t level) {
+  switch (level) {
+    case ANTISPIN_TEXT_OFF:
+      return "OFF";
+    case ANTISPIN_TEXT_LOW:
+      return "LOW";
+    case ANTISPIN_TEXT_MED:
+      return "MED";
+    case ANTISPIN_TEXT_HIGH:
+    default:
+      return "HIGH";
+  }
+}
+
+static void formatAntiSpinValue(char* out, size_t outSize, uint16_t antiSpinMs) {
+  if (!out || outSize == 0) return;
+
+  switch (g_antiSpinDisplayMode) {
+    case ANTISPIN_UI_MODE_PERCENT:
+      snprintf(out, outSize, "%4u%%", (unsigned int)antiSpinMsToPercent(antiSpinMs));
+      break;
+    case ANTISPIN_UI_MODE_TEXT:
+      snprintf(out, outSize, "%5s", getAntiSpinTextValueLabel(antiSpinMsToTextLevel(antiSpinMs)));
+      break;
+    case ANTISPIN_UI_MODE_MS:
+    default:
+      snprintf(out, outSize, "%3ums", (unsigned int)antiSpinMs);
       break;
   }
 }
@@ -243,6 +275,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   static bool lastBrakeUsesPot = false;
   static bool lastSensiUsesPot = false;
   static uint16_t lastAntis = 999;
+  static uint16_t lastAntisMode = 0xFFFF;
   static uint16_t lastCurve = 999;
   static uint8_t lastSelectedItem = 255;
   static bool lastIsEditing = false;
@@ -261,6 +294,7 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
     lastBrakeUsesPot = false;
     lastSensiUsesPot = false;
     lastAntis = 999;
+    lastAntisMode = 0xFFFF;
     lastCurve = 999;
 
     lastSelectedItem = selectedItem;
@@ -316,15 +350,16 @@ void displayRaceMode(uint8_t selectedItem, bool isEditing) {
   }
 
   /* ANTIS - left column, lower */
-  if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis) {
+  if (g_storedVar.carParam[g_carSel].antiSpin != lastAntis || g_antiSpinDisplayMode != lastAntisMode) {
     /* Label - using language-specific text, dynamically centered */
     const char* antisLabel = getRaceLabel(g_storedVar.language, 2);
     uint8_t labelWidth = strlen(antisLabel) * 6;
     obdWriteString(&g_obd, 0, col1_center - (labelWidth / 2), 24, (char *)antisLabel, FONT_6x8, colorAntis, 1);
-    /* Value - "999ms" is 5 chars × 8px = 40px wide, center at col1_center - 20 */
-    sprintf(msgStr, "%3dms", g_storedVar.carParam[g_carSel].antiSpin);
-    obdWriteString(&g_obd, 0, col1_center - 20, 34, msgStr, FONT_8x8, colorAntis, 1);
+    formatAntiSpinValue(msgStr, sizeof(msgStr), g_storedVar.carParam[g_carSel].antiSpin);
+    uint8_t valueWidth = (uint8_t)strlen(msgStr) * WIDTH8x8;
+    obdWriteString(&g_obd, 0, col1_center - (valueWidth / 2), 34, msgStr, FONT_8x8, colorAntis, 1);
     lastAntis = g_storedVar.carParam[g_carSel].antiSpin;
+    lastAntisMode = g_antiSpinDisplayMode;
   }
 
   /* CURVE - right column, lower */
@@ -565,6 +600,9 @@ void printMainMenu(MenuState_enum currMenuState)
               uint16_t sensiRaw = getEffectiveSensiRaw();
               sprintf(msgStr, "%2u.%u%%", sensiRaw / SENSI_SCALE, sensiFracDigit(sensiRaw));
             }
+          }
+          else if (menuIndex == 2) {
+            formatAntiSpinValue(msgStr, sizeof(msgStr), g_storedVar.carParam[g_carSel].antiSpin);
           }
           else {
             /* value is a generic pointer to void, so first cast to uint16_t pointer, then take the pointed value */

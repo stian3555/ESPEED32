@@ -998,7 +998,8 @@ void showScreenCalibration(int16_t adcRaw)
 /**
  * @brief Apply anti-spin control to prevent car drift
  * @details Applies a ramp to output speed to prevent sudden speed changes that cause wheel spin.
- *          Anti-spin time is the time taken from minSpeed to maxSpeed, selected by user.
+ *          Anti-spin time is the ramp time from the anti-spin start point up toward maxSpeed.
+ *          It is not a pure trigger delay.
  *          Anti-spin is bypassed at low duty cycles (< antispinPercStart) where current is too low to cause spinning.
  *          The antispinPercStart threshold varies with the antiSpin setting:
  *          - High antiSpin (200ms) = Low threshold (powerful motor/slippery track)
@@ -1042,9 +1043,10 @@ uint16_t throttleAntiSpin3(uint16_t requestedSpeed) {
   uint16_t minSpeedTmpRaw = max(getEffectiveSensiRaw(), antispinPercStartRaw);
   uint16_t maxSpeedRaw = g_storedVar.carParam[g_carSel].maxSpeed * SENSI_SCALE;
   
-  /* Calculate maximum allowed speed change: deltaSpeed = ((minSpeed-maxSpeed) * deltaTime) / antiSpin */
-  uint32_t maxDeltaSpeedx1000 = (((uint32_t)(maxSpeedRaw - minSpeedTmpRaw) * 500UL) * deltaTime_uS) /
-                                 g_storedVar.carParam[g_carSel].antiSpin;
+  /* Convert the 0.5%-unit span into the existing x1000-percent ramp units.
+   * deltaTime is in us while antiSpin is in ms, so the required conversion is /2 overall. */
+  uint32_t maxDeltaSpeedx1000 = ((uint32_t)(maxSpeedRaw - minSpeedTmpRaw) * deltaTime_uS) /
+                                 ((uint32_t)g_storedVar.carParam[g_carSel].antiSpin * 2UL);
 
   uint32_t outputSpeedX1000;
   

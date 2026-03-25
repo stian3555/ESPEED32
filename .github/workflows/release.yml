@@ -73,6 +73,25 @@ jobs:
             --build-path build \
             source/ESPEED32
 
+      - name: Verify version matches tag
+        shell: bash
+        run: |
+          VER="${{ steps.meta.outputs.ver }}"
+          MAJOR="${VER#v}"
+          MINOR="${MAJOR#*.}"
+          MAJOR="${MAJOR%%.*}"
+
+          FILE_MAJOR="$(grep -m1 'SW_MAJOR_VERSION' source/ESPEED32/slot_ESC.h | awk '{print $3}')"
+          FILE_MINOR="$(grep -m1 'SW_MINOR_VERSION' source/ESPEED32/slot_ESC.h | awk '{print $3}')"
+
+          if [[ "$MAJOR" != "$FILE_MAJOR" || "$MINOR" != "$FILE_MINOR" ]]; then
+            echo "Version mismatch: tag is ${VER} but slot_ESC.h defines ${FILE_MAJOR}.${FILE_MINOR}" >&2
+            echo "Update SW_MAJOR_VERSION and SW_MINOR_VERSION in slot_ESC.h before releasing." >&2
+            exit 1
+          fi
+
+          echo "Version OK: ${VER} matches slot_ESC.h"
+
       - name: Stamp SPIFFS release version
         shell: bash
         run: |

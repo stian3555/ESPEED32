@@ -4701,8 +4701,18 @@ async function runCombinedOtaUpdate(config){
     activeStage='final-restart';
     await waitForControllerReturn(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'),
                                   config.statusId);
-    ss(config.statusId,'ok',(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'))+' complete. Reloading page...');
-    setTimeout(function(){ location.reload(); }, 1200);
+    var _otaLabel=(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'));
+    var _otaSec=8;
+    ss(config.statusId,'ok',_otaLabel+' complete. Reloading in '+_otaSec+'s — giving the controller time to stabilize.');
+    var _otaCountdown=setInterval(function(){
+      _otaSec--;
+      if(_otaSec>0){
+        ss(config.statusId,'ok',_otaLabel+' complete. Reloading in '+_otaSec+'s — giving the controller time to stabilize.');
+      }else{
+        clearInterval(_otaCountdown);
+        location.reload();
+      }
+    },1000);
   }catch(e){
     var errMsg=(e&&e.message)?e.message:String(e);
     errMsg=describeOtaFailure(errMsg,!!config.usedDownloadService);

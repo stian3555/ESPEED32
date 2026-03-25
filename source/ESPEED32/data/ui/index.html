@@ -4568,20 +4568,27 @@ function describeOtaFailure(errMsg,usedDownloadService){
 
 async function verifySha256(blob,sha256Url){
   if(!sha256Url || !window.crypto || !window.crypto.subtle) return;
+
+  // Fetch and parse the expected hash. Network or parse failures are treated
+  // as "checksum unavailable" and silently skipped — older releases have no
+  // .sha256 asset, and transient network errors should not block OTA.
+  var expectedHex;
   try{
     var expectedResp=await fetch(sha256Url,{cache:'no-store'});
-    if(!expectedResp.ok) return; // skip if checksum unavailable
-    var expectedHex=(await expectedResp.text()).trim().split(/\s/)[0].toLowerCase();
+    if(!expectedResp.ok) return;
+    expectedHex=(await expectedResp.text()).trim().split(/\s/)[0].toLowerCase();
     if(!expectedHex || expectedHex.length!==64) return;
-    var buf=await blob.arrayBuffer();
-    var hashBuf=await crypto.subtle.digest('SHA-256',buf);
-    var actualHex=Array.from(new Uint8Array(hashBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-    if(actualHex!==expectedHex){
-      throw new Error('SHA-256 mismatch — downloaded file may be corrupt. Expected '+expectedHex.slice(0,12)+'… got '+actualHex.slice(0,12)+'…');
-    }
   }catch(_){
-    // Treat fetch/parsing/crypto failures as "checksum unavailable" and skip verification
     return;
+  }
+
+  // Hash is in hand — mismatch is now a hard failure so a corrupt download
+  // cannot silently reach the controller.
+  var buf=await blob.arrayBuffer();
+  var hashBuf=await crypto.subtle.digest('SHA-256',buf);
+  var actualHex=Array.from(new Uint8Array(hashBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  if(actualHex!==expectedHex){
+    throw new Error('SHA-256 mismatch — downloaded file may be corrupt. Expected '+expectedHex.slice(0,12)+'… got '+actualHex.slice(0,12)+'…');
   }
 }
 

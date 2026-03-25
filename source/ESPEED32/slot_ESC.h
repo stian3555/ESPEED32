@@ -17,7 +17,7 @@
 
 /* Firmware Version */
 #define SW_MAJOR_VERSION 6
-#define SW_MINOR_VERSION 5
+#define SW_MINOR_VERSION 7
 
 /* Stored Variable Version */
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
@@ -76,7 +76,7 @@
 #define THROTTLE_CURVE_SPEED_DIFF_DEFAULT       50                          /* Throttle curve vertex Y */
 #define FADE_DEFAULT              0     /* [%] Fade disabled by default for legacy behavior */
 #define PWM_FREQ_DEFAULT          40    /* [100*Hz] Motor PWM frequency (4.0 kHz) */
-#define BRAKE_BUTTON_REDUCTION_DEFAULT  50   /* [%] Brake reduction when button is pressed */
+#define BRAKE_BUTTON_REDUCTION_DEFAULT  0    /* [%] Alt brake off by default (0 = no effect) */
 #define QUICK_BRAKE_ENABLED_DEFAULT     0    /* Quick brake off by default */
 #define QUICK_BRAKE_THRESHOLD_DEFAULT   10   /* [%] Trigger position where quick brake engages */
 #define QUICK_BRAKE_STRENGTH_DEFAULT    60   /* [%] Brake force in quick brake zone */

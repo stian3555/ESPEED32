@@ -7,6 +7,7 @@
 #include <Update.h>
 #include <esp_mac.h>
 #include <esp_random.h>
+#include <esp_wifi.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <mbedtls/base64.h>
@@ -41,6 +42,7 @@ static uint32_t g_wifiRestartAtMs = 0;
 static uint16_t g_wifiConfiguredMode = WIFI_CONFIG_AP;
 static uint8_t g_wifiActiveMode = WIFI_PORTAL_OFF;
 static bool g_wifiApFallbackActive = false;
+static wl_status_t g_wifiLastConnectStatus = WL_IDLE_STATUS;
 static char g_wifiClientSsid[WIFI_STA_SSID_MAX_LEN + 1] = "";
 static char g_wifiClientPassword[WIFI_STA_PASS_MAX_LEN + 1] = "";
 static const size_t UI_AUTH_USER_MAX_LEN = 31;
@@ -1932,6 +1934,7 @@ static bool g_otaInProgress = false;
 static bool g_otaTargetSpiffs = false;
 static bool g_otaSessionOk = false;
 static bool g_otaRestartRequested = true;
+static int8_t g_otaPrevTxPower = 0;
 static bool g_otaRestartDeferredPending = false;
 static uint32_t g_otaRestartDeferredUntilMs = 0;
 static uint32_t g_otaLastUiUpdateMs = 0;
@@ -3242,6 +3245,12 @@ static void handleOtaUpload() {
       g_spiffsMounted = false;
     }
 
+    /* Boost WiFi TX power for the duration of the upload. In STA (home WiFi)
+     * mode this helps maintain a stable connection during the large transfer.
+     * The previous value is saved and restored at END/ABORTED. */
+    esp_wifi_get_max_tx_power(&g_otaPrevTxPower);
+    esp_wifi_set_max_tx_power(84); /* 84 * 0.25 dBm = 21 dBm (maximum) */
+
 #if defined(U_SPIFFS)
     int updateCommand = g_otaTargetSpiffs ? U_SPIFFS : U_FLASH;
 #else
@@ -3253,7 +3262,13 @@ static void handleOtaUpload() {
     }
 #endif
 
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateCommand)) {
+    /* Use the binary size sent by the UI if available so Update.begin()
+     * allocates the exact partition space instead of UPDATE_SIZE_UNKNOWN.
+     * Falls back to UPDATE_SIZE_UNKNOWN if the header is absent, non-positive,
+     * or otherwise invalid. */
+    long binarySizeSigned = g_wifiServer->header("X-Binary-Size").toInt();
+    size_t binarySize = (binarySizeSigned > 0) ? static_cast<size_t>(binarySizeSigned) : 0;
+    if (!Update.begin(binarySize > 0 ? binarySize : UPDATE_SIZE_UNKNOWN, updateCommand)) {
       g_otaSessionOk = false;
       g_otaInProgress = false;
     }
@@ -3280,6 +3295,7 @@ static void handleOtaUpload() {
     }
 
   } else if (upload.status == UPLOAD_FILE_END) {
+    esp_wifi_set_max_tx_power(g_otaPrevTxPower);
     bool otaOk = g_otaSessionOk && Update.end(true);
     if (otaOk) {
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -3298,6 +3314,7 @@ static void handleOtaUpload() {
     }
     g_otaInProgress = false;
   } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    esp_wifi_set_max_tx_power(g_otaPrevTxPower);
     Update.abort();
     g_otaSessionOk = false;
     g_otaInProgress = false;
@@ -3974,6 +3991,11 @@ static void registerWebRoutes() {
   g_wifiServer->on("/ota-spiffs", HTTP_POST,
                    []() { if (!requireControllerAuth()) return; handleOta(); },
                    []() { if (!requireControllerAuth()) return; handleOtaUpload(); });
+
+  /* Collect the binary size header sent by the UI so Update.begin() can
+   * allocate the exact partition space needed instead of UPDATE_SIZE_UNKNOWN. */
+  static const char* kOtaCollectHeaders[] = {"X-Binary-Size"};
+  g_wifiServer->collectHeaders(kOtaCollectHeaders, 1);
 }
 
 bool isWiFiPortalActive() {
@@ -4027,6 +4049,15 @@ static bool startWiFiHomeTransportAttempt() {
   WiFi.setAutoReconnect(true);
   WiFi.setHostname(g_wifiHostName);
   delay(50);
+  /* Boost TX power before connecting — STA mode needs more power than AP mode
+   * to reach a distant router. Reverts to default on WiFi.mode(WIFI_OFF). */
+  esp_wifi_set_max_tx_power(84); /* 84 * 0.25 dBm = 21 dBm (maximum) */
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, centerX8x8("Connecting..."), 0, (char*)"Connecting...", FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)"SSID:", FONT_6x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)g_wifiClientSsid, FONT_6x8, OBD_BLACK, 1);
+
   WiFi.begin(g_wifiClientSsid, g_wifiClientPassword);
 
   uint32_t startedAt = millis();
@@ -4041,7 +4072,8 @@ static bool startWiFiHomeTransportAttempt() {
     delay(100);
   }
 
-  if (WiFi.status() != WL_CONNECTED) {
+  g_wifiLastConnectStatus = WiFi.status();
+  if (g_wifiLastConnectStatus != WL_CONNECTED) {
     WiFi.disconnect(true, false, 250);
     WiFi.mode(WIFI_OFF);
     delay(120);
@@ -4107,6 +4139,18 @@ bool startWiFiPortal() {
 
   if (!networkReady) {
     g_wifiApFallbackActive = (g_wifiConfiguredMode == WIFI_CONFIG_HOME);
+    if (g_wifiApFallbackActive) {
+      const char* reason = (g_wifiLastConnectStatus == WL_CONNECT_FAILED)
+                             ? "Wrong password?"
+                             : "Router unreachable";
+      obdFill(&g_obd, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, centerX8x8("WiFi failed"), 0, (char*)"WiFi failed", FONT_8x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)reason, FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Switching to AP", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, (char*)"mode. Retrying", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"later.", FONT_6x8, OBD_BLACK, 1);
+      delay(2500);
+    }
     networkReady = startWiFiApTransport();
   }
 
@@ -4124,7 +4168,7 @@ void serviceWiFiPortal() {
 }
 
 void serviceConnectivityPortal() {
-  serviceWiFiPortal();
+  /* serviceWiFiPortal() is handled by the dedicated WiFiTask in ESPEED32.ino */
   serviceUsbSerialCommands();
   isOtaDeferredRestartActive();
   if (g_wifiRestartPending && !isOtaInProgress() &&

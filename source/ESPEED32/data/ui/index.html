@@ -1303,7 +1303,7 @@ form{margin:0}
 <div id="fw-backup-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="fw-backup-modal-title" aria-describedby="fw-backup-modal-text">
 <div class="modal-card">
 <h3 id="fw-backup-modal-title">Backup Config Before Update?</h3>
-<p id="fw-backup-modal-text">Recommended: download a config backup before installing a firmware + filesystem pair, so restore is easier if settings change or something goes wrong.</p>
+<p id="fw-backup-modal-text">Recommended: download a config backup before installing a firmware + filesystem pair, so restore is easier if settings change or something goes wrong. The update will start automatically once the backup is downloaded.</p>
 <div class="modal-actions">
 <button type="button" class="btn dl" id="btn-fw-backup-modal-download">Download Config Backup</button>
 <button type="button" class="btn ota" id="btn-fw-backup-modal-continue">Continue Update Without Backup</button>
@@ -4072,13 +4072,20 @@ async function doBackup(statusId){
     return;
   }
   if(!usb){
-    ss(statusId,'','Starting backup download...');
-    var a=document.createElement('a');
-    a.href='/backup';
-    a.download=fn;
-    a.click();
-    markBackupDownloadedThisSession();
-    ss(statusId,'ok','Backup download started');
+    ss(statusId,'','Downloading backup...');
+    try{
+      var resp=await fetch('/backup');
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      var blob=await resp.blob();
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=fn;
+      a.click();
+      markBackupDownloadedThisSession();
+      ss(statusId,'ok','Backup downloaded');
+    }catch(e){
+      ss(statusId,'err','Backup failed: '+e.message);
+    }
     return;
   }
   ss(statusId,'','Reading backup...');
@@ -4500,7 +4507,7 @@ async function downloadBinaryWithProgress(url,progressPrefix,defaultName){
   return {blob:new Blob(chunks,{type:'application/octet-stream'}),fileName:fileName};
 }
 
-function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
+function attemptUploadOnce(endpoint,blob,fileName,progressPrefix){
   return new Promise(function(resolve,reject){
     var xhr=new XMLHttpRequest();
     var lastPercent=0;
@@ -4518,10 +4525,7 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
     };
 
     xhr.onload=function(){
-      resolve({
-        status:xhr.status,
-        text:String(xhr.responseText||'')
-      });
+      resolve({status:xhr.status,text:String(xhr.responseText||'')});
     };
 
     xhr.onerror=function(){
@@ -4532,18 +4536,35 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
       }
     };
 
-    xhr.onabort=function(){
-      reject(new Error('Upload aborted'));
-    };
-
-    xhr.ontimeout=function(){
-      reject(new Error('Upload timed out'));
-    };
+    xhr.onabort=function(){reject(new Error('Upload aborted'));};
+    xhr.ontimeout=function(){reject(new Error('Upload timed out'));};
 
     var fd=new FormData();
     fd.append('file',blob,fileName||'update.bin');
+    xhr.setRequestHeader('X-Binary-Size',String(blob.size));
     xhr.send(fd);
   });
+}
+
+async function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix,maxRetries){
+  if(maxRetries===undefined) maxRetries=3;
+  var lastErr=null;
+  for(var attempt=1;attempt<=maxRetries;attempt++){
+    if(attempt>1){
+      setProgress(progressPrefix,'Retrying upload (attempt '+attempt+'/'+maxRetries+')...',0);
+    }
+    try{
+      return await attemptUploadOnce(endpoint,blob,fileName,progressPrefix);
+    }catch(e){
+      lastErr=e;
+      var msg=String(e&&e.message||'');
+      if(msg.indexOf('Device may still be updating')!==-1) throw e;
+      if(attempt>=maxRetries) break;
+      setProgress(progressPrefix,'Upload dropped (attempt '+attempt+'/'+maxRetries+'). Retrying in 5s...',null);
+      await sleepMs(5000);
+    }
+  }
+  throw lastErr;
 }
 
 function sleepMs(ms){
@@ -4671,6 +4692,7 @@ async function runCombinedOtaUpdate(config){
 
     if(hasSpiffs){
       activeStage='spiffs-download';
+      ss(config.statusId,'','Firmware staged. Downloading filesystem...');
       var spiffsPayload=await resolveOtaBinary(config.spiffs);
 
       activeStage='spiffs-upload';
@@ -4687,8 +4709,18 @@ async function runCombinedOtaUpdate(config){
     activeStage='final-restart';
     await waitForControllerReturn(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'),
                                   config.statusId);
-    ss(config.statusId,'ok',(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'))+' complete. Reloading page...');
-    setTimeout(function(){ location.reload(); }, 1200);
+    var _otaLabel=(hasFirmware && hasSpiffs ? 'Update pair' : (hasSpiffs ? 'Filesystem update' : 'Firmware update'));
+    var _otaSec=8;
+    ss(config.statusId,'ok',_otaLabel+' complete. Reloading in '+_otaSec+'s — giving the controller time to stabilize.');
+    var _otaCountdown=setInterval(function(){
+      _otaSec--;
+      if(_otaSec>0){
+        ss(config.statusId,'ok',_otaLabel+' complete. Reloading in '+_otaSec+'s — giving the controller time to stabilize.');
+      }else{
+        clearInterval(_otaCountdown);
+        location.reload();
+      }
+    },1000);
   }catch(e){
     var errMsg=(e&&e.message)?e.message:String(e);
     errMsg=describeOtaFailure(errMsg,!!config.usedDownloadService);
@@ -4801,7 +4833,7 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('btn-fw-backup-modal-download').onclick=async function(){
   await doBackup(otaBackupPromptStatusId);
-  if(backupDownloadedThisSession) closeFirmwareBackupPrompt(false);
+  if(backupDownloadedThisSession) closeFirmwareBackupPrompt(true);
 };
 
 document.getElementById('btn-fw-backup-modal-continue').onclick=function(){

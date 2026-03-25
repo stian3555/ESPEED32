@@ -4534,6 +4534,7 @@ function attemptUploadOnce(endpoint,blob,fileName,progressPrefix){
 
     var fd=new FormData();
     fd.append('file',blob,fileName||'update.bin');
+    xhr.setRequestHeader('X-Binary-Size',String(blob.size));
     xhr.send(fd);
   });
 }

@@ -7,6 +7,7 @@
 #include <Update.h>
 #include <esp_mac.h>
 #include <esp_random.h>
+#include <esp_wifi.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <mbedtls/base64.h>
@@ -3242,6 +3243,10 @@ static void handleOtaUpload() {
       g_spiffsMounted = false;
     }
 
+    /* Boost WiFi TX power for the duration of the upload. In STA (home WiFi)
+     * mode this helps maintain a stable connection during the large transfer. */
+    esp_wifi_set_max_tx_power(84); /* 84 * 0.25 dBm = 21 dBm (maximum) */
+
 #if defined(U_SPIFFS)
     int updateCommand = g_otaTargetSpiffs ? U_SPIFFS : U_FLASH;
 #else
@@ -3253,7 +3258,11 @@ static void handleOtaUpload() {
     }
 #endif
 
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN, updateCommand)) {
+    /* Use the binary size sent by the UI if available so Update.begin()
+     * allocates the exact partition space instead of UPDATE_SIZE_UNKNOWN.
+     * Falls back to UPDATE_SIZE_UNKNOWN if the header is absent or zero. */
+    size_t binarySize = (size_t)g_wifiServer->header("X-Binary-Size").toInt();
+    if (!Update.begin(binarySize > 0 ? binarySize : UPDATE_SIZE_UNKNOWN, updateCommand)) {
       g_otaSessionOk = false;
       g_otaInProgress = false;
     }
@@ -3974,6 +3983,11 @@ static void registerWebRoutes() {
   g_wifiServer->on("/ota-spiffs", HTTP_POST,
                    []() { if (!requireControllerAuth()) return; handleOta(); },
                    []() { if (!requireControllerAuth()) return; handleOtaUpload(); });
+
+  /* Collect the binary size header sent by the UI so Update.begin() can
+   * allocate the exact partition space needed instead of UPDATE_SIZE_UNKNOWN. */
+  static const char* kOtaCollectHeaders[] = {"X-Binary-Size"};
+  g_wifiServer->collectHeaders(kOtaCollectHeaders, 1);
 }
 
 bool isWiFiPortalActive() {

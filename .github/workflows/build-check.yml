@@ -16,6 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache arduino-cli packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.arduino15
+          key: arduino-esp32-${{ hashFiles('source/ESPEED32/*.ino') }}
+          restore-keys: arduino-esp32-
+
       - name: Setup arduino-cli
         uses: arduino/setup-arduino-cli@v2
 
@@ -27,6 +34,13 @@ jobs:
           arduino-cli core install esp32:esp32
           arduino-cli lib update-index
           arduino-cli lib install "OneBitDisplay" "Ai Esp32 Rotary Encoder"
+
+      - name: Lint with arduino-lint
+        uses: arduino/arduino-lint-action@v1
+        with:
+          path: source/ESPEED32
+          library-manager: skip
+          compliance: specification
 
       - name: Compile firmware
         shell: bash

@@ -1,0 +1,77 @@
+name: Bug Report
+description: Something is not working as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill in as much as you can. Firmware version and FS/UI version are shown under **SETTINGS → ABOUT** on the controller.
+
+  - type: input
+    id: firmware_version
+    attributes:
+      label: Firmware version
+      description: Shown as "Firmware" under SETTINGS → ABOUT
+      placeholder: "6.5"
+    validations:
+      required: true
+
+  - type: input
+    id: spiffs_version
+    attributes:
+      label: FS/UI version
+      description: Shown as "FS/UI" under SETTINGS → ABOUT
+      placeholder: "6.5"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: wifi_mode
+    attributes:
+      label: WiFi mode
+      options:
+        - AP (access point)
+        - Client
+        - WiFi not involved
+    validations:
+      required: true
+
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: Trigger sensor
+      options:
+        - TLE493D (default)
+        - AS5600 / AS5600L
+        - MT6701
+        - Analog potentiometer
+        - Not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem clearly. Include what you expected to happen and what actually happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Set ... to ...
+        3. See error
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or photos
+      description: Attach photos of the OLED screen, browser error, or SETTINGS → ABOUT if relevant.
+    validations:
+      required: false

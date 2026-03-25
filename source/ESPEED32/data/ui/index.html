@@ -4500,7 +4500,7 @@ async function downloadBinaryWithProgress(url,progressPrefix,defaultName){
   return {blob:new Blob(chunks,{type:'application/octet-stream'}),fileName:fileName};
 }
 
-function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
+function attemptUploadOnce(endpoint,blob,fileName,progressPrefix){
   return new Promise(function(resolve,reject){
     var xhr=new XMLHttpRequest();
     var lastPercent=0;
@@ -4518,10 +4518,7 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
     };
 
     xhr.onload=function(){
-      resolve({
-        status:xhr.status,
-        text:String(xhr.responseText||'')
-      });
+      resolve({status:xhr.status,text:String(xhr.responseText||'')});
     };
 
     xhr.onerror=function(){
@@ -4532,18 +4529,34 @@ function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix){
       }
     };
 
-    xhr.onabort=function(){
-      reject(new Error('Upload aborted'));
-    };
-
-    xhr.ontimeout=function(){
-      reject(new Error('Upload timed out'));
-    };
+    xhr.onabort=function(){reject(new Error('Upload aborted'));};
+    xhr.ontimeout=function(){reject(new Error('Upload timed out'));};
 
     var fd=new FormData();
     fd.append('file',blob,fileName||'update.bin');
     xhr.send(fd);
   });
+}
+
+async function uploadBinaryWithProgress(endpoint,blob,fileName,progressPrefix,maxRetries){
+  if(maxRetries===undefined) maxRetries=3;
+  var lastErr=null;
+  for(var attempt=1;attempt<=maxRetries;attempt++){
+    if(attempt>1){
+      setProgress(progressPrefix,'Retrying upload (attempt '+attempt+'/'+maxRetries+')...',0);
+    }
+    try{
+      return await attemptUploadOnce(endpoint,blob,fileName,progressPrefix);
+    }catch(e){
+      lastErr=e;
+      var msg=String(e&&e.message||'');
+      if(msg.indexOf('Device may still be updating')!==-1) throw e;
+      if(attempt>=maxRetries) break;
+      setProgress(progressPrefix,'Upload dropped (attempt '+attempt+'/'+maxRetries+'). Retrying in 5s...',null);
+      await sleepMs(5000);
+    }
+  }
+  throw lastErr;
 }
 
 function sleepMs(ms){

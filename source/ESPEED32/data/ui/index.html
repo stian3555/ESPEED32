@@ -1303,7 +1303,7 @@ form{margin:0}
 <div id="fw-backup-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="fw-backup-modal-title" aria-describedby="fw-backup-modal-text">
 <div class="modal-card">
 <h3 id="fw-backup-modal-title">Backup Config Before Update?</h3>
-<p id="fw-backup-modal-text">Recommended: download a config backup before installing a firmware + filesystem pair, so restore is easier if settings change or something goes wrong.</p>
+<p id="fw-backup-modal-text">Recommended: download a config backup before installing a firmware + filesystem pair, so restore is easier if settings change or something goes wrong. The update will start automatically once the backup is downloaded.</p>
 <div class="modal-actions">
 <button type="button" class="btn dl" id="btn-fw-backup-modal-download">Download Config Backup</button>
 <button type="button" class="btn ota" id="btn-fw-backup-modal-continue">Continue Update Without Backup</button>
@@ -4801,7 +4801,7 @@ document.getElementById('uf').onsubmit=async function(e){
 
 document.getElementById('btn-fw-backup-modal-download').onclick=async function(){
   await doBackup(otaBackupPromptStatusId);
-  if(backupDownloadedThisSession) closeFirmwareBackupPrompt(false);
+  if(backupDownloadedThisSession) closeFirmwareBackupPrompt(true);
 };
 
 document.getElementById('btn-fw-backup-modal-continue').onclick=function(){

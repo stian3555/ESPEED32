@@ -620,16 +620,44 @@ function fetchLatestRelease(){
       if(!latest && list.length) latest=list[0];
       if(!latest) return;
       var tag=String(latest.tag||latest.version||'').trim();
-      var url=String(latest.source||'').trim()||('https://github.com/nerdweeg/ESPEED32/releases/tag/'+encodeURIComponent(tag));
+      var defaultUrl='https://github.com/nerdweeg/ESPEED32/releases/tag/'+encodeURIComponent(tag);
       if(!tag) return;
+      var rawUrl=String(latest.source||'').trim();
+      var safeUrl=null;
+      if(rawUrl){
+        try{
+          var parsed=new URL(rawUrl, window.location.origin);
+          if(parsed.protocol==='https:'||parsed.protocol==='http:'){
+            safeUrl=parsed.href;
+          }
+        }catch(e){}
+      }
+      if(!safeUrl){
+        safeUrl=defaultUrl;
+      }
 
       var badge=document.getElementById('release-badge');
       if(badge){
-        badge.innerHTML='Latest release: <a href="'+url+'" target="_blank" rel="noopener">'+tag+'</a>';
+        while(badge.firstChild){badge.removeChild(badge.firstChild);}
+        badge.appendChild(document.createTextNode('Latest release: '));
+        var badgeLink=document.createElement('a');
+        badgeLink.setAttribute('href', safeUrl);
+        badgeLink.setAttribute('target', '_blank');
+        badgeLink.setAttribute('rel', 'noopener');
+        badgeLink.textContent=tag;
+        badge.appendChild(badgeLink);
       }
       var resEl=document.getElementById('resources-release');
       if(resEl){
-        resEl.innerHTML='Latest release: <a href="'+url+'" target="_blank" rel="noopener">'+tag+'</a> &mdash; see GitHub for changelog and download links.';
+        while(resEl.firstChild){resEl.removeChild(resEl.firstChild);}
+        resEl.appendChild(document.createTextNode('Latest release: '));
+        var resLink=document.createElement('a');
+        resLink.setAttribute('href', safeUrl);
+        resLink.setAttribute('target', '_blank');
+        resLink.setAttribute('rel', 'noopener');
+        resLink.textContent=tag;
+        resEl.appendChild(resLink);
+        resEl.appendChild(document.createTextNode(' \u2014 see GitHub for changelog and download links.'));
       }
     })
     .catch(function(){});

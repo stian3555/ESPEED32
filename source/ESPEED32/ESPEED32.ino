@@ -470,6 +470,10 @@ void setup() {
   /* HalfBridge & Hardware Setup */
   HalfBridge_Setup();
 
+  /* Mark this firmware as valid unconditionally so the ESP32 bootloader
+   * does not roll back regardless of stored-var migration state. */
+  esp_ota_mark_app_valid_cancel_rollback();
+
   /* Create FreeRTOS Tasks */
   /* Task 1: UI and state machine (low priority, core 0) */
   xTaskCreatePinnedToCore(
@@ -635,12 +639,6 @@ void Task1code(void *pvParameters) {
             }
 
             g_pref.end(); /* Close the namespace */
-
-            /* Mark this firmware as valid so the ESP32 bootloader does not roll
-             * back to the previous image on the next reboot. Safe to call even
-             * when no OTA partition is in a pending-verify state. */
-            esp_ota_mark_app_valid_cancel_rollback();
-
             break;        /* Break the switch case: if code reaches here, it means that the stored user param and sw versions are OK */
           }
         }

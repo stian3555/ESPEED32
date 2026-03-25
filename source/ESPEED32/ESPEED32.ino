@@ -496,16 +496,17 @@ void setup() {
     &Task2,      /* Task handle */
     1);          /* Core 1 */
 
-  /* WiFiTask: web server client handling (lowest priority, core 0).
+  /* WiFiTask: web server client handling (same priority as Task1, core 0).
    * Pinned to Core 0 alongside Task1 — FreeRTOS runs only one at a time so
-   * no mutex is needed. Priority 0 ensures it only runs in Task1's vTaskDelay
-   * gaps and never blocks the encoder or state machine. */
+   * no mutex is needed. Equal priority means FreeRTOS time-slices them, giving
+   * WiFiTask enough CPU for fast OTA transfers while keeping encoder responsive
+   * (each task gets ~1 tick per slice instead of WiFiTask being starved). */
   xTaskCreatePinnedToCore(
     WiFiTaskcode, /* Task function */
     "WiFiTask",   /* Task name */
     8192,         /* Stack size (larger than Task1: handles HTTP file serving) */
     NULL,         /* Parameters */
-    0,            /* Priority 0 — lowest, yields to Task1 (priority 1) */
+    1,            /* Priority 1 — same as Task1, time-sliced fairly */
     &WiFiTask,    /* Task handle */
     0);           /* Core 0 — same core as Task1, safe without mutex */
 }

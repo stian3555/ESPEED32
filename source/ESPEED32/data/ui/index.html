@@ -4692,6 +4692,7 @@ async function runCombinedOtaUpdate(config){
 
     if(hasSpiffs){
       activeStage='spiffs-download';
+      ss(config.statusId,'','Firmware staged. Downloading filesystem...');
       var spiffsPayload=await resolveOtaBinary(config.spiffs);
 
       activeStage='spiffs-upload';

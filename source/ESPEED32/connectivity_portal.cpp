@@ -4048,6 +4048,9 @@ static bool startWiFiHomeTransportAttempt() {
   WiFi.setAutoReconnect(true);
   WiFi.setHostname(g_wifiHostName);
   delay(50);
+  /* Boost TX power before connecting — STA mode needs more power than AP mode
+   * to reach a distant router. Reverts to default on WiFi.mode(WIFI_OFF). */
+  esp_wifi_set_max_tx_power(84); /* 84 * 0.25 dBm = 21 dBm (maximum) */
   WiFi.begin(g_wifiClientSsid, g_wifiClientPassword);
 
   uint32_t startedAt = millis();
@@ -4128,6 +4131,15 @@ bool startWiFiPortal() {
 
   if (!networkReady) {
     g_wifiApFallbackActive = (g_wifiConfiguredMode == WIFI_CONFIG_HOME);
+    if (g_wifiApFallbackActive) {
+      obdFill(&g_obd, OBD_WHITE, 1);
+      obdWriteString(&g_obd, 0, centerX8x8("WiFi failed"), 0, (char*)"WiFi failed", FONT_8x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"Could not connect.", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Switching to AP", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, (char*)"mode. Retrying", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"later.", FONT_6x8, OBD_BLACK, 1);
+      delay(2500);
+    }
     networkReady = startWiFiApTransport();
   }
 

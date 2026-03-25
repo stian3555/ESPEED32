@@ -4072,13 +4072,20 @@ async function doBackup(statusId){
     return;
   }
   if(!usb){
-    ss(statusId,'','Starting backup download...');
-    var a=document.createElement('a');
-    a.href='/backup';
-    a.download=fn;
-    a.click();
-    markBackupDownloadedThisSession();
-    ss(statusId,'ok','Backup download started');
+    ss(statusId,'','Downloading backup...');
+    try{
+      var resp=await fetch('/backup');
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      var blob=await resp.blob();
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=fn;
+      a.click();
+      markBackupDownloadedThisSession();
+      ss(statusId,'ok','Backup downloaded');
+    }catch(e){
+      ss(statusId,'err','Backup failed: '+e.message);
+    }
     return;
   }
   ss(statusId,'','Reading backup...');

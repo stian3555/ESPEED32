@@ -1933,6 +1933,7 @@ static bool g_otaInProgress = false;
 static bool g_otaTargetSpiffs = false;
 static bool g_otaSessionOk = false;
 static bool g_otaRestartRequested = true;
+static int8_t g_otaPrevTxPower = 0;
 static bool g_otaRestartDeferredPending = false;
 static uint32_t g_otaRestartDeferredUntilMs = 0;
 static uint32_t g_otaLastUiUpdateMs = 0;
@@ -3244,7 +3245,9 @@ static void handleOtaUpload() {
     }
 
     /* Boost WiFi TX power for the duration of the upload. In STA (home WiFi)
-     * mode this helps maintain a stable connection during the large transfer. */
+     * mode this helps maintain a stable connection during the large transfer.
+     * The previous value is saved and restored at END/ABORTED. */
+    esp_wifi_get_max_tx_power(&g_otaPrevTxPower);
     esp_wifi_set_max_tx_power(84); /* 84 * 0.25 dBm = 21 dBm (maximum) */
 
 #if defined(U_SPIFFS)
@@ -3260,8 +3263,10 @@ static void handleOtaUpload() {
 
     /* Use the binary size sent by the UI if available so Update.begin()
      * allocates the exact partition space instead of UPDATE_SIZE_UNKNOWN.
-     * Falls back to UPDATE_SIZE_UNKNOWN if the header is absent or zero. */
-    size_t binarySize = (size_t)g_wifiServer->header("X-Binary-Size").toInt();
+     * Falls back to UPDATE_SIZE_UNKNOWN if the header is absent, non-positive,
+     * or otherwise invalid. */
+    long binarySizeSigned = g_wifiServer->header("X-Binary-Size").toInt();
+    size_t binarySize = (binarySizeSigned > 0) ? static_cast<size_t>(binarySizeSigned) : 0;
     if (!Update.begin(binarySize > 0 ? binarySize : UPDATE_SIZE_UNKNOWN, updateCommand)) {
       g_otaSessionOk = false;
       g_otaInProgress = false;
@@ -3289,6 +3294,7 @@ static void handleOtaUpload() {
     }
 
   } else if (upload.status == UPLOAD_FILE_END) {
+    esp_wifi_set_max_tx_power(g_otaPrevTxPower);
     bool otaOk = g_otaSessionOk && Update.end(true);
     if (otaOk) {
       obdFill(&g_obd, OBD_WHITE, 1);
@@ -3307,6 +3313,7 @@ static void handleOtaUpload() {
     }
     g_otaInProgress = false;
   } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    esp_wifi_set_max_tx_power(g_otaPrevTxPower);
     Update.abort();
     g_otaSessionOk = false;
     g_otaInProgress = false;

@@ -42,6 +42,7 @@ static uint32_t g_wifiRestartAtMs = 0;
 static uint16_t g_wifiConfiguredMode = WIFI_CONFIG_AP;
 static uint8_t g_wifiActiveMode = WIFI_PORTAL_OFF;
 static bool g_wifiApFallbackActive = false;
+static wl_status_t g_wifiLastConnectStatus = WL_IDLE_STATUS;
 static char g_wifiClientSsid[WIFI_STA_SSID_MAX_LEN + 1] = "";
 static char g_wifiClientPassword[WIFI_STA_PASS_MAX_LEN + 1] = "";
 static const size_t UI_AUTH_USER_MAX_LEN = 31;
@@ -4065,7 +4066,8 @@ static bool startWiFiHomeTransportAttempt() {
     delay(100);
   }
 
-  if (WiFi.status() != WL_CONNECTED) {
+  g_wifiLastConnectStatus = WiFi.status();
+  if (g_wifiLastConnectStatus != WL_CONNECTED) {
     WiFi.disconnect(true, false, 250);
     WiFi.mode(WIFI_OFF);
     delay(120);
@@ -4132,9 +4134,12 @@ bool startWiFiPortal() {
   if (!networkReady) {
     g_wifiApFallbackActive = (g_wifiConfiguredMode == WIFI_CONFIG_HOME);
     if (g_wifiApFallbackActive) {
+      const char* reason = (g_wifiLastConnectStatus == WL_CONNECT_FAILED)
+                             ? "Wrong password?"
+                             : "Router unreachable";
       obdFill(&g_obd, OBD_WHITE, 1);
       obdWriteString(&g_obd, 0, centerX8x8("WiFi failed"), 0, (char*)"WiFi failed", FONT_8x8, OBD_BLACK, 1);
-      obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)"Could not connect.", FONT_6x8, OBD_BLACK, 1);
+      obdWriteString(&g_obd, 0, 0, 2 * HEIGHT8x8, (char*)reason, FONT_6x8, OBD_BLACK, 1);
       obdWriteString(&g_obd, 0, 0, 4 * HEIGHT8x8, (char*)"Switching to AP", FONT_6x8, OBD_BLACK, 1);
       obdWriteString(&g_obd, 0, 0, 5 * HEIGHT8x8, (char*)"mode. Retrying", FONT_6x8, OBD_BLACK, 1);
       obdWriteString(&g_obd, 0, 0, 6 * HEIGHT8x8, (char*)"later.", FONT_6x8, OBD_BLACK, 1);

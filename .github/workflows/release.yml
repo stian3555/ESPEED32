@@ -44,7 +44,7 @@ jobs:
           echo "ver=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ steps.meta.outputs.tag }}
           fetch-depth: 0

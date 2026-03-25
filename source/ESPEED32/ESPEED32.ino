@@ -44,6 +44,7 @@
 /* FreeRTOS Task Handles */
 TaskHandle_t Task1;
 TaskHandle_t Task2;
+TaskHandle_t WiFiTask;
 
 /* State Machine */
 StateMachine_enum g_currState = INIT;
@@ -494,6 +495,19 @@ void setup() {
     2,           /* Priority */
     &Task2,      /* Task handle */
     1);          /* Core 1 */
+
+  /* WiFiTask: web server client handling (lowest priority, core 0).
+   * Pinned to Core 0 alongside Task1 — FreeRTOS runs only one at a time so
+   * no mutex is needed. Priority 0 ensures it only runs in Task1's vTaskDelay
+   * gaps and never blocks the encoder or state machine. */
+  xTaskCreatePinnedToCore(
+    WiFiTaskcode, /* Task function */
+    "WiFiTask",   /* Task name */
+    8192,         /* Stack size (larger than Task1: handles HTTP file serving) */
+    NULL,         /* Parameters */
+    0,            /* Priority 0 — lowest, yields to Task1 (priority 1) */
+    &WiFiTask,    /* Task handle */
+    0);           /* Core 0 — same core as Task1, safe without mutex */
 }
 
 void applyAdcVoltageRangeMilliVolts(uint16_t range_mV) {
@@ -943,6 +957,19 @@ void Task1code(void *pvParameters) {
 
     if (g_currState != prevState) /* Every time FSM machine change state */
       obdFill(&g_obd, OBD_WHITE, 1);
+  }
+}
+
+/**
+ * @brief WiFiTask: dedicated web server client handler
+ * @details Calls handleClient() at lowest priority on Core 0 so it only runs
+ *          in Task1's vTaskDelay gaps. This prevents large SPIFFS file transfers
+ *          from blocking the encoder and state machine in Task1.
+ */
+void WiFiTaskcode(void *pvParameters) {
+  for (;;) {
+    serviceWiFiPortal();
+    vTaskDelay(1);
   }
 }
 

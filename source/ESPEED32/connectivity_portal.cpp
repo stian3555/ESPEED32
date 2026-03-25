@@ -4145,7 +4145,7 @@ void serviceWiFiPortal() {
 }
 
 void serviceConnectivityPortal() {
-  serviceWiFiPortal();
+  /* serviceWiFiPortal() is handled by the dedicated WiFiTask in ESPEED32.ino */
   serviceUsbSerialCommands();
   isOtaDeferredRestartActive();
   if (g_wifiRestartPending && !isOtaInProgress() &&

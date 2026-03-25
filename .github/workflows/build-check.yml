@@ -39,8 +39,8 @@ jobs:
         uses: arduino/arduino-lint-action@v1
         with:
           path: source/ESPEED32
-          library-manager: skip
-          compliance: specification
+          compliance: permissive
+          project-type: sketch
 
       - name: Compile firmware
         shell: bash

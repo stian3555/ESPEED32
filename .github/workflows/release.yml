@@ -34,7 +34,14 @@ jobs:
             exit 1
           fi
 
+          # Normalize tag to a plain vX.Y version string for use in filenames.
+          # Strips legacy "espeed_fw_" prefix, then ensures a leading "v".
+          ver="${tag#espeed_fw_}"
+          ver="${ver#v}"
+          ver="v${ver}"
+
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "ver=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -100,10 +107,19 @@ jobs:
           OUT_DIR="${RUNNER_TEMP}/release"
           mkdir -p "$OUT_DIR"
 
-          cp build/ESPEED32.ino.bin "$OUT_DIR/ESPEED32.ino.bin"
-          cp build/espeed32_spiffs.bin "$OUT_DIR/espeed32_spiffs.bin"
+          VER="${{ steps.meta.outputs.ver }}"
+
+          # Firmware filename encodes version, motor driver family, and mag sensor family
+          # so users know exactly what hardware the binary targets.
+          FW_NAME="espeed32-fw-${VER}-btn9960lv-tle493d.bin"
+          SPIFFS_NAME="espeed32-spiffs-${VER}.bin"
+
+          cp build/ESPEED32.ino.bin "$OUT_DIR/${FW_NAME}"
+          cp build/espeed32_spiffs.bin "$OUT_DIR/${SPIFFS_NAME}"
 
           echo "out_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
+          echo "fw_name=${FW_NAME}" >> "$GITHUB_OUTPUT"
+          echo "spiffs_name=${SPIFFS_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

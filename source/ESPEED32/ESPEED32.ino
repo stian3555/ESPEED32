@@ -957,6 +957,8 @@ void Task1code(void *pvParameters) {
 
     if (g_currState != prevState) /* Every time FSM machine change state */
       obdFill(&g_obd, OBD_WHITE, 1);
+
+    vTaskDelay(1); /* Yield to WiFiTask (priority 0) every iteration */
   }
 }
 

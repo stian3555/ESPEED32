@@ -34,7 +34,14 @@ jobs:
             exit 1
           fi
 
+          # Normalize tag to a plain vX.Y version string for use in filenames.
+          # Strips legacy "espeed_fw_" prefix, then ensures a leading "v".
+          ver="${tag#espeed_fw_}"
+          ver="${ver#v}"
+          ver="v${ver}"
+
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "ver=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -50,9 +57,9 @@ jobs:
         run: |
           arduino-cli config init --overwrite
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32
+          arduino-cli core install esp32:esp32@3.3.7
           arduino-cli lib update-index
-          arduino-cli lib install "OneBitDisplay" "Ai Esp32 Rotary Encoder"
+          arduino-cli lib install "OneBitDisplay@3.0.0" "Ai Esp32 Rotary Encoder@1.7.0"
 
       - name: Build firmware
         shell: bash
@@ -65,6 +72,34 @@ jobs:
             --board-options "$BOARD_OPTIONS" \
             --build-path build \
             source/ESPEED32
+
+      - name: Verify version matches tag
+        shell: bash
+        run: |
+          VER="${{ steps.meta.outputs.ver }}"
+          MAJOR="${VER#v}"
+          MINOR="${MAJOR#*.}"
+          MAJOR="${MAJOR%%.*}"
+
+          FILE_MAJOR="$(grep -m1 'SW_MAJOR_VERSION' source/ESPEED32/slot_ESC.h | awk '{print $3}')"
+          FILE_MINOR="$(grep -m1 'SW_MINOR_VERSION' source/ESPEED32/slot_ESC.h | awk '{print $3}')"
+
+          if [[ "$MAJOR" != "$FILE_MAJOR" || "$MINOR" != "$FILE_MINOR" ]]; then
+            echo "Version mismatch: tag is ${VER} but slot_ESC.h defines ${FILE_MAJOR}.${FILE_MINOR}" >&2
+            echo "Update SW_MAJOR_VERSION and SW_MINOR_VERSION in slot_ESC.h before releasing." >&2
+            exit 1
+          fi
+
+          echo "Version OK: ${VER} matches slot_ESC.h"
+
+      - name: Stamp SPIFFS release version
+        shell: bash
+        run: |
+          # Write the version into the SPIFFS data directory before the image
+          # is built so the controller can detect firmware/SPIFFS mismatches.
+          VER="${{ steps.meta.outputs.ver }}"
+          printf '{"spiffsRelease":"%s"}\n' "${VER#v}" \
+            > source/ESPEED32/data/ui/release.json
 
       - name: Build SPIFFS image
         shell: bash
@@ -100,8 +135,21 @@ jobs:
           OUT_DIR="${RUNNER_TEMP}/release"
           mkdir -p "$OUT_DIR"
 
-          cp build/ESPEED32.ino.bin "$OUT_DIR/ESPEED32.ino.bin"
-          cp build/espeed32_spiffs.bin "$OUT_DIR/espeed32_spiffs.bin"
+          VER="${{ steps.meta.outputs.ver }}"
+          TAG="${{ steps.meta.outputs.tag }}"
+
+          # Firmware filename encodes version and mag sensor family (tle493d = default trigger sensor).
+          # SPIFFS is hardware-independent so carries only the version.
+          FW_NAME="espeed32-fw-${VER}-tle493d.bin"
+          SPIFFS_NAME="espeed32-spiffs-${VER}.bin"
+
+          cp build/ESPEED32.ino.bin "$OUT_DIR/${FW_NAME}"
+          cp build/espeed32_spiffs.bin "$OUT_DIR/${SPIFFS_NAME}"
+
+          # Compute SHA256 checksums so the download service and web UI
+          # can verify download integrity before flashing.
+          sha256sum "$OUT_DIR/${FW_NAME}"     | awk '{print $1}' > "$OUT_DIR/${FW_NAME}.sha256"
+          sha256sum "$OUT_DIR/${SPIFFS_NAME}" | awk '{print $1}' > "$OUT_DIR/${SPIFFS_NAME}.sha256"
 
           echo "out_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
 
@@ -115,8 +163,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          name: ESPEED32 ${{ steps.meta.outputs.tag }}
+          name: ESPEED32 ${{ steps.meta.outputs.ver }}
           generate_release_notes: true
           files: |
             ${{ steps.files.outputs.out_dir }}/*
           fail_on_unmatched_files: true
+

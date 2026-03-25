@@ -654,6 +654,38 @@ static bool hasWiFiClientCredentials() {
 }
 
 /* Minimal fallback page if /ui/index.html is missing on SPIFFS */
+static const char SPIFFS_MISMATCH_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPEED32 – Update Required</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:560px;margin:20px auto;padding:0 15px;background:#1a1a2e;color:#eee}
+h1{color:#e94560;margin-bottom:8px}
+code{background:#111;padding:2px 6px;border-radius:4px}
+li{margin:8px 0}
+a{color:#7ed6ff}
+.ver{margin:10px 0;padding:10px 12px;background:#111;border-radius:6px;font-size:14px}
+</style>
+</head>
+<body>
+<h1>Filesystem Update Required</h1>
+<p>The controller is running firmware <code>%FW_VER%</code> but the web UI filesystem is <code>%SPIFFS_VER%</code>.
+These must match. The controller is working normally — only the web UI is affected.</p>
+<div class="ver">Firmware: <code>%FW_VER%</code> &nbsp;|&nbsp; Filesystem/UI: <code>%SPIFFS_VER%</code></div>
+<p><b>Fix: upload the SPIFFS image for firmware %FW_VER%</b></p>
+<form method="POST" action="/ota-spiffs" enctype="multipart/form-data">
+  <input type="file" name="file" accept=".bin" required>
+  <button type="submit" style="margin-left:8px">Upload Filesystem (.bin)</button>
+</form>
+<p>Or use the <a href="https://espeed32.com/ui/index.html?mode=hosted">hosted controller page</a>
+to run an automatic paired update.</p>
+<p><a href="/backup">Download config backup (.json)</a> before updating if you want to be safe.</p>
+</body>
+</html>
+)rawliteral";
+
 static const char UI_FALLBACK_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -760,6 +792,7 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
 
   getBackupControllerId(backupControllerId, sizeof(backupControllerId));
   json += "{\n";
+  json += "  \"schemaVersion\": 1,\n";
   sprintf(buf, "  \"version\": %d,\n", STORED_VAR_VERSION);              json += buf;
   sprintf(buf, "  \"selectedCarNumber\": %u,\n", storedVar.selectedCarNumber); json += buf;
   sprintf(buf, "  \"minTrigger_raw\": %d,\n", storedVar.minTrigger_raw); json += buf;
@@ -1946,6 +1979,31 @@ static const char* getDefaultDocsPath() {
   return getDocsPathForLanguage(g_storedVar.language);
 }
 
+static bool spiffsMatchesFirmware(char* spiffsVerOut, size_t outLen) {
+  char fwVer[16];
+  snprintf(fwVer, sizeof(fwVer), "%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+
+  char release[16];
+  if (!readSpiffsRelease(release, sizeof(release))) {
+    copyBoundedString(spiffsVerOut, outLen, "unknown");
+    return false;
+  }
+  copyBoundedString(spiffsVerOut, outLen, release);
+
+  const char* r = (release[0] == 'v' || release[0] == 'V') ? release + 1 : release;
+  return strcmp(r, fwVer) == 0;
+}
+
+static void sendSpiffsMismatch(const char* spiffsVer) {
+  char fwVer[16];
+  snprintf(fwVer, sizeof(fwVer), "%d.%d", SW_MAJOR_VERSION, SW_MINOR_VERSION);
+
+  String page = FPSTR(SPIFFS_MISMATCH_HTML);
+  page.replace("%FW_VER%", fwVer);
+  page.replace("%SPIFFS_VER%", spiffsVer);
+  g_wifiServer->send(200, "text/html; charset=utf-8", page);
+}
+
 static bool streamFileFromSpiffs(const char* path, const char* contentType) {
   if (!g_spiffsMounted) {
     return false;
@@ -2979,6 +3037,11 @@ static void handleTelemetryExportJson() {
 }
 
 static void handleRoot() {
+  char spiffsVer[16];
+  if (!spiffsMatchesFirmware(spiffsVer, sizeof(spiffsVer))) {
+    sendSpiffsMismatch(spiffsVer);
+    return;
+  }
   if (!streamHtmlFromSpiffs(getPublicUiPath())) {
     sendPublicUiFallback();
   }
@@ -2986,6 +3049,11 @@ static void handleRoot() {
 
 static void handleUi() {
   if (!requireControllerAuth()) {
+    return;
+  }
+  char spiffsVer[16];
+  if (!spiffsMatchesFirmware(spiffsVer, sizeof(spiffsVer))) {
+    sendSpiffsMismatch(spiffsVer);
     return;
   }
   if (!streamHtmlFromSpiffs(getUiPath())) {

@@ -2,6 +2,7 @@
 /*                                                   Includes                                                        */
 /*********************************************************************************************************************/
 #include "slot_ESC.h"
+#include <esp_ota_ops.h>
 #include "HAL.h"
 #include "ui_strings.h"
 #include "ui_text_access.h"
@@ -468,6 +469,10 @@ void setup() {
 
   /* HalfBridge & Hardware Setup */
   HalfBridge_Setup();
+
+  /* Mark this firmware as valid unconditionally so the ESP32 bootloader
+   * does not roll back regardless of stored-var migration state. */
+  esp_ota_mark_app_valid_cancel_rollback();
 
   /* Create FreeRTOS Tasks */
   /* Task 1: UI and state machine (low priority, core 0) */

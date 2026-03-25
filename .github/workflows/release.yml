@@ -118,19 +118,7 @@ jobs:
           cp build/ESPEED32.ino.bin "$OUT_DIR/${FW_NAME}"
           cp build/espeed32_spiffs.bin "$OUT_DIR/${SPIFFS_NAME}"
 
-          # Compute stable GitHub asset download URLs so the download service can
-          # serve canonical paths (/firmware.bin, /releases/{v}/firmware.bin)
-          # regardless of how the underlying asset is named. This is what makes
-          # OTA updates backwards- and forwards-compatible across renames.
-          REPO="nerdweeg/ESPEED32"
-          FW_URL="https://github.com/${REPO}/releases/download/${TAG}/${FW_NAME}"
-          SPIFFS_URL="https://github.com/${REPO}/releases/download/${TAG}/${SPIFFS_NAME}"
-
           echo "out_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
-          echo "fw_name=${FW_NAME}" >> "$GITHUB_OUTPUT"
-          echo "spiffs_name=${SPIFFS_NAME}" >> "$GITHUB_OUTPUT"
-          echo "fw_url=${FW_URL}" >> "$GITHUB_OUTPUT"
-          echo "spiffs_url=${SPIFFS_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -148,54 +136,3 @@ jobs:
             ${{ steps.files.outputs.out_dir }}/*
           fail_on_unmatched_files: true
 
-      - name: Update releases.json in download service
-        shell: bash
-        env:
-          DOWNLOADS_DEPLOY_TOKEN: ${{ secrets.DOWNLOADS_DEPLOY_TOKEN }}
-        run: |
-          VER="${{ steps.meta.outputs.ver }}"
-          TAG="${{ steps.meta.outputs.tag }}"
-          FW_URL="${{ steps.files.outputs.fw_url }}"
-          SPIFFS_URL="${{ steps.files.outputs.spiffs_url }}"
-          PUBLISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-          # Clone the download service repo, inject the new release entry, and push.
-          # The worker serves releases.json as-is, so explicit firmwareUrl/spiffsUrl
-          # here is what keeps OTA working for all UI versions regardless of filename changes.
-          git clone "https://x-access-token:${DOWNLOADS_DEPLOY_TOKEN}@github.com/nerdweeg/espeed32-downloads.git" downloads-repo
-          cd downloads-repo
-
-          node - <<'JS'
-          const fs = require('fs');
-          const path = 'releases.json';
-          const raw = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '{"releases":[]}';
-          const data = JSON.parse(raw);
-          if (!Array.isArray(data.releases)) data.releases = [];
-
-          const ver  = process.env.VER.replace(/^v/, '');
-          const tag  = process.env.TAG;
-          const entry = {
-            version:     ver,
-            tag:         tag,
-            name:        'ESPEED32 ' + tag,
-            publishedAt: process.env.PUBLISHED_AT,
-            source:      'https://github.com/nerdweeg/ESPEED32/releases/tag/' + encodeURIComponent(tag),
-            firmwareUrl: process.env.FW_URL,
-            spiffsUrl:   process.env.SPIFFS_URL,
-          };
-
-          // Replace existing entry for this version or prepend as newest.
-          const idx = data.releases.findIndex(r => String(r.version).replace(/^v/,'') === ver);
-          if (idx >= 0) data.releases[idx] = entry;
-          else data.releases.unshift(entry);
-
-          data.latestVersion = data.releases[0].version;
-          fs.writeFileSync(path, JSON.stringify(data, null, 2) + '\n');
-          console.log('Updated releases.json for', ver);
-          JS
-
-          git config user.email "ci@espeed32.com"
-          git config user.name "ESPEED32 CI"
-          git add releases.json
-          git commit -m "release: add ${VER} to releases.json"
-          git push

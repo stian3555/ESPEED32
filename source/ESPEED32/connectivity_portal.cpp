@@ -4052,6 +4052,11 @@ static bool startWiFiHomeTransportAttempt() {
   /* Boost TX power before connecting — STA mode needs more power than AP mode
    * to reach a distant router. Reverts to default on WiFi.mode(WIFI_OFF). */
   esp_wifi_set_max_tx_power(84); /* 84 * 0.25 dBm = 21 dBm (maximum) */
+
+  obdFill(&g_obd, OBD_WHITE, 1);
+  obdWriteString(&g_obd, 0, centerX8x8("Connecting..."), 0, (char*)"Connecting...", FONT_8x8, OBD_BLACK, 1);
+  obdWriteString(&g_obd, 0, 0, 3 * HEIGHT8x8, (char*)g_wifiClientSsid, FONT_6x8, OBD_BLACK, 1);
+
   WiFi.begin(g_wifiClientSsid, g_wifiClientPassword);
 
   uint32_t startedAt = millis();

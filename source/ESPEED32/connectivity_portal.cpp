@@ -792,6 +792,7 @@ static String buildJsonBackupFromConfig(const StoredVar_type& storedVar,
 
   getBackupControllerId(backupControllerId, sizeof(backupControllerId));
   json += "{\n";
+  json += "  \"schemaVersion\": 1,\n";
   sprintf(buf, "  \"version\": %d,\n", STORED_VAR_VERSION);              json += buf;
   sprintf(buf, "  \"selectedCarNumber\": %u,\n", storedVar.selectedCarNumber); json += buf;
   sprintf(buf, "  \"minTrigger_raw\": %d,\n", storedVar.minTrigger_raw); json += buf;

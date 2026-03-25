@@ -284,3 +284,41 @@ The docs include:
    - or terminal: `./scripts/upload_spiffs.sh`
    - optional: purge SPIFFS region first: `./scripts/upload_spiffs.sh --purge` (asks for confirmation)
 3. Open `http://192.168.4.1/docs` while the controller is in WiFi mode.
+
+## Troubleshooting
+
+### Web UI shows a blank page or 404 after firmware update
+
+The firmware and filesystem (SPIFFS) must match. If you updated firmware only, the old SPIFFS is serving stale files.
+
+Check `SETTINGS → ABOUT` on the controller:
+- **Firmware** and **FS/UI** should show the same version number.
+- If they differ, flash the SPIFFS image for the same release as the firmware.
+
+The easiest fix is to use the automatic paired update in the Manage Controller page, which flashes both in one go.
+
+### Current sense always reads zero with IBT-2 / BTS7960
+
+The IBT-2 module does not include a sense resistor. The BTS7960 IS pin is a current output, not a voltage — connecting it directly to the ESP32 ADC gives nothing to measure.
+
+Add a resistor externally:
+
+```
+IBT-2 IS_R pin → 1 kΩ → GND
+                     ↑
+                 GPIO25
+```
+
+Compile with `CURRENT_SENSE_PROFILE=CURRENT_SENSE_PROFILE_BTS7960`. The default tuning assumes a 1 kΩ sense resistor. Values may need tuning for your specific module — see [Motor Current Sense Profiles](#motor-current-sense-profiles).
+
+### WiFi page loads but controller panel or docs return 404
+
+Try these paths in order and note which ones work:
+
+- `http://<ip>/` — public landing page
+- `http://<ip>/docs` — user guide
+- `http://<ip>/ui` — controller panel (requires login)
+
+If `/` works but `/ui` does not, check that you are using the correct login. Default credentials are `espeed32 / espeed32` unless changed. The current password is always shown on the controller WiFi info screen.
+
+If none of the paths load, the IP shown on the OLED is the most reliable address to use — avoid saved bookmarks or mDNS hostnames until basic connectivity is confirmed.

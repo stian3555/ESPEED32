@@ -1,0 +1,38 @@
+name: Firmware Compile Check
+
+on:
+  push:
+    branches:
+      - main
+      - "v*"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 core and libraries
+        shell: bash
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          arduino-cli lib update-index
+          arduino-cli lib install "OneBitDisplay" "Ai Esp32 Rotary Encoder"
+
+      - name: Compile firmware
+        shell: bash
+        run: |
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32 \
+            --board-options "JTAGAdapter=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none,ZigbeeMode=default" \
+            --build-path /tmp/build-check \
+            source/ESPEED32

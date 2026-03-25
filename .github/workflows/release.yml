@@ -73,6 +73,15 @@ jobs:
             --build-path build \
             source/ESPEED32
 
+      - name: Stamp SPIFFS release version
+        shell: bash
+        run: |
+          # Write the version into the SPIFFS data directory before the image
+          # is built so the controller can detect firmware/SPIFFS mismatches.
+          VER="${{ steps.meta.outputs.ver }}"
+          printf '{"spiffsRelease":"%s"}\n' "${VER#v}" \
+            > source/ESPEED32/data/ui/release.json
+
       - name: Build SPIFFS image
         shell: bash
         run: |
@@ -117,6 +126,11 @@ jobs:
 
           cp build/ESPEED32.ino.bin "$OUT_DIR/${FW_NAME}"
           cp build/espeed32_spiffs.bin "$OUT_DIR/${SPIFFS_NAME}"
+
+          # Compute SHA256 checksums so the download service and web UI
+          # can verify download integrity before flashing.
+          sha256sum "$OUT_DIR/${FW_NAME}"     | awk '{print $1}' > "$OUT_DIR/${FW_NAME}.sha256"
+          sha256sum "$OUT_DIR/${SPIFFS_NAME}" | awk '{print $1}' > "$OUT_DIR/${SPIFFS_NAME}.sha256"
 
           echo "out_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
 

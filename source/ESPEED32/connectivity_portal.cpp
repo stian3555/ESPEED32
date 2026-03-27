@@ -2028,6 +2028,9 @@ static bool streamFileFromSpiffs(const char* path, const char* contentType) {
 }
 
 static bool streamHtmlFromSpiffs(const char* path) {
+  /* Prevent browsers from caching HTML pages so stale UI is never served
+   * after a SPIFFS update. Static assets (images, fonts) keep default caching. */
+  g_wifiServer->sendHeader("Cache-Control", "no-store");
   return streamFileFromSpiffs(path, "text/html; charset=utf-8");
 }
 

@@ -912,7 +912,7 @@ void Task1code(void *pvParameters) {
               const char* msg = g_settingsLocked ? "LOCKED" : "UNLOCKED";
               uint8_t msgW = strlen(msg) * WIDTH8x8;
               obdWriteString(&g_obd, 0, (OLED_WIDTH - msgW) / 2, 3 * HEIGHT8x8, (char *)msg, FONT_8x8, OBD_BLACK, 1);
-              obdDumpBuffer(&g_obd, NULL);
+              obdDumpBuffer(&g_obd, NULL, 1, 0, 0);
               delay(800);
               obdFill(&g_obd, OBD_WHITE, 1);
               g_forceRaceRedraw = true;

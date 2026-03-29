@@ -119,6 +119,18 @@ jobs:
               <loc>${SITE_URL}/docs/de/</loc>
               <lastmod>${TODAY}</lastmod>
             </url>
+            <url>
+              <loc>${SITE_URL}/docs/it/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+            <url>
+              <loc>${SITE_URL}/docs/nl/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
+            <url>
+              <loc>${SITE_URL}/docs/pt/</loc>
+              <lastmod>${TODAY}</lastmod>
+            </url>
           </urlset>
           EOF
 

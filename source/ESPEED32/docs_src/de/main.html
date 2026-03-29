@@ -163,7 +163,7 @@
         <tr><td><code>BREMSE+ / Alt.Brems</code></td><td>0-100 %</td><td>0</td><td>Alternativer Bremswert bei gehaltenem Bremsknopf und Trigger=0.</td></tr>
         <tr><td><code>BREMSE+ / Rel.Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, beste Runde und scrollbare Historie.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, beste Runde und scrollbare Historie. Der Encoder scrollt. Kurzer Druck auf die Bremstaste beendet die Ansicht; langer Druck setzt die Stats zurueck.</td></tr>
         <tr><td><code>SPERRE</code></td><td>-</td><td>Entsperrt</td><td>Einstellungssperre umschalten. Im gesperrten Zustand sind alle Parameteränderungen blockiert — nur <code>SPERRE</code> selbst bleibt aktiv. Die Sperre ist temporär und wird beim Neustart zurückgesetzt. Sichtbarkeit und Tastenkürzel konfigurieren unter <code>SETUP → SPERRE</code>. Statusleiste zeigt <code>SPERRE</code> (invertiert) wenn aktiv.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
@@ -291,7 +291,7 @@
       <li><code>STATS</code>: zeigt oder versteckt den STATS-Eintrag im Hauptmenue. Standard AUS.</li>
       <li><code>WIFI</code>: Hintergrund-WiFi, Infoseite, QR-Code und WiFi-Auto-Aus.</li>
       <li><code>LOGGING</code>: lokale Telemetrie-Aufzeichnung mit Start/Stopp und eigenem Auto-Aus (Standard 30 min).</li>
-      <li><code>SPERRE</code>: Einstellungssperre konfigurieren — SPERRE im Hauptmenü aktivieren (Standard AUS) und Dauer des Bremstastenkürzels festlegen (AUS oder 2–10 s, Standard 5 s).</li>
+      <li><code>SPERRE</code>: Einstellungssperre konfigurieren — SPERRE im Hauptmenue aktivieren (Standard AUS), Dauer des Bremstastenkuerzels festlegen (AUS oder 1–10 s, Standard 5 s) und waehlen, ob das <code>LOCKED</code>/<code>UNLOCKED</code>-Bestaetigungs-Popup gezeigt wird.</li>
     </ul>
     <h3>HARDWARE-Untermenue</h3>
     <ul>
@@ -481,7 +481,8 @@
 |  |  `- BACK
 |  |- SPERRE
 |  |  |- MENUPUNKT (AUS/EIN, Standard AUS)
-|  |  |- KUERZEL (AUS / 2-10 s, Standard 5 s)
+|  |  |- KUERZEL (AUS / 1-10 s, Standard 5 s)
+|  |  |- BESTAET (AUS/EIN, Standard AUS)
 |  |  `- ZURUCK
 |  |- USB INFO
 |  |- RESET

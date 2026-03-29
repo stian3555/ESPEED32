@@ -13,6 +13,8 @@ const char* getViewModeLabel(uint8_t lang, uint8_t mode);
 const char* getSoundMenuName(uint8_t lang, uint8_t item);
 const char* getOnOffLabel(uint8_t lang, uint8_t state);
 const char* getReleaseBrakeModeLabel(uint8_t lang, uint8_t mode);
+const char* getLockMenuName(uint8_t lang, uint8_t item);
+const char* getLockShortcutLabel(uint8_t lang, uint8_t idx);
 const char* getBackLabel(uint8_t lang);
 uint8_t getMenuLines();
 

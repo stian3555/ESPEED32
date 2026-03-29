@@ -327,7 +327,8 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>BREMS+ / Alt.brems</code></td><td>0-100 %</td><td>0</td><td>Alternativ brems som brukes mens bremseknapp holdes inne og trigger er sluppet.</td></tr>
         <tr><td><code>BREMS+ / Rel.brems</code></td><td>OFF/QUICK(sone+nivå)/DRAG(nivå)</td><td>OFF</td><td>Release-brems når trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid og scrollbar historikk.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid og scrollbar historikk. Encoder brukes til scrolling. Kort trykk paa brems gaar ut; langt trykk paa brems nullstiller stats.</td></tr>
+        <tr><td><code>LAS</code></td><td>-</td><td>Ulåst</td><td>Veksle innstillingslås. Når låst, er alle parameterendringer blokkert — kun <code>LAS</code> selv er aktivt. Låsen er midlertidig og tilbakestilles ved omstart. Konfigurer synlighet og snarveiens varighet under <code>INNSTILL → LAS</code>. Statuslinjen viser <code>LAS</code> (invertert) når aktiv.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
@@ -454,6 +455,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>STATS</code>: vis eller skjul STATS i hovedmenyen. Default AV.</li>
       <li><code>WIFI</code>: bakgrunns-WiFi, infoside, QR-kode og auto-av for WiFi.</li>
       <li><code>LOGGING</code>: lokal telemetrilogging med start/stopp og egen auto-av (default 30 min).</li>
+      <li><code>LAS</code>: konfigurer innstillingslaas — aktiver LAS i hovedmenyen (standard AV), angi varighet for bremseknapp-snarvei (AV eller 1–10 s, standard 5 s), og velg om <code>LOCKED</code>/<code>UNLOCKED</code>-popupen skal vises.</li>
     </ul>
     <h3>HARDWARE-undermeny</h3>
     <ul>
@@ -643,6 +645,11 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- START/STOP NA
 |  |  |- AUTO AV (1-120 min, default 30)
 |  |  `- BACK
+|  |- LAS
+|  |  |- MENYVALG (AV/PA, standard AV)
+|  |  |- SNARVEI (AV / 1-10 s, standard 5 s)
+|  |  |- BEKREFT (AV/PA, standard AV)
+|  |  `- TILBAKE
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -653,6 +660,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |- ABOUT
 |  `- BACK
 |- STATS [hvis aktivert]
+|- LAS [hvis aktivert]
 `- CAR
    |- SELECT
    |- RENAME

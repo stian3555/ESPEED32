@@ -4,8 +4,10 @@
 #include <Arduino.h>
 
 /* Menu item names: [language][item] */
-extern const char* MENU_NAMES[][11];
-extern const char* SETTINGS_MENU_NAMES[][11];
+extern const char* MENU_NAMES[][12];
+extern const char* SETTINGS_MENU_NAMES[][12];
+extern const char* LOCK_MENU_NAMES[][4];
+extern const char* LOCK_SHORTCUT_LABELS[][11];
 extern const char* POWER_MENU_NAMES[][6];
 extern const char* DISPLAY_MENU_NAMES[][7];
 extern const char* RACE_LABELS[][4];
@@ -19,8 +21,9 @@ extern const char* TEXT_CASE_LABELS[][2];
 extern const char* FONT_SIZE_LABELS[][2];
 
 /* Pascal-case variants */
-extern const char* MENU_NAMES_PASCAL[][11];
-extern const char* SETTINGS_MENU_NAMES_PASCAL[][11];
+extern const char* MENU_NAMES_PASCAL[][12];
+extern const char* SETTINGS_MENU_NAMES_PASCAL[][12];
+extern const char* LOCK_MENU_NAMES_PASCAL[][4];
 extern const char* POWER_MENU_NAMES_PASCAL[][6];
 extern const char* DISPLAY_MENU_NAMES_PASCAL[][7];
 extern const char* RACE_LABELS_PASCAL[][4];

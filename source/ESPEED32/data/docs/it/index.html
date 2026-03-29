@@ -340,7 +340,8 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>FRENO+ / Alt.Freno</code></td><td>0-100 %</td><td>0</td><td>Freno alternativo mentre il pulsante freno e premuto e trigger=0.</td></tr>
         <tr><td><code>FRENO+ / Rel.Freno</code></td><td>OFF/QUICK(zona+livello)/DRAG(livello)</td><td>OFF</td><td>Aiuto frenata vicino al rilascio del trigger. QUICK usa una zona a output zero; DRAG aggiunge drag senza zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Uscita massima del motore.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>contatore giri, best lap e storico scorrevole.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>contatore giri, best lap e storico scorrevole. L'encoder scorre la lista. Pressione breve del freno esce; pressione lunga del freno resetta le statistiche.</td></tr>
+        <tr><td><code>BLOCCO</code></td><td>-</td><td>Sbloccato</td><td>Attiva/disattiva il blocco impostazioni. Quando bloccato, tutte le modifiche ai parametri sono bloccate — solo <code>BLOCCO</code> rimane attivo. Il blocco è temporaneo e si azzera al riavvio. Configura visibilità e durata della scorciatoia in <code>SETUP → BLOCCO</code>. La barra di stato mostra <code>BLOCCO</code> (invertito) quando attivo.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profili</td><td>CAR0</td><td>Seleziona o gestisci il profilo attivo.</td></tr>
       </tbody>
     </table>
@@ -442,6 +443,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>STATS</code>: mostra o nasconde la voce STATS nel menu principale. Default OFF.</li>
       <li><code>WIFI</code>: WiFi in background, pagina info, QR code e auto-off del WiFi.</li>
       <li><code>LOGGING</code>: logging locale della telemetria con start/stop e auto-off dedicato (default 30 min).</li>
+      <li><code>BLOCCO</code>: configura il blocco impostazioni — abilita BLOCCO nel menu principale (predefinito OFF), imposta la durata della scorciatoia del tasto freno (OFF o 1–10 s, predefinito 5 s) e scegli se mostrare il popup di conferma <code>LOCKED</code>/<code>UNLOCKED</code>.</li>
     </ul>
     <h3>Sottomenu HARDWARE</h3>
     <ul>
@@ -631,6 +633,11 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- BLOCCO
+|  |  |- VOCE MENU (OFF/ON, predefinito OFF)
+|  |  |- SCORCIAT (OFF / 1-10 s, predefinito 5 s)
+|  |  |- CONFIRM (OFF/ON, predefinito OFF)
+|  |  `- INDIETRO
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -641,6 +648,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |- ABOUT
 |  `- BACK
 |- STATS [se abilitato]
+|- BLOCCO [se abilitato]
 `- CAR
    |- SELECT
    |- RENAME

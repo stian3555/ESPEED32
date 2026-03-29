@@ -1296,6 +1296,32 @@ form{margin:0}
 </div>
 <div id="manual-ota-status" class="st"></div>
 <p class="warn">Do not disconnect power during update.</p>
+<details class="subsection">
+<summary>Advanced — Upload Single Component</summary>
+<p class="tiny warn">Only use this if a paired update partially failed and the controller has not rebooted yet. Uploading a single component leaves firmware and filesystem out of sync until both are updated.</p>
+<div class="update-actions">
+<div class="row">
+<label for="adv-fw">Firmware only (.bin)</label>
+<input type="file" id="adv-fw" accept=".bin">
+<button type="button" class="btn ota" onclick="uploadSingleFirmware()">Upload Firmware Only</button>
+</div>
+<div class="row">
+<label for="adv-spiffs">Filesystem only (.bin)</label>
+<input type="file" id="adv-spiffs" accept=".bin">
+<button type="button" class="btn ota" onclick="uploadSingleSpiffs()">Upload Filesystem Only</button>
+</div>
+</div>
+<div id="adv-fw-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="adv-fw-progress-label">Firmware stage idle</span><span id="adv-fw-progress-pct">0%</span></div>
+<div class="progress-track"><div id="adv-fw-progress-fill" class="progress-fill"></div></div>
+</div>
+<div id="adv-spiffs-progress" class="progress-wrap" aria-live="polite">
+<div class="progress-head"><span id="adv-spiffs-progress-label">Filesystem stage idle</span><span id="adv-spiffs-progress-pct">0%</span></div>
+<div class="progress-track"><div id="adv-spiffs-progress-fill" class="progress-fill"></div></div>
+</div>
+<div id="adv-ota-status" class="st"></div>
+<p class="warn">Do not disconnect power during update.</p>
+</details>
 </section>
 </div>
 </main>
@@ -4803,6 +4829,32 @@ async function uploadSelectedUpdatePair(){
       fileName:spiffsFile.name,
       progressPrefix:'manual-spiffs'
     }
+  });
+}
+
+async function uploadSingleFirmware(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Single firmware upload');
+  if(blocked){ss('adv-ota-status','err',blocked);return;}
+  var fwFile=document.getElementById('adv-fw').files[0];
+  if(!fwFile){ss('adv-ota-status','err','Select a firmware .bin file first.');return;}
+  if(!/\.bin$/i.test(fwFile.name)){ss('adv-ota-status','err','Only .bin files are allowed.');return;}
+  await runCombinedOtaUpdate({
+    usedDownloadService:false,
+    statusId:'adv-ota-status',
+    firmware:{fileBlob:fwFile,fileName:fwFile.name,progressPrefix:'adv-fw'}
+  });
+}
+
+async function uploadSingleSpiffs(){
+  var blocked=otaBusy?'Another update is already running. Wait for completion.':otaUploadUnavailableReason('Single filesystem upload');
+  if(blocked){ss('adv-ota-status','err',blocked);return;}
+  var spiffsFile=document.getElementById('adv-spiffs').files[0];
+  if(!spiffsFile){ss('adv-ota-status','err','Select a filesystem .bin file first.');return;}
+  if(!/\.bin$/i.test(spiffsFile.name)){ss('adv-ota-status','err','Only .bin files are allowed.');return;}
+  await runCombinedOtaUpdate({
+    usedDownloadService:false,
+    statusId:'adv-ota-status',
+    spiffs:{fileBlob:spiffsFile,fileName:spiffsFile.name,progressPrefix:'adv-spiffs'}
   });
 }
 

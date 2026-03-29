@@ -327,7 +327,8 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>BRAKE+ / Alt.Brake</code></td><td>0-100 %</td><td>0</td><td>Valor alternativo de travagem usado enquanto o botao de travao esta premido e o gatilho esta solto.</td></tr>
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Ajuda de travagem perto da libertacao do gatilho. QUICK usa uma zona de output zero; DRAG adiciona arrasto sem zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Output maximo do motor. &lt;100 ativa o aviso LIMITER.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Contador de voltas, melhor volta e historico de voltas com scroll.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Contador de voltas, melhor volta e historico de voltas com scroll. O encoder faz scroll. Toque curto no travao sai; toque longo no travao reinicia as stats.</td></tr>
+        <tr><td><code>BLOQ</code></td><td>-</td><td>Desbloqueado</td><td>Ativa/desativa o bloqueio de configurações. Quando bloqueado, todas as edições de parâmetros são bloqueadas — apenas <code>BLOQ</code> permanece ativo. O bloqueio é temporário e é reposto ao reiniciar. Configure a visibilidade e a duração do atalho em <code>AJUSTES → BLOQ</code>. A barra de estado mostra <code>BLOQ</code> (invertido) quando ativo.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 perfis</td><td>CAR0</td><td>Selecionar/gerir perfil, copiar valores e repor car params.</td></tr>
       </tbody>
     </table>
@@ -454,6 +455,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>STATS</code>: mostrar ou ocultar a entrada STATS no menu principal. Predefinido OFF.</li>
       <li><code>WIFI</code>: WiFi em segundo plano, pagina de informacao, QR code e temporizador de desligar automatico.</li>
       <li><code>LOGGING</code>: iniciar/parar logging local de telemetria e um temporizador separado de auto-off para logging (predefinido 30 min).</li>
+      <li><code>BLOQ</code>: configure o bloqueio de configuracoes — ative BLOQ no menu principal (padrao OFF), defina a duracao do atalho do botao de travao (OFF ou 1–10 s, padrao 5 s) e escolha se o popup de confirmacao <code>LOCKED</code>/<code>UNLOCKED</code> deve ser mostrado.</li>
     </ul>
     <h3>Submenu HARDWARE</h3>
     <ul>
@@ -643,6 +645,11 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- BLOQ
+|  |  |- ITEM MENU (OFF/ON, padrão OFF)
+|  |  |- ATALHO (OFF / 1-10 s, padrao 5 s)
+|  |  |- CONFIRM (OFF/ON, padrao OFF)
+|  |  `- VOLTAR
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -653,6 +660,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |- ABOUT
 |  `- BACK
 |- STATS [if enabled]
+|- BLOQ [se ativado]
 `- CAR
    |- SELECT
    |- RENAME

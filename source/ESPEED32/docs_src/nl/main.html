@@ -164,7 +164,8 @@
         <tr><td><code>BRAKE+ / Alt.Brake</code></td><td>0-100 %</td><td>0</td><td>Alternatieve remwaarde die wordt gebruikt terwijl de remknop is ingedrukt en de trigger los is.</td></tr>
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Hulpfunctie voor remmen bij loslaten van de trigger. QUICK gebruikt een zone met nul output; DRAG voegt loslaatdrag toe zonder zone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale motoroutput. &lt;100 activeert de LIMITER-waarschuwing.</td></tr>
-        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rondeteller, snelste ronde en scrollbare rondehistorie.</td></tr>
+        <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rondeteller, snelste ronde en scrollbare rondehistorie. De encoder scrolt. Korte druk op de remknop sluit af; lange druk op de remknop reset de stats.</td></tr>
+        <tr><td><code>VERGR</code></td><td>-</td><td>Ontgrendeld</td><td>Schakel de instellingsvergrendeling in/uit. Wanneer vergrendeld, zijn alle parameterwijzigingen geblokkeerd — alleen <code>VERGR</code> zelf blijft actief. De vergrendeling is tijdelijk en wordt gereset bij herstart. Configureer zichtbaarheid en sneltoetsduur in <code>INSTELL → VERGR</code>. De statusbalk toont <code>VERGR</code> (inverteerd) wanneer actief.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profielen</td><td>CAR0</td><td>Selecteer of beheer profiel, kopieer instellingen en reset car params.</td></tr>
       </tbody>
     </table>
@@ -291,6 +292,7 @@
       <li><code>STATS</code>: toon of verberg de STATS-ingang in het hoofdmenu. Standaard OFF.</li>
       <li><code>WIFI</code>: WiFi op de achtergrond, directe infopagina, QR-code en WiFi auto-off timer.</li>
       <li><code>LOGGING</code>: lokaal telemetrieloggen starten/stoppen plus aparte auto-off timer voor logging, standaard 30 min.</li>
+      <li><code>VERGR</code>: configureer de instellingsvergrendeling — activeer VERGR in het hoofdmenu (standaard UIT), stel de duur van de remknop-sneltoets in (UIT of 1–10 s, standaard 5 s) en kies of de <code>LOCKED</code>/<code>UNLOCKED</code>-bevestigingspopup wordt getoond.</li>
     </ul>
     <h3>Submenu HARDWARE</h3>
     <ul>
@@ -480,6 +482,11 @@
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- VERGR
+|  |  |- MENU ITEM (UIT/AAN, standaard UIT)
+|  |  |- SNELKOP (UIT / 1-10 s, standaard 5 s)
+|  |  |- BEVESTIG (UIT/AAN, standaard UIT)
+|  |  `- TERUG
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -490,6 +497,7 @@
 |  |- ABOUT
 |  `- BACK
 |- STATS [if enabled]
+|- VERGR [indien ingeschakeld]
 `- CAR
    |- SELECT
    |- RENAME

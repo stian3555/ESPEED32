@@ -47,6 +47,15 @@ const char* getReleaseBrakeModeLabel(uint8_t lang, uint8_t mode) {
     : RELEASE_BRAKE_MODE_LABELS[lang][mode];
 }
 
+const char* getLockMenuName(uint8_t lang, uint8_t item) {
+  return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? LOCK_MENU_NAMES_PASCAL[lang][item] : LOCK_MENU_NAMES[lang][item];
+}
+
+const char* getLockShortcutLabel(uint8_t lang, uint8_t idx) {
+  if (idx > LOCK_SHORTCUT_COUNT) idx = 0;
+  return LOCK_SHORTCUT_LABELS[lang][idx];
+}
+
 const char* getBackLabel(uint8_t lang) {
   return (g_storedVar.textCase == TEXT_CASE_PASCAL) ? BACK_LABELS_PASCAL[lang] : BACK_LABELS[lang];
 }

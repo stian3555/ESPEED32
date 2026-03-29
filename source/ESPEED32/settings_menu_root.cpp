@@ -7,6 +7,7 @@
 #include "settings_display_menu.h"
 #include "settings_hardware_menu.h"
 #include "settings_sound_wifi_submenus.h"
+#include "settings_lock_menu.h"
 #include "settings_reset_menu.h"
 #include "settings_about_screen.h"
 #include "ui_render.h"
@@ -129,15 +130,22 @@ void showSettingsMenu() {
           continue;
         }
         /* WIFI submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 6) {
           showWiFiSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;
         }
         /* LOGGING submenu */
-        if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 5) {
           showLoggingSettings();
+          if (isEscapeToMainRequested()) break;
+          resumeAfterSettingsChild();
+          continue;
+        }
+        /* LOCK submenu */
+        if (settingsSelector == SETTINGS_ITEMS_COUNT - 4) {
+          showLockSettings();
           if (isEscapeToMainRequested()) break;
           resumeAfterSettingsChild();
           continue;

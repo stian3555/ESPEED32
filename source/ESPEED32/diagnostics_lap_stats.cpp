@@ -22,7 +22,7 @@ extern uint8_t getMainMenuItemsCount();
  * Show the Lap Stats screen
  * Displays lap count, best time, current lap time, motor current,
  * and a scrollable list of the last 20 lap times.
- * Encoder scrolls through lap list, button click returns to main menu.
+ * Encoder scrolls through lap list.
  * Brake short press returns to main menu, long press resets lap stats.
  */
 void showLapStats() {
@@ -76,10 +76,9 @@ void showLapStats() {
       }
     }
 
-    /* Button click = return to main menu */
+    /* Consume encoder clicks here so STATS follows the normal "brake = back" pattern. */
     if (g_rotaryEncoder.isEncoderButtonClicked()) {
       lastInteraction = millis();
-      break;
     }
 
     /* Brake button:

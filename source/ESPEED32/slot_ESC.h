@@ -20,11 +20,11 @@
 #define SW_MINOR_VERSION 8
 
 /* Stored Variable Version */
-#define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
+#define STORED_VAR_VERSION 21 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
 #define MENU_ITEMS_COUNT    12    /* Number of possible items in main menu (including optional STATS, LOCK and CAR) */
-#define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
+#define SETTINGS_ITEMS_COUNT 12   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL., BACK) */
 #define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTISPIN, STATUS, BACK) */
 #define HARDWARE_ITEMS_COUNT 5    /* Number of items in hardware submenu (ENC INV, EXT POT, TRIGGER, TEST, BACK) */
@@ -225,6 +225,10 @@ static inline const char* antiSpinTextLevelToLabel(uint16_t level) {
 /* Shared runtime helpers */
 void applyAdcVoltageRangeMilliVolts(uint16_t range_mV);
 #define SOUND_ITEMS_COUNT   3  /* Items in sound submenu: BOOT, RACE, BACK */
+#define LOCK_ITEMS_COUNT    3  /* Items in lock submenu: MENU ITEM, SHORTCUT, BACK */
+#define LOCK_SHORTCUT_COUNT 10 /* Shortcut duration options: OFF, 2s, 3s, …, 10s */
+#define LOCK_MENU_ENABLED_DEFAULT  0  /* Hide LOCK menu item by default */
+#define LOCK_SHORTCUT_IDX_DEFAULT  4  /* Default shortcut: 5s (index 4 → value 5) */
 #define GRID_CAR_SELECT_DEFAULT 1  /* Grid car select (RACESWP): 0=OFF, 1=ON */
 #define STATS_ENABLED_DEFAULT    0  /* Hide STATS menu item by default */
 #define EXT_POT_COUNT            2  /* Two optional external ADC pots: GPIO35 and GPIO15 */
@@ -401,6 +405,8 @@ typedef struct {
   uint16_t statusSlot[STATUS_SLOTS]; /* content type for each fixed-position column */
   uint16_t powerSaveTimeout;         /* [min] Auto power save delay (0=manual only, 1-10 min) */
   uint16_t deepSleepTimeout;         /* [min] Auto deep sleep delay (0=manual only, 2-30 min) */
+  uint16_t lockMenuEnabled;          /* Show LOCK item in main menu: 0=OFF, 1=ON */
+  uint16_t lockShortcutIdx;          /* Brake hold shortcut: 0=OFF, 1=2s, 2=3s, …, 9=10s */
 } StoredVar_type;
 
 /**

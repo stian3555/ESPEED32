@@ -165,7 +165,7 @@
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Ajuda de travagem perto da libertacao do gatilho. QUICK usa uma zona de output zero; DRAG adiciona arrasto sem zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Output maximo do motor. &lt;100 ativa o aviso LIMITER.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Contador de voltas, melhor volta e historico de voltas com scroll.</td></tr>
-        <tr><td><code>BLOQ</code></td><td>-</td><td>Desbloqueado</td><td>Ativar ou desativar o bloqueio de configuracoes. No modo bloqueado, todas as edicoes de parametros estao bloqueadas — apenas <code>BLOQ</code> permanece ativo. O bloqueio e temporario e e redefinido ao reiniciar. Atalho: manter o botao de freio premido durante 5 segundos. A barra de estado mostra <code>LOCK</code> (invertido) quando ativo.</td></tr>
+        <tr><td><code>BLOQ</code></td><td>-</td><td>Desbloqueado</td><td>Ativa/desativa o bloqueio de configurações. Quando bloqueado, todas as edições de parâmetros são bloqueadas — apenas <code>BLOQ</code> permanece ativo. O bloqueio é temporário e é reposto ao reiniciar. Configure a visibilidade e a duração do atalho em <code>AJUSTES → BLOQ</code>. A barra de estado mostra <code>BLOQ</code> (invertido) quando ativo.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 perfis</td><td>CAR0</td><td>Selecionar/gerir perfil, copiar valores e repor car params.</td></tr>
       </tbody>
     </table>
@@ -292,6 +292,7 @@
       <li><code>STATS</code>: mostrar ou ocultar a entrada STATS no menu principal. Predefinido OFF.</li>
       <li><code>WIFI</code>: WiFi em segundo plano, pagina de informacao, QR code e temporizador de desligar automatico.</li>
       <li><code>LOGGING</code>: iniciar/parar logging local de telemetria e um temporizador separado de auto-off para logging (predefinido 30 min).</li>
+      <li><code>BLOQ</code>: configure o bloqueio de configurações — ative BLOQ no menu principal (padrão OFF) e defina a duração do atalho do botão de travão (OFF ou 2–10 s, padrão 5 s).</li>
     </ul>
     <h3>Submenu HARDWARE</h3>
     <ul>
@@ -481,6 +482,10 @@
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- BLOQ
+|  |  |- ITEM MENU (OFF/ON, padrão OFF)
+|  |  |- ATALHO (OFF / 2-10 s, padrão 5 s)
+|  |  `- VOLTAR
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -491,7 +496,7 @@
 |  |- ABOUT
 |  `- BACK
 |- STATS [if enabled]
-|- LOCK
+|- BLOQ [se ativado]
 `- CAR
    |- SELECT
    |- RENAME

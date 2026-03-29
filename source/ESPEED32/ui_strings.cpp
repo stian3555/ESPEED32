@@ -14,16 +14,16 @@ const char* MENU_NAMES[][12] = {
 };
 
 /* Settings menu item names: [language][item] */
-const char* SETTINGS_MENU_NAMES[][11] = {
-  /* NOR */ {"STROM", "SKJERM", "LYD", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "NULLSTILL", "INFO", "TILBAKE"},
-  /* ENG */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
-  /* CS  */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
-  /* ACD */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ABOUT", "BACK"},
-  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "ACERCA", "ATRAS"},
-  /* DEU */ {"STROM", "ANZEIGE", "TON", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "ZURUCK"},
-  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "INDIETRO"},
-  /* NLD */ {"STROOM", "DISPLAY", "GELUID", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "INFO", "TERUG"},
-  /* POR */ {"ENERGIA", "ECRA", "SOM", "HARDWARE", "STATS", "WIFI", "LOGGING", "USB INFO", "RESET", "SOBRE", "VOLTAR"}
+const char* SETTINGS_MENU_NAMES[][12] = {
+  /* NOR */ {"STROM", "SKJERM", "LYD", "HARDWARE", "STATS", "WIFI", "LOGGING", "LAS", "USB INFO", "NULLSTILL", "INFO", "TILBAKE"},
+  /* ENG */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "LOCK", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* CS  */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "LOCK", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* ACD */ {"POWER", "DISPLAY", "SOUND", "HARDWARE", "STATS", "WIFI", "LOGGING", "LOCK", "USB INFO", "RESET", "ABOUT", "BACK"},
+  /* ESP */ {"ENERGIA", "PANTALLA", "SONIDO", "HARDWARE", "STATS", "WIFI", "LOGGING", "BLOQUEO", "USB INFO", "RESET", "ACERCA", "ATRAS"},
+  /* DEU */ {"STROM", "ANZEIGE", "TON", "HARDWARE", "STATS", "WIFI", "LOGGING", "SPERRE", "USB INFO", "RESET", "INFO", "ZURUCK"},
+  /* ITA */ {"POTENZA", "SCHERMO", "SUONO", "HARDWARE", "STATS", "WIFI", "LOGGING", "BLOCCO", "USB INFO", "RESET", "INFO", "INDIETRO"},
+  /* NLD */ {"STROOM", "DISPLAY", "GELUID", "HARDWARE", "STATS", "WIFI", "LOGGING", "VERGR", "USB INFO", "RESET", "INFO", "TERUG"},
+  /* POR */ {"ENERGIA", "ECRA", "SOM", "HARDWARE", "STATS", "WIFI", "LOGGING", "BLOQ", "USB INFO", "RESET", "SOBRE", "VOLTAR"}
 };
 
 /* Power submenu item names: [language][item] */
@@ -104,6 +104,45 @@ const char* SOUND_MENU_NAMES[][3] = {
   /* POR */ {"ARRANQUE", "CORRIDA", "VOLTAR"}
 };
 
+/* Lock submenu item names: [language][item] - MENU ITEM, SHORTCUT, BACK */
+const char* LOCK_MENU_NAMES[][3] = {
+  /* NOR */ {"MENYVALG", "SNARVEI", "TILBAKE"},
+  /* ENG */ {"MENU ITEM", "SHORTCUT", "BACK"},
+  /* CS  */ {"MENU ITEM", "SHORTCUT", "BACK"},
+  /* ACD */ {"MENU ITEM", "SHORTCUT", "BACK"},
+  /* ESP */ {"MENU", "ATAJO", "ATRAS"},
+  /* DEU */ {"MENUPUNKT", "KUERZEL", "ZURUCK"},
+  /* ITA */ {"VOCE MENU", "SCORCIAT", "INDIETRO"},
+  /* NLD */ {"MENU ITEM", "SNELKOP", "TERUG"},
+  /* POR */ {"ITEM MENU", "ATALHO", "VOLTAR"}
+};
+
+/* Lock submenu item names - Pascal Case: [language][item] */
+const char* LOCK_MENU_NAMES_PASCAL[][3] = {
+  /* NOR */ {"Menyvalg", "Snarvei", "Tilbake"},
+  /* ENG */ {"Menu Item", "Shortcut", "Back"},
+  /* CS  */ {"Menu Item", "Shortcut", "Back"},
+  /* ACD */ {"Menu Item", "Shortcut", "Back"},
+  /* ESP */ {"Menu", "Atajo", "Atras"},
+  /* DEU */ {"Menupunkt", "Kuerzel", "Zuruck"},
+  /* ITA */ {"Voce Menu", "Scorciat", "Indietro"},
+  /* NLD */ {"Menu Item", "Snelkop", "Terug"},
+  /* POR */ {"Item Menu", "Atalho", "Voltar"}
+};
+
+/* Lock shortcut duration labels: [language][idx] - OFF, 2s, 3s, ..., 10s */
+const char* LOCK_SHORTCUT_LABELS[][11] = {
+  /* NOR */ {"AV", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "AV"},
+  /* ENG */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
+  /* CS  */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
+  /* ACD */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
+  /* ESP */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
+  /* DEU */ {"AUS", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "AUS"},
+  /* ITA */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
+  /* NLD */ {"UIT", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "UIT"},
+  /* POR */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"}
+};
+
 /* ON/OFF labels: [language][state] */
 const char* ON_OFF_LABELS[][2] = {
   /* NOR */ {"AV", "PA"},
@@ -173,16 +212,16 @@ const char* MENU_NAMES_PASCAL[][12] = {
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */
-const char* SETTINGS_MENU_NAMES_PASCAL[][11] = {
-  /* NOR */ {"Strom", "Skjerm", "Lyd", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Nullstill", "Info", "Tilbake"},
-  /* ENG */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
-  /* CS  */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
-  /* ACD */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "About", "Back"},
-  /* ESP */ {"Energia", "Pantalla", "Sonido", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Acerca", "Atras"},
-  /* DEU */ {"Strom", "Anzeige", "Ton", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Zuruck"},
-  /* ITA */ {"Potenza", "Schermo", "Suono", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Indietro"},
-  /* NLD */ {"Stroom", "Display", "Geluid", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Info", "Terug"},
-  /* POR */ {"Energia", "Ecra", "Som", "Hardware", "Stats", "Wifi", "Logging", "Usb info", "Reset", "Sobre", "Voltar"}
+const char* SETTINGS_MENU_NAMES_PASCAL[][12] = {
+  /* NOR */ {"Strom", "Skjerm", "Lyd", "Hardware", "Stats", "Wifi", "Logging", "Las", "Usb info", "Nullstill", "Info", "Tilbake"},
+  /* ENG */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Lock", "Usb info", "Reset", "About", "Back"},
+  /* CS  */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Lock", "Usb info", "Reset", "About", "Back"},
+  /* ACD */ {"Power", "Display", "Sound", "Hardware", "Stats", "Wifi", "Logging", "Lock", "Usb info", "Reset", "About", "Back"},
+  /* ESP */ {"Energia", "Pantalla", "Sonido", "Hardware", "Stats", "Wifi", "Logging", "Bloqueo", "Usb info", "Reset", "Acerca", "Atras"},
+  /* DEU */ {"Strom", "Anzeige", "Ton", "Hardware", "Stats", "Wifi", "Logging", "Sperre", "Usb info", "Reset", "Info", "Zuruck"},
+  /* ITA */ {"Potenza", "Schermo", "Suono", "Hardware", "Stats", "Wifi", "Logging", "Blocco", "Usb info", "Reset", "Info", "Indietro"},
+  /* NLD */ {"Stroom", "Display", "Geluid", "Hardware", "Stats", "Wifi", "Logging", "Vergr", "Usb info", "Reset", "Info", "Terug"},
+  /* POR */ {"Energia", "Ecra", "Som", "Hardware", "Stats", "Wifi", "Logging", "Bloq", "Usb info", "Reset", "Sobre", "Voltar"}
 };
 
 /* Power submenu item names - Pascal Case: [language][item] */

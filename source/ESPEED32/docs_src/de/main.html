@@ -164,7 +164,7 @@
         <tr><td><code>BREMSE+ / Rel.Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, beste Runde und scrollbare Historie.</td></tr>
-        <tr><td><code>SPERRE</code></td><td>-</td><td>Entsperrt</td><td>Einstellungssperre ein-/ausschalten. Im gesperrten Modus sind alle Parametereingaben blockiert — nur <code>SPERRE</code> bleibt aktiv. Die Sperre ist temporaer und wird beim Neustart zurueckgesetzt. Kuerzeste Methode: Bremstaste 5 Sekunden halten. Die Statuszeile zeigt <code>LOCK</code> (invertiert) wenn aktiv.</td></tr>
+        <tr><td><code>SPERRE</code></td><td>-</td><td>Entsperrt</td><td>Einstellungssperre umschalten. Im gesperrten Zustand sind alle Parameteränderungen blockiert — nur <code>SPERRE</code> selbst bleibt aktiv. Die Sperre ist temporär und wird beim Neustart zurückgesetzt. Sichtbarkeit und Tastenkürzel konfigurieren unter <code>SETUP → SPERRE</code>. Statusleiste zeigt <code>SPERRE</code> (invertiert) wenn aktiv.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
@@ -291,6 +291,7 @@
       <li><code>STATS</code>: zeigt oder versteckt den STATS-Eintrag im Hauptmenue. Standard AUS.</li>
       <li><code>WIFI</code>: Hintergrund-WiFi, Infoseite, QR-Code und WiFi-Auto-Aus.</li>
       <li><code>LOGGING</code>: lokale Telemetrie-Aufzeichnung mit Start/Stopp und eigenem Auto-Aus (Standard 30 min).</li>
+      <li><code>SPERRE</code>: Einstellungssperre konfigurieren — SPERRE im Hauptmenü aktivieren (Standard AUS) und Dauer des Bremstastenkürzels festlegen (AUS oder 2–10 s, Standard 5 s).</li>
     </ul>
     <h3>HARDWARE-Untermenue</h3>
     <ul>
@@ -478,6 +479,10 @@
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- SPERRE
+|  |  |- MENUPUNKT (AUS/EIN, Standard AUS)
+|  |  |- KUERZEL (AUS / 2-10 s, Standard 5 s)
+|  |  `- ZURUCK
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -488,7 +493,7 @@
 |  |- ABOUT
 |  `- BACK
 |- STATS [wenn aktiviert]
-|- SPERRE
+|- SPERRE [wenn aktiviert]
 `- CAR
    |- SELECT
    |- RENAME

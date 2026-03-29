@@ -328,6 +328,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Release-brake helper near trigger release. QUICK uses a zero-output zone; DRAG adds release drag without a zone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximum motor output. &lt;100 enables LIMITER warning.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Lap counter, best lap, and scrollable lap history.</td></tr>
+        <tr><td><code>LOCK</code></td><td>-</td><td>Unlocked</td><td>Toggle settings lock. When locked, all parameter edits are blocked — only <code>LOCK</code> itself remains active. Lock is temporary and resets on reboot. Configure visibility and shortcut duration in <code>SETTINGS → LOCK</code>. Status bar shows <code>LOCK</code> (inverted) when active.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiles</td><td>CAR0</td><td>Select/manage profile, copy settings, reset car params.</td></tr>
       </tbody>
     </table>
@@ -454,6 +455,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>STATS</code>: show or hide the STATS entry in the main menu. Default OFF.</li>
       <li><code>WIFI</code>: background WiFi, direct info page, QR code, and WiFi auto-off timer.</li>
       <li><code>LOGGING</code>: local telemetry logging start/stop plus a separate logging auto-off timer (default 30 min).</li>
+      <li><code>LOCK</code>: configure settings lock — enable the LOCK main menu item (default OFF) and set the brake-button shortcut duration (OFF or 2–10 s, default 5 s).</li>
     </ul>
     <h3>HARDWARE submenu</h3>
     <ul>
@@ -643,6 +645,10 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- LOCK
+|  |  |- MENU ITEM (ON/OFF, default OFF)
+|  |  |- SHORTCUT (OFF / 2-10 s, default 5 s)
+|  |  `- BACK
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -653,6 +659,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |- ABOUT
 |  `- BACK
 |- STATS [if enabled]
+|- LOCK [if enabled]
 `- CAR
    |- SELECT
    |- RENAME

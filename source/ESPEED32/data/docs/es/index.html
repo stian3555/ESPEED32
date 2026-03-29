@@ -340,6 +340,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>FRENO+ / Rel.Freno</code></td><td>OFF/QUICK(zona+nivel)/DRAG(nivel)</td><td>OFF</td><td>Ayuda de frenado al soltar trigger. QUICK usa zona a salida cero; DRAG anade drag sin zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Salida maxima del motor.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>contador de vueltas, mejor vuelta e historial desplazable.</td></tr>
+        <tr><td><code>BLOQUEO</code></td><td>-</td><td>Desbloqueado</td><td>Activa/desactiva el bloqueo de ajustes. Con el bloqueo activo, todas las ediciones de parámetros quedan bloqueadas — solo <code>BLOQUEO</code> permanece activo. El bloqueo es temporal y se restablece al reiniciar. Configura la visibilidad y la duración del atajo en <code>AJUSTES → BLOQUEO</code>. La barra de estado muestra <code>BLOQUEO</code> (invertido) cuando está activo.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 perfiles</td><td>CAR0</td><td>Seleccion y gestion de perfil.</td></tr>
       </tbody>
     </table>
@@ -441,6 +442,7 @@ details.doc-fold>:not(summary){margin-top:8px}
       <li><code>STATS</code>: muestra u oculta la entrada STATS en el menu principal. Default OFF.</li>
       <li><code>WIFI</code>: WiFi en segundo plano, pagina de info, codigo QR y auto-off de WiFi.</li>
       <li><code>LOGGING</code>: registro local de telemetria con start/stop y auto-off propio (default 30 min).</li>
+      <li><code>BLOQUEO</code>: configura el bloqueo — activa BLOQUEO en el menú principal (predeterminado OFF) y ajusta la duración del atajo del botón de freno (OFF o 2–10 s, predeterminado 5 s).</li>
     </ul>
     <h3>Submenu HARDWARE</h3>
     <ul>
@@ -628,6 +630,10 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |  |- START/STOP NOW
 |  |  |- AUTO OFF (1-120 min, default 30)
 |  |  `- BACK
+|  |- BLOQUEO
+|  |  |- MENU (OFF/ON, predeterminado OFF)
+|  |  |- ATAJO (OFF / 2-10 s, predeterminado 5 s)
+|  |  `- ATRAS
 |  |- USB INFO
 |  |- RESET
 |  |  |- CAR
@@ -638,6 +644,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |- ABOUT
 |  `- BACK
 |- STATS [si esta activo]
+|- BLOQUEO [si activado]
 `- CAR
    |- SELECT
    |- RENAME

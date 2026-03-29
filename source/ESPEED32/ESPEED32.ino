@@ -346,7 +346,10 @@ uint8_t getMainMenuSelector() {
 }
 
 uint8_t getMainMenuItemsCount() {
-  return (g_statsEnabled ? MENU_ITEMS_COUNT : (MENU_ITEMS_COUNT - 1));
+  uint8_t count = MENU_ITEMS_COUNT;
+  if (!g_statsEnabled) count--;
+  if (!g_storedVar.lockMenuEnabled) count--;
+  return count;
 }
 
 void resetEncoderForMainMenu() {
@@ -894,14 +897,15 @@ void Task1code(void *pvParameters) {
           brakeButtonWasPressedInMenu = false;
         }
 
-        /* 5-second brake hold in ITEM_SELECTION toggles settings lock */
-        if (menuState == ITEM_SELECTION) {
+        /* Configurable brake hold in ITEM_SELECTION toggles settings lock */
+        if (menuState == ITEM_SELECTION && g_storedVar.lockShortcutIdx > 0) {
           static uint32_t brakeLockPressStartMs = 0;
           static bool brakeLockHandled = false;
+          uint32_t holdMs = (uint32_t)(g_storedVar.lockShortcutIdx + 1) * 1000UL;
           bool brakeHeld = (digitalRead(BUTT_PIN) == BUTTON_PRESSED);
           if (brakeHeld) {
             if (brakeLockPressStartMs == 0) brakeLockPressStartMs = millis();
-            if (!brakeLockHandled && (millis() - brakeLockPressStartMs >= BUTTON_LOCK_HOLD_MS)) {
+            if (!brakeLockHandled && (millis() - brakeLockPressStartMs >= holdMs)) {
               brakeLockHandled = true;
               toggleSettingsLock();
               obdFill(&g_obd, OBD_WHITE, 1);

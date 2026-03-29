@@ -116,6 +116,11 @@ Preferences g_pref;
 /* UI Timing */
 uint32_t g_lastEncoderInteraction = 0;         /* Timestamp of last encoder interaction for display power saving */
 
+/* Settings lock — volatile, resets on reboot */
+static bool g_settingsLocked = false;
+bool isSettingsLocked() { return g_settingsLocked; }
+void toggleSettingsLock() { g_settingsLocked = !g_settingsLocked; }
+
 /* Menu Navigation State */
 static bool g_inSettingsMenu = false;  /* Track if we're currently in the settings submenu */
 bool g_forceRaceRedraw = false; /* Force race mode display to redraw */
@@ -889,6 +894,31 @@ void Task1code(void *pvParameters) {
           brakeButtonWasPressedInMenu = false;
         }
 
+        /* 5-second brake hold in ITEM_SELECTION toggles settings lock */
+        if (menuState == ITEM_SELECTION) {
+          static uint32_t brakeLockPressStartMs = 0;
+          static bool brakeLockHandled = false;
+          bool brakeHeld = (digitalRead(BUTT_PIN) == BUTTON_PRESSED);
+          if (brakeHeld) {
+            if (brakeLockPressStartMs == 0) brakeLockPressStartMs = millis();
+            if (!brakeLockHandled && (millis() - brakeLockPressStartMs >= BUTTON_LOCK_HOLD_MS)) {
+              brakeLockHandled = true;
+              toggleSettingsLock();
+              obdFill(&g_obd, OBD_WHITE, 1);
+              const char* msg = g_settingsLocked ? "LOCKED" : "UNLOCKED";
+              uint8_t msgW = strlen(msg) * WIDTH8x8;
+              obdWriteString(&g_obd, 0, (OLED_WIDTH - msgW) / 2, 3 * HEIGHT8x8, (char *)msg, FONT_8x8, OBD_BLACK, 1);
+              obdDumpBuffer(&g_obd, NULL);
+              delay(800);
+              obdFill(&g_obd, OBD_WHITE, 1);
+              g_forceRaceRedraw = true;
+            }
+          } else {
+            brakeLockPressStartMs = 0;
+            brakeLockHandled = false;
+          }
+        }
+
         /* Change menu state if encoder button is clicked (short press) */
         if (encoderShortClick)
         {
@@ -1270,6 +1300,13 @@ MenuState_enum rotary_onButtonClick(MenuState_enum currMenuState)
 
   if (currMenuState == ITEM_SELECTION) /* If the current state is ITEM_SELECTION */
   {
+    /* Settings lock: block all edits except the LOCK item itself */
+    if (g_settingsLocked) {
+      bool isLockItem = (g_storedVar.viewMode == VIEW_MODE_LIST &&
+                         g_mainMenu.item[g_encoderMainSelector - 1].callback == &toggleSettingsLock);
+      if (!isLockItem) return ITEM_SELECTION;
+    }
+
     /* Special handling for GRID mode - map grid item to car parameter */
     if (g_storedVar.viewMode == VIEW_MODE_GRID)
     {

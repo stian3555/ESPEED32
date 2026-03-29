@@ -23,7 +23,7 @@
 #define STORED_VAR_VERSION 20 /* Increment when StoredVar_type structure changes */
 
 /* Menu Configuration */
-#define MENU_ITEMS_COUNT    11    /* Number of possible items in main menu (including optional STATS and CAR) */
+#define MENU_ITEMS_COUNT    12    /* Number of possible items in main menu (including optional STATS, LOCK and CAR) */
 #define SETTINGS_ITEMS_COUNT 11   /* Number of items in settings menu (including BACK) */
 #define POWER_ITEMS_COUNT    6    /* Number of items in power submenu (SCRSV, SLEEP, D-SLEEP, STARTUP, VIN CAL., BACK) */
 #define DISPLAY_ITEMS_COUNT  7    /* Number of items in display submenu (VIEW, LANG, CASE, FSIZE, ANTISPIN, STATUS, BACK) */
@@ -216,6 +216,7 @@ static inline const char* antiSpinTextLevelToLabel(uint16_t level) {
 #define BUTTON_DEBOUNCE_AFTER_LONG_MS   200  /* [ms] Require release plus short debounce after a long press */
 #define BUTTON_CLICK_MIN_MS           30  /* [ms] Minimum hold time to treat a press/release as a real click */
 #define BUTTON_SHORT_PRESS_DEBOUNCE_MS  200  /* [ms] Minimum time between button presses */
+#define BUTTON_LOCK_HOLD_MS            5000  /* [ms] Brake hold duration to toggle settings lock */
 
 /* Sound Configuration */
 #define SOUND_BOOT_DEFAULT  1  /* Boot sounds on by default (startup, calib, on, off) */

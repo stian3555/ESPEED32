@@ -328,6 +328,7 @@ details.doc-fold>:not(summary){margin-top:8px}
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Ajuda de travagem perto da libertacao do gatilho. QUICK usa uma zona de output zero; DRAG adiciona arrasto sem zona.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Output maximo do motor. &lt;100 ativa o aviso LIMITER.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Contador de voltas, melhor volta e historico de voltas com scroll.</td></tr>
+        <tr><td><code>BLOQ</code></td><td>-</td><td>Desbloqueado</td><td>Ativar ou desativar o bloqueio de configuracoes. No modo bloqueado, todas as edicoes de parametros estao bloqueadas — apenas <code>BLOQ</code> permanece ativo. O bloqueio e temporario e e redefinido ao reiniciar. Atalho: manter o botao de freio premido durante 5 segundos. A barra de estado mostra <code>LOCK</code> (invertido) quando ativo.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 perfis</td><td>CAR0</td><td>Selecionar/gerir perfil, copiar valores e repor car params.</td></tr>
       </tbody>
     </table>
@@ -653,6 +654,7 @@ details.doc-fold>:not(summary){margin-top:8px}
 |  |- ABOUT
 |  `- BACK
 |- STATS [if enabled]
+|- LOCK
 `- CAR
    |- SELECT
    |- RENAME

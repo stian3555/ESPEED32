@@ -164,6 +164,7 @@
         <tr><td><code>BREMSE+ / Rel.Brems</code></td><td>OFF/QUICK(zone+stufe)/DRAG(stufe)</td><td>OFF</td><td>Bremsunterstuetzung nahe Trigger-Release. QUICK nutzt eine Null-Output-Zone; DRAG mischt Drag ohne Zone hinzu.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale Motorleistung.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundenzaehler, beste Runde und scrollbare Historie.</td></tr>
+        <tr><td><code>SPERRE</code></td><td>-</td><td>Entsperrt</td><td>Einstellungssperre ein-/ausschalten. Im gesperrten Modus sind alle Parametereingaben blockiert — nur <code>SPERRE</code> bleibt aktiv. Die Sperre ist temporaer und wird beim Neustart zurueckgesetzt. Kuerzeste Methode: Bremstaste 5 Sekunden halten. Die Statuszeile zeigt <code>LOCK</code> (invertiert) wenn aktiv.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 Profile</td><td>CAR0</td><td>Profil waehlen/verwalten.</td></tr>
       </tbody>
     </table>
@@ -487,6 +488,7 @@
 |  |- ABOUT
 |  `- BACK
 |- STATS [wenn aktiviert]
+|- SPERRE
 `- CAR
    |- SELECT
    |- RENAME

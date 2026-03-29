@@ -165,6 +165,7 @@
         <tr><td><code>BREMS+ / Rel.brems</code></td><td>OFF/QUICK(sone+nivå)/DRAG(nivå)</td><td>OFF</td><td>Release-brems når trigger slippes. QUICK bruker null-output-sone; DRAG legger inn drag uten sone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maks motoreffekt. Ved &lt;100 vises LIMITER-varsling.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rundetider, beste tid og scrollbar historikk.</td></tr>
+        <tr><td><code>LAS</code></td><td>-</td><td>Ulåst</td><td>Slå innstillingslås av/på. Låst modus blokkerer alle parameterendringer — kun <code>LAS</code>-elementet er aktivt. Låsen er midlertidig og tilbakestilles ved omstart. Snarvei: hold bremsknappen i 5 sekunder. Statuslinjen viser <code>LOCK</code> (invertert) når aktiv.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profiler</td><td>CAR0</td><td>Velg/rediger profil, kopier eller nullstill bilparametre.</td></tr>
       </tbody>
     </table>
@@ -490,6 +491,7 @@
 |  |- ABOUT
 |  `- BACK
 |- STATS [hvis aktivert]
+|- LAS
 `- CAR
    |- SELECT
    |- RENAME

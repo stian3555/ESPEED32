@@ -1,16 +1,16 @@
 #include "ui_strings.h"
 
 /* Menu item names in different languages: [language][item] */
-const char* MENU_NAMES[][11] = {
-  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMS+", "STROM", "INNSTILL", "STATS", "*BIL*"},
-  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "LIMIT", "SETTINGS", "STATS", "*CAR*"},
-  /* CS  */ {"BRAKE", "ATTACK", "CHOKE2", "PROFIL", "FADE", "PWM_F", "BRAKE+", "CHOKE1", "SETTINGS", "STATS", "*CAR*"},
-  /* ACD */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "CHOKE", "SETTINGS", "STATS", "*CAR*"},
-  /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "AJUSTES", "STATS", "*AUTO*"},
-  /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMSE+", "LIMIT", "SETUP", "STATS", "*AUTO*"},
-  /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "SETUP", "STATS", "*AUTO*"},
-  /* NLD */ {"REM", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "REM+", "LIMIET", "INSTELL", "STATS", "*AUTO*"},
-  /* POR */ {"TRAVAO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "TRAVAO+", "LIMITE", "AJUSTES", "STATS", "*CARRO*"}
+const char* MENU_NAMES[][12] = {
+  /* NOR */ {"BREMS", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMS+", "STROM", "INNSTILL", "STATS", "LAS", "*BIL*"},
+  /* ENG */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "LIMIT", "SETTINGS", "STATS", "LOCK", "*CAR*"},
+  /* CS  */ {"BRAKE", "ATTACK", "CHOKE2", "PROFIL", "FADE", "PWM_F", "BRAKE+", "CHOKE1", "SETTINGS", "STATS", "LOCK", "*CAR*"},
+  /* ACD */ {"BRAKE", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "BRAKE+", "CHOKE", "SETTINGS", "STATS", "LOCK", "*CAR*"},
+  /* ESP */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "AJUSTES", "STATS", "BLOQUEO", "*AUTO*"},
+  /* DEU */ {"BREMSE", "SENSI", "ANTIS", "KURVE", "FADE", "PWM_F", "BREMSE+", "LIMIT", "SETUP", "STATS", "SPERRE", "*AUTO*"},
+  /* ITA */ {"FRENO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "FRENO+", "LIMITE", "SETUP", "STATS", "BLOCCO", "*AUTO*"},
+  /* NLD */ {"REM", "SENSI", "ANTIS", "CURVE", "FADE", "PWM_F", "REM+", "LIMIET", "INSTELL", "STATS", "VERGR", "*AUTO*"},
+  /* POR */ {"TRAVAO", "SENSI", "ANTIS", "CURVA", "FADE", "PWM_F", "TRAVAO+", "LIMITE", "AJUSTES", "STATS", "BLOQ", "*CARRO*"}
 };
 
 /* Settings menu item names: [language][item] */
@@ -160,16 +160,16 @@ const char* FONT_SIZE_LABELS[][2] = {
 };
 
 /* Menu item names - Pascal Case: [language][item] */
-const char* MENU_NAMES_PASCAL[][11] = {
-  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Brems+", "Strom", "Innstill", "Stats", "*Bil*"},
-  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Limit", "Settings", "Stats", "*Car*"},
-  /* CS  */ {"Brake", "Attack", "Choke2", "Profil", "Fade", "Pwm_F", "Brake+", "Choke1", "Settings", "Stats", "*Car*"},
-  /* ACD */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Choke", "Settings", "Stats", "*Car*"},
-  /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Ajustes", "Stats", "*Auto*"},
-  /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Bremse+", "Limit", "Setup", "Stats", "*Auto*"},
-  /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Setup", "Stats", "*Auto*"},
-  /* NLD */ {"Rem", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Rem+", "Limiet", "Instell", "Stats", "*Auto*"},
-  /* POR */ {"Travao", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Travao+", "Limite", "Ajustes", "Stats", "*Carro*"}
+const char* MENU_NAMES_PASCAL[][12] = {
+  /* NOR */ {"Brems", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Brems+", "Strom", "Innstill", "Stats", "Las", "*Bil*"},
+  /* ENG */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Limit", "Settings", "Stats", "Lock", "*Car*"},
+  /* CS  */ {"Brake", "Attack", "Choke2", "Profil", "Fade", "Pwm_F", "Brake+", "Choke1", "Settings", "Stats", "Lock", "*Car*"},
+  /* ACD */ {"Brake", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Brake+", "Choke", "Settings", "Stats", "Lock", "*Car*"},
+  /* ESP */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Ajustes", "Stats", "Bloqueo", "*Auto*"},
+  /* DEU */ {"Bremse", "Sensi", "Antis", "Kurve", "Fade", "Pwm_F", "Bremse+", "Limit", "Setup", "Stats", "Sperre", "*Auto*"},
+  /* ITA */ {"Freno", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Freno+", "Limite", "Setup", "Stats", "Blocco", "*Auto*"},
+  /* NLD */ {"Rem", "Sensi", "Antis", "Curve", "Fade", "Pwm_F", "Rem+", "Limiet", "Instell", "Stats", "Vergr", "*Auto*"},
+  /* POR */ {"Travao", "Sensi", "Antis", "Curva", "Fade", "Pwm_F", "Travao+", "Limite", "Ajustes", "Stats", "Bloq", "*Carro*"}
 };
 
 /* Settings menu item names - Pascal Case: [language][item] */

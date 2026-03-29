@@ -165,6 +165,7 @@
         <tr><td><code>BRAKE+ / Rel.Brake</code></td><td>OFF/QUICK(zone+level)/DRAG(level)</td><td>OFF</td><td>Hulpfunctie voor remmen bij loslaten van de trigger. QUICK gebruikt een zone met nul output; DRAG voegt loslaatdrag toe zonder zone.</td></tr>
         <tr><td><code>LIMIT</code></td><td>(SENSI+5)-100 %</td><td>100</td><td>Maximale motoroutput. &lt;100 activeert de LIMITER-waarschuwing.</td></tr>
         <tr><td><code>STATS</code></td><td>-</td><td>-</td><td>Rondeteller, snelste ronde en scrollbare rondehistorie.</td></tr>
+        <tr><td><code>VERGR</code></td><td>-</td><td>Ontgrendeld</td><td>Schakel de instellingsvergrendeling in of uit. In vergrendelde modus zijn alle parameterwijzigingen geblokkeerd — alleen <code>VERGR</code> blijft actief. De vergrendeling is tijdelijk en wordt gereset bij opnieuw opstarten. Snelkoppeling: rem-knop 5 seconden ingedrukt houden. De statusbalk toont <code>LOCK</code> (omgekeerd) als actief.</td></tr>
         <tr><td><code>CAR</code></td><td>0-19 profielen</td><td>CAR0</td><td>Selecteer of beheer profiel, kopieer instellingen en reset car params.</td></tr>
       </tbody>
     </table>
@@ -490,6 +491,7 @@
 |  |- ABOUT
 |  `- BACK
 |- STATS [if enabled]
+|- LOCK
 `- CAR
    |- SELECT
    |- RENAME

@@ -24,6 +24,7 @@ extern void showPowerSave(uint32_t inactivityStartMs);
 extern void showDeepSleep();
 extern void initMenuItems();
 extern uint8_t getMainMenuItemsCount();
+extern bool isSettingsLocked();
 
 static void formatExtPotLabel(char* out, size_t outSize, int8_t potIndex) {
   if (!out || outSize == 0) return;
@@ -97,10 +98,23 @@ void displayStatusLine() {
   }
 
   char buf[7];  /* 5 chars + null */
+  int8_t lockSlot = -1;
   int8_t wifiSlot = -1;
+
+  /* Settings lock indicator: find a blank slot, or steal slot 0 */
+  if (isSettingsLocked()) {
+    for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
+      if (normalizeStatusSlotValue(g_storedVar.statusSlot[s]) == STATUS_BLANK) {
+        lockSlot = (int8_t)s;
+        break;
+      }
+    }
+    if (lockSlot < 0) lockSlot = 0;
+  }
 
   if (isWiFiPortalActive()) {
     for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
+      if ((int8_t)s == lockSlot) continue;  /* Don't double-assign */
       if (normalizeStatusSlotValue(g_storedVar.statusSlot[s]) == STATUS_BLANK) {
         wifiSlot = (int8_t)s;
         break;
@@ -109,13 +123,19 @@ void displayStatusLine() {
 
     /* If all slots are occupied, temporarily override slot 4 with WIFI status. */
     if (wifiSlot < 0) {
-      wifiSlot = STATUS_SLOTS - 1;
+      wifiSlot = (lockSlot == STATUS_SLOTS - 1) ? STATUS_SLOTS - 2 : STATUS_SLOTS - 1;
     }
   }
 
   for (uint8_t s = 0; s < STATUS_SLOTS; s++) {
     uint16_t slot = normalizeStatusSlotValue(g_storedVar.statusSlot[s]);
     uint8_t color = OBD_BLACK;
+
+    if (lockSlot == (int8_t)s) {
+      strcpy(buf, "LOCK ");
+      obdWriteString(&g_obd, 0, SLOT_X[s], Y, buf, FONT_6x8, OBD_WHITE, 1);
+      continue;
+    }
 
     if (wifiSlot == (int8_t)s) {
       strcpy(buf, "WIFI ");

@@ -105,42 +105,42 @@ const char* SOUND_MENU_NAMES[][3] = {
 };
 
 /* Lock submenu item names: [language][item] - MENU ITEM, SHORTCUT, BACK */
-const char* LOCK_MENU_NAMES[][3] = {
-  /* NOR */ {"MENYVALG", "SNARVEI", "TILBAKE"},
-  /* ENG */ {"MENU ITEM", "SHORTCUT", "BACK"},
-  /* CS  */ {"MENU ITEM", "SHORTCUT", "BACK"},
-  /* ACD */ {"MENU ITEM", "SHORTCUT", "BACK"},
-  /* ESP */ {"MENU", "ATAJO", "ATRAS"},
-  /* DEU */ {"MENUPUNKT", "KUERZEL", "ZURUCK"},
-  /* ITA */ {"VOCE MENU", "SCORCIAT", "INDIETRO"},
-  /* NLD */ {"MENU ITEM", "SNELKOP", "TERUG"},
-  /* POR */ {"ITEM MENU", "ATALHO", "VOLTAR"}
+const char* LOCK_MENU_NAMES[][4] = {
+  /* NOR */ {"MENYVALG", "SNARVEI", "BEKREFT", "TILBAKE"},
+  /* ENG */ {"MENU ITEM", "SHORTCUT", "CONFIRM", "BACK"},
+  /* CS  */ {"MENU ITEM", "SHORTCUT", "CONFIRM", "BACK"},
+  /* ACD */ {"MENU ITEM", "SHORTCUT", "CONFIRM", "BACK"},
+  /* ESP */ {"MENU", "ATAJO", "CONFIRM", "ATRAS"},
+  /* DEU */ {"MENUPUNKT", "KUERZEL", "BESTAET", "ZURUCK"},
+  /* ITA */ {"VOCE MENU", "SCORCIAT", "CONFIRM", "INDIETRO"},
+  /* NLD */ {"MENU ITEM", "SNELKOP", "BEVESTIG", "TERUG"},
+  /* POR */ {"ITEM MENU", "ATALHO", "CONFIRM", "VOLTAR"}
 };
 
 /* Lock submenu item names - Pascal Case: [language][item] */
-const char* LOCK_MENU_NAMES_PASCAL[][3] = {
-  /* NOR */ {"Menyvalg", "Snarvei", "Tilbake"},
-  /* ENG */ {"Menu Item", "Shortcut", "Back"},
-  /* CS  */ {"Menu Item", "Shortcut", "Back"},
-  /* ACD */ {"Menu Item", "Shortcut", "Back"},
-  /* ESP */ {"Menu", "Atajo", "Atras"},
-  /* DEU */ {"Menupunkt", "Kuerzel", "Zuruck"},
-  /* ITA */ {"Voce Menu", "Scorciat", "Indietro"},
-  /* NLD */ {"Menu Item", "Snelkop", "Terug"},
-  /* POR */ {"Item Menu", "Atalho", "Voltar"}
+const char* LOCK_MENU_NAMES_PASCAL[][4] = {
+  /* NOR */ {"Menyvalg", "Snarvei", "Bekreft", "Tilbake"},
+  /* ENG */ {"Menu Item", "Shortcut", "Confirm", "Back"},
+  /* CS  */ {"Menu Item", "Shortcut", "Confirm", "Back"},
+  /* ACD */ {"Menu Item", "Shortcut", "Confirm", "Back"},
+  /* ESP */ {"Menu", "Atajo", "Confirm", "Atras"},
+  /* DEU */ {"Menupunkt", "Kuerzel", "Bestaet", "Zuruck"},
+  /* ITA */ {"Voce Menu", "Scorciat", "Confirm", "Indietro"},
+  /* NLD */ {"Menu Item", "Snelkop", "Bevestig", "Terug"},
+  /* POR */ {"Item Menu", "Atalho", "Confirm", "Voltar"}
 };
 
-/* Lock shortcut duration labels: [language][idx] - OFF, 2s, 3s, ..., 10s */
+/* Lock shortcut duration labels: [language][idx] - OFF=0, 1s=1, 2s=2, …, 10s=10 */
 const char* LOCK_SHORTCUT_LABELS[][11] = {
-  /* NOR */ {"AV", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "AV"},
-  /* ENG */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
-  /* CS  */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
-  /* ACD */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
-  /* ESP */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
-  /* DEU */ {"AUS", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "AUS"},
-  /* ITA */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"},
-  /* NLD */ {"UIT", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "UIT"},
-  /* POR */ {"OFF", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s", "OFF"}
+  /* NOR */ {"AV", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* ENG */ {"OFF", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* CS  */ {"OFF", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* ACD */ {"OFF", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* ESP */ {"OFF", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* DEU */ {"AUS", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* ITA */ {"OFF", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* NLD */ {"UIT", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"},
+  /* POR */ {"OFF", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"}
 };
 
 /* ON/OFF labels: [language][state] */

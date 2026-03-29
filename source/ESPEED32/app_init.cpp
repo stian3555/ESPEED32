@@ -111,8 +111,9 @@ void initStoredVariables() {
   g_storedVar.statusSlot[1] = STATUS_SLOT1_DEFAULT;
   g_storedVar.statusSlot[2] = STATUS_SLOT2_DEFAULT;
   g_storedVar.statusSlot[3] = STATUS_SLOT3_DEFAULT;
-  g_storedVar.lockMenuEnabled  = LOCK_MENU_ENABLED_DEFAULT;
-  g_storedVar.lockShortcutIdx  = LOCK_SHORTCUT_IDX_DEFAULT;
+  g_storedVar.lockMenuEnabled    = LOCK_MENU_ENABLED_DEFAULT;
+  g_storedVar.lockShortcutIdx    = LOCK_SHORTCUT_IDX_DEFAULT;
+  g_storedVar.lockConfirmEnabled = LOCK_CONFIRM_DEFAULT;
   g_statsEnabled = STATS_ENABLED_DEFAULT;
   g_antiSpinStepMs = ANTISPIN_STEP_DEFAULT;
   g_encoderInvertEnabled = ENCODER_INVERT_DEFAULT;
